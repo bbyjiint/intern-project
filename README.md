@@ -1,8 +1,13 @@
 # เว็บเด็กฝึกงาน - Intern Website
 
-เว็บแอปพลิเคชันสำหรับการฝึกงานที่สร้างด้วย React (Vite) + TypeScript + Tailwind CSS สำหรับ Frontend และ Node.js + Express + Prisma + PostgreSQL สำหรับ Backend
+เว็บแอปพลิเคชันสำหรับการฝึกงานที่สร้างด้วย **Next.js 14** + TypeScript + Tailwind CSS สำหรับ Frontend
 
-## โครงสร้างโปรเจกต์
+## 📍 ตำแหน่งโปรเจกต์
+
+⚠️ **สำคัญ**: โปรเจกต์อยู่ที่ `intern-project/` (ไม่ใช่ root directory)  
+ต้อง `cd intern-project` ก่อนรันคำสั่ง npm
+
+## 🏗️ โครงสร้างโปรเจกต์
 
 ```
 .
