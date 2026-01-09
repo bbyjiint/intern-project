@@ -6,7 +6,7 @@
 
 ```
 .
-├── frontend/          # next.js 14 + Vite + TypeScript + Tailwind CSS
+├── frontend/          # next.js 14 +  TypeScript + Tailwind CSS
 ├── backend/           # Node.js + Express + Prisma + PostgreSQL
 └── package.json       # Root package.json สำหรับจัดการ workspaces
 ```
