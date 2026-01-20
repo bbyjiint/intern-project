@@ -1,0 +1,251 @@
+═══════════════════════════════════════════════════════════════════════════════
+                    UPDATED DATABASE SCHEMA - ERD DIAGRAM
+                    (University-Faculty Many-to-Many)
+═══════════════════════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 1. USER AUTHENTICATION & PROFILE SELECTION                                 │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    ┌──────────────────┐
+    │      User        │
+    ├──────────────────┤
+    │ id (UUID) PK     │
+    │ email (UK)       │
+    │ password         │
+    │ role (ENUM)      │ ◄─── CANDIDATE | COMPANY
+    │ authProvider     │ ◄─── LOCAL | GOOGLE | LINE | FACEBOOK
+    │ socialID (UK)    │
+    │ lineUserID       │
+    │ passwordReset    │
+    │ createdAt        │
+    │ updatedAt        │
+    └────────┬─────────┘
+             │
+             │ 1:1 (optional)
+             │
+    ┌────────┴─────────┐
+    │                  │
+    ▼                  ▼
+┌──────────────┐  ┌──────────────┐
+│  Candidate   │  │   Company    │
+│   Profile    │  │   Profile    │
+├──────────────┤  ├──────────────┤
+│ id (UUID) PK │  │ id (UUID) PK │
+│ userId FK(UK)│  │ userId FK(UK)│
+│ studentCode  │  │ companyName  │
+│ fullName     │  │ about        │
+│ contactEmail │  │ location     │
+│ phoneNumber  │  │ province     │
+│ desiredPos   │  │ logoURL      │
+│ bio          │  │ recruiterName│
+│ major        │  │ recruiterPos │
+│ studyYear    │  │ registration │
+│ createdAt    │  │ createdAt    │
+│ updatedAt    │  │ updatedAt    │
+└──────┬───────┘  └──────┬───────┘
+       │                 │
+       │                 │ 1:N
+       │                 │
+       │                 ▼
+       │         ┌──────────────┐
+       │         │ CompanyEmail │
+       │         ├──────────────┤
+       │         │ id (UUID) PK │
+       │         │ companyId FK │
+       │         │ email        │
+       │         │ createdAt    │
+       │         │ updatedAt    │
+       │         └──────────────┘
+       │
+       │                 │
+       │                 │ 1:N
+       │                 │
+       │                 ▼
+       │         ┌──────────────┐
+       │         │ CompanyPhone │
+       │         ├──────────────┤
+       │         │ id (UUID) PK │
+       │         │ companyId FK │
+       │         │ phone        │
+       │         │ createdAt    │
+       │         │ updatedAt    │
+       │         └──────────────┘
+       │
+       │
+       │ 1:N
+       │
+       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 2. CANDIDATE EDUCATION HISTORY (Multiple Universities with Faculties)      │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    ┌──────────────────┐
+    │ CandidateProfile │
+    │                  │
+    │ id (UUID) PK     │
+    └────────┬─────────┘
+             │
+             │ 1:N
+             │
+             ▼
+    ┌──────────────────────┐
+    │ CandidateUniversity   │
+    ├──────────────────────┤
+    │ id (UUID) PK         │
+    │ candidateId FK       │
+    │ universityId FK      │
+    │ universityFacultyId  │ ◄─── NEW: References UniversityFaculty pair
+    │ educationLevel       │ ◄─── BACHELOR | MASTERS | PHD
+    │ degreeName           │
+    │ startDate            │
+    │ endDate              │
+    │ gpa                  │
+    │ isCurrent            │
+    │ createdAt            │
+    │ updatedAt            │
+    └──────┬───────────────┘
+           │
+           │ N:1
+           │
+    ┌──────┴───────────────┐
+    │                      │
+    ▼                      ▼
+┌──────────────┐    ┌──────────────────┐
+│  University  │    │ UniversityFaculty│ ◄─── NEW: Join Table
+├──────────────┤    ├──────────────────┤
+│ id (UUID) PK │    │ id (UUID) PK     │
+│ name (UK)    │    │ universityId FK  │
+│ thname (UK)  │    │ facultyId FK     │
+│ code         │    │ createdAt        │
+│ province     │    │ updatedAt        │
+│ country      │    │                  │
+│ createdAt    │    │ UNIQUE(uniId,    │
+│ updatedAt    │    │  facultyId)      │
+└──────┬───────┘    └──────┬────────────┘
+       │                  │
+       │ N:N              │ N:1
+       │                  │
+       └──────────┬───────┘
+                  │
+                  ▼
+         ┌──────────────┐
+         │   Faculty    │ ◄─── UPDATED: Now Global (no universityId)
+         ├──────────────┤
+         │ id (UUID) PK │
+         │ name (UK)    │ ◄─── Global uniqueness
+         │ thname (UK)  │ ◄─── Global uniqueness
+         │ code (UK)    │ ◄─── Global uniqueness
+         │ createdAt    │
+         │ updatedAt    │
+         └──────────────┘
+
+    Relationship Flow:
+    CandidateProfile (1) ──→ (N) CandidateUniversity
+                                    │
+                                    ├──→ (N:1) University
+                                    │
+                                    └──→ (N:1) UniversityFaculty
+                                              │
+                                              ├──→ (N:1) University
+                                              │
+                                              └──→ (N:1) Faculty
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 3. CANDIDATE SKILLS (Many-to-Many Relationship)                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    ┌──────────────────┐         ┌──────────────┐         ┌──────────────┐
+    │ CandidateProfile │         │  UserSkill   │         │    Skills    │
+    │                  │         │              │         │              │
+    │ id (UUID) PK     │◄────────│ id (UUID) PK │────────►│ id (UUID) PK │
+    └──────────────────┘ 1:N     │ candidateId FK│  N:1   │ name (UK)    │
+                                  │ skillId FK    │        │ createdAt    │
+                                  │ rating        │        │ updatedAt    │
+                                  │ createdAt     │        └──────────────┘
+                                  │ updatedAt     │
+                                  │ UNIQUE(candId,│
+                                  │  skillId)     │
+                                  └──────────────┘
+
+
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ 4. CANDIDATE WORK HISTORY & FILES                                           │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+    ┌──────────────────┐
+    │ CandidateProfile │
+    │                  │
+    │ id (UUID) PK     │
+    └────────┬─────────┘
+             │
+             │ 1:N
+             │
+    ┌────────┴─────────┬──────────────┬──────────────────┐
+    │                  │              │                  │
+    ▼                  ▼              ▼                  ▼
+┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌────────────────────┐
+│ WorkHistory  │  │ Certificate │  │  Candidate   │  │                    │
+│              │  │    File     │  │ ContactFile  │  │                    │
+├──────────────┤  ├──────────────┤  ├──────────────┤  │                    │
+│ id (UUID) PK │  │ id (UUID) PK │  │ id (UUID) PK │  │                    │
+│ candidateId  │  │ candidateId  │  │ candidateId  │  │                    │
+│ companyName  │  │ name         │  │ name         │  │                    │
+│ position     │  │ url          │  │ url          │  │                    │
+│ startDate    │  │ type         │  │ type (ENUM)  │  │                    │
+│ endDate      │  │ description  │  │              │  │                    │
+│ description  │  │ createdAt    │  │ createdAt    │  │                    │
+│ createdAt    │  │ updatedAt    │  │ updatedAt    │  │                    │
+│ updatedAt    │  └──────────────┘  └──────────────┘  │                    │
+└──────────────┘                                      │                    │
+                                                      │ RESUME | PORTFOLIO │
+                                                      │ | OTHER            │
+                                                      └────────────────────┘
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                    KEY RELATIONSHIPS SUMMARY
+═══════════════════════════════════════════════════════════════════════════════
+
+1. User (1) ──→ (0..1) CandidateProfile
+2. User (1) ──→ (0..1) CompanyProfile
+3. CandidateProfile (1) ──→ (N) CandidateUniversity
+4. CandidateUniversity (N) ──→ (1) University
+5. CandidateUniversity (N) ──→ (0..1) UniversityFaculty
+6. University (N) ──→ (N) Faculty [via UniversityFaculty]
+7. UniversityFaculty (N) ──→ (1) University
+8. UniversityFaculty (N) ──→ (1) Faculty
+9. CandidateProfile (1) ──→ (N) UserSkill
+10. Skills (1) ──→ (N) UserSkill
+11. CandidateProfile (1) ──→ (N) WorkHistory
+12. CandidateProfile (1) ──→ (N) CertificateFile
+13. CandidateProfile (1) ──→ (N) CandidateContactFile
+14. CompanyProfile (1) ──→ (N) CompanyEmail
+15. CompanyProfile (1) ──→ (N) CompanyPhone
+
+
+═══════════════════════════════════════════════════════════════════════════════
+                    MAJOR UPDATES FROM PREVIOUS SCHEMA
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ NEW: UniversityFaculty join table (Many-to-Many)
+   - Links University and Faculty
+   - Unique constraint on (universityId, facultyId)
+   - CandidateUniversity references this pair
+
+✅ UPDATED: Faculty model
+   - Removed universityId field
+   - Now global entity (unique by name, thname, code)
+   - Can belong to multiple universities
+
+✅ UPDATED: CandidateUniversity model
+   - Changed facultyId → universityFacultyId
+   - Now references UniversityFaculty pair
+   - Supports multiple universities per candidate
+
+✅ REMOVED: Direct University-Faculty relationship
+   - Old: University (1) ──→ (N) Faculty
+   - New: University (N) ──→ (N) Faculty [via UniversityFaculty]
+
+═══════════════════════════════════════════════════════════════════════════════

@@ -12,8 +12,8 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "argon2": "^0.44.0"
   }
 }
-
-
-
