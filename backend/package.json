@@ -1,0 +1,21 @@
+{
+  "name": "intern-website-backend",
+  "private": true,
+  "prisma": {
+    "schema": "prisma/schema.prisma"
+  },
+  "scripts": {
+    "prisma:studio": "npx prisma studio --config=./prisma.config.ts",
+    "prisma:generate": "npx prisma generate --config=./prisma.config.ts",
+    "prisma:migrate": "npx prisma migrate dev --config=./prisma.config.ts",
+    "prisma:dbpull": "npx prisma db pull --config=./prisma.config.ts",
+    "prisma:validate": "npx prisma validate --config=./prisma.config.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.2.0"
+  },
+  "devDependencies": {
+    "prisma": "^7.2.0"
+  }
+}
+
