@@ -8,17 +8,14 @@ module.exports = {
   theme: {
     extend: {
       colors: {
+        // Design System Colors - Use these consistently across the project
         primary: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#38bdf8',
-          500: '#0ea5e9',
-          600: '#0284c7',
-          700: '#0369a1',
-          800: '#075985',
-          900: '#0c4a6e',
+          DEFAULT: '#0273B1', // Primary button color - use for ALL buttons
+          hover: '#025a8f',  // Primary button hover state
+        },
+        text: {
+          primary: '#1C2D4F',   // Primary font color - use for main text
+          secondary: '#A9B4CD', // Secondary text / hover color
         },
       },
     },

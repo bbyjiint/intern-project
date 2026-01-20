@@ -1,236 +1,70 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
+import Image from 'next/image'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
+import LoginModal from '@/components/LoginModal'
+import RegisterModal from '@/components/RegisterModal'
 
 export default function Home() {
-  const [searchQuery, setSearchQuery] = useState('')
-  const [academicYear, setAcademicYear] = useState('All Years')
-  const [position, setPosition] = useState('All Positions')
-  const [university, setUniversity] = useState('All Universities')
-  const [department, setDepartment] = useState('All Departments')
-
-  const handleClearFilters = () => {
-    setSearchQuery('')
-    setAcademicYear('All Years')
-    setPosition('All Positions')
-    setUniversity('All Universities')
-    setDepartment('All Departments')
-  }
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false)
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false)
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
+    <div className="min-h-screen flex flex-col bg-white">
+      <Navbar onLoginClick={() => setIsLoginModalOpen(true)} />
+      <LoginModal 
+        isOpen={isLoginModalOpen} 
+        onClose={() => setIsLoginModalOpen(false)}
+        onSignUpClick={() => setIsRegisterModalOpen(true)}
+      />
+      <RegisterModal 
+        isOpen={isRegisterModalOpen} 
+        onClose={() => setIsRegisterModalOpen(false)}
+        onLoginClick={() => setIsLoginModalOpen(true)}
+      />
       <main className="flex-grow">
-        {/* Search Interns Section */}
-        <section className="py-8">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Search Interns
-              </h1>
-              <p className="text-gray-600 mb-6">
-                Find and connect with interns across the company.
-              </p>
-
-              {/* Search Input */}
-              <div className="relative mb-6">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by name, skills, or keywords..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12"
-                />
-                <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                  <svg
-                    className="w-5 h-5 text-gray-400"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-                </div>
-              </div>
-
-              {/* Filter Dropdowns */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                <div className="relative">
-                  <select
-                    value={academicYear}
-                    onChange={(e) => setAcademicYear(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white pr-10"
-                  >
-                    <option>All Years</option>
-                    <option>Year 1</option>
-                    <option>Year 2</option>
-                    <option>Year 3</option>
-                    <option>Year 4</option>
-                  </select>
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                    <svg
-                      className="w-5 h-5 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <select
-                    value={position}
-                    onChange={(e) => setPosition(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white pr-10"
-                  >
-                    <option>All Positions</option>
-                    <option>Software Engineer</option>
-                    <option>Designer</option>
-                    <option>Marketing</option>
-                    <option>Business Analyst</option>
-                  </select>
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                    <svg
-                      className="w-5 h-5 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <select
-                    value={university}
-                    onChange={(e) => setUniversity(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white pr-10"
-                  >
-                    <option>All Universities</option>
-                    <option>Chulalongkorn University</option>
-                    <option>Thammasat University</option>
-                    <option>Mahidol University</option>
-                    <option>KMITL</option>
-                  </select>
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                    <svg
-                      className="w-5 h-5 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <select
-                    value={department}
-                    onChange={(e) => setDepartment(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white pr-10"
-                  >
-                    <option>All Departments</option>
-                    <option>Engineering</option>
-                    <option>Design</option>
-                    <option>Marketing</option>
-                    <option>Sales</option>
-                    <option>HR</option>
-                  </select>
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                    <svg
-                      className="w-5 h-5 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex justify-end space-x-4">
-                <button
-                  onClick={handleClearFilters}
-                  className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
-                >
-                  Clear Filters
-                </button>
-                <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
-                  Search
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Results Section */}
-        <section className="py-6">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="border-t border-blue-200 pt-6">
-              <div className="flex justify-between items-center mb-8">
-                <p className="text-gray-700 font-medium">0 candidates found</p>
-                <div className="relative">
-                  <select className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white pr-10 text-gray-700">
-                    <option>Sort by Name</option>
-                    <option>Sort by Date</option>
-                    <option>Sort by Relevance</option>
-                  </select>
-                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
-                    <svg
-                      className="w-4 h-4 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              {/* Login Prompt */}
-              <div className="flex items-center justify-center min-h-[400px]">
-                <p className="text-2xl font-semibold text-gray-800">
-                  Log in to see candidates and more features.
+        {/* Hero Section */}
+        <section className="py-16 lg:py-24">
+          <div className="max-w-[1600px] mx-auto px-6 lg:px-12 xl:px-16">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
+              {/* Left Side - Text Content */}
+              <div className="space-y-6 lg:space-y-8">
+                <p className="text-lg lg:text-xl" style={{ color: '#A9B4CD' }}>Welcome...</p>
+                <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold leading-[1.1]" style={{ color: '#1C2D4F' }}>
+                  Your future start here
+                </h1>
+                <p className="text-base lg:text-lg leading-relaxed max-w-xl" style={{ color: '#A9B4CD' }}>
+                  Connecting companies with top talent, and students with career-building opportunities
                 </p>
+                <div>
+                  <Link
+                    href="/role-selection"
+                    className="inline-block text-white px-8 py-3 rounded-md transition-colors font-medium text-base"
+                    style={{ backgroundColor: '#0273B1' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#025a8f'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0273B1'}
+                  >
+                    Start here
+                  </Link>
+                </div>
+              </div>
+
+              {/* Right Side - MacBook Image */}
+              <div className="flex justify-end items-center">
+                <div className="w-full max-w-4xl">
+                  <Image
+                    src="/15_ Macbook Pro Mockup Front view.png"
+                    alt="MacBook Pro Mockup"
+                    width={1200}
+                    height={800}
+                    className="w-full h-auto"
+                    priority
+                    style={{ objectFit: 'contain' }}
+                  />
+                </div>
               </div>
             </div>
           </div>
