@@ -3,17 +3,32 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { apiFetch, setToken } from '@/lib/api'
 
 export default function LoginPage() {
   const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // After successful login, navigate to role selection
-    router.push('/role-selection')
+    setError(null)
+    setIsSubmitting(true)
+    try {
+      const data = await apiFetch<{ token: string }>(`/api/auth/login`, {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      })
+      setToken(data.token)
+      router.push('/role-selection')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Login failed')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -36,6 +51,11 @@ export default function LoginPage() {
 
           {/* Login Form */}
           <form className="space-y-6" onSubmit={handleSubmit}>
+            {error && (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
             {/* Email Input */}
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -119,12 +139,13 @@ export default function LoginPage() {
             {/* Login Button */}
             <button
               type="submit"
+              disabled={isSubmitting}
               className="w-full text-white py-3 rounded-lg font-semibold transition-colors"
               style={{ backgroundColor: '#0273B1' }}
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#025a8f'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0273B1'}
             >
-              เข้าสู่ระบบ
+              {isSubmitting ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
             </button>
 
             {/* Social Login Buttons */}

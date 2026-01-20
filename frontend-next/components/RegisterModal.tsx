@@ -12,7 +12,6 @@ interface RegisterModalProps {
 
 export default function RegisterModal({ isOpen, onClose, onLoginClick }: RegisterModalProps) {
   const router = useRouter()
-  const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -63,33 +62,6 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
 
           {/* Register Form */}
           <form className="space-y-6" onSubmit={handleSubmit}>
-            {/* Username Input */}
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <svg
-                  className="h-5 w-5 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
-                </svg>
-              </div>
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter Your Username"
-                required
-                className="block w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg bg-gray-50"
-              />
-            </div>
-
             {/* Email Input */}
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">

@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import EmployerNavbar from '@/components/EmployerNavbar'
 import CandidateCard from '@/components/CandidateCard'
 import CandidateProfileModal from '@/components/CandidateProfileModal'
+import { apiFetch } from '@/lib/api'
 
 const mockCandidates = [
   {
@@ -83,6 +84,25 @@ export default function EmployerDashboardPage() {
   const [sortBy, setSortBy] = useState('Name')
   const [viewMode, setViewMode] = useState<'all' | 'shortlist'>('all')
   const [selectedCandidate, setSelectedCandidate] = useState<typeof mockCandidates[0] | null>(null)
+  const [apiCandidates, setApiCandidates] = useState<typeof mockCandidates | null>(null)
+  const [apiError, setApiError] = useState<string | null>(null)
+
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const data = await apiFetch<{ candidates: typeof mockCandidates }>(`/api/candidates`)
+        setApiCandidates(data.candidates)
+      } catch (err) {
+        // If not logged in / wrong role, keep mock list but show message.
+        setApiError(err instanceof Error ? err.message : 'Failed to load candidates')
+        setApiCandidates(null)
+      }
+    })()
+  }, [])
+
+  const candidates = useMemo(() => {
+    return apiCandidates && apiCandidates.length > 0 ? apiCandidates : mockCandidates
+  }, [apiCandidates])
 
   const handleBookmark = (e: React.MouseEvent, name: string) => {
     e.stopPropagation()
@@ -106,7 +126,7 @@ export default function EmployerDashboardPage() {
     setDepartment('All Departments')
   }
 
-  const filteredCandidates = mockCandidates.filter((candidate) => {
+  const filteredCandidates = candidates.filter((candidate) => {
     if (viewMode === 'shortlist' && !bookmarkedCandidates.has(candidate.name)) {
       return false
     }
@@ -137,6 +157,11 @@ export default function EmployerDashboardPage() {
     <div className="min-h-screen bg-gray-50">
       <EmployerNavbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {apiError && (
+          <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+            {apiError}
+          </div>
+        )}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-6">Search Candidates</h1>
 

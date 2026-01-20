@@ -3,20 +3,34 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { apiFetch, setToken } from '@/lib/api'
 
 export default function RegisterPage() {
   const router = useRouter()
-  const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // After successful registration, navigate to role selection
-    router.push('/role-selection')
+    setError(null)
+    setIsSubmitting(true)
+    try {
+      const data = await apiFetch<{ token: string }>(`/api/auth/register`, {
+        method: 'POST',
+        body: JSON.stringify({ email, password, confirmPassword }),
+      })
+      setToken(data.token)
+      router.push('/role-selection')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Registration failed')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -38,33 +52,11 @@ export default function RegisterPage() {
 
         {/* Register Form */}
         <form className="space-y-6" onSubmit={handleSubmit}>
-          {/* Username Input */}
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-              <svg
-                className="h-5 w-5 text-gray-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                />
-              </svg>
+          {error && (
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
             </div>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Enter Your Username"
-              required
-              className="block w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg bg-gray-50"
-            />
-          </div>
-
+          )}
           {/* Email Input */}
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -205,12 +197,13 @@ export default function RegisterPage() {
           {/* Sign Up Button */}
           <button
             type="submit"
+            disabled={isSubmitting}
             className="w-full text-white py-3 rounded-lg font-semibold transition-colors"
             style={{ backgroundColor: '#0273B1' }}
             onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#025a8f'}
             onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0273B1'}
           >
-            Sign Up
+            {isSubmitting ? 'Signing Up...' : 'Sign Up'}
           </button>
 
           {/* Link */}

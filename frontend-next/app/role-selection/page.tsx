@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { apiFetch, setToken } from '@/lib/api'
 
 interface RoleCardProps {
   icon: React.ReactNode
@@ -88,13 +89,41 @@ export default function RoleSelectionPage() {
   const router = useRouter()
   const [selectedRole, setSelectedRole] = useState<'intern' | 'employer' | null>(null)
   const [hoveredRole, setHoveredRole] = useState<'intern' | 'employer' | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const handleInternClick = () => {
-    router.push('/intern/dashboard')
+  const handleInternClick = async () => {
+    setError(null)
+    setIsSubmitting(true)
+    try {
+      const data = await apiFetch<{ token: string }>(`/api/auth/me/role`, {
+        method: 'PATCH',
+        body: JSON.stringify({ role: 'CANDIDATE' }),
+      })
+      setToken(data.token)
+      router.push('/intern/dashboard')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to set role')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  const handleEmployerClick = () => {
-    router.push('/employer/profile-setup')
+  const handleEmployerClick = async () => {
+    setError(null)
+    setIsSubmitting(true)
+    try {
+      const data = await apiFetch<{ token: string }>(`/api/auth/me/role`, {
+        method: 'PATCH',
+        body: JSON.stringify({ role: 'COMPANY' }),
+      })
+      setToken(data.token)
+      router.push('/employer/dashboard')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to set role')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleInternSelect = () => {
@@ -117,6 +146,12 @@ export default function RoleSelectionPage() {
               Join thousands of students and employers already using our platform to build the future of finance.
             </p>
           </div>
+
+          {error && (
+            <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div
@@ -159,7 +194,7 @@ export default function RoleSelectionPage() {
                 }
                 title="I'm a Intern"
                 description="Looking for internships and entry-level roles."
-                buttonText="Continue as Intern"
+                buttonText={isSubmitting ? 'Please wait...' : 'Continue as Intern'}
                 onClick={handleInternClick}
                 isSelected={selectedRole === 'intern'}
                 onCardClick={handleInternSelect}
@@ -195,7 +230,7 @@ export default function RoleSelectionPage() {
                 }
                 title="I'm an Employer"
                 description="Looking to hire top finance talent."
-                buttonText="Continue as Employer"
+                buttonText={isSubmitting ? 'Please wait...' : 'Continue as Employer'}
                 onClick={handleEmployerClick}
                 isSelected={selectedRole === 'employer'}
                 onCardClick={handleEmployerSelect}
