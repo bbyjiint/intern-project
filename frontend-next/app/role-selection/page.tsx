@@ -92,6 +92,7 @@ export default function RoleSelectionPage() {
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+<<<<<<< Updated upstream
   const handleInternClick = async () => {
     setError(null)
     setIsSubmitting(true)
@@ -107,6 +108,10 @@ export default function RoleSelectionPage() {
     } finally {
       setIsSubmitting(false)
     }
+=======
+  const handleInternClick = () => {
+    router.push('/intern/profile-setup')
+>>>>>>> Stashed changes
   }
 
   const handleEmployerClick = async () => {
