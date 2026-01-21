@@ -110,8 +110,7 @@ export default function RoleSelectionPage() {
     }
 =======
   const handleInternClick = () => {
-    router.push('/intern/profile-setup')
->>>>>>> Stashed changes
+    router.push('/intern/dashboard')
   }
 
   const handleEmployerClick = async () => {
