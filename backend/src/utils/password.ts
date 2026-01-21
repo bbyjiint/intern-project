@@ -7,8 +7,7 @@ export async function hashPassword(password: string): Promise<string> {
 }
 
 export async function verifyPassword(hash: string, password: string): Promise<boolean> {
-  return await argon2.verify(hash, password, {
-    type: argon2.argon2id,
-  });
+  // The hash encodes the Argon2 variant/params; `verify` will use what's in the hash.
+  return await argon2.verify(hash, password);
 }
 
