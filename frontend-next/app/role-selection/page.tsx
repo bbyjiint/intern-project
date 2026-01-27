@@ -92,42 +92,12 @@ export default function RoleSelectionPage() {
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-<<<<<<< Updated upstream
-  const handleInternClick = async () => {
-    setError(null)
-    setIsSubmitting(true)
-    try {
-      const data = await apiFetch<{ token: string }>(`/api/auth/me/role`, {
-        method: 'PATCH',
-        body: JSON.stringify({ role: 'CANDIDATE' }),
-      })
-      setToken(data.token)
-      router.push('/intern/dashboard')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to set role')
-    } finally {
-      setIsSubmitting(false)
-    }
-=======
   const handleInternClick = () => {
-    router.push('/intern/dashboard')
+    router.push('/intern/profile-setup')
   }
 
-  const handleEmployerClick = async () => {
-    setError(null)
-    setIsSubmitting(true)
-    try {
-      const data = await apiFetch<{ token: string }>(`/api/auth/me/role`, {
-        method: 'PATCH',
-        body: JSON.stringify({ role: 'COMPANY' }),
-      })
-      setToken(data.token)
-      router.push('/employer/dashboard')
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to set role')
-    } finally {
-      setIsSubmitting(false)
-    }
+  const handleEmployerClick = () => {
+    router.push('/employer/profile-setup')
   }
 
   const handleInternSelect = () => {
@@ -247,4 +217,3 @@ export default function RoleSelectionPage() {
     </div>
   )
 }
-

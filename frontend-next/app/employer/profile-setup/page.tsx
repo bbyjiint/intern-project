@@ -1,30 +1,56 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Step1GeneralInfo from '@/components/profile-setup/Step1GeneralInfo'
-import Step2BackgroundExperience from '@/components/profile-setup/Step2BackgroundExperience'
-import Step3SkillsProjects from '@/components/profile-setup/Step3SkillsProjects'
-import ProgressIndicator from '@/components/profile-setup/ProgressIndicator'
+import Step1GeneralInfo from '@/components/employer-profile-setup/Step1GeneralInfo'
+import Step2CompanyAddress from '@/components/employer-profile-setup/Step2CompanyAddress'
+import Step3ContactInfo from '@/components/employer-profile-setup/Step3ContactInfo'
+import EmployerProgressIndicator from '@/components/employer-profile-setup/EmployerProgressIndicator'
 
-export default function ProfileSetupPage() {
+export default function EmployerProfileSetupPage() {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
+  
+  // Check for step query parameter and load existing data
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const stepParam = params.get('step')
+    if (stepParam) {
+      const step = parseInt(stepParam, 10)
+      if (step >= 1 && step <= 3) {
+        setCurrentStep(step)
+      }
+    }
+    
+    // Load existing profile data from localStorage
+    const savedData = localStorage.getItem('employerProfileData')
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData)
+        setFormData(prev => ({ ...prev, ...parsed }))
+      } catch (e) {
+        console.error('Failed to parse profile data:', e)
+      }
+    }
+  }, [])
   const [formData, setFormData] = useState({
     // Step 1
-    fullName: '',
-    location: '',
-    email: '',
-    phoneNumber: '',
-    aboutYou: '',
+    companyName: '',
+    companyDescription: '',
+    businessType: '',
+    companySize: '',
     // Step 2
-    professionalSummary: '',
-    education: [],
-    experience: [],
+    addressDetails: '',
+    subDistrict: '',
+    district: '',
+    province: '',
+    postcode: '',
     // Step 3
-    skills: [],
-    projects: [],
+    phoneNumber: '',
+    email: '',
+    websiteUrl: '',
+    contactName: '',
   })
 
   const handleNext = () => {
@@ -43,9 +69,9 @@ export default function ProfileSetupPage() {
 
   const handleCreateProfile = () => {
     // Save profile data to localStorage
-    localStorage.setItem('internProfileData', JSON.stringify(formData))
+    localStorage.setItem('employerProfileData', JSON.stringify(formData))
     // Redirect to profile page
-    router.push('/intern/profile')
+    router.push('/employer/profile')
   }
 
   const updateFormData = (stepData: any) => {
@@ -66,18 +92,18 @@ export default function ProfileSetupPage() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-[800px] mx-auto px-4 sm:px-6 py-8">
-        <h1 className="text-3xl font-bold mb-6" style={{ color: '#1C2D4F' }}>
+      <div className="max-w-[800px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6" style={{ color: '#1C2D4F' }}>
           Start building your profile
         </h1>
 
         {/* Progress Indicator */}
         <div className="mb-4">
-          <ProgressIndicator currentStep={currentStep} totalSteps={3} />
+          <EmployerProgressIndicator currentStep={currentStep} totalSteps={3} />
         </div>
 
         {/* Form Content */}
-        <div className="bg-white rounded-lg shadow-md p-8 sm:p-10">
+        <div className="bg-white rounded-lg shadow-md p-6 sm:p-8 lg:p-10">
           {currentStep === 1 && (
             <Step1GeneralInfo
               data={formData}
@@ -85,23 +111,23 @@ export default function ProfileSetupPage() {
             />
           )}
           {currentStep === 2 && (
-            <Step2BackgroundExperience
+            <Step2CompanyAddress
               data={formData}
               onUpdate={updateFormData}
             />
           )}
           {currentStep === 3 && (
-            <Step3SkillsProjects
+            <Step3ContactInfo
               data={formData}
               onUpdate={updateFormData}
             />
           )}
 
           {/* Navigation Buttons */}
-          <div className="flex justify-between mt-10 pt-6 border-t border-gray-200">
+          <div className="flex flex-col sm:flex-row justify-between gap-4 sm:gap-0 mt-8 sm:mt-10 pt-6 border-t border-gray-200">
             <button
               onClick={handlePrevious}
-              className="flex items-center justify-center px-6 py-3 rounded-lg font-semibold text-sm transition-colors h-11"
+              className="flex items-center justify-center px-6 py-3 rounded-lg font-semibold text-sm transition-colors h-11 w-full sm:w-auto order-2 sm:order-1"
               style={{
                 backgroundColor: 'white',
                 border: '2px solid #0273B1',
@@ -124,7 +150,7 @@ export default function ProfileSetupPage() {
             {currentStep < 3 ? (
               <button
                 onClick={handleNext}
-                className="flex items-center justify-center px-6 py-3 rounded-lg font-semibold text-sm text-white transition-colors h-11"
+                className="flex items-center justify-center px-6 py-3 rounded-lg font-semibold text-sm text-white transition-colors h-11 w-full sm:w-auto order-1 sm:order-2"
                 style={{ backgroundColor: '#0273B1', minWidth: '120px' }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = '#025a8f'
@@ -141,7 +167,7 @@ export default function ProfileSetupPage() {
             ) : (
               <button
                 onClick={handleCreateProfile}
-                className="flex items-center justify-center px-6 py-3 rounded-lg font-semibold text-sm text-white transition-colors h-11"
+                className="flex items-center justify-center px-6 py-3 rounded-lg font-semibold text-sm text-white transition-colors h-11 w-full sm:w-auto order-1 sm:order-2"
                 style={{ backgroundColor: '#0273B1', minWidth: '120px' }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = '#025a8f'

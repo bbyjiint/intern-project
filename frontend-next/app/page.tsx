@@ -41,7 +41,7 @@ export default function Home() {
                 </p>
                 <div>
                   <Link
-                    href="/role-selection"
+                    href="/login"
                     className="inline-block text-white px-8 py-3 rounded-md transition-colors font-medium text-base"
                     style={{ backgroundColor: '#0273B1' }}
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#025a8f'}

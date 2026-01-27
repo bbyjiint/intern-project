@@ -4,18 +4,25 @@ import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 
-export default function EmployerNavbar() {
+interface InternNavbarProps {
+  searchQuery?: string
+  onSearchChange?: (query: string) => void
+  onFindJob?: () => void
+}
+
+export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }: InternNavbarProps = {}) {
   const pathname = usePathname()
   const router = useRouter()
-  const isFindCandidatesPage = pathname?.includes('/find-candidates')
+  const isFindCompaniesPage = pathname?.includes('/find-companies')
   const isMessagesPage = pathname?.includes('/messages')
   const [profileData, setProfileData] = useState<any>(null)
   const [showDropdown, setShowDropdown] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const [localSearchQuery, setLocalSearchQuery] = useState('')
 
   useEffect(() => {
     const loadProfileData = () => {
-      const savedData = localStorage.getItem('employerProfileData')
+      const savedData = localStorage.getItem('internProfileData')
       if (savedData) {
         try {
           setProfileData(JSON.parse(savedData))
@@ -29,7 +36,7 @@ export default function EmployerNavbar() {
     
     // Listen for storage changes to sync profile image
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'employerProfileData') {
+      if (e.key === 'internProfileData') {
         loadProfileData()
       }
     }
@@ -66,40 +73,64 @@ export default function EmployerNavbar() {
   }, [showDropdown])
 
   const getInitials = (name: string) => {
-    if (!name) return 'C'
+    if (!name) return 'I'
+    const parts = name.split(' ')
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase()
+    }
     return name.charAt(0).toUpperCase()
+  }
+
+  useEffect(() => {
+    if (searchQuery !== undefined) {
+      setLocalSearchQuery(searchQuery)
+    }
+  }, [searchQuery])
+
+  const currentSearchQuery = searchQuery !== undefined ? searchQuery : localSearchQuery
+  const handleSearchChange = (value: string) => {
+    setLocalSearchQuery(value)
+    if (onSearchChange) {
+      onSearchChange(value)
+    }
+  }
+
+  const handleFindJob = () => {
+    if (onFindJob) {
+      onFindJob()
+    }
   }
 
   return (
     <nav className="bg-white border-b border-gray-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          <div className="flex items-center space-x-8">
+          <div className="flex items-center space-x-8 flex-1">
             <div>
-              <Link href="/employer/dashboard" className="text-2xl font-semibold tracking-tight" style={{ color: '#0273B1' }}>
-                CompanyHub
+              <Link href="/intern/profile" className="text-2xl font-semibold tracking-tight" style={{ color: '#0273B1' }}>
+                CompanyHub.
               </Link>
             </div>
             <div className="hidden md:flex space-x-6">
               <Link
-                href="/employer/find-candidates"
+                href="/intern/find-companies"
                 className="font-medium pb-1 transition-colors"
-                style={{ color: isFindCandidatesPage ? '#0273B1' : '#A9B4CD' }}
+                style={{ color: isFindCompaniesPage ? '#0273B1' : '#A9B4CD' }}
                 onMouseEnter={(e) => {
-                  if (!isFindCandidatesPage) {
+                  if (!isFindCompaniesPage) {
                     e.currentTarget.style.color = '#0273B1'
                   }
                 }}
                 onMouseLeave={(e) => {
-                  if (!isFindCandidatesPage) {
+                  if (!isFindCompaniesPage) {
                     e.currentTarget.style.color = '#A9B4CD'
                   }
                 }}
               >
-                Find Candidates
+                Find Companies
               </Link>
               <Link
-                href="/employer/messages"
+                href="/intern/messages"
                 className="font-medium pb-1 transition-colors"
                 style={{ color: isMessagesPage ? '#0273B1' : '#A9B4CD' }}
                 onMouseEnter={(e) => {
@@ -116,36 +147,59 @@ export default function EmployerNavbar() {
                 Message
               </Link>
             </div>
+            {isFindCompaniesPage && (
+              <div className="flex-1 max-w-md mx-8">
+                <div className="relative">
+                  <input
+                    type="text"
+                    value={currentSearchQuery}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleFindJob()
+                      }
+                    }}
+                    placeholder="What position are you looking for?"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <svg
+                    className="w-5 h-5 text-gray-400 absolute left-3 top-2.5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+                </div>
+              </div>
+            )}
+            {isFindCompaniesPage && (
+              <button
+                onClick={handleFindJob}
+                className="px-6 py-2 rounded-lg font-semibold text-sm text-white transition-colors"
+                style={{ backgroundColor: '#0273B1' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#025a8f'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#0273B1'
+                }}
+              >
+                Find Job
+              </button>
+            )}
           </div>
           <div className="flex items-center space-x-4">
-            <Link
-              href="/employer/create-job-post"
-              className="flex items-center space-x-2 px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
-              style={{ backgroundColor: '#E3F5FF', color: '#0273B1' }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#0273B1'
-                e.currentTarget.style.color = '#FFFFFF'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#E3F5FF'
-                e.currentTarget.style.color = '#0273B1'
-              }}
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              <span>Create Job Post</span>
-            </Link>
             <div className="relative" ref={dropdownRef}>
               <div className="flex items-center gap-3">
-                <div className="text-right hidden md:block">
-                  <div className="text-sm font-semibold text-gray-900">
-                    {profileData?.companyName || 'Company Name'}
-                  </div>
-                </div>
                 <div className="relative w-10 h-10">
                   <Link
-                    href="/employer/profile"
+                    href="/intern/profile"
                     className="block w-10 h-10 rounded-full overflow-hidden cursor-pointer"
                   >
                     {profileData?.profileImage ? (
@@ -160,7 +214,7 @@ export default function EmployerNavbar() {
                         style={{ backgroundColor: '#0273B1' }}
                       >
                         <span className="text-white font-semibold text-sm">
-                          {getInitials(profileData?.companyName || 'Company Name')}
+                          {getInitials(profileData?.fullName || 'Intern Name')}
                         </span>
                       </div>
                     )}
@@ -185,7 +239,7 @@ export default function EmployerNavbar() {
               {showDropdown && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                   <Link
-                    href="/employer/profile"
+                    href="/intern/profile"
                     className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     onClick={() => setShowDropdown(false)}
                   >
@@ -195,27 +249,17 @@ export default function EmployerNavbar() {
                     Profile
                   </Link>
                   <Link
-                    href="/employer/dashboard"
+                    href="/intern/applied"
                     className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     onClick={() => setShowDropdown(false)}
                   >
                     <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
-                    Applicants
+                    Applied
                   </Link>
                   <Link
-                    href="/employer/job-post"
-                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    onClick={() => setShowDropdown(false)}
-                  >
-                    <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    Job Post
-                  </Link>
-                  <Link
-                    href="/employer/bookmark"
+                    href="/intern/bookmark"
                     className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                     onClick={() => setShowDropdown(false)}
                   >
@@ -227,13 +271,12 @@ export default function EmployerNavbar() {
                   <div className="border-t border-gray-200 my-1"></div>
                   <button
                     onClick={() => {
-                      // Clear authentication data (adjust based on your auth implementation)
+                      // Clear authentication data
                       localStorage.removeItem('authToken')
                       localStorage.removeItem('user')
-                      localStorage.removeItem('employerProfileData')
-                      localStorage.removeItem('employerConversations')
-                      localStorage.removeItem('jobPosts')
-                      localStorage.removeItem('bookmarkedCandidates')
+                      localStorage.removeItem('internProfileData')
+                      localStorage.removeItem('internConversations')
+                      localStorage.removeItem('savedJobs')
                       // Redirect to home page
                       router.push('/')
                       setShowDropdown(false)
@@ -254,4 +297,3 @@ export default function EmployerNavbar() {
     </nav>
   )
 }
-
