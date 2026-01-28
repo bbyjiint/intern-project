@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { apiFetch, setToken } from '@/lib/api'
 
 interface LoginModalProps {
   isOpen: boolean
@@ -15,12 +16,38 @@ export default function LoginModal({ isOpen, onClose, onSignUpClick }: LoginModa
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   if (!isOpen) return null
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    router.push('/role-selection')
+    setError(null)
+    setIsSubmitting(true)
+    
+    try {
+      const data = await apiFetch<{ token: string; user: { id: string; email: string; role: string | null } }>(`/api/auth/login`, {
+        method: 'POST',
+        body: JSON.stringify({ email, password }),
+      })
+      setToken(data.token)
+      onClose()
+      
+      // Redirect based on user role
+      if (!data.user.role) {
+        router.push('/role-selection')
+      } else if (data.user.role === 'CANDIDATE') {
+        router.push('/intern/find-companies')
+      } else if (data.user.role === 'COMPANY') {
+        router.push('/employer/find-candidates')
+      } else {
+        router.push('/role-selection')
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Login failed')
+      setIsSubmitting(false)
+    }
   }
 
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -60,6 +87,12 @@ export default function LoginModal({ isOpen, onClose, onSignUpClick }: LoginModa
 
           {/* Login Form */}
           <form className="space-y-6" onSubmit={handleSubmit}>
+            {error && (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
             {/* Email Input */}
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -145,12 +178,21 @@ export default function LoginModal({ isOpen, onClose, onSignUpClick }: LoginModa
             {/* Login Button */}
             <button
               type="submit"
-              className="w-full text-white py-3 rounded-lg font-semibold transition-colors"
+              disabled={isSubmitting}
+              className="w-full text-white py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ backgroundColor: '#0273B1' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#025a8f'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0273B1'}
+              onMouseEnter={(e) => {
+                if (!isSubmitting) {
+                  e.currentTarget.style.backgroundColor = '#025a8f'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isSubmitting) {
+                  e.currentTarget.style.backgroundColor = '#0273B1'
+                }
+              }}
             >
-              Login
+              {isSubmitting ? 'Logging in...' : 'Login'}
             </button>
 
             {/* Links */}

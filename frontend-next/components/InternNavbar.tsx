@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { apiFetch, getToken } from '@/lib/api'
 
 interface InternNavbarProps {
   searchQuery?: string
@@ -15,12 +16,26 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
   const router = useRouter()
   const isFindCompaniesPage = pathname?.includes('/find-companies')
   const isMessagesPage = pathname?.includes('/messages')
+  const [userData, setUserData] = useState<{ displayName?: string; email?: string } | null>(null)
   const [profileData, setProfileData] = useState<any>(null)
   const [showDropdown, setShowDropdown] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [localSearchQuery, setLocalSearchQuery] = useState('')
 
   useEffect(() => {
+    // Load user data from API
+    const loadUserData = async () => {
+      try {
+        const token = getToken()
+        if (token) {
+          const data = await apiFetch<{ user: { displayName?: string; email?: string } }>('/api/auth/me')
+          setUserData(data.user)
+        }
+      } catch (error) {
+        console.error('Failed to load user data:', error)
+      }
+    }
+
     const loadProfileData = () => {
       const savedData = localStorage.getItem('internProfileData')
       if (savedData) {
@@ -32,6 +47,7 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
       }
     }
     
+    loadUserData()
     loadProfileData()
     
     // Listen for storage changes to sync profile image
@@ -46,6 +62,7 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
     // Also listen for custom event for same-window updates
     const handleProfileUpdate = () => {
       loadProfileData()
+      loadUserData()
     }
     
     window.addEventListener('profileImageUpdated', handleProfileUpdate)
@@ -214,7 +231,7 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
                         style={{ backgroundColor: '#0273B1' }}
                       >
                         <span className="text-white font-semibold text-sm">
-                          {getInitials(profileData?.fullName || 'Intern Name')}
+                          {getInitials(userData?.displayName || profileData?.fullName || 'I')}
                         </span>
                       </div>
                     )}
@@ -272,7 +289,7 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
                   <button
                     onClick={() => {
                       // Clear authentication data
-                      localStorage.removeItem('authToken')
+                      localStorage.removeItem('auth_token')
                       localStorage.removeItem('user')
                       localStorage.removeItem('internProfileData')
                       localStorage.removeItem('internConversations')

@@ -4,27 +4,55 @@ import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import InternNavbar from '@/components/InternNavbar'
+import { apiFetch, getToken } from '@/lib/api'
 
 export default function InternProfilePage() {
   const router = useRouter()
   const [profileData, setProfileData] = useState<any>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [currentDate, setCurrentDate] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    // Get profile data from localStorage
-    const savedData = localStorage.getItem('internProfileData')
-    if (savedData) {
+    // Fetch profile data from API
+    const loadProfileData = async () => {
       try {
-        setProfileData(JSON.parse(savedData))
-      } catch (e) {
-        console.error('Failed to parse profile data:', e)
+        const token = getToken()
+        if (!token) {
+          router.push('/login')
+          return
+        }
+
+        const data = await apiFetch<{ profile: any }>('/api/candidates/profile')
+        setProfileData(data.profile)
+        
+        // Also save to localStorage for backward compatibility
+        localStorage.setItem('internProfileData', JSON.stringify(data.profile))
+      } catch (error: any) {
+        console.error('Failed to load profile data:', error)
+        // If 404, profile doesn't exist yet - that's okay
+        if (error.status === 404) {
+          setProfileData(null)
+        } else {
+          // Fallback to localStorage if API fails
+          const savedData = localStorage.getItem('internProfileData')
+          if (savedData) {
+            try {
+              setProfileData(JSON.parse(savedData))
+            } catch (e) {
+              console.error('Failed to parse profile data:', e)
+            }
+          }
+        }
+      } finally {
+        setIsLoading(false)
       }
     }
     
+    loadProfileData()
     // Set current date
     updateDate()
-  }, [])
+  }, [router])
 
   const updateDate = () => {
     const now = new Date()
@@ -89,6 +117,36 @@ export default function InternProfilePage() {
 
   const technicalSkills = profileData?.skills?.filter((s: any) => s.category === 'technical') || []
   const businessSkills = profileData?.skills?.filter((s: any) => s.category === 'business') || []
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <InternNavbar />
+        <div className="flex items-center justify-center min-h-screen">
+          <p className="text-gray-600">Loading profile...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!profileData) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <InternNavbar />
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <p className="text-gray-600 mb-4">No profile data found. Please complete your profile setup.</p>
+            <button
+              onClick={() => router.push('/intern/profile-setup')}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Go to Profile Setup
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

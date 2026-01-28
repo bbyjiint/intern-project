@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { apiFetch, getToken } from '@/lib/api'
 import Step1GeneralInfo from '@/components/profile-setup/Step1GeneralInfo'
 import Step2BackgroundExperience from '@/components/profile-setup/Step2BackgroundExperience'
 import Step3SkillsProjects from '@/components/profile-setup/Step3SkillsProjects'
@@ -11,6 +12,28 @@ import ProgressIndicator from '@/components/profile-setup/ProgressIndicator'
 export default function ProfileSetupPage() {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
+  const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Check if user has correct role
+  useEffect(() => {
+    const token = getToken()
+    if (!token) {
+      router.push('/login')
+      return
+    }
+
+    // Check user role
+    apiFetch<{ user: { role: string | null } }>('/api/auth/me')
+      .then((data) => {
+        if (data.user.role !== 'CANDIDATE') {
+          router.push('/role-selection')
+        }
+      })
+      .catch(() => {
+        router.push('/login')
+      })
+  }, [router])
   const [formData, setFormData] = useState({
     // Step 1
     fullName: '',
@@ -41,11 +64,36 @@ export default function ProfileSetupPage() {
     }
   }
 
-  const handleCreateProfile = () => {
-    // Save profile data to localStorage
-    localStorage.setItem('internProfileData', JSON.stringify(formData))
-    // Redirect to profile page
-    router.push('/intern/profile')
+  const handleCreateProfile = async () => {
+    if (isSubmitting) return
+    
+    setIsSubmitting(true)
+    setError(null)
+
+    try {
+      await apiFetch('/api/candidates/profile', {
+        method: 'PUT',
+        body: JSON.stringify({
+          fullName: formData.fullName,
+          location: formData.location,
+          email: formData.email,
+          phoneNumber: formData.phoneNumber,
+          aboutYou: formData.aboutYou,
+          professionalSummary: formData.professionalSummary,
+          education: formData.education,
+          experience: formData.experience,
+          skills: formData.skills,
+        }),
+      })
+      
+      // Clear localStorage
+      localStorage.removeItem('internProfileData')
+      // Redirect to find companies page after profile creation
+      router.push('/intern/find-companies')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create profile')
+      setIsSubmitting(false)
+    }
   }
 
   const updateFormData = (stepData: any) => {
@@ -78,6 +126,11 @@ export default function ProfileSetupPage() {
 
         {/* Form Content */}
         <div className="bg-white rounded-lg shadow-md p-8 sm:p-10">
+          {error && (
+            <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
           {currentStep === 1 && (
             <Step1GeneralInfo
               data={formData}
@@ -141,16 +194,21 @@ export default function ProfileSetupPage() {
             ) : (
               <button
                 onClick={handleCreateProfile}
+                disabled={isSubmitting}
                 className="flex items-center justify-center px-6 py-3 rounded-lg font-semibold text-sm text-white transition-colors h-11"
                 style={{ backgroundColor: '#0273B1', minWidth: '120px' }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#025a8f'
+                  if (!isSubmitting) {
+                    e.currentTarget.style.backgroundColor = '#025a8f'
+                  }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#0273B1'
+                  if (!isSubmitting) {
+                    e.currentTarget.style.backgroundColor = '#0273B1'
+                  }
                 }}
               >
-                Create Profile
+                {isSubmitting ? 'Creating...' : 'Create Profile'}
               </button>
             )}
           </div>

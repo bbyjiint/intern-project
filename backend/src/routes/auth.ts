@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { randomUUID } from "crypto";
 import prisma from "../utils/prisma";
 import { hashPassword, verifyPassword } from "../utils/password";
 import { signAuthToken } from "../utils/jwt";
@@ -37,10 +38,9 @@ async function findOrCreateSocialUser(args: {
       email,
       password: null,
       authProvider: args.provider,
-      role: "CANDIDATE",
+      role: null, // Role will be set on role selection page
       socialID,
       ...(args.provider === "LINE" ? { lineUserID: args.providerUserId } : {}),
-      CandidateProfile: { create: {} },
     },
     select: { id: true, email: true, role: true },
   });
@@ -72,16 +72,14 @@ authRouter.post("/register", async (req, res) => {
       email: normalizedEmail,
       password: passwordHash,
       authProvider: "LOCAL",
-      role: "CANDIDATE", // default; can be changed at role selection
+      role: null, // Role will be set on role selection page
       socialID,
-      CandidateProfile: {
-        create: {},
-      },
     },
     select: { id: true, email: true, role: true },
   });
 
-  const token = signAuthToken({ sub: user.id, role: user.role });
+  // Sign token without role (role is null initially)
+  const token = signAuthToken({ sub: user.id, role: user.role ?? "CANDIDATE" });
   return res.status(201).json({ token, user });
 });
 
@@ -109,7 +107,8 @@ authRouter.post("/login", async (req, res) => {
   const ok = await verifyPassword(user.password, password);
   if (!ok) return res.status(401).json({ error: "invalid credentials" });
 
-  const token = signAuthToken({ sub: user.id, role: user.role });
+  // Use temporary role for token if user hasn't selected role yet
+  const token = signAuthToken({ sub: user.id, role: user.role ?? "CANDIDATE" });
   return res.json({ token, user: { id: user.id, email: user.email, role: user.role } });
 });
 
@@ -131,7 +130,8 @@ authRouter.post("/google", async (req, res) => {
       email: claims.email,
     });
 
-    const token = signAuthToken({ sub: user.id, role: user.role });
+    // Use temporary role for token if user hasn't selected role yet
+    const token = signAuthToken({ sub: user.id, role: user.role ?? "CANDIDATE" });
     return res.json({ token, user });
   } catch (e: any) {
     if (e?.message === "EMAIL_ALREADY_IN_USE_WITH_DIFFERENT_PROVIDER") {
@@ -207,7 +207,7 @@ authRouter.get("/google/callback", async (req, res) => {
       email: claims.email,
     });
 
-    const token = signAuthToken({ sub: user.id, role: user.role });
+    const token = signAuthToken({ sub: user.id, role: user.role ?? "CANDIDATE" });
 
     if (returnTo) {
       const url = new URL(returnTo);
@@ -242,7 +242,8 @@ authRouter.post("/line", async (req, res) => {
       email: claims.email,
     });
 
-    const token = signAuthToken({ sub: user.id, role: user.role });
+    // Use temporary role for token if user hasn't selected role yet
+    const token = signAuthToken({ sub: user.id, role: user.role ?? "CANDIDATE" });
     return res.json({ token, user });
   } catch (e: any) {
     if (e?.message === "EMAIL_ALREADY_IN_USE_WITH_DIFFERENT_PROVIDER") {
@@ -298,7 +299,7 @@ authRouter.get("/line/callback", async (req, res) => {
       email: claims.email,
     });
 
-    const token = signAuthToken({ sub: user.id, role: user.role });
+    const token = signAuthToken({ sub: user.id, role: user.role ?? "CANDIDATE" });
 
     if (returnTo) {
       const url = new URL(returnTo);
@@ -336,7 +337,8 @@ authRouter.post("/line/code", async (req, res) => {
       email: claims.email,
     });
 
-    const token = signAuthToken({ sub: user.id, role: user.role });
+    // Use temporary role for token if user hasn't selected role yet
+    const token = signAuthToken({ sub: user.id, role: user.role ?? "CANDIDATE" });
     return res.json({ token, user });
   } catch (e: any) {
     if (e?.message === "EMAIL_ALREADY_IN_USE_WITH_DIFFERENT_PROVIDER") {
@@ -358,7 +360,20 @@ authRouter.get("/me", requireAuth, async (req: AuthedRequest, res) => {
       CompanyProfile: { select: { id: true, companyName: true } },
     },
   });
-  return res.json({ user });
+
+  // Add displayName based on role
+  const displayName = user?.role === "CANDIDATE" 
+    ? user.CandidateProfile?.fullName || user.email
+    : user?.role === "COMPANY"
+    ? user.CompanyProfile?.companyName || user.email
+    : user?.email || "User";
+
+  return res.json({ 
+    user: {
+      ...user,
+      displayName,
+    }
+  });
 });
 
 authRouter.patch("/me/role", requireAuth, async (req: AuthedRequest, res) => {
@@ -368,13 +383,33 @@ authRouter.patch("/me/role", requireAuth, async (req: AuthedRequest, res) => {
   }
 
   const userId = req.user!.id;
+  
+  // Check if user already has a role
+  const currentUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true, CandidateProfile: { select: { id: true } }, CompanyProfile: { select: { id: true } } },
+  });
+
+  if (currentUser?.role) {
+    return res.status(400).json({ error: "role has already been set" });
+  }
+
+  // Update role and create appropriate profile
   const updated = await prisma.user.update({
     where: { id: userId },
-    data: { role },
+    data: {
+      role,
+      ...(role === "CANDIDATE" && !currentUser?.CandidateProfile
+        ? { CandidateProfile: { create: { id: randomUUID(), updatedAt: new Date() } } }
+        : {}),
+      ...(role === "COMPANY" && !currentUser?.CompanyProfile
+        ? { CompanyProfile: { create: { id: randomUUID(), companyName: "Company", updatedAt: new Date() } } }
+        : {}),
+    },
     select: { id: true, email: true, role: true },
   });
 
-  const token = signAuthToken({ sub: updated.id, role: updated.role });
+  const token = signAuthToken({ sub: updated.id, role: updated.role! });
   return res.json({ token, user: updated });
 });
 

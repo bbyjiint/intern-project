@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { apiFetch, getToken } from '@/lib/api'
 import Step1GeneralInfo from '@/components/employer-profile-setup/Step1GeneralInfo'
 import Step2CompanyAddress from '@/components/employer-profile-setup/Step2CompanyAddress'
 import Step3ContactInfo from '@/components/employer-profile-setup/Step3ContactInfo'
@@ -11,9 +12,27 @@ import EmployerProgressIndicator from '@/components/employer-profile-setup/Emplo
 export default function EmployerProfileSetupPage() {
   const router = useRouter()
   const [currentStep, setCurrentStep] = useState(1)
+  const [error, setError] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   
-  // Check for step query parameter and load existing data
+  // Check if user has correct role and load existing data
   useEffect(() => {
+    const token = getToken()
+    if (!token) {
+      router.push('/login')
+      return
+    }
+
+    // Check user role
+    apiFetch<{ user: { role: string | null } }>('/api/auth/me')
+      .then((data) => {
+        if (data.user.role !== 'COMPANY') {
+          router.push('/role-selection')
+        }
+      })
+      .catch(() => {
+        router.push('/login')
+      })
     const params = new URLSearchParams(window.location.search)
     const stepParam = params.get('step')
     if (stepParam) {
@@ -67,11 +86,38 @@ export default function EmployerProfileSetupPage() {
     }
   }
 
-  const handleCreateProfile = () => {
-    // Save profile data to localStorage
-    localStorage.setItem('employerProfileData', JSON.stringify(formData))
-    // Redirect to profile page
-    router.push('/employer/profile')
+  const handleCreateProfile = async () => {
+    if (isSubmitting) return
+    
+    setIsSubmitting(true)
+    setError(null)
+
+    try {
+      await apiFetch('/api/companies/profile', {
+        method: 'PUT',
+        body: JSON.stringify({
+          companyName: formData.companyName,
+          companyDescription: formData.companyDescription,
+          addressDetails: formData.addressDetails,
+          subDistrict: formData.subDistrict,
+          district: formData.district,
+          province: formData.province,
+          postcode: formData.postcode,
+          phoneNumber: formData.phoneNumber,
+          email: formData.email,
+          websiteUrl: formData.websiteUrl,
+          contactName: formData.contactName,
+        }),
+      })
+      
+      // Clear localStorage
+      localStorage.removeItem('employerProfileData')
+      // Redirect to find candidates page after profile creation
+      router.push('/employer/find-candidates')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create profile')
+      setIsSubmitting(false)
+    }
   }
 
   const updateFormData = (stepData: any) => {
@@ -104,6 +150,11 @@ export default function EmployerProfileSetupPage() {
 
         {/* Form Content */}
         <div className="bg-white rounded-lg shadow-md p-6 sm:p-8 lg:p-10">
+          {error && (
+            <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              {error}
+            </div>
+          )}
           {currentStep === 1 && (
             <Step1GeneralInfo
               data={formData}
@@ -167,16 +218,21 @@ export default function EmployerProfileSetupPage() {
             ) : (
               <button
                 onClick={handleCreateProfile}
+                disabled={isSubmitting}
                 className="flex items-center justify-center px-6 py-3 rounded-lg font-semibold text-sm text-white transition-colors h-11 w-full sm:w-auto order-1 sm:order-2"
                 style={{ backgroundColor: '#0273B1', minWidth: '120px' }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#025a8f'
+                  if (!isSubmitting) {
+                    e.currentTarget.style.backgroundColor = '#025a8f'
+                  }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#0273B1'
+                  if (!isSubmitting) {
+                    e.currentTarget.style.backgroundColor = '#0273B1'
+                  }
                 }}
               >
-                Create Profile
+                {isSubmitting ? 'Creating...' : 'Create Profile'}
               </button>
             )}
           </div>

@@ -18,15 +18,24 @@ export default function LoginPage() {
     setError(null)
     setIsSubmitting(true)
     try {
-      const data = await apiFetch<{ token: string }>(`/api/auth/login`, {
+      const data = await apiFetch<{ token: string; user: { id: string; email: string; role: string | null } }>(`/api/auth/login`, {
         method: 'POST',
         body: JSON.stringify({ email, password }),
       })
       setToken(data.token)
-      router.push('/role-selection')
+      
+      // Redirect based on user role
+      if (!data.user.role) {
+        router.push('/role-selection')
+      } else if (data.user.role === 'CANDIDATE') {
+        router.push('/intern/find-companies')
+      } else if (data.user.role === 'COMPANY') {
+        router.push('/employer/find-candidates')
+      } else {
+        router.push('/role-selection')
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed')
-    } finally {
       setIsSubmitting(false)
     }
   }

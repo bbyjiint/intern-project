@@ -4,6 +4,7 @@ import prisma from "./prisma";
 import { loadDotEnv } from "./env";
 import { authRouter } from "../routes/auth";
 import { candidatesRouter } from "../routes/candidates";
+import { profilesRouter } from "../routes/profiles";
 
 const app = express();
 
@@ -28,6 +29,34 @@ app.get("/api/db-check", async (req, res) => {
 
 app.use("/api/auth", authRouter);
 app.use("/api/candidates", candidatesRouter);
+app.use("/api", profilesRouter);
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ error: "Route not found" });
+});
+
+// Error handling middleware (must be last)
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error("Error:", err);
+  
+  // Prisma errors
+  if (err.code === "P2002") {
+    return res.status(409).json({ error: "A record with this value already exists" });
+  }
+  if (err.code === "P2025") {
+    return res.status(404).json({ error: "Record not found" });
+  }
+  if (err.code?.startsWith("P")) {
+    return res.status(500).json({ error: "Database error", details: err.message });
+  }
+  
+  // Default error
+  res.status(err.status || 500).json({ 
+    error: err.message || "Internal server error",
+    ...(process.env.NODE_ENV === "development" && { stack: err.stack })
+  });
+});
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 5000;
 app.listen(PORT, () => {

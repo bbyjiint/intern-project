@@ -23,18 +23,52 @@ export async function apiFetch<T>(
   const token = getToken();
   const headers = new Headers(init.headers);
   if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
-  if (token) headers.set("Authorization", `Bearer ${token}`);
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
 
-  const res = await fetch(`${API_BASE_URL}${path}`, {
-    ...init,
-    headers,
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      headers,
+    });
+  } catch (err) {
+    // Network error - backend might not be running
+    throw new Error("Unable to connect to server. Please make sure the backend is running.");
+  }
 
+  const contentType = res.headers.get("content-type");
   const text = await res.text();
-  const data = text ? JSON.parse(text) : null;
+  
+  // Check if response is JSON
+  if (!contentType || !contentType.includes("application/json")) {
+    if (res.status === 404) {
+      throw new Error(`API endpoint not found: ${path}`);
+    }
+    if (res.status >= 500) {
+      throw new Error("Server error. Please try again later.");
+    }
+    throw new Error(`Unexpected response format. Expected JSON but got ${contentType}`);
+  }
+
+  let data: any = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch (parseError) {
+    throw new Error("Invalid JSON response from server");
+  }
 
   if (!res.ok) {
-    throw new Error(data?.error || `Request failed (${res.status})`);
+    // If unauthorized and no token, provide helpful error
+    if (res.status === 401 && !token) {
+      const error: any = new Error("Please log in to continue");
+      error.status = 401;
+      throw error;
+    }
+    const error: any = new Error(data?.error || `Request failed (${res.status})`);
+    error.status = res.status;
+    throw error;
   }
 
   return data as T;

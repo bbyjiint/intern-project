@@ -7,20 +7,171 @@ datasource db {
 }
 
 model CandidateContactFile {
-  id               String            @id @default(uuid()) @db.Uuid
-  candidateId      String            @db.Uuid
-  name             String
-  url              String
-  type             CandidateFileType @default(OTHER)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime @updatedAt
-  CandidateProfile CandidateProfile  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  id          String            @id @default(uuid()) @db.Uuid
+  candidateId String            @db.Uuid
+  name        String
+  url         String
+  type        CandidateFileType @default(OTHER)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  Profile     CandidateProfile  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
 
   @@index([candidateId])
 }
 
+model CertificateFile {
+  id          String           @id @default(uuid()) @db.Uuid
+  candidateId String           @db.Uuid
+  name        String
+  url         String
+  type        String?
+  description String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  Profile     CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+}
+
+model CompanyEmail {
+  id        String         @id @default(uuid()) @db.Uuid
+  companyId String         @db.Uuid
+  email     String         @db.VarChar(255)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  Profile   CompanyProfile @relation("CompanyEmails", fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+}
+
+model CompanyPhone {
+  id        String         @id @default(uuid()) @db.Uuid
+  companyId String         @db.Uuid
+  phone     String         @db.VarChar(32)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  Profile   CompanyProfile @relation("CompanyPhones", fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+}
+
+model Skills {
+  id        String      @id @default(uuid()) @db.Uuid
+  name      String      @unique
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  UserSkill UserSkill[]
+}
+
+model University {
+  id                  String                @id @default(uuid()) @db.Uuid
+  name                String                @unique
+  code                String?
+  province            String?
+  country             String?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  thname              String?               @unique
+  CandidateProfile    CandidateProfile[]
+  CandidateUniversity CandidateUniversity[]
+  UniversityFaculty   UniversityFaculty[]
+
+  @@index([code])
+}
+
+model Faculty {
+  id                String              @id @default(uuid()) @db.Uuid
+  name              String              @unique
+  thname            String?             @unique
+  code              String?             @unique
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  UniversityFaculty UniversityFaculty[]
+}
+
+model User {
+  email            String            @unique @db.VarChar(255)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  authProvider     AuthProvider      @default(LOCAL)
+  lineUserID       String?
+  password         String?
+  passwordReset    String?
+  role             UserRole?
+  socialID         String            @unique
+  id               String            @id @default(uuid()) @db.Uuid
+  CandidateProfile CandidateProfile?
+  CompanyProfile   CompanyProfile?
+}
+
+model UserSkill {
+  id          String           @id @default(uuid()) @db.Uuid
+  candidateId String           @db.Uuid
+  skillId     String           @db.Uuid
+  rating      Int?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  Profile     CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  Skills      Skills           @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([candidateId, skillId])
+  @@index([skillId])
+}
+
+model WorkHistory {
+  id          String           @id @default(uuid()) @db.Uuid
+  candidateId String           @db.Uuid
+  companyName String
+  position    String
+  startDate   DateTime?
+  endDate     DateTime?
+  description String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  Profile     CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+}
+
+model UniversityFaculty {
+  id                  String                @id @default(uuid()) @db.Uuid
+  universityId        String                @db.Uuid
+  facultyId           String                @db.Uuid
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  CandidateUniversity CandidateUniversity[]
+  Faculty             Faculty               @relation(fields: [facultyId], references: [id], onDelete: Cascade)
+  University          University            @relation(fields: [universityId], references: [id], onDelete: Cascade)
+
+  @@unique([universityId, facultyId])
+  @@index([universityId])
+  @@index([facultyId])
+}
+
+model CandidateUniversity {
+  id                  String             @id @default(uuid()) @db.Uuid
+  candidateId         String             @db.Uuid
+  universityId        String             @db.Uuid
+  educationLevel      EducationLevel
+  degreeName          String?
+  startDate           DateTime?
+  endDate             DateTime?
+  gpa                 Float?
+  isCurrent           Boolean            @default(false)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  universityFacultyId String?            @db.Uuid
+  Profile             CandidateProfile   @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  UniversityFaculty   UniversityFaculty? @relation(fields: [universityFacultyId], references: [id])
+  University          University         @relation(fields: [universityId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+  @@index([universityId])
+  @@index([universityFacultyId])
+}
+
 model CandidateProfile {
-  id                   String                 @id @default(uuid()) @db.Uuid
+  id                   String                 @id @db.Uuid
   userId               String                 @unique @db.Uuid
   studentCode          String?                @unique
   fullName             String?
@@ -30,58 +181,22 @@ model CandidateProfile {
   bio                  String?
   major                String?
   studyYear            Int?
-  universityId         String?                @db.Uuid
   createdAt            DateTime               @default(now())
-  updatedAt            DateTime @updatedAt
+  updatedAt            DateTime
+  universityId         String?                @db.Uuid
   CandidateContactFile CandidateContactFile[]
+  University           University?            @relation(fields: [universityId], references: [id])
   User                 User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  CandidateUniversity  CandidateUniversity[]
   CertificateFile      CertificateFile[]
   UserSkill            UserSkill[]
   WorkHistory          WorkHistory[]
-  CandidateUniversity  CandidateUniversity[]
-  University           University?            @relation(fields: [universityId], references: [id], onDelete: SetNull)
 
   @@index([universityId])
 }
 
-model CertificateFile {
-  id               String           @id @default(uuid()) @db.Uuid
-  candidateId      String           @db.Uuid
-  name             String
-  url              String
-  type             String?
-  description      String?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime @updatedAt
-  CandidateProfile CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-
-  @@index([candidateId])
-}
-
-model CompanyEmail {
-  id             String         @id @default(uuid()) @db.Uuid
-  companyId      String         @db.Uuid
-  email          String         @db.VarChar(255)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime @updatedAt
-  CompanyProfile CompanyProfile @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  @@index([companyId])
-}
-
-model CompanyPhone {
-  id             String         @id @default(uuid()) @db.Uuid
-  companyId      String         @db.Uuid
-  phone          String         @db.VarChar(32)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime @updatedAt
-  CompanyProfile CompanyProfile @relation(fields: [companyId], references: [id], onDelete: Cascade)
-
-  @@index([companyId])
-}
-
 model CompanyProfile {
-  id                String         @id @default(uuid()) @db.Uuid
+  id                String         @id @db.Uuid
   userId            String         @unique @db.Uuid
   companyName       String
   about             String?
@@ -92,127 +207,11 @@ model CompanyProfile {
   recruiterPosition String?
   registrationNum   String?
   createdAt         DateTime       @default(now())
-  updatedAt         DateTime @updatedAt
-  CompanyEmail      CompanyEmail[]
-  CompanyPhone      CompanyPhone[]
+  updatedAt         DateTime
+  CompanyEmails     CompanyEmail[] @relation("CompanyEmails")
+  CompanyPhones     CompanyPhone[] @relation("CompanyPhones")
   User              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
-
-model Skills {
-  id        String      @id @default(uuid()) @db.Uuid
-  name      String      @unique
-  createdAt DateTime    @default(now())
-  updatedAt DateTime @updatedAt
-  UserSkill UserSkill[]
-}
-
-model University {
-  id                String              @id @default(uuid()) @db.Uuid
-  name              String              @unique
-  thname            String?             @unique
-  code              String?            
-  province          String?
-  country           String?
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime @updatedAt
-  UniversityFaculty UniversityFaculty[]
-  CandidateUniversity CandidateUniversity[]
-  CandidateProfile    CandidateProfile[]
-  @@index([code])
-}
-
-model Faculty {
-  id                String              @id @default(uuid()) @db.Uuid
-  name              String              @unique
-  thname            String?             @unique
-  code              String?             @unique
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime @updatedAt
-  UniversityFaculty UniversityFaculty[]
-}
-
-model User {
-  email            String            @unique @db.VarChar(255)
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime @updatedAt
-  authProvider     AuthProvider      @default(LOCAL)
-  lineUserID       String?
-  password         String?
-  passwordReset    String?
-  role             UserRole
-  socialID         String            @unique
-  id               String            @id @default(uuid()) @db.Uuid
-  CandidateProfile CandidateProfile?
-  CompanyProfile   CompanyProfile?
-}
-
-model UserSkill {
-  id               String           @id @default(uuid()) @db.Uuid
-  candidateId      String           @db.Uuid
-  skillId          String           @db.Uuid
-  rating           Int?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime @updatedAt
-  CandidateProfile CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  Skills           Skills           @relation(fields: [skillId], references: [id], onDelete: Cascade)
-
-  @@unique([candidateId, skillId])
-  @@index([skillId])
-}
-
-model WorkHistory {
-  id               String           @id @default(uuid()) @db.Uuid
-  candidateId      String           @db.Uuid
-  companyName      String
-  position         String
-  startDate        DateTime?
-  endDate          DateTime?
-  description      String?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime @updatedAt
-  CandidateProfile CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-
-  @@index([candidateId])
-}
-
-model UniversityFaculty {
-  id           String              @id @default(uuid()) @db.Uuid
-  universityId String              @db.Uuid
-  facultyId    String              @db.Uuid
-  createdAt    DateTime            @default(now())
-  updatedAt    DateTime            @updatedAt
-  University   University          @relation(fields: [universityId], references: [id], onDelete: Cascade)
-  Faculty      Faculty             @relation(fields: [facultyId], references: [id], onDelete: Cascade)
-  CandidateUniversity CandidateUniversity[]
-
-  @@unique([universityId, facultyId])
-  @@index([universityId])
-  @@index([facultyId])
-}
-
-model CandidateUniversity {
-  id                 String           @id @default(uuid()) @db.Uuid
-  candidateId        String           @db.Uuid
-  universityId       String           @db.Uuid
-  universityFacultyId String?         @db.Uuid
-  educationLevel     EducationLevel
-  degreeName         String?
-  startDate          DateTime?
-  endDate            DateTime?
-  gpa                Float?
-  isCurrent          Boolean          @default(false)
-  createdAt          DateTime         @default(now())
-  updatedAt          DateTime         @updatedAt
-  CandidateProfile   CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  University         University       @relation(fields: [universityId], references: [id], onDelete: Cascade)
-  UniversityFaculty  UniversityFaculty? @relation(fields: [universityFacultyId], references: [id], onDelete: SetNull)
-
-  @@index([candidateId])
-  @@index([universityId])
-  @@index([universityFacultyId])
-}
-
-
 
 enum AuthProvider {
   LOCAL
@@ -237,6 +236,3 @@ enum EducationLevel {
   MASTERS
   PHD
 }
-
-
-

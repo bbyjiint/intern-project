@@ -292,7 +292,6 @@ export default function EmployerDashboardPage() {
                 <CandidateCard
                   key={candidate.name}
                   {...candidate}
-                  academicYear={candidate.graduationDate.split(' ')[1] || ''}
                   isBookmarked={bookmarkedCandidates.has(candidate.name)}
                   onBookmark={(e) => handleBookmark(e, candidate.name)}
                   onClick={() => handleCardClick(candidate)}

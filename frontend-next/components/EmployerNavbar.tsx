@@ -3,17 +3,32 @@
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { apiFetch, getToken } from '@/lib/api'
 
 export default function EmployerNavbar() {
   const pathname = usePathname()
   const router = useRouter()
   const isFindCandidatesPage = pathname?.includes('/find-candidates')
   const isMessagesPage = pathname?.includes('/messages')
+  const [userData, setUserData] = useState<{ displayName?: string; email?: string } | null>(null)
   const [profileData, setProfileData] = useState<any>(null)
   const [showDropdown, setShowDropdown] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    // Load user data from API
+    const loadUserData = async () => {
+      try {
+        const token = getToken()
+        if (token) {
+          const data = await apiFetch<{ user: { displayName?: string; email?: string } }>('/api/auth/me')
+          setUserData(data.user)
+        }
+      } catch (error) {
+        console.error('Failed to load user data:', error)
+      }
+    }
+
     const loadProfileData = () => {
       const savedData = localStorage.getItem('employerProfileData')
       if (savedData) {
@@ -25,6 +40,7 @@ export default function EmployerNavbar() {
       }
     }
     
+    loadUserData()
     loadProfileData()
     
     // Listen for storage changes to sync profile image
@@ -39,6 +55,7 @@ export default function EmployerNavbar() {
     // Also listen for custom event for same-window updates
     const handleProfileUpdate = () => {
       loadProfileData()
+      loadUserData()
     }
     
     window.addEventListener('profileImageUpdated', handleProfileUpdate)
@@ -140,7 +157,7 @@ export default function EmployerNavbar() {
               <div className="flex items-center gap-3">
                 <div className="text-right hidden md:block">
                   <div className="text-sm font-semibold text-gray-900">
-                    {profileData?.companyName || 'Company Name'}
+                    {userData?.displayName || profileData?.companyName || 'Company Name'}
                   </div>
                 </div>
                 <div className="relative w-10 h-10">
@@ -160,7 +177,7 @@ export default function EmployerNavbar() {
                         style={{ backgroundColor: '#0273B1' }}
                       >
                         <span className="text-white font-semibold text-sm">
-                          {getInitials(profileData?.companyName || 'Company Name')}
+                          {getInitials(userData?.displayName || profileData?.companyName || 'C')}
                         </span>
                       </div>
                     )}
@@ -228,7 +245,7 @@ export default function EmployerNavbar() {
                   <button
                     onClick={() => {
                       // Clear authentication data (adjust based on your auth implementation)
-                      localStorage.removeItem('authToken')
+                      localStorage.removeItem('auth_token')
                       localStorage.removeItem('user')
                       localStorage.removeItem('employerProfileData')
                       localStorage.removeItem('employerConversations')

@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import EmployerNavbar from '@/components/EmployerNavbar'
+import { apiFetch, getToken } from '@/lib/api'
 
 interface CompanyProfileData {
   companyName: string
@@ -45,23 +46,66 @@ interface CompanyProfileData {
 export default function EmployerProfilePage() {
   const router = useRouter()
   const [profileData, setProfileData] = useState<CompanyProfileData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [currentDate, setCurrentDate] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    // Get profile data from localStorage
-    const savedData = localStorage.getItem('employerProfileData')
-    if (savedData) {
+    // Fetch profile data from API
+    const loadProfileData = async () => {
       try {
-        setProfileData(JSON.parse(savedData))
-      } catch (e) {
-        console.error('Failed to parse profile data:', e)
+        const token = getToken()
+        if (!token) {
+          router.push('/login')
+          return
+        }
+
+        const data = await apiFetch<{ profile: CompanyProfileData }>('/api/companies/profile')
+        console.log('Profile data received:', data)
+        
+        // Ensure profile data exists and has at least companyName
+        if (data && data.profile) {
+          setProfileData(data.profile)
+          // Also save to localStorage for backward compatibility
+          localStorage.setItem('employerProfileData', JSON.stringify(data.profile))
+        } else {
+          console.warn('Profile data is missing or invalid:', data)
+          setProfileData(null)
+        }
+      } catch (error: any) {
+        console.error('Failed to load profile data:', error)
+        console.error('Error status:', error.status)
+        console.error('Error message:', error.message)
+        
+        // If 404, profile doesn't exist yet - that's okay
+        if (error.status === 404) {
+          console.log('Profile not found (404)')
+          setProfileData(null)
+        } else {
+          // Fallback to localStorage if API fails
+          const savedData = localStorage.getItem('employerProfileData')
+          if (savedData) {
+            try {
+              const parsed = JSON.parse(savedData)
+              console.log('Using localStorage fallback:', parsed)
+              setProfileData(parsed)
+            } catch (e) {
+              console.error('Failed to parse profile data:', e)
+              setProfileData(null)
+            }
+          } else {
+            setProfileData(null)
+          }
+        }
+      } finally {
+        setIsLoading(false)
       }
     }
     
+    loadProfileData()
     // Set current date from calendar
     updateDate()
-  }, [])
+  }, [router])
 
   const updateDate = () => {
     const now = new Date()
@@ -144,7 +188,19 @@ export default function EmployerProfilePage() {
     return name.charAt(0).toUpperCase()
   }
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <EmployerNavbar />
+        <div className="flex items-center justify-center min-h-screen">
+          <p className="text-gray-600">Loading profile...</p>
+        </div>
+      </div>
+    )
+  }
 
+  // Show "no profile" only if we're not loading and profileData is explicitly null (404)
+  // If profileData exists but has empty fields, still show the profile page
   if (!profileData) {
     return (
       <div className="min-h-screen bg-gray-50">

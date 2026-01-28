@@ -44,13 +44,13 @@ candidatesRouter.get("/", requireAuth, requireRole("COMPANY"), async (req, res) 
     take: 50,
   });
 
-  const items = candidates.map((c) => {
+  const items = candidates.map((c: typeof candidates[0]) => {
     const name = c.fullName ?? c.User.email;
     const uni =
       c.CandidateUniversity[0]?.University?.name ??
       c.University?.name ??
       "Unknown University";
-    const skills = c.UserSkill.map((us) => us.Skills.name);
+    const skills = c.UserSkill.map((us: typeof c.UserSkill[0]) => us.Skills.name);
     const endDate = c.CandidateUniversity[0]?.endDate ?? null;
 
     return {
