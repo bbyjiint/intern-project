@@ -130,8 +130,8 @@ export default function EmployerProfileSetupPage() {
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-6 lg:px-12 xl:px-16 py-4">
           <Link href="/" className="flex items-center">
-            <span className="text-xl font-semibold tracking-tight" style={{ color: '#1C2D4F' }}>
-              CompanyHub.
+            <span className="text-2xl font-semibold tracking-tight" style={{ color: '#0273B1' }}>
+              CompanyHub
             </span>
           </Link>
         </div>
@@ -139,7 +139,7 @@ export default function EmployerProfileSetupPage() {
 
       {/* Main Content */}
       <div className="max-w-[800px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6" style={{ color: '#1C2D4F' }}>
+        <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-center" style={{ color: '#1C2D4F' }}>
           Start building your profile
         </h1>
 

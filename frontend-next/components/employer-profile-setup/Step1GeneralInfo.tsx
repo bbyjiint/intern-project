@@ -23,14 +23,14 @@ export default function Step1GeneralInfo({ data, onUpdate }: Step1GeneralInfoPro
 
   return (
     <div>
-      <h2 className="text-xl sm:text-2xl font-bold mb-6 sm:mb-8" style={{ color: '#1C2D4F', fontWeight: 700 }}>
+      <h2 className="text-xl sm:text-2xl font-bold mb-6 sm:mb-8" style={{ color: '#0273B1', fontWeight: 700 }}>
         General Information
       </h2>
 
       <div className="space-y-8">
         {/* Company Name */}
         <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: '#1C2D4F' }}>
+          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
             Company Name
           </label>
           <input
@@ -42,27 +42,9 @@ export default function Step1GeneralInfo({ data, onUpdate }: Step1GeneralInfoPro
           />
         </div>
 
-        {/* Company Description */}
-        <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: '#1C2D4F' }}>
-            Company Description
-          </label>
-          <textarea
-            value={formData.companyDescription}
-            onChange={(e) => handleChange('companyDescription', e.target.value)}
-            placeholder="Describe your company, its mission, and what makes it unique"
-            rows={5}
-            maxLength={2000}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-          />
-          <div className="text-right text-xs mt-1" style={{ color: '#A9B4CD' }}>
-            {formData.companyDescription.length}/2,000
-          </div>
-        </div>
-
         {/* Business Type */}
         <div>
-          <label className="block text-xs font-medium mb-4" style={{ color: '#1C2D4F' }}>
+          <label className="block text-xs font-medium mb-4" style={{ color: '#0273B1' }}>
             Business Type
           </label>
           <div className="space-y-3">
@@ -117,7 +99,7 @@ export default function Step1GeneralInfo({ data, onUpdate }: Step1GeneralInfoPro
 
         {/* Company Size */}
         <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: '#1C2D4F' }}>
+          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
             Company Size (Number of employees)
           </label>
           <select
@@ -133,6 +115,24 @@ export default function Step1GeneralInfo({ data, onUpdate }: Step1GeneralInfoPro
             <option value="501-1000">501-1000 people</option>
             <option value="more-than-1000">More than 1000 people</option>
           </select>
+        </div>
+
+        {/* Company Description */}
+        <div>
+          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
+            Company Description
+          </label>
+          <textarea
+            value={formData.companyDescription}
+            onChange={(e) => handleChange('companyDescription', e.target.value)}
+            placeholder="Describe your company, its mission, and what makes it unique"
+            rows={5}
+            maxLength={2000}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          />
+          <div className="text-right text-xs mt-1" style={{ color: '#A9B4CD' }}>
+            {formData.companyDescription.length}/2,000
+          </div>
         </div>
       </div>
     </div>

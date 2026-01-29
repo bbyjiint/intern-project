@@ -106,8 +106,8 @@ export default function ProfileSetupPage() {
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-6 lg:px-12 xl:px-16 py-4">
           <Link href="/" className="flex items-center">
-            <span className="text-xl font-semibold tracking-tight" style={{ color: '#1C2D4F' }}>
-              CompanyHub.
+            <span className="text-2xl font-semibold tracking-tight" style={{ color: '#0273B1' }}>
+              CompanyHub
             </span>
           </Link>
         </div>

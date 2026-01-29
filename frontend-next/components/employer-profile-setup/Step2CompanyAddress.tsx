@@ -24,14 +24,14 @@ export default function Step2CompanyAddress({ data, onUpdate }: Step2CompanyAddr
 
   return (
     <div>
-      <h2 className="text-xl sm:text-2xl font-bold mb-6 sm:mb-8" style={{ color: '#1C2D4F', fontWeight: 700 }}>
+      <h2 className="text-xl sm:text-2xl font-bold mb-6 sm:mb-8" style={{ color: '#0273B1', fontWeight: 700 }}>
         Company Address
       </h2>
 
       <div className="space-y-6">
         {/* Address Details */}
         <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: '#1C2D4F' }}>
+          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
             Address Details
           </label>
           <p className="text-xs mb-3" style={{ color: '#A9B4CD' }}>
@@ -48,7 +48,7 @@ export default function Step2CompanyAddress({ data, onUpdate }: Step2CompanyAddr
 
         {/* Sub-District */}
         <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: '#1C2D4F' }}>
+          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
             Sub-District
           </label>
           <input
@@ -62,7 +62,7 @@ export default function Step2CompanyAddress({ data, onUpdate }: Step2CompanyAddr
 
         {/* District */}
         <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: '#1C2D4F' }}>
+          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
             District
           </label>
           <input
@@ -78,7 +78,7 @@ export default function Step2CompanyAddress({ data, onUpdate }: Step2CompanyAddr
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Province */}
           <div>
-            <label className="block text-xs font-medium mb-2" style={{ color: '#1C2D4F' }}>
+            <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
               Province
             </label>
             <input
@@ -92,7 +92,7 @@ export default function Step2CompanyAddress({ data, onUpdate }: Step2CompanyAddr
 
           {/* Postcode */}
           <div>
-            <label className="block text-xs font-medium mb-2" style={{ color: '#1C2D4F' }}>
+            <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
               Postcode
             </label>
             <input

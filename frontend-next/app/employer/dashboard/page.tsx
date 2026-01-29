@@ -7,80 +7,24 @@ import CandidateProfileModal from '@/components/CandidateProfileModal'
 import { apiFetch } from '@/lib/api'
 import Link from 'next/link'
 
-const mockCandidates = [
-  {
-    name: 'Alex Patel',
-    role: 'Data Science Intern',
-    university: 'Georgia Tech',
-    major: 'Data Science',
-    graduationDate: 'Aug 2024',
-    skills: ['Python', 'TensorFlow', 'Deep Learning', 'SQL'],
-    initials: 'AP',
-    email: 'alex.patel@company.com',
-    about: 'Passionate data science intern with expertise in machine learning and deep learning. Experienced in building predictive models and analyzing large datasets.',
-  },
-  {
-    name: 'Amanda Wong',
-    role: 'UX Design Intern',
-    university: 'Stanford University',
-    major: 'Design',
-    graduationDate: 'Apr 2024',
-    skills: ['Adobe XD', 'UI Design', 'Wireframing', 'Figma'],
-    initials: 'AW',
-    email: 'amanda.wong@company.com',
-    about: 'Creative UX design intern focused on creating intuitive and user-friendly interfaces. Passionate about design thinking and user research.',
-  },
-  {
-    name: 'David Kim',
-    role: 'Software Engineering Intern',
-    university: 'UCLA',
-    major: 'Engineering',
-    graduationDate: 'Jan 2025',
-    skills: ['Java', 'Spring Boot', 'AWS', 'Docker'],
-    initials: 'DK',
-    email: 'david.kim@company.com',
-    about: 'Software engineering intern specializing in backend development and cloud infrastructure. Experienced with microservices architecture.',
-  },
-  {
-    name: 'Emily Chen',
-    role: 'Data Science Intern',
-    university: 'Stanford University',
-    major: 'Data Science',
-    graduationDate: 'Jun 2024',
-    skills: ['Python', 'R', 'Machine Learning', 'Pandas'],
-    initials: 'EC',
-    email: 'emily.chen@company.com',
-    about: 'Data science intern with strong analytical skills and experience in statistical modeling. Passionate about turning data into actionable insights.',
-  },
-  {
-    name: 'Jessica Martinez',
-    role: 'Marketing Intern',
-    university: 'University of Washington',
-    major: 'Marketing',
-    graduationDate: 'May 2024',
-    skills: ['Content Marketing', 'SEO', 'Social Media', 'Analytics'],
-    initials: 'JM',
-    email: 'jessica.martinez@company.com',
-    about: 'Marketing intern with expertise in digital marketing and content strategy. Experienced in SEO optimization and social media management.',
-  },
-  {
-    name: 'John Smith',
-    role: 'Software Engineering Intern',
-    university: 'UC Berkeley',
-    major: 'Engineering',
-    graduationDate: 'Jan 2024',
-    skills: ['Python', 'JavaScript', 'React', 'Node.js'],
-    initials: 'JS',
-    email: 'john.smith@company.com',
-    about: 'Passionate software engineering intern focused on full-stack development. Eager to learn modern web technologies and contribute to impactful projects.',
-  },
-]
+interface Candidate {
+  name: string
+  role?: string
+  university?: string
+  major?: string
+  graduationDate?: string
+  skills?: string[]
+  initials: string
+  email?: string
+  about?: string
+  status?: 'interviewed' | 'accepted' | 'rejected'
+}
 
 export default function EmployerDashboardPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'interviewed' | 'accepted' | 'rejected'>('all')
   const [bookmarkedCandidates, setBookmarkedCandidates] = useState<Set<string>>(new Set())
-  const [selectedCandidate, setSelectedCandidate] = useState<typeof mockCandidates[0] | null>(null)
-  const [apiCandidates, setApiCandidates] = useState<typeof mockCandidates | null>(null)
+  const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null)
+  const [apiCandidates, setApiCandidates] = useState<Candidate[]>([])
   const [apiError, setApiError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -97,18 +41,17 @@ export default function EmployerDashboardPage() {
 
     ;(async () => {
       try {
-        const data = await apiFetch<{ candidates: typeof mockCandidates }>(`/api/candidates`)
-        setApiCandidates(data.candidates)
+        const data = await apiFetch<{ candidates: Candidate[] }>(`/api/candidates`)
+        setApiCandidates(data.candidates || [])
       } catch (err) {
-        // If not logged in / wrong role, keep mock list but show message.
         setApiError(err instanceof Error ? err.message : 'Failed to load candidates')
-        setApiCandidates(null)
+        setApiCandidates([])
       }
     })()
   }, [])
 
   const candidates = useMemo(() => {
-    return apiCandidates && apiCandidates.length > 0 ? apiCandidates : mockCandidates
+    return apiCandidates || []
   }, [apiCandidates])
 
   const handleBookmark = (e: React.MouseEvent, name: string) => {
@@ -124,34 +67,21 @@ export default function EmployerDashboardPage() {
     localStorage.setItem('bookmarkedCandidates', JSON.stringify(Array.from(newBookmarks)))
   }
 
-  const handleCardClick = (candidate: typeof mockCandidates[0]) => {
+  const handleCardClick = (candidate: Candidate) => {
     setSelectedCandidate(candidate)
-  }
-
-  // Mock status assignment for candidates
-  const getCandidateStatus = (name: string): 'interviewed' | 'accepted' | 'rejected' => {
-    const statusMap: Record<string, 'interviewed' | 'accepted' | 'rejected'> = {
-      'Alex Patel': 'interviewed',
-      'Amanda Wong': 'accepted',
-      'David Kim': 'accepted',
-      'Emily Chen': 'interviewed',
-      'Jessica Martinez': 'accepted',
-      'John Smith': 'rejected',
-    }
-    return statusMap[name] || 'interviewed'
   }
 
   const filteredCandidates = candidates.filter((candidate) => {
     if (statusFilter === 'all') return true
-    return getCandidateStatus(candidate.name) === statusFilter
+    return candidate.status === statusFilter
   })
 
   const statusCounts = useMemo(() => {
     return {
       all: candidates.length,
-      interviewed: candidates.filter((c) => getCandidateStatus(c.name) === 'interviewed').length,
-      accepted: candidates.filter((c) => getCandidateStatus(c.name) === 'accepted').length,
-      rejected: candidates.filter((c) => getCandidateStatus(c.name) === 'rejected').length,
+      interviewed: candidates.filter((c) => c.status === 'interviewed').length,
+      accepted: candidates.filter((c) => c.status === 'accepted').length,
+      rejected: candidates.filter((c) => c.status === 'rejected').length,
     }
   }, [candidates])
 

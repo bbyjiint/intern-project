@@ -33,6 +33,8 @@ const mockJobPosts: JobPost[] = [
 export default function JobPostPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [jobPosts, setJobPosts] = useState<JobPost[]>(mockJobPosts)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [jobToDelete, setJobToDelete] = useState<JobPost | null>(null)
 
   useEffect(() => {
     // Load job posts from localStorage
@@ -78,6 +80,42 @@ export default function JobPostPage() {
     const query = searchQuery.toLowerCase()
     return title.includes(query) || companyName.includes(query)
   })
+
+  const handleDeleteClick = (post: JobPost) => {
+    setJobToDelete(post)
+    setShowDeleteModal(true)
+  }
+
+  const handleConfirmDelete = () => {
+    if (jobToDelete) {
+      // Remove from state
+      const updatedPosts = jobPosts.filter((p) => p.id !== jobToDelete.id)
+      setJobPosts(updatedPosts)
+      
+      // Update localStorage
+      const savedJobPosts = localStorage.getItem('jobPosts')
+      if (savedJobPosts) {
+        try {
+          const posts = JSON.parse(savedJobPosts)
+          const filtered = posts.filter((p: any) => {
+            const postId = p.id || Date.now().toString()
+            return postId !== jobToDelete.id
+          })
+          localStorage.setItem('jobPosts', JSON.stringify(filtered))
+        } catch (e) {
+          console.error('Failed to update localStorage:', e)
+        }
+      }
+      
+      setShowDeleteModal(false)
+      setJobToDelete(null)
+    }
+  }
+
+  const handleCancelDelete = () => {
+    setShowDeleteModal(false)
+    setJobToDelete(null)
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -198,9 +236,7 @@ export default function JobPostPage() {
                 {/* Close Button */}
                 <button
                   className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-                  onClick={() => {
-                    setJobPosts(jobPosts.filter((p) => p.id !== post.id))
-                  }}
+                  onClick={() => handleDeleteClick(post)}
                 >
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -248,8 +284,9 @@ export default function JobPostPage() {
                     <div className="flex justify-between items-center">
                       <span className="text-gray-500 text-sm">{post.postedDate}</span>
                       <div className="flex gap-3">
-                        <button
-                          className="px-4 py-2 border-2 rounded-lg font-semibold text-sm transition-colors"
+                        <Link
+                          href={`/employer/job-post/applicants/${post.id}`}
+                          className="px-4 py-2 border-2 rounded-lg font-semibold text-sm transition-colors inline-block"
                           style={{ borderColor: '#0273B1', color: '#0273B1', backgroundColor: 'white' }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.backgroundColor = '#F0F4F8'
@@ -259,7 +296,7 @@ export default function JobPostPage() {
                           }}
                         >
                           View Applicants
-                        </button>
+                        </Link>
                         <button
                           className="px-4 py-2 rounded-lg font-semibold text-sm text-white transition-colors"
                           style={{ backgroundColor: '#0273B1' }}
@@ -287,6 +324,58 @@ export default function JobPostPage() {
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            {/* Warning Icon */}
+            <div className="flex justify-center mb-4">
+              <div className="relative w-16 h-16">
+                {/* Red Triangle */}
+                <svg className="w-16 h-16" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M12 2L2 22h20L12 2z"
+                    fill="#EF4444"
+                    stroke="#DC2626"
+                    strokeWidth="2"
+                  />
+                </svg>
+                {/* White Exclamation Mark */}
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-white text-2xl font-bold">!</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Title */}
+            <h2 className="text-xl font-bold text-gray-900 text-center mb-3">
+              Delete this job post?
+            </h2>
+
+            {/* Description */}
+            <p className="text-gray-600 text-center mb-6">
+              This action will permanently delete this job post and remove all associated applicants.
+            </p>
+
+            {/* Buttons */}
+            <div className="flex gap-4">
+              <button
+                onClick={handleCancelDelete}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmDelete}
+                className="flex-1 px-4 py-2 rounded-lg font-medium text-white bg-red-600 hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -39,8 +39,8 @@ export default function RegisterPage() {
         {/* Logo */}
         <div className="mb-8">
           <Link href="/" className="flex items-center">
-            <span className="text-xl font-semibold tracking-tight" style={{ color: '#1C2D4F' }}>
-              CompanyHub.
+            <span className="text-2xl font-semibold tracking-tight" style={{ color: '#0273B1' }}>
+              CompanyHub
             </span>
           </Link>
         </div>

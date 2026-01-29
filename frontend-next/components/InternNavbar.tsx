@@ -125,7 +125,7 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
           <div className="flex items-center space-x-8 flex-1">
             <div>
               <Link href="/intern/profile" className="text-2xl font-semibold tracking-tight" style={{ color: '#0273B1' }}>
-                CompanyHub.
+                CompanyHub
               </Link>
             </div>
             <div className="hidden md:flex space-x-6">
