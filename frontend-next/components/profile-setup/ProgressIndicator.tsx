@@ -6,8 +6,8 @@ interface ProgressIndicatorProps {
 export default function ProgressIndicator({ currentStep, totalSteps }: ProgressIndicatorProps) {
   const steps = [
     { number: 1, label: 'General Information' },
-    { number: 2, label: 'Background & Experience' },
-    { number: 3, label: 'Skills & Projects' },
+    { number: 2, label: 'Education & Projects' },
+    { number: 3, label: 'Experience & Skills' },
   ]
 
   return (

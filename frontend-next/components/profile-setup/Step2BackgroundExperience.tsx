@@ -9,15 +9,14 @@ interface Step2BackgroundExperienceProps {
 
 export default function Step2BackgroundExperience({ data, onUpdate }: Step2BackgroundExperienceProps) {
   const [formData, setFormData] = useState({
-    professionalSummary: data.professionalSummary || '',
     education: data.education || [],
-    experience: data.experience || [],
+    projects: data.projects || [],
   })
 
   const [showEducationForm, setShowEducationForm] = useState(false)
-  const [showExperienceForm, setShowExperienceForm] = useState(false)
+  const [showProjectForm, setShowProjectForm] = useState(false)
   const [editingEducationIndex, setEditingEducationIndex] = useState<number | null>(null)
-  const [editingExperienceIndex, setEditingExperienceIndex] = useState<number | null>(null)
+  const [editingProjectIndex, setEditingProjectIndex] = useState<number | null>(null)
 
   const handleChange = (field: string, value: any) => {
     const updated = { ...formData, [field]: value }
@@ -43,173 +42,101 @@ export default function Step2BackgroundExperience({ data, onUpdate }: Step2Backg
     handleChange('education', updated)
   }
 
-  const handleAddExperience = (experience: any) => {
-    const updated = [...formData.experience, experience]
-    handleChange('experience', updated)
-    setShowExperienceForm(false)
+  const handleAddProject = (project: any) => {
+    const updated = [...formData.projects, project]
+    handleChange('projects', updated)
+    setShowProjectForm(false)
   }
 
-  const handleEditExperience = (index: number, experience: any) => {
-    const updated = [...formData.experience]
-    updated[index] = experience
-    handleChange('experience', updated)
-    setEditingExperienceIndex(null)
+  const handleEditProject = (index: number, project: any) => {
+    const updated = [...formData.projects]
+    updated[index] = project
+    handleChange('projects', updated)
+    setEditingProjectIndex(null)
   }
 
-  const handleDeleteExperience = (index: number) => {
-    const updated = formData.experience.filter((_: any, i: number) => i !== index)
-    handleChange('experience', updated)
+  const handleDeleteProject = (index: number) => {
+    const updated = formData.projects.filter((_: any, i: number) => i !== index)
+    handleChange('projects', updated)
   }
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-6" style={{ color: '#1C2D4F' }}>
-        Background & Experience
+      <h2 className="text-2xl font-bold mb-6" style={{ color: '#0273B1', fontWeight: 700 }}>
+        Education & Projects
       </h2>
 
       <div className="space-y-8">
-        {/* Professional Summary */}
+        {/* Education */}
         <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <div className="flex justify-between items-start mb-4">
-            <h3 className="text-lg font-bold" style={{ color: '#1C2D4F' }}>
-              Professional Summary
-            </h3>
-            <button
-              className="px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
-              style={{
-                backgroundColor: 'white',
-                border: '2px solid #0273B1',
-                color: '#0273B1'
-              }}
-            >
-              Edit
-            </button>
-          </div>
-          <textarea
-            value={formData.professionalSummary}
-            onChange={(e) => handleChange('professionalSummary', e.target.value)}
-            placeholder="Describe your background, interests, and career goals"
-            rows={4}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          <h3 className="text-lg font-bold mb-6" style={{ color: '#0273B1' }}>
+            Education
+          </h3>
+          <EducationForm
+            education={formData.education.length > 0 ? formData.education[0] : null}
+            onSave={(edu) => {
+              const educationData = {
+                university: edu.institution,
+                fieldOfStudy: edu.fieldOfStudy,
+                startYear: edu.year,
+                degree: '',
+                endYear: ''
+              }
+              if (formData.education.length > 0) {
+                handleEditEducation(0, educationData)
+              } else {
+                handleAddEducation(educationData)
+              }
+            }}
+            onCancel={() => {}}
+            onSkip={() => {
+              // Skip functionality - can proceed without education
+            }}
           />
         </div>
 
-        {/* Education */}
+        {/* Projects */}
         <div className="bg-white border border-gray-200 rounded-lg p-6">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold" style={{ color: '#1C2D4F' }}>
-              Education
+            <h3 className="text-lg font-bold" style={{ color: '#0273B1' }}>
+              Projects
             </h3>
             <button
-              onClick={() => setShowEducationForm(true)}
+              onClick={() => setShowProjectForm(true)}
               className="px-4 py-2 rounded-lg font-semibold text-sm text-white transition-colors"
-              style={{ backgroundColor: '#0273B1' }}
+              style={{ backgroundColor: '#E3F5FF', color: '#0273B1' }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#025a8f'
+                e.currentTarget.style.backgroundColor = '#0273B1'
+                e.currentTarget.style.color = '#FFFFFF'
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#0273B1'
+                e.currentTarget.style.backgroundColor = '#E3F5FF'
+                e.currentTarget.style.color = '#0273B1'
               }}
             >
-              + Add Education
+              <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add Project
             </button>
           </div>
 
-          {formData.education.length === 0 && !showEducationForm && (
-            <p className="text-sm" style={{ color: '#A9B4CD' }}>
-              No education entries yet. Click "Add Education" to get started.
-            </p>
-          )}
-
-          {formData.education.map((edu: any, index: number) => (
-            <div key={index} className="mb-4 p-4 border border-gray-200 rounded-lg">
+          {/* Existing Projects */}
+          {formData.projects.map((project: any, index: number) => (
+            <div key={index} className="mb-4 p-4 border border-gray-200 rounded-lg bg-white">
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <h4 className="font-bold mb-1" style={{ color: '#1C2D4F' }}>
-                    {edu.university || 'University Name'}
+                    {project.name || 'Project Name'} - {project.role || 'Role'}
                   </h4>
-                  <p className="text-sm mb-2" style={{ color: '#A9B4CD' }}>
-                    {edu.degree || 'Degree'} | {edu.fieldOfStudy || 'Field of Study'} | {edu.startYear || 'Start'} - {edu.endYear || 'End'}
-                  </p>
-                </div>
-                <button
-                  onClick={() => setEditingEducationIndex(index)}
-                  className="px-3 py-1 rounded text-sm font-semibold transition-colors"
-                  style={{
-                    backgroundColor: 'white',
-                    border: '2px solid #0273B1',
-                    color: '#0273B1'
-                  }}
-                >
-                  Edit
-                </button>
-              </div>
-            </div>
-          ))}
-
-          {(showEducationForm || editingEducationIndex !== null) && (
-            <EducationForm
-              education={editingEducationIndex !== null ? formData.education[editingEducationIndex] : null}
-              onSave={(edu) => {
-                if (editingEducationIndex !== null) {
-                  handleEditEducation(editingEducationIndex, edu)
-                } else {
-                  handleAddEducation(edu)
-                }
-              }}
-              onCancel={() => {
-                setShowEducationForm(false)
-                setEditingEducationIndex(null)
-              }}
-            />
-          )}
-        </div>
-
-        {/* Experience */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-bold" style={{ color: '#1C2D4F' }}>
-              Experience
-            </h3>
-            <button
-              onClick={() => setShowExperienceForm(true)}
-              className="px-4 py-2 rounded-lg font-semibold text-sm text-white transition-colors"
-              style={{ backgroundColor: '#0273B1' }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#025a8f'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#0273B1'
-              }}
-            >
-              + Add Experience
-            </button>
-          </div>
-
-          {formData.experience.length === 0 && !showExperienceForm && (
-            <p className="text-sm" style={{ color: '#A9B4CD' }}>
-              No experience entries yet. Click "Add Experience" to get started.
-            </p>
-          )}
-
-          {formData.experience.map((exp: any, index: number) => (
-            <div key={index} className="mb-4 p-4 border border-gray-200 rounded-lg">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <h4 className="font-bold mb-1" style={{ color: '#1C2D4F' }}>
-                    {exp.title || 'Job Title'} ({exp.type || 'Type'})
-                  </h4>
-                  <p className="text-sm mb-2" style={{ color: '#A9B4CD' }}>
-                    {exp.company || 'Company'} | {exp.startDate || 'Start'} - {exp.endDate || 'End'} | Manager: {exp.manager || 'N/A'}
-                  </p>
-                  {exp.description && (
+                  {project.description && (
                     <p className="text-sm mt-2" style={{ color: '#1C2D4F' }}>
-                      {exp.description}
+                      {project.description}
                     </p>
                   )}
                 </div>
                 <button
-                  onClick={() => setEditingExperienceIndex(index)}
+                  onClick={() => setEditingProjectIndex(index)}
                   className="px-3 py-1 rounded text-sm font-semibold transition-colors"
                   style={{
                     backgroundColor: 'white',
@@ -223,20 +150,25 @@ export default function Step2BackgroundExperience({ data, onUpdate }: Step2Backg
             </div>
           ))}
 
-          {(showExperienceForm || editingExperienceIndex !== null) && (
-            <ExperienceForm
-              experience={editingExperienceIndex !== null ? formData.experience[editingExperienceIndex] : null}
-              onSave={(exp) => {
-                if (editingExperienceIndex !== null) {
-                  handleEditExperience(editingExperienceIndex, exp)
+          {/* Project Form */}
+          {(showProjectForm || editingProjectIndex !== null) && (
+            <ProjectForm
+              project={editingProjectIndex !== null ? formData.projects[editingProjectIndex] : null}
+              onSave={(project) => {
+                if (editingProjectIndex !== null) {
+                  handleEditProject(editingProjectIndex, project)
                 } else {
-                  handleAddExperience(exp)
+                  handleAddProject(project)
                 }
               }}
               onCancel={() => {
-                setShowExperienceForm(false)
-                setEditingExperienceIndex(null)
+                setShowProjectForm(false)
+                setEditingProjectIndex(null)
               }}
+              onDelete={editingProjectIndex !== null ? () => {
+                handleDeleteProject(editingProjectIndex)
+                setEditingProjectIndex(null)
+              } : undefined}
             />
           )}
         </div>
@@ -245,164 +177,219 @@ export default function Step2BackgroundExperience({ data, onUpdate }: Step2Backg
   )
 }
 
-function EducationForm({ education, onSave, onCancel }: any) {
+function EducationForm({ education, onSave, onCancel, onSkip }: any) {
   const [formData, setFormData] = useState({
-    university: education?.university || '',
-    degree: education?.degree || '',
+    institution: education?.university || '',
     fieldOfStudy: education?.fieldOfStudy || '',
-    startYear: education?.startYear || '',
-    endYear: education?.endYear || '',
+    year: education?.startYear || '',
   })
 
+  const yearOptions = ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Graduate']
+
+  // Auto-save when form data changes
+  const handleFieldChange = (field: string, value: string) => {
+    const updated = { ...formData, [field]: value }
+    setFormData(updated)
+    // Auto-save if there's any data
+    if (updated.institution || updated.fieldOfStudy || updated.year) {
+      if (onSave) {
+        onSave(updated)
+      }
+    }
+  }
+
   return (
-    <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
-      <div className="space-y-4">
-        <input
-          type="text"
-          placeholder="University / School"
-          value={formData.university}
-          onChange={(e) => setFormData({ ...formData, university: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white"
-        />
-        <input
-          type="text"
-          placeholder="Degree"
-          value={formData.degree}
-          onChange={(e) => setFormData({ ...formData, degree: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white"
-        />
-        <input
-          type="text"
-          placeholder="Field of Study"
-          value={formData.fieldOfStudy}
-          onChange={(e) => setFormData({ ...formData, fieldOfStudy: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white"
-        />
-        <div className="grid grid-cols-2 gap-4">
+    <div className="flex flex-col md:flex-row gap-6">
+      {/* Left Side - Form Fields */}
+      <div className="flex-1 space-y-6">
+        {/* Institution */}
+        <div>
+          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
+            Institution
+          </label>
           <input
             type="text"
-            placeholder="Start Year"
-            value={formData.startYear}
-            onChange={(e) => setFormData({ ...formData, startYear: e.target.value })}
-            className="px-4 py-2 border border-gray-300 rounded-lg bg-white"
-          />
-          <input
-            type="text"
-            placeholder="End Year"
-            value={formData.endYear}
-            onChange={(e) => setFormData({ ...formData, endYear: e.target.value })}
-            className="px-4 py-2 border border-gray-300 rounded-lg bg-white"
+            placeholder="Institution Name"
+            value={formData.institution}
+            onChange={(e) => handleFieldChange('institution', e.target.value)}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => onSave(formData)}
-            className="px-4 py-2 rounded-lg font-semibold text-sm text-white"
-            style={{ backgroundColor: '#0273B1' }}
-          >
-            Save
-          </button>
-          <button
-            onClick={onCancel}
-            className="px-4 py-2 rounded-lg font-semibold text-sm"
-            style={{
-              backgroundColor: 'white',
-              border: '2px solid #0273B1',
-              color: '#0273B1'
-            }}
-          >
-            Cancel
-          </button>
+
+        {/* Field of Study */}
+        <div>
+          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
+            Field of Study
+          </label>
+          <div className="relative">
+            <select
+              value={formData.fieldOfStudy}
+              onChange={(e) => handleFieldChange('fieldOfStudy', e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+            >
+              <option value="">Field of Study</option>
+              <option value="Computer Science">Computer Science</option>
+              <option value="Engineering">Engineering</option>
+              <option value="Business">Business</option>
+              <option value="Arts">Arts</option>
+              <option value="Science">Science</option>
+            </select>
+            <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
         </div>
+
+        {/* Year */}
+        <div>
+          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
+            Year
+          </label>
+          <div className="relative">
+            <select
+              value={formData.year}
+              onChange={(e) => handleFieldChange('year', e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+            >
+              <option value="">Year</option>
+              {yearOptions.map((year) => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+            <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      {/* Right Side - Save and Skip Buttons */}
+      <div className="flex flex-col items-center justify-center gap-3">
+        <button
+          onClick={() => {
+            if (onSave) onSave(formData)
+          }}
+          className="px-6 py-3 rounded-lg font-semibold text-sm text-white transition-colors"
+          style={{ backgroundColor: '#0273B1' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#025a8f'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#0273B1'
+          }}
+        >
+          Save
+        </button>
+        <button
+          onClick={() => {
+            if (onSkip) onSkip()
+          }}
+          className="px-6 py-3 rounded-lg font-semibold text-sm transition-colors"
+          style={{
+            backgroundColor: 'white',
+            border: '2px solid #0273B1',
+            color: '#0273B1'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#F0F4F8'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = 'white'
+          }}
+        >
+          Skip
+        </button>
+        <p className="text-xs text-center" style={{ color: '#A9B4CD' }}>
+          *You can build your profile later
+        </p>
       </div>
     </div>
   )
 }
 
-function ExperienceForm({ experience, onSave, onCancel }: any) {
+function ProjectForm({ project, onSave, onCancel, onDelete }: any) {
   const [formData, setFormData] = useState({
-    title: experience?.title || '',
-    type: experience?.type || '',
-    company: experience?.company || '',
-    startDate: experience?.startDate || '',
-    endDate: experience?.endDate || '',
-    manager: experience?.manager || '',
-    description: experience?.description || '',
+    name: project?.name || '',
+    role: project?.role || '',
+    description: project?.description || '',
   })
 
   return (
-    <div className="mt-4 p-4 border border-gray-300 rounded-lg bg-gray-50">
+    <div className="mt-4 p-6 border border-gray-200 rounded-lg bg-white">
+      <h4 className="text-lg font-bold mb-4" style={{ color: '#1C2D4F' }}>
+        New Project
+      </h4>
       <div className="space-y-4">
-        <input
-          type="text"
-          placeholder="Job / Internship Title"
-          value={formData.title}
-          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white"
-        />
-        <input
-          type="text"
-          placeholder="Type (e.g., Intern, Full-time)"
-          value={formData.type}
-          onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white"
-        />
-        <input
-          type="text"
-          placeholder="Company"
-          value={formData.company}
-          onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white"
-        />
-        <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
+            Project Name
+          </label>
           <input
             type="text"
-            placeholder="Start Date"
-            value={formData.startDate}
-            onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-            className="px-4 py-2 border border-gray-300 rounded-lg bg-white"
-          />
-          <input
-            type="text"
-            placeholder="End Date"
-            value={formData.endDate}
-            onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-            className="px-4 py-2 border border-gray-300 rounded-lg bg-white"
+            placeholder="Project Name"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
-        <input
-          type="text"
-          placeholder="Manager Name"
-          value={formData.manager}
-          onChange={(e) => setFormData({ ...formData, manager: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white"
-        />
-        <textarea
-          placeholder="Description (what you did / learned)"
-          value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          rows={4}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white resize-none"
-        />
-        <div className="flex gap-2">
-          <button
-            onClick={() => onSave(formData)}
-            className="px-4 py-2 rounded-lg font-semibold text-sm text-white"
-            style={{ backgroundColor: '#0273B1' }}
-          >
-            Save
-          </button>
-          <button
-            onClick={onCancel}
-            className="px-4 py-2 rounded-lg font-semibold text-sm"
-            style={{
-              backgroundColor: 'white',
-              border: '2px solid #0273B1',
-              color: '#0273B1'
-            }}
-          >
-            Cancel
-          </button>
+        <div>
+          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
+            Role
+          </label>
+          <input
+            type="text"
+            placeholder="Example: Designing UI"
+            value={formData.role}
+            onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
+            Description
+          </label>
+          <textarea
+            placeholder="Description about your project"
+            value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            rows={4}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          />
+        </div>
+        <div className="flex justify-between items-center pt-4">
+          {onDelete && (
+            <button
+              onClick={() => {
+                onDelete()
+                onCancel()
+              }}
+              className="px-4 py-2 rounded-lg font-semibold text-sm text-white transition-colors"
+              style={{ backgroundColor: '#EF4444' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#DC2626'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#EF4444'
+              }}
+            >
+              Delete
+            </button>
+          )}
+          <div className={`flex gap-2 ${onDelete ? 'ml-auto' : ''}`}>
+            <button
+              onClick={() => onSave(formData)}
+              className="px-4 py-2 rounded-lg font-semibold text-sm text-white transition-colors"
+              style={{ backgroundColor: '#0273B1' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#025a8f'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = '#0273B1'
+              }}
+            >
+              Save
+            </button>
+          </div>
         </div>
       </div>
     </div>

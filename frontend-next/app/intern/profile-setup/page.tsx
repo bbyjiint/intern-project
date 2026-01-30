@@ -37,17 +37,15 @@ export default function ProfileSetupPage() {
   const [formData, setFormData] = useState({
     // Step 1
     fullName: '',
-    location: '',
     email: '',
     phoneNumber: '',
     aboutYou: '',
     // Step 2
-    professionalSummary: '',
     education: [],
-    experience: [],
-    // Step 3
-    skills: [],
     projects: [],
+    // Step 3
+    experience: [],
+    skills: [],
   })
 
   const handleNext = () => {
@@ -75,12 +73,11 @@ export default function ProfileSetupPage() {
         method: 'PUT',
         body: JSON.stringify({
           fullName: formData.fullName,
-          location: formData.location,
           email: formData.email,
           phoneNumber: formData.phoneNumber,
           aboutYou: formData.aboutYou,
-          professionalSummary: formData.professionalSummary,
           education: formData.education,
+          projects: formData.projects,
           experience: formData.experience,
           skills: formData.skills,
         }),
@@ -115,7 +112,7 @@ export default function ProfileSetupPage() {
 
       {/* Main Content */}
       <div className="max-w-[800px] mx-auto px-4 sm:px-6 py-8">
-        <h1 className="text-3xl font-bold mb-6" style={{ color: '#1C2D4F' }}>
+        <h1 className="text-3xl font-bold mb-6 text-center" style={{ color: '#1C2D4F' }}>
           Start building your profile
         </h1>
 
