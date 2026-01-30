@@ -146,14 +146,21 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
 
       // Create new education entries
       for (const edu of education) {
-        if (edu.university && edu.degree) {
-          // Find or create university (simplified - you might want to use a lookup)
+        if (edu.university && (edu.degree || edu.fieldOfStudy)) {
+          // Find university by exact name match (since we're using dropdown now)
           let university = await prisma.university.findFirst({
-            where: { name: { contains: edu.university, mode: "insensitive" } },
+            where: { name: { equals: edu.university, mode: "insensitive" } },
           });
 
           if (!university) {
-            // Create university if not found (you might want to handle this differently)
+            // Fallback: try contains match for backward compatibility
+            university = await prisma.university.findFirst({
+              where: { name: { contains: edu.university, mode: "insensitive" } },
+            });
+          }
+
+          if (!university) {
+            // Only create if not found - this shouldn't happen with dropdown, but keep for safety
             university = await prisma.university.create({
               data: {
                 id: randomUUID(),
@@ -168,7 +175,7 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
               candidateId: candidateProfile.id,
               universityId: university.id,
               educationLevel: "BACHELOR", // Default, you might want to map this
-              degreeName: edu.degree || edu.fieldOfStudy || null,
+              degreeName: (edu.degree && edu.degree.trim()) ? edu.degree : (edu.fieldOfStudy || null),
               startDate: edu.startYear ? new Date(`${edu.startYear}-01-01`) : null,
               endDate: edu.endYear ? new Date(`${edu.endYear}-12-31`) : null,
               isCurrent: !edu.endYear || false,

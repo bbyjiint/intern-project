@@ -1,6 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import SearchableDropdown from '@/components/SearchableDropdown'
+import { apiFetch } from '@/lib/api'
 
 interface Step2BackgroundExperienceProps {
   data: any
@@ -183,8 +185,28 @@ function EducationForm({ education, onSave, onCancel, onSkip }: any) {
     fieldOfStudy: education?.fieldOfStudy || '',
     year: education?.startYear || '',
   })
+  const [universities, setUniversities] = useState<Array<{ id: string; name: string; thname: string | null; code: string | null }>>([])
+  const [universitiesLoading, setUniversitiesLoading] = useState(false)
 
   const yearOptions = ['Year 1', 'Year 2', 'Year 3', 'Year 4', 'Graduate']
+
+  // Load universities from API
+  useEffect(() => {
+    ;(async () => {
+      setUniversitiesLoading(true)
+      try {
+        const data = await apiFetch<{ universities: Array<{ id: string; name: string; thname: string | null; code: string | null }> }>(
+          `/api/universities`
+        )
+        setUniversities(data.universities || [])
+      } catch (err) {
+        console.error('Failed to load universities:', err)
+        setUniversities([])
+      } finally {
+        setUniversitiesLoading(false)
+      }
+    })()
+  }, [])
 
   // Auto-save when form data changes
   const handleFieldChange = (field: string, value: string) => {
@@ -207,13 +229,24 @@ function EducationForm({ education, onSave, onCancel, onSkip }: any) {
           <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
             Institution
           </label>
-          <input
-            type="text"
-            placeholder="Institution Name"
-            value={formData.institution}
-            onChange={(e) => handleFieldChange('institution', e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          {universitiesLoading ? (
+            <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 flex items-center justify-center">
+              <span className="text-gray-500 text-sm">Loading universities...</span>
+            </div>
+          ) : (
+            <SearchableDropdown
+              options={universities.map((uni) => ({
+                value: uni.name,
+                label: uni.thname ? `${uni.name} (${uni.thname})` : uni.name,
+                code: uni.code,
+              }))}
+              value={formData.institution}
+              onChange={(value) => handleFieldChange('institution', value)}
+              placeholder="Search by name or code..."
+              className="w-full"
+              allOptionLabel="Select University"
+            />
+          )}
         </div>
 
         {/* Field of Study */}
