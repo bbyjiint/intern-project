@@ -84,7 +84,7 @@ export default function FindCandidatesPage() {
   const [position, setPosition] = useState('All Positions')
   const [university, setUniversity] = useState('All Universities')
   const [department, setDepartment] = useState('All Departments')
-  const [bookmarkedCandidates, setBookmarkedCandidates] = useState<Set<string>>(new Set())
+  const [bookmarkedCandidates, setBookmarkedCandidates] = useState<Set<string>>(new Set()) // Using candidate IDs
   const [sortBy, setSortBy] = useState('Name')
   const [viewMode, setViewMode] = useState<'all' | 'shortlist'>('all')
   const [selectedCandidate, setSelectedCandidate] = useState<typeof mockCandidates[0] | null>(null)
@@ -93,17 +93,27 @@ export default function FindCandidatesPage() {
   const [universities, setUniversities] = useState<Array<{ id: string; name: string; thname: string | null; code: string | null }>>([])
   const [universitiesLoading, setUniversitiesLoading] = useState(false)
 
-  // Load bookmarked candidates from localStorage
+  // Load bookmarked candidates from API
   useEffect(() => {
-    const savedBookmarks = localStorage.getItem('bookmarkedCandidates')
-    if (savedBookmarks) {
+    ;(async () => {
       try {
-        const bookmarks = JSON.parse(savedBookmarks)
-        setBookmarkedCandidates(new Set(bookmarks))
-      } catch (e) {
-        console.error('Failed to parse bookmarked candidates:', e)
+        const data = await apiFetch<{ candidates: Array<{ id: string }> }>(`/api/bookmarks`)
+        const bookmarkIds = new Set(data.candidates.map((c) => c.id))
+        setBookmarkedCandidates(bookmarkIds)
+      } catch (err) {
+        console.error('Failed to load bookmarks:', err)
+        // Fallback to localStorage for backward compatibility
+        const savedBookmarks = localStorage.getItem('bookmarkedCandidates')
+        if (savedBookmarks) {
+          try {
+            const bookmarks = JSON.parse(savedBookmarks)
+            setBookmarkedCandidates(new Set(bookmarks))
+          } catch (e) {
+            console.error('Failed to parse bookmarked candidates:', e)
+          }
+        }
       }
-    }
+    })()
   }, [])
 
   useEffect(() => {
@@ -144,24 +154,28 @@ export default function FindCandidatesPage() {
     return apiCandidates && apiCandidates.length > 0 ? apiCandidates : mockCandidates
   }, [apiCandidates])
 
-  // Save bookmarked candidates to localStorage
-  useEffect(() => {
-    if (bookmarkedCandidates.size > 0) {
-      localStorage.setItem('bookmarkedCandidates', JSON.stringify(Array.from(bookmarkedCandidates)))
-    } else {
-      localStorage.removeItem('bookmarkedCandidates')
-    }
-  }, [bookmarkedCandidates])
+  // Note: Bookmarks are now saved via API calls, not localStorage
 
-  const handleBookmark = (e: React.MouseEvent, name: string) => {
+  const handleBookmark = async (e: React.MouseEvent, candidateId: string) => {
     e.stopPropagation()
+    const isCurrentlyBookmarked = bookmarkedCandidates.has(candidateId)
     const newBookmarks = new Set(bookmarkedCandidates)
-    if (newBookmarks.has(name)) {
-      newBookmarks.delete(name)
-    } else {
-      newBookmarks.add(name)
+
+    try {
+      if (isCurrentlyBookmarked) {
+        // Remove bookmark
+        await apiFetch(`/api/bookmarks/${candidateId}`, { method: 'DELETE' })
+        newBookmarks.delete(candidateId)
+      } else {
+        // Add bookmark
+        await apiFetch(`/api/bookmarks/${candidateId}`, { method: 'POST' })
+        newBookmarks.add(candidateId)
+      }
+      setBookmarkedCandidates(newBookmarks)
+    } catch (err) {
+      console.error('Failed to update bookmark:', err)
+      // Show error to user (you might want to add a toast notification here)
     }
-    setBookmarkedCandidates(newBookmarks)
   }
 
   const handleCardClick = (candidate: typeof mockCandidates[0]) => {
@@ -176,7 +190,7 @@ export default function FindCandidatesPage() {
   }
 
   const filteredCandidates = candidates.filter((candidate) => {
-    if (viewMode === 'shortlist' && !bookmarkedCandidates.has(candidate.name)) {
+    if (viewMode === 'shortlist' && !bookmarkedCandidates.has(candidate.id)) {
       return false
     }
 
@@ -403,11 +417,11 @@ export default function FindCandidatesPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {sortedCandidates.map((candidate) => (
                   <CandidateCard
-                    key={candidate.name}
+                    key={candidate.id || candidate.name}
                     {...candidate}
                     variant="find-candidates"
-                    isBookmarked={bookmarkedCandidates.has(candidate.name)}
-                    onBookmark={(e) => handleBookmark(e, candidate.name)}
+                    isBookmarked={bookmarkedCandidates.has(candidate.id || candidate.name)}
+                    onBookmark={(e) => handleBookmark(e, candidate.id || candidate.name)}
                     onClick={() => handleCardClick(candidate)}
                   />
                 ))}

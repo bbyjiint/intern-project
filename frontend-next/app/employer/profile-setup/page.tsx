@@ -14,6 +14,7 @@ export default function EmployerProfileSetupPage() {
   const [currentStep, setCurrentStep] = useState(1)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [userRole, setUserRole] = useState<string | null>(null)
   
   // Check if user has correct role and load existing data
   useEffect(() => {
@@ -26,6 +27,7 @@ export default function EmployerProfileSetupPage() {
     // Check user role
     apiFetch<{ user: { role: string | null } }>('/api/auth/me')
       .then((data) => {
+        setUserRole(data.user.role)
         if (data.user.role !== 'COMPANY') {
           router.push('/role-selection')
         }
@@ -80,7 +82,13 @@ export default function EmployerProfileSetupPage() {
 
   const handlePrevious = () => {
     if (currentStep === 1) {
-      router.push('/role-selection')
+      // If user already has a role, go back to profile page
+      // Otherwise, go to role selection
+      if (userRole === 'COMPANY') {
+        router.push('/employer/profile')
+      } else {
+        router.push('/role-selection')
+      }
     } else if (currentStep > 1) {
       setCurrentStep(currentStep - 1)
     }

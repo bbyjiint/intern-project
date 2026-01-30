@@ -191,6 +191,7 @@ model CandidateProfile {
   CertificateFile      CertificateFile[]
   UserSkill            UserSkill[]
   WorkHistory          WorkHistory[]
+  Bookmarks            Bookmark[]
 
   @@index([universityId])
 }
@@ -211,6 +212,7 @@ model CompanyProfile {
   CompanyEmails     CompanyEmail[] @relation("CompanyEmails")
   CompanyPhones     CompanyPhone[] @relation("CompanyPhones")
   JobPosts          JobPost[]
+  Bookmarks         Bookmark[]
   User              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -320,4 +322,18 @@ model ScreeningQuestionChoice {
 
   @@index([questionId])
   @@index([questionId, order])
+}
+
+model Bookmark {
+  id            String           @id @default(uuid()) @db.Uuid
+  companyId     String           @db.Uuid
+  candidateId   String           @db.Uuid
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  Company       CompanyProfile   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  Candidate     CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, candidateId])
+  @@index([companyId])
+  @@index([candidateId])
 }

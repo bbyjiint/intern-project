@@ -4,116 +4,60 @@ import { useEffect, useMemo, useState } from 'react'
 import EmployerNavbar from '@/components/EmployerNavbar'
 import CandidateCard from '@/components/CandidateCard'
 import CandidateProfileModal from '@/components/CandidateProfileModal'
+import { apiFetch } from '@/lib/api'
 import Link from 'next/link'
-
-const mockCandidates = [
-  {
-    name: 'Alex Patel',
-    role: 'Data Science Intern',
-    university: 'Georgia Tech',
-    major: 'Data Science',
-    graduationDate: 'Aug 2024',
-    skills: ['Python', 'TensorFlow', 'Deep Learning', 'SQL'],
-    initials: 'AP',
-    email: 'alex.patel@company.com',
-    about: 'Passionate data science intern with expertise in machine learning and deep learning. Experienced in building predictive models and analyzing large datasets.',
-  },
-  {
-    name: 'Amanda Wong',
-    role: 'UX Design Intern',
-    university: 'Stanford University',
-    major: 'Design',
-    graduationDate: 'Apr 2024',
-    skills: ['Adobe XD', 'UI Design', 'Wireframing', 'Figma'],
-    initials: 'AW',
-    email: 'amanda.wong@company.com',
-    about: 'Creative UX design intern focused on creating intuitive and user-friendly interfaces. Passionate about design thinking and user research.',
-  },
-  {
-    name: 'David Kim',
-    role: 'Software Engineering Intern',
-    university: 'UCLA',
-    major: 'Engineering',
-    graduationDate: 'Jan 2025',
-    skills: ['Java', 'Spring Boot', 'AWS', 'Docker'],
-    initials: 'DK',
-    email: 'david.kim@company.com',
-    about: 'Software engineering intern specializing in backend development and cloud infrastructure. Experienced with microservices architecture.',
-  },
-  {
-    name: 'Emily Chen',
-    role: 'Data Science Intern',
-    university: 'Stanford University',
-    major: 'Data Science',
-    graduationDate: 'Jun 2024',
-    skills: ['Python', 'R', 'Machine Learning', 'Pandas'],
-    initials: 'EC',
-    email: 'emily.chen@company.com',
-    about: 'Data science intern with strong analytical skills and experience in statistical modeling. Passionate about turning data into actionable insights.',
-  },
-  {
-    name: 'Jessica Martinez',
-    role: 'Marketing Intern',
-    university: 'University of Washington',
-    major: 'Marketing',
-    graduationDate: 'May 2024',
-    skills: ['Content Marketing', 'SEO', 'Social Media', 'Analytics'],
-    initials: 'JM',
-    email: 'jessica.martinez@company.com',
-    about: 'Marketing intern with expertise in digital marketing and content strategy. Experienced in SEO optimization and social media management.',
-  },
-  {
-    name: 'John Smith',
-    role: 'Software Engineering Intern',
-    university: 'UC Berkeley',
-    major: 'Engineering',
-    graduationDate: 'Jan 2024',
-    skills: ['Python', 'JavaScript', 'React', 'Node.js'],
-    initials: 'JS',
-    email: 'john.smith@company.com',
-    about: 'Passionate software engineering intern focused on full-stack development. Eager to learn modern web technologies and contribute to impactful projects.',
-  },
-]
 
 export default function BookmarkPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [academicYear, setAcademicYear] = useState('')
   const [position, setPosition] = useState('')
   const [university, setUniversity] = useState('')
-  const [bookmarkedCandidates, setBookmarkedCandidates] = useState<Set<string>>(new Set())
-  const [selectedCandidate, setSelectedCandidate] = useState<typeof mockCandidates[0] | null>(null)
+  const [bookmarkedCandidates, setBookmarkedCandidates] = useState<Set<string>>(new Set()) // Using candidate IDs
+  const [selectedCandidate, setSelectedCandidate] = useState<any | null>(null)
+  const [apiCandidates, setApiCandidates] = useState<any[]>([])
+  const [apiError, setApiError] = useState<string | null>(null)
 
-  // Load bookmarked candidates from localStorage
+  // Load bookmarked candidates from API
   useEffect(() => {
-    const savedBookmarks = localStorage.getItem('bookmarkedCandidates')
-    if (savedBookmarks) {
+    ;(async () => {
       try {
-        const bookmarks = JSON.parse(savedBookmarks)
-        setBookmarkedCandidates(new Set(bookmarks))
-      } catch (e) {
-        console.error('Failed to parse bookmarked candidates:', e)
+        // Fetch bookmarked candidates directly from bookmarks API
+        const data = await apiFetch<{ candidates: any[] }>(`/api/bookmarks`)
+        setApiCandidates(data.candidates || [])
+        // Set bookmarked IDs for the bookmark toggle functionality
+        const bookmarkIds = new Set(data.candidates.map((c) => c.id))
+        setBookmarkedCandidates(bookmarkIds)
+      } catch (err) {
+        setApiError(err instanceof Error ? err.message : 'Failed to load bookmarks')
+        setApiCandidates([])
       }
-    }
+    })()
   }, [])
 
-  // Save bookmarked candidates to localStorage
-  useEffect(() => {
-    if (bookmarkedCandidates.size > 0) {
-      localStorage.setItem('bookmarkedCandidates', JSON.stringify(Array.from(bookmarkedCandidates)))
-    } else {
-      localStorage.removeItem('bookmarkedCandidates')
-    }
-  }, [bookmarkedCandidates])
+  // Note: Bookmarks are now saved via API calls, not localStorage
 
-  const handleBookmark = (e: React.MouseEvent, name: string) => {
+  const handleBookmark = async (e: React.MouseEvent, candidateId: string) => {
     e.stopPropagation()
+    const isCurrentlyBookmarked = bookmarkedCandidates.has(candidateId)
     const newBookmarks = new Set(bookmarkedCandidates)
-    if (newBookmarks.has(name)) {
-      newBookmarks.delete(name)
-    } else {
-      newBookmarks.add(name)
+
+    try {
+      if (isCurrentlyBookmarked) {
+        // Remove bookmark
+        await apiFetch(`/api/bookmarks/${candidateId}`, { method: 'DELETE' })
+        newBookmarks.delete(candidateId)
+        // Remove from displayed list
+        setApiCandidates((prev) => prev.filter((c) => c.id !== candidateId))
+      } else {
+        // Add bookmark
+        await apiFetch(`/api/bookmarks/${candidateId}`, { method: 'POST' })
+        newBookmarks.add(candidateId)
+      }
+      setBookmarkedCandidates(newBookmarks)
+    } catch (err) {
+      console.error('Failed to update bookmark:', err)
+      // Show error to user (you might want to add a toast notification here)
     }
-    setBookmarkedCandidates(newBookmarks)
   }
 
   const handleCardClick = (candidate: typeof mockCandidates[0]) => {
@@ -127,13 +71,11 @@ export default function BookmarkPage() {
     setUniversity('')
   }
 
-  // Filter: Only show bookmarked candidates
-  const bookmarkedCandidatesList = mockCandidates.filter((candidate) =>
-    bookmarkedCandidates.has(candidate.name)
-  )
+  // All candidates from API are already bookmarked (fetched from /api/bookmarks)
+  const candidates = apiCandidates
 
   // Apply search and filter
-  const filteredCandidates = bookmarkedCandidatesList.filter((candidate) => {
+  const filteredCandidates = candidates.filter((candidate) => {
     const matchesSearch =
       candidate.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       candidate.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -296,10 +238,10 @@ export default function BookmarkPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredCandidates.map((candidate) => (
                   <CandidateCard
-                    key={candidate.name}
+                    key={candidate.id || candidate.name}
                     {...candidate}
-                    isBookmarked={bookmarkedCandidates.has(candidate.name)}
-                    onBookmark={(e) => handleBookmark(e, candidate.name)}
+                    isBookmarked={bookmarkedCandidates.has(candidate.id || candidate.name)}
+                    onBookmark={(e) => handleBookmark(e, candidate.id || candidate.name)}
                     onClick={() => handleCardClick(candidate)}
                   />
                 ))}

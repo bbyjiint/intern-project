@@ -22,24 +22,33 @@ interface Candidate {
 
 export default function EmployerDashboardPage() {
   const [statusFilter, setStatusFilter] = useState<'all' | 'interviewed' | 'accepted' | 'rejected'>('all')
-  const [bookmarkedCandidates, setBookmarkedCandidates] = useState<Set<string>>(new Set())
+  const [bookmarkedCandidates, setBookmarkedCandidates] = useState<Set<string>>(new Set()) // Using candidate IDs
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null)
   const [apiCandidates, setApiCandidates] = useState<Candidate[]>([])
   const [apiError, setApiError] = useState<string | null>(null)
 
   useEffect(() => {
-    // Load bookmarked candidates from localStorage
-    const savedBookmarks = localStorage.getItem('bookmarkedCandidates')
-    if (savedBookmarks) {
-      try {
-        const bookmarks = JSON.parse(savedBookmarks)
-        setBookmarkedCandidates(new Set(bookmarks))
-      } catch (e) {
-        console.error('Failed to parse bookmarked candidates:', e)
-      }
-    }
-
     ;(async () => {
+      try {
+        // Load bookmarked candidates from API
+        const bookmarksData = await apiFetch<{ candidates: Array<{ id: string }> }>(`/api/bookmarks`)
+        const bookmarkIds = new Set(bookmarksData.candidates.map((c) => c.id))
+        setBookmarkedCandidates(bookmarkIds)
+      } catch (err) {
+        console.error('Failed to load bookmarks:', err)
+        // Fallback to localStorage for backward compatibility
+        const savedBookmarks = localStorage.getItem('bookmarkedCandidates')
+        if (savedBookmarks) {
+          try {
+            const bookmarks = JSON.parse(savedBookmarks)
+            setBookmarkedCandidates(new Set(bookmarks))
+          } catch (e) {
+            console.error('Failed to parse bookmarked candidates:', e)
+          }
+        }
+      }
+
+      // Load all candidates
       try {
         const data = await apiFetch<{ candidates: Candidate[] }>(`/api/candidates`)
         setApiCandidates(data.candidates || [])
@@ -54,17 +63,26 @@ export default function EmployerDashboardPage() {
     return apiCandidates || []
   }, [apiCandidates])
 
-  const handleBookmark = (e: React.MouseEvent, name: string) => {
+  const handleBookmark = async (e: React.MouseEvent, candidateId: string) => {
     e.stopPropagation()
+    const isCurrentlyBookmarked = bookmarkedCandidates.has(candidateId)
     const newBookmarks = new Set(bookmarkedCandidates)
-    if (newBookmarks.has(name)) {
-      newBookmarks.delete(name)
-    } else {
-      newBookmarks.add(name)
+
+    try {
+      if (isCurrentlyBookmarked) {
+        // Remove bookmark
+        await apiFetch(`/api/bookmarks/${candidateId}`, { method: 'DELETE' })
+        newBookmarks.delete(candidateId)
+      } else {
+        // Add bookmark
+        await apiFetch(`/api/bookmarks/${candidateId}`, { method: 'POST' })
+        newBookmarks.add(candidateId)
+      }
+      setBookmarkedCandidates(newBookmarks)
+    } catch (err) {
+      console.error('Failed to update bookmark:', err)
+      // Show error to user (you might want to add a toast notification here)
     }
-    setBookmarkedCandidates(newBookmarks)
-    // Save to localStorage
-    localStorage.setItem('bookmarkedCandidates', JSON.stringify(Array.from(newBookmarks)))
   }
 
   const handleCardClick = (candidate: Candidate) => {
@@ -220,10 +238,10 @@ export default function EmployerDashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredCandidates.map((candidate) => (
                 <CandidateCard
-                  key={candidate.name}
+                  key={candidate.id || candidate.name}
                   {...candidate}
-                  isBookmarked={bookmarkedCandidates.has(candidate.name)}
-                  onBookmark={(e) => handleBookmark(e, candidate.name)}
+                  isBookmarked={bookmarkedCandidates.has(candidate.id || candidate.name)}
+                  onBookmark={(e) => handleBookmark(e, candidate.id || candidate.name)}
                   onClick={() => handleCardClick(candidate)}
                 />
               ))}

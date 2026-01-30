@@ -14,6 +14,7 @@ export default function ProfileSetupPage() {
   const [currentStep, setCurrentStep] = useState(1)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [userRole, setUserRole] = useState<string | null>(null)
 
   // Check if user has correct role
   useEffect(() => {
@@ -26,6 +27,7 @@ export default function ProfileSetupPage() {
     // Check user role
     apiFetch<{ user: { role: string | null } }>('/api/auth/me')
       .then((data) => {
+        setUserRole(data.user.role)
         if (data.user.role !== 'CANDIDATE') {
           router.push('/role-selection')
         }
@@ -56,7 +58,13 @@ export default function ProfileSetupPage() {
 
   const handlePrevious = () => {
     if (currentStep === 1) {
-      router.push('/role-selection')
+      // If user already has a role, go back to profile page
+      // Otherwise, go to role selection
+      if (userRole === 'CANDIDATE') {
+        router.push('/intern/profile')
+      } else {
+        router.push('/role-selection')
+      }
     } else if (currentStep > 1) {
       setCurrentStep(currentStep - 1)
     }
