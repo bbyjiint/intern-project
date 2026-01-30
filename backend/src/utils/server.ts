@@ -5,6 +5,8 @@ import { loadDotEnv } from "./env";
 import { authRouter } from "../routes/auth";
 import { candidatesRouter } from "../routes/candidates";
 import { profilesRouter } from "../routes/profiles";
+import { jobPostsRouter } from "../routes/job-posts";
+import { universitiesRouter } from "../routes/universities";
 
 const app = express();
 
@@ -30,6 +32,8 @@ app.get("/api/db-check", async (req, res) => {
 app.use("/api/auth", authRouter);
 app.use("/api/candidates", candidatesRouter);
 app.use("/api", profilesRouter);
+app.use("/api", jobPostsRouter);
+app.use("/api/universities", universitiesRouter);
 
 // 404 handler
 app.use((req, res) => {

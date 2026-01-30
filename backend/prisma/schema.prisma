@@ -210,6 +210,7 @@ model CompanyProfile {
   updatedAt         DateTime
   CompanyEmails     CompanyEmail[] @relation("CompanyEmails")
   CompanyPhones     CompanyPhone[] @relation("CompanyPhones")
+  JobPosts          JobPost[]
   User              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -235,4 +236,88 @@ enum EducationLevel {
   BACHELOR
   MASTERS
   PHD
+}
+
+enum WorkplaceType {
+  ON_SITE
+  HYBRID
+  REMOTE
+}
+
+enum AllowancePeriod {
+  MONTH
+  WEEK
+  DAY
+}
+
+enum JobPostStatus {
+  URGENT
+  NOT_URGENT
+}
+
+enum JobPostState {
+  DRAFT
+  PUBLISHED
+  CLOSED
+}
+
+enum QuestionType {
+  TEXT
+  MULTIPLE_CHOICE
+}
+
+model JobPost {
+  id                String                @id @default(uuid()) @db.Uuid
+  companyId         String                 @db.Uuid
+  jobTitle          String
+  locationProvince  String?
+  locationDistrict  String?
+  jobType           String?
+  workplaceType     WorkplaceType          @default(ON_SITE)
+  allowance         Float?
+  allowancePeriod   AllowancePeriod?
+  noAllowance       Boolean                @default(false)
+  jobPostStatus     JobPostStatus          @default(NOT_URGENT)
+  jobDescription    String?
+  jobSpecification  String?
+  rejectionMessage  String?
+  state             JobPostState           @default(DRAFT)
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  Company           CompanyProfile         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  ScreeningQuestions ScreeningQuestion[]
+
+  @@index([companyId])
+  @@index([state])
+  @@index([createdAt])
+}
+
+model ScreeningQuestion {
+  id                  String                   @id @default(uuid()) @db.Uuid
+  jobPostId           String                   @db.Uuid
+  question            String
+  questionType        QuestionType             @default(TEXT)
+  idealAnswer         String?
+  automaticRejection  Boolean                  @default(false)
+  order               Int
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+  JobPost             JobPost                 @relation(fields: [jobPostId], references: [id], onDelete: Cascade)
+  Choices             ScreeningQuestionChoice[]
+
+  @@index([jobPostId])
+  @@index([jobPostId, order])
+}
+
+model ScreeningQuestionChoice {
+  id          String            @id @default(uuid()) @db.Uuid
+  questionId  String            @db.Uuid
+  choice      String
+  order       Int
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  Question    ScreeningQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+  @@index([questionId, order])
 }

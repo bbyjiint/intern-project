@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import EmployerNavbar from '@/components/EmployerNavbar'
 import CandidateCard from '@/components/CandidateCard'
 import CandidateProfileModal from '@/components/CandidateProfileModal'
+import SearchableDropdown from '@/components/SearchableDropdown'
 import { apiFetch } from '@/lib/api'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -89,6 +90,8 @@ export default function FindCandidatesPage() {
   const [selectedCandidate, setSelectedCandidate] = useState<typeof mockCandidates[0] | null>(null)
   const [apiCandidates, setApiCandidates] = useState<typeof mockCandidates | null>(null)
   const [apiError, setApiError] = useState<string | null>(null)
+  const [universities, setUniversities] = useState<Array<{ id: string; name: string; thname: string | null; code: string | null }>>([])
+  const [universitiesLoading, setUniversitiesLoading] = useState(false)
 
   // Load bookmarked candidates from localStorage
   useEffect(() => {
@@ -112,6 +115,27 @@ export default function FindCandidatesPage() {
         // If not logged in / wrong role, keep mock list but show message.
         setApiError(err instanceof Error ? err.message : 'Failed to load candidates')
         setApiCandidates(null)
+      }
+    })()
+  }, [])
+
+  // Load universities from API
+  useEffect(() => {
+    ;(async () => {
+      setUniversitiesLoading(true)
+      try {
+        // Load all universities (no search query for initial load)
+        const data = await apiFetch<{ universities: Array<{ id: string; name: string; thname: string | null; code: string | null }> }>(
+          `/api/universities`
+        )
+        setUniversities(data.universities || [])
+        console.log(`Loaded ${data.universities?.length || 0} universities`)
+      } catch (err) {
+        console.error('Failed to load universities:', err)
+        // If API fails, keep empty array - dropdown will just be empty
+        setUniversities([])
+      } finally {
+        setUniversitiesLoading(false)
       }
     })()
   }, [])
@@ -290,18 +314,18 @@ export default function FindCandidatesPage() {
                   <option value="Software Engineering">Software Engineering</option>
                   <option value="Marketing">Marketing</option>
                 </select>
-                <select
+                <SearchableDropdown
+                  options={universities.map((uni) => ({
+                    value: uni.name,
+                    label: uni.thname ? `${uni.name} (${uni.thname})` : uni.name,
+                    code: uni.code,
+                  }))}
                   value={university}
-                  onChange={(e) => setUniversity(e.target.value)}
-                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="All Universities">All Universities</option>
-                  <option value="Georgia Tech">Georgia Tech</option>
-                  <option value="Stanford University">Stanford University</option>
-                  <option value="UCLA">UCLA</option>
-                  <option value="UC Berkeley">UC Berkeley</option>
-                  <option value="University of Washington">University of Washington</option>
-                </select>
+                  onChange={setUniversity}
+                  placeholder="Search by name or code..."
+                  className="min-w-[200px]"
+                  allOptionLabel="All Universities"
+                />
                 <select
                   value={department}
                   onChange={(e) => setDepartment(e.target.value)}
