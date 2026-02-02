@@ -69,6 +69,10 @@
     color: var(--color-primary-text);
   }
 
+  .nav-link-active {
+    color: var(--color-primary-text);
+  }
+
   /* Navigation Button */
   .nav-button {
     background-color: var(--color-primary);
