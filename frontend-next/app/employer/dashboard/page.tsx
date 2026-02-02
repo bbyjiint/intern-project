@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import EmployerNavbar from '@/components/EmployerNavbar'
 import CandidateCard from '@/components/CandidateCard'
 import CandidateProfileModal from '@/components/CandidateProfileModal'
-import { apiFetch } from '@/lib/api'
+import { apiFetch, getToken } from '@/lib/api'
 import Link from 'next/link'
 
 interface Candidate {
@@ -21,11 +22,45 @@ interface Candidate {
 }
 
 export default function EmployerDashboardPage() {
+  const router = useRouter()
   const [statusFilter, setStatusFilter] = useState<'all' | 'interviewed' | 'accepted' | 'rejected'>('all')
   const [bookmarkedCandidates, setBookmarkedCandidates] = useState<Set<string>>(new Set()) // Using candidate IDs
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null)
   const [apiCandidates, setApiCandidates] = useState<Candidate[]>([])
   const [apiError, setApiError] = useState<string | null>(null)
+
+  // Check user role and redirect if necessary
+  useEffect(() => {
+    const checkRole = async () => {
+      try {
+        const token = getToken()
+        if (!token) {
+          router.push('/login')
+          return
+        }
+
+        const userData = await apiFetch<{ user: { role: string | null } }>('/api/auth/me')
+        
+        // If user has CANDIDATE role, redirect to intern pages
+        if (userData.user.role === 'CANDIDATE') {
+          router.push('/intern/dashboard')
+          return
+        }
+        
+        // If user has no role, redirect to role selection
+        if (!userData.user.role) {
+          router.push('/role-selection')
+          return
+        }
+      } catch (error) {
+        console.error('Failed to check user role:', error)
+        // If auth fails, redirect to login
+        router.push('/login')
+      }
+    }
+
+    checkRole()
+  }, [router])
 
   useEffect(() => {
     ;(async () => {

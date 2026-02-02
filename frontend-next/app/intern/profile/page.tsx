@@ -14,8 +14,8 @@ export default function InternProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    // Fetch profile data from API
-    const loadProfileData = async () => {
+    // Check user role first
+    const checkRoleAndLoadProfile = async () => {
       try {
         const token = getToken()
         if (!token) {
@@ -23,16 +23,44 @@ export default function InternProfilePage() {
           return
         }
 
+        // Check user role first
+        const userData = await apiFetch<{ user: { role: string | null } }>('/api/auth/me')
+        
+        // If user has COMPANY role, redirect to employer pages
+        if (userData.user.role === 'COMPANY') {
+          router.push('/employer/profile')
+          return
+        }
+        
+        // If user has no role, redirect to role selection
+        if (!userData.user.role) {
+          router.push('/role-selection')
+          return
+        }
+
+        // User has CANDIDATE role, proceed to load profile
         const data = await apiFetch<{ profile: any }>('/api/candidates/profile')
         setProfileData(data.profile)
         
         // Also save to localStorage for backward compatibility
         localStorage.setItem('internProfileData', JSON.stringify(data.profile))
+        setIsLoading(false)
       } catch (error: any) {
         console.error('Failed to load profile data:', error)
+        
+        // If 403 Forbidden, it's a role mismatch - redirect based on error message
+        if (error.status === 403) {
+          const errorMessage = error.message || ''
+          if (errorMessage.includes('COMPANY role')) {
+            router.push('/employer/profile')
+            return
+          }
+        }
+        
         // If 404, profile doesn't exist yet - that's okay
         if (error.status === 404) {
           setProfileData(null)
+          setIsLoading(false)
         } else {
           // Fallback to localStorage if API fails
           const savedData = localStorage.getItem('internProfileData')
@@ -43,13 +71,12 @@ export default function InternProfilePage() {
               console.error('Failed to parse profile data:', e)
             }
           }
+          setIsLoading(false)
         }
-      } finally {
-        setIsLoading(false)
       }
     }
     
-    loadProfileData()
+    checkRoleAndLoadProfile()
     // Set current date
     updateDate()
   }, [router])

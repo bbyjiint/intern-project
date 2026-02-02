@@ -1,13 +1,15 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import EmployerNavbar from '@/components/EmployerNavbar'
 import CandidateCard from '@/components/CandidateCard'
 import CandidateProfileModal from '@/components/CandidateProfileModal'
-import { apiFetch } from '@/lib/api'
+import { apiFetch, getToken } from '@/lib/api'
 import Link from 'next/link'
 
 export default function BookmarkPage() {
+  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
   const [academicYear, setAcademicYear] = useState('')
   const [position, setPosition] = useState('')
@@ -16,6 +18,39 @@ export default function BookmarkPage() {
   const [selectedCandidate, setSelectedCandidate] = useState<any | null>(null)
   const [apiCandidates, setApiCandidates] = useState<any[]>([])
   const [apiError, setApiError] = useState<string | null>(null)
+
+  // Check user role and redirect if necessary
+  useEffect(() => {
+    const checkRole = async () => {
+      try {
+        const token = getToken()
+        if (!token) {
+          router.push('/login')
+          return
+        }
+
+        const userData = await apiFetch<{ user: { role: string | null } }>('/api/auth/me')
+        
+        // If user has CANDIDATE role, redirect to intern pages
+        if (userData.user.role === 'CANDIDATE') {
+          router.push('/intern/bookmark')
+          return
+        }
+        
+        // If user has no role, redirect to role selection
+        if (!userData.user.role) {
+          router.push('/role-selection')
+          return
+        }
+      } catch (error) {
+        console.error('Failed to check user role:', error)
+        // If auth fails, redirect to login
+        router.push('/login')
+      }
+    }
+
+    checkRole()
+  }, [router])
 
   // Load bookmarked candidates from API
   useEffect(() => {

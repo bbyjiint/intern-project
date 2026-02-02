@@ -231,7 +231,7 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
                         style={{ backgroundColor: '#0273B1' }}
                       >
                         <span className="text-white font-semibold text-sm">
-                          {getInitials(userData?.displayName || profileData?.fullName || 'I')}
+                          {getInitials(profileData?.fullName || userData?.displayName || userData?.email || 'I')}
                         </span>
                       </div>
                     )}

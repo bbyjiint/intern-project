@@ -443,3 +443,91 @@ jobPostsRouter.delete("/job-posts/:id", requireAuth, requireRole("COMPANY"), asy
     });
   }
 });
+
+// Public endpoint: Get all published job posts (for interns/candidates)
+// No authentication required, but optional for bookmarking
+jobPostsRouter.get("/job-posts/public", async (req, res) => {
+  try {
+    const jobPosts = await prisma.jobPost.findMany({
+      where: {
+        state: "PUBLISHED", // Only show published job posts
+      },
+      include: {
+        Company: {
+          select: {
+            companyName: true,
+            logoURL: true,
+          },
+        },
+      },
+      orderBy: [
+        { jobPostStatus: "asc" }, // URGENT first
+        { createdAt: "desc" }, // Then newest first
+      ],
+    });
+
+    // Format job posts for frontend
+    const formattedJobPosts = jobPosts.map((post) => {
+      // Format allowance
+      let allowanceStr = "Not specified";
+      if (post.noAllowance) {
+        allowanceStr = "No allowance";
+      } else if (post.allowance && post.allowancePeriod) {
+        const periodMap: Record<string, string> = {
+          MONTH: "Month",
+          WEEK: "Week",
+          DAY: "Day",
+        };
+        allowanceStr = `${post.allowance} THB/${periodMap[post.allowancePeriod] || post.allowancePeriod}`;
+      } else if (post.allowance) {
+        allowanceStr = `${post.allowance} THB`;
+      }
+
+      // Format workplace type
+      const workplaceTypeMap: Record<string, string> = {
+        ON_SITE: "On-site",
+        HYBRID: "Hybrid",
+        REMOTE: "Remote",
+      };
+
+      // Format location
+      const locationParts = [post.locationDistrict, post.locationProvince].filter(Boolean);
+      const location = locationParts.length > 0 ? locationParts.join(", ") : "Location not specified";
+
+      // Format posted date
+      const postedDate = post.createdAt
+        ? new Date(post.createdAt).toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          })
+        : "Date not available";
+
+      return {
+        id: post.id,
+        jobTitle: post.jobTitle || "Untitled Job",
+        companyName: post.Company?.companyName || "Company Name",
+        companyLogo: post.Company?.logoURL || "TRINITY",
+        location,
+        workType: workplaceTypeMap[post.workplaceType] || "On-site",
+        jobType: post.jobType || "internship",
+        seniorityLevel: "student", // Default, can be enhanced later
+        field: "IT&Software", // Default, can be enhanced later
+        positions: 1, // Default, can be enhanced later
+        allowance: allowanceStr,
+        skills: [], // Can be enhanced later if skills are stored
+        postedDate,
+        jobDescription: post.jobDescription || "",
+        jobSpecification: post.jobSpecification || "",
+        isUrgent: post.jobPostStatus === "URGENT",
+      };
+    });
+
+    return res.json({ jobPosts: formattedJobPosts });
+  } catch (error: any) {
+    console.error("Error fetching public job posts:", error);
+    return res.status(500).json({
+      error: error.message || "Failed to fetch job posts",
+    });
+  }
+});

@@ -9,6 +9,7 @@ import Step2JobDescription from '@/components/job-post/Step2JobDescription'
 import Step3PostSettings from '@/components/job-post/Step3PostSettings'
 import Step4PostPreview from '@/components/job-post/Step4PostPreview'
 import ConfirmationModal from '@/components/job-post/ConfirmationModal'
+import { apiFetch, getToken } from '@/lib/api'
 
 const initialFormData = {
   // Step 1: Job Details
@@ -42,6 +43,38 @@ export default function CreateJobPostPage() {
   const [currentStep, setCurrentStep] = useState(1)
   const [showConfirmationModal, setShowConfirmationModal] = useState(false)
   const [formData, setFormData] = useState(initialFormData)
+
+  // Check user role and redirect if necessary
+  useEffect(() => {
+    const checkRole = async () => {
+      try {
+        const token = getToken()
+        if (!token) {
+          router.push('/login')
+          return
+        }
+
+        const userData = await apiFetch<{ user: { role: string | null } }>('/api/auth/me')
+        
+        // If user has CANDIDATE role, redirect to intern pages
+        if (userData.user.role === 'CANDIDATE') {
+          router.push('/intern/find-companies')
+          return
+        }
+        
+        // If user has no role, redirect to role selection
+        if (!userData.user.role) {
+          router.push('/role-selection')
+          return
+        }
+      } catch (error) {
+        console.error('Failed to check user role:', error)
+        router.push('/login')
+      }
+    }
+
+    checkRole()
+  }, [router])
 
   // Reset form when component mounts (when navigating back from success page)
   useEffect(() => {

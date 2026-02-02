@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from 'react'
 import InternNavbar from '@/components/InternNavbar'
+import { apiFetch } from '@/lib/api'
 
 interface JobPost {
   id: string
@@ -184,19 +185,22 @@ export default function FindCompaniesPage() {
   const [minSalary, setMinSalary] = useState('10000')
   const [maxSalary, setMaxSalary] = useState('500000')
   const [salaryRange, setSalaryRange] = useState([10000, 500000])
-  const [jobs, setJobs] = useState<JobPost[]>(mockJobs)
+  const [jobs, setJobs] = useState<JobPost[]>([])
   const [bookmarkedJobs, setBookmarkedJobs] = useState<Set<string>>(new Set())
   const [ignoredJobs, setIgnoredJobs] = useState<Set<string>>(new Set())
   const [selectedJob, setSelectedJob] = useState<JobPost | null>(null)
   const [showJobDetailModal, setShowJobDetailModal] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     // Load bookmarked jobs from localStorage
     const savedBookmarks = localStorage.getItem('internBookmarkedJobs')
+    let bookmarksSet = new Set<string>()
     if (savedBookmarks) {
       try {
         const bookmarks = JSON.parse(savedBookmarks)
-        setBookmarkedJobs(new Set(bookmarks))
+        bookmarksSet = new Set(bookmarks)
+        setBookmarkedJobs(bookmarksSet)
       } catch (e) {
         console.error('Failed to parse bookmarked jobs:', e)
       }
@@ -213,36 +217,27 @@ export default function FindCompaniesPage() {
       }
     }
 
-    // Load jobs from localStorage if available
-    const savedJobs = localStorage.getItem('allJobPosts')
-    if (savedJobs) {
+    // Fetch job posts from API
+    const loadJobPosts = async () => {
+      setIsLoading(true)
       try {
-        const parsed = JSON.parse(savedJobs)
-        // Convert employer job posts to intern job posts format
-        const converted = parsed.map((post: any) => ({
-          id: post.id || Date.now().toString(),
-          jobTitle: post.jobTitle || post.title || 'Untitled Job',
-          companyName: post.companyName || 'Company Name',
-          companyLogo: post.companyLogo || 'TRINITY',
-          location: post.location || `${post.locationDistrict || ''}, ${post.locationProvince || ''}`.replace(/^,\s*|,\s*$/g, '') || 'Location not specified',
-          workType: post.workplaceType === 'on-site' ? 'On-site' : post.workplaceType === 'hybrid' ? 'Hybrid' : post.workplaceType === 'remote' ? 'Remote' : 'Remote',
-          jobType: post.jobType || 'internship',
-          seniorityLevel: 'student',
-          field: 'IT&Software',
-          positions: 5,
-          allowance: post.allowance || '200-300 THB/Day',
-          skills: post.skills || [],
-          postedDate: post.postedDate || '15 January 2026',
-          isBookmarked: bookmarkedJobs.has(post.id),
-          jobDescription: post.jobDescription || '',
-          jobSpecification: post.jobSpecification || '',
-          isUrgent: post.isUrgent || post.jobPostStatus === 'urgent',
+        const data = await apiFetch<{ jobPosts: JobPost[] }>('/api/job-posts/public')
+        // Mark bookmarked jobs using the loaded bookmarks
+        const jobsWithBookmarks = data.jobPosts.map((job) => ({
+          ...job,
+          isBookmarked: bookmarksSet.has(job.id),
         }))
-        setJobs([...mockJobs, ...converted])
-      } catch (e) {
-        console.error('Failed to parse jobs:', e)
+        setJobs(jobsWithBookmarks)
+      } catch (error) {
+        console.error('Failed to load job posts:', error)
+        // Fallback to mock data if API fails
+        setJobs(mockJobs)
+      } finally {
+        setIsLoading(false)
       }
     }
+
+    loadJobPosts()
   }, [])
 
   const handleBookmark = (id: string) => {
@@ -626,11 +621,19 @@ export default function FindCompaniesPage() {
         <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="mb-6">
             <h2 className="text-2xl font-bold text-gray-900">
-              {filteredJobs.length} Jobs Found
+              {isLoading ? 'Loading...' : `${filteredJobs.length} Jobs Found`}
             </h2>
           </div>
 
+          {/* Loading State */}
+          {isLoading && (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-gray-500">Loading job posts...</div>
+            </div>
+          )}
+
           {/* Job Cards Grid */}
+          {!isLoading && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredJobs.map((job) => {
               const isBookmarked = bookmarkedJobs.has(job.id)
@@ -775,6 +778,7 @@ export default function FindCompaniesPage() {
               )
             })}
           </div>
+          )}
         </div>
       </div>
 

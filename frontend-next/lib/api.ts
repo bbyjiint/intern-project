@@ -60,13 +60,33 @@ export async function apiFetch<T>(
   }
 
   if (!res.ok) {
+    // If unauthorized, clear token and redirect to login
+    if (res.status === 401 && token) {
+      // Token is invalid or expired
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem("auth_token");
+        // Only redirect if we're not already on login/register page
+        if (!window.location.pathname.includes("/login") && !window.location.pathname.includes("/register")) {
+          console.warn("Token expired or invalid, redirecting to login");
+          window.location.href = "/login";
+        }
+      }
+    }
+    
+    // If forbidden (403), it might be a role mismatch - don't clear token immediately
+    // Let the error propagate so the UI can handle it appropriately
+    if (res.status === 403) {
+      console.warn(`Access forbidden: ${data?.message || data?.error || "Insufficient permissions"}`);
+    }
+    
     // If unauthorized and no token, provide helpful error
     if (res.status === 401 && !token) {
       const error: any = new Error("Please log in to continue");
       error.status = 401;
       throw error;
     }
-    const error: any = new Error(data?.error || `Request failed (${res.status})`);
+    
+    const error: any = new Error(data?.error || data?.message || `Request failed (${res.status})`);
     error.status = res.status;
     throw error;
   }

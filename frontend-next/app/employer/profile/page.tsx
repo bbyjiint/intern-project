@@ -51,8 +51,8 @@ export default function EmployerProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    // Fetch profile data from API
-    const loadProfileData = async () => {
+    // Check user role first, then fetch profile data
+    const checkRoleAndLoadProfile = async () => {
       try {
         const token = getToken()
         if (!token) {
@@ -60,6 +60,22 @@ export default function EmployerProfilePage() {
           return
         }
 
+        // Check user role
+        const userData = await apiFetch<{ user: { role: string | null } }>('/api/auth/me')
+        
+        // If user has CANDIDATE role, redirect to intern profile
+        if (userData.user.role === 'CANDIDATE') {
+          router.push('/intern/profile')
+          return
+        }
+        
+        // If user has no role, redirect to role selection
+        if (!userData.user.role) {
+          router.push('/role-selection')
+          return
+        }
+
+        // User has COMPANY role, proceed to load company profile
         const data = await apiFetch<{ profile: CompanyProfileData }>('/api/companies/profile')
         console.log('Profile data received:', data)
         
@@ -72,10 +88,20 @@ export default function EmployerProfilePage() {
           console.warn('Profile data is missing or invalid:', data)
           setProfileData(null)
         }
+        setIsLoading(false)
       } catch (error: any) {
         console.error('Failed to load profile data:', error)
         console.error('Error status:', error.status)
         console.error('Error message:', error.message)
+        
+        // If 403 Forbidden, it's a role mismatch - redirect based on error message
+        if (error.status === 403) {
+          const errorMessage = error.message || ''
+          if (errorMessage.includes('CANDIDATE role')) {
+            router.push('/intern/profile')
+            return
+          }
+        }
         
         // If 404, profile doesn't exist yet - that's okay
         if (error.status === 404) {
@@ -102,7 +128,7 @@ export default function EmployerProfilePage() {
       }
     }
     
-    loadProfileData()
+    checkRoleAndLoadProfile()
     // Set current date from calendar
     updateDate()
   }, [router])
