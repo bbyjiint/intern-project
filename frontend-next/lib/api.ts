@@ -88,6 +88,7 @@ export async function apiFetch<T>(
     
     const error: any = new Error(data?.error || data?.message || `Request failed (${res.status})`);
     error.status = res.status;
+    error.details = data?.details; // Pass through additional error details
     throw error;
   }
 

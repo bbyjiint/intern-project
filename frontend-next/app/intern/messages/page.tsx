@@ -1,7 +1,9 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import InternNavbar from '@/components/InternNavbar'
+import { apiFetch, getToken } from '@/lib/api'
 
 interface Message {
   id: string
@@ -151,42 +153,117 @@ function formatMessageTime(date: Date): string {
 }
 
 export default function InternMessagesPage() {
-  const [conversations, setConversations] = useState<Conversation[]>(mockConversations)
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(mockConversations[0] || null)
+  const router = useRouter()
+  const [conversations, setConversations] = useState<Conversation[]>([])
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [newMessage, setNewMessage] = useState('')
+  const [loading, setLoading] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const chatContainerRef = useRef<HTMLDivElement>(null)
 
+  // Check role and load conversations (only on mount)
   useEffect(() => {
-    // Load conversations from localStorage if available
-    const savedConversations = localStorage.getItem('internConversations')
-    if (savedConversations) {
+    const loadConversations = async () => {
       try {
-        const parsed = JSON.parse(savedConversations)
-        // Convert timestamp strings back to Date objects
-        const converted = parsed.map((conv: any) => ({
+        const token = getToken()
+        if (!token) {
+          router.push('/login')
+          return
+        }
+
+        const userData = await apiFetch<{ user: { role: string | null } }>('/api/auth/me')
+        
+        // Only redirect if role doesn't match the current page
+        // This prevents issues when multiple tabs are open with different users
+        const currentPath = window.location.pathname
+        
+        if (userData.user.role === 'COMPANY') {
+          // Only redirect if we're on an intern page
+          if (currentPath.startsWith('/intern')) {
+            router.push('/employer/messages')
+            return
+          }
+          // If we're already on an employer page, don't redirect (might be wrong token but let it be)
+          return
+        }
+        
+        if (!userData.user.role) {
+          if (!currentPath.startsWith('/role-selection')) {
+            router.push('/role-selection')
+          }
+          return
+        }
+        
+        // If we're here and role is CANDIDATE, we're good to proceed
+
+        // Load conversations from API
+        const data = await apiFetch<{ conversations: Conversation[] }>('/api/messages/conversations')
+        
+        // Convert timestamp strings to Date objects
+        const converted = data.conversations.map((conv: any) => ({
           ...conv,
           lastMessageTime: new Date(conv.lastMessageTime),
-          messages: conv.messages.map((msg: any) => ({
-            ...msg,
-            timestamp: new Date(msg.timestamp),
-          })),
+          messages: [], // Will be loaded when conversation is selected
         }))
+        
         setConversations(converted)
-        if (converted.length > 0 && !selectedConversation) {
+        
+        // Set first conversation as selected if we have conversations
+        if (converted.length > 0) {
           setSelectedConversation(converted[0])
         }
-      } catch (e) {
-        console.error('Failed to load conversations:', e)
+      } catch (error) {
+        console.error('Failed to load conversations:', error)
+      } finally {
+        setLoading(false)
       }
     }
-  }, [])
 
+    loadConversations()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router])
+
+  // Load messages when conversation is selected
   useEffect(() => {
-    // Save conversations to localStorage whenever they change
-    localStorage.setItem('internConversations', JSON.stringify(conversations))
-  }, [conversations])
+    if (!selectedConversation?.id) return
+
+    const loadMessages = async () => {
+      try {
+        const data = await apiFetch<{ messages: Message[] }>(
+          `/api/messages/conversations/${selectedConversation.id}/messages`
+        )
+        
+        // Convert timestamp strings to Date objects
+        const converted = data.messages.map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp),
+        }))
+
+        // Update conversations list first
+        setConversations((prev) =>
+          prev.map((conv) =>
+            conv.id === selectedConversation.id
+              ? { ...conv, messages: converted }
+              : conv
+          )
+        )
+
+        // Then update selected conversation to match
+        setSelectedConversation((prev) => {
+          if (!prev || prev.id !== selectedConversation.id) return prev
+          return {
+            ...prev,
+            messages: converted,
+          }
+        })
+      } catch (error) {
+        console.error('Failed to load messages:', error)
+      }
+    }
+
+    loadMessages()
+  }, [selectedConversation?.id])
 
   useEffect(() => {
     // Scroll to bottom when messages change
@@ -198,45 +275,48 @@ export default function InternMessagesPage() {
     (conv.jobTitle && conv.jobTitle.toLowerCase().includes(searchQuery.toLowerCase()))
   )
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedConversation) return
 
-    const internProfile = JSON.parse(localStorage.getItem('internProfileData') || '{}')
-    const internName = internProfile.fullName || 'Intern Name'
-    const internInitials = internProfile.fullName
-      ? internProfile.fullName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
-      : 'IN'
-
-    const newMsg: Message = {
-      id: Date.now().toString(),
-      senderId: 'intern',
-      senderName: internName,
-      senderInitials: internInitials,
-      text: newMessage.trim(),
-      timestamp: new Date(),
-      isCompany: false,
-    }
-
-    const updatedConversations = conversations.map((conv) => {
-      if (conv.id === selectedConversation.id) {
-        return {
-          ...conv,
-          lastMessage: newMessage.trim(),
-          lastMessageTime: new Date(),
-          messages: [...conv.messages, newMsg],
+    try {
+      const data = await apiFetch<{ message: Message }>(
+        `/api/messages/conversations/${selectedConversation.id}/messages`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ text: newMessage.trim() }),
         }
-      }
-      return conv
-    })
+      )
 
-    setConversations(updatedConversations)
-    setSelectedConversation({
-      ...selectedConversation,
-      lastMessage: newMessage.trim(),
-      lastMessageTime: new Date(),
-      messages: [...selectedConversation.messages, newMsg],
-    })
-    setNewMessage('')
+      const newMsg: Message = {
+        ...data.message,
+        timestamp: new Date(data.message.timestamp),
+        senderName: data.message.isCompany ? 'Company' : 'Intern',
+        senderInitials: data.message.isCompany ? 'CO' : 'IN',
+      }
+
+      const updatedConversations = conversations.map((conv) => {
+        if (conv.id === selectedConversation.id) {
+          return {
+            ...conv,
+            lastMessage: newMessage.trim(),
+            lastMessageTime: new Date(),
+            messages: [...conv.messages, newMsg],
+          }
+        }
+        return conv
+      })
+
+      setConversations(updatedConversations)
+      setSelectedConversation({
+        ...selectedConversation,
+        lastMessage: newMessage.trim(),
+        lastMessageTime: new Date(),
+        messages: [...selectedConversation.messages, newMsg],
+      })
+      setNewMessage('')
+    } catch (error) {
+      console.error('Failed to send message:', error)
+    }
   }
 
   const getInitials = (name: string) => {
@@ -281,7 +361,9 @@ export default function InternMessagesPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            {filteredConversations.length === 0 ? (
+            {loading ? (
+              <div className="p-6 text-center text-gray-500">Loading conversations...</div>
+            ) : filteredConversations.length === 0 ? (
               <div className="p-6 text-center text-gray-500">
                 {searchQuery ? 'No conversations found' : 'No messages yet. Companies will contact you here.'}
               </div>
@@ -369,38 +451,43 @@ export default function InternMessagesPage() {
               {/* Messages */}
               <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-6 bg-gray-50">
                 <div className="space-y-4">
-                  {selectedConversation.messages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`flex items-start space-x-3 ${msg.isCompany ? '' : 'flex-row-reverse space-x-reverse'}`}
-                    >
+                  {selectedConversation.messages.map((msg) => {
+                    // For intern page: isCompany means it's from the company (other person) - should be on left
+                    // !isCompany means it's from the intern (current user) - should be on right
+                    const isCurrentUser = !msg.isCompany
+                    return (
                       <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0 ${
-                          msg.isCompany ? 'bg-blue-600' : 'bg-gray-400'
-                        }`}
+                        key={msg.id}
+                        className={`flex items-start space-x-3 ${isCurrentUser ? 'flex-row-reverse space-x-reverse' : ''}`}
                       >
-                        {msg.senderInitials}
-                      </div>
-                      <div className={`flex-1 ${msg.isCompany ? '' : 'flex justify-end'}`}>
                         <div
-                          className={`inline-block max-w-[70%] rounded-lg px-4 py-2 ${
-                            msg.isCompany
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-white border border-gray-200 text-gray-900'
+                          className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0 ${
+                            isCurrentUser ? 'bg-blue-600' : 'bg-gray-400'
                           }`}
                         >
-                          <p className="text-sm leading-relaxed">{msg.text}</p>
-                          <p
-                            className={`text-xs mt-1 ${
-                              msg.isCompany ? 'text-blue-100' : 'text-gray-500'
+                          {msg.senderInitials}
+                        </div>
+                        <div className={`flex-1 ${isCurrentUser ? 'flex justify-end' : ''}`}>
+                          <div
+                            className={`inline-block max-w-[70%] rounded-lg px-4 py-2 ${
+                              isCurrentUser
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-white border border-gray-200 text-gray-900'
                             }`}
                           >
-                            {formatMessageTime(msg.timestamp)}
-                          </p>
+                            <p className="text-sm leading-relaxed">{msg.text}</p>
+                            <p
+                              className={`text-xs mt-1 ${
+                                isCurrentUser ? 'text-blue-100' : 'text-gray-500'
+                              }`}
+                            >
+                              {formatMessageTime(msg.timestamp)}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                   <div ref={messagesEndRef} />
                 </div>
               </div>

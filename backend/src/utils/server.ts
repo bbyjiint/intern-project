@@ -8,6 +8,7 @@ import { profilesRouter } from "../routes/profiles";
 import { jobPostsRouter } from "../routes/job-posts";
 import { universitiesRouter } from "../routes/universities";
 import { bookmarksRouter } from "../routes/bookmarks";
+import messagesRouter from "../routes/messages";
 
 const app = express();
 
@@ -36,6 +37,7 @@ app.use("/api", profilesRouter);
 app.use("/api", jobPostsRouter);
 app.use("/api/universities", universitiesRouter);
 app.use("/api/bookmarks", bookmarksRouter);
+app.use("/api/messages", messagesRouter);
 
 // 404 handler
 app.use((req, res) => {

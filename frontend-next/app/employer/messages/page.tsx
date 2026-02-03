@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import EmployerNavbar from '@/components/EmployerNavbar'
 import CandidateProfileModal from '@/components/CandidateProfileModal'
+import { apiFetch, getToken } from '@/lib/api'
 
 interface Message {
   id: string
@@ -308,43 +310,112 @@ function formatMessageTime(date: Date): string {
 }
 
 export default function MessagesPage() {
-  const [conversations, setConversations] = useState<Conversation[]>(mockConversations)
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(mockConversations[0] || null)
+  const router = useRouter()
+  const [conversations, setConversations] = useState<Conversation[]>([])
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [newMessage, setNewMessage] = useState('')
   const [selectedCandidate, setSelectedCandidate] = useState<typeof mockCandidates[0] | null>(null)
+  const [loading, setLoading] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const chatContainerRef = useRef<HTMLDivElement>(null)
 
+  // Check role and load conversations
   useEffect(() => {
-    // Load conversations from localStorage if available
-    const savedConversations = localStorage.getItem('employerConversations')
-    if (savedConversations) {
+    const loadConversations = async () => {
       try {
-        const parsed = JSON.parse(savedConversations)
-        // Convert timestamp strings back to Date objects
-        const converted = parsed.map((conv: any) => ({
+        const token = getToken()
+        if (!token) {
+          router.push('/login')
+          return
+        }
+
+        const userData = await apiFetch<{ user: { role: string | null } }>('/api/auth/me')
+        
+        // Only redirect if role doesn't match the current page
+        // This prevents issues when multiple tabs are open with different users
+        const currentPath = window.location.pathname
+        
+        if (userData.user.role === 'CANDIDATE') {
+          // Only redirect if we're on an employer page
+          if (currentPath.startsWith('/employer')) {
+            router.push('/intern/messages')
+            return
+          }
+          // If we're already on an intern page, don't redirect (might be wrong token but let it be)
+          return
+        }
+        
+        if (!userData.user.role) {
+          if (!currentPath.startsWith('/role-selection')) {
+            router.push('/role-selection')
+          }
+          return
+        }
+        
+        // If we're here and role is COMPANY, we're good to proceed
+
+        // Load conversations from API
+        const data = await apiFetch<{ conversations: Conversation[] }>('/api/messages/conversations')
+        
+        // Convert timestamp strings to Date objects
+        const converted = data.conversations.map((conv: any) => ({
           ...conv,
           lastMessageTime: new Date(conv.lastMessageTime),
-          messages: conv.messages.map((msg: any) => ({
-            ...msg,
-            timestamp: new Date(msg.timestamp),
-          })),
+          messages: [], // Will be loaded when conversation is selected
         }))
+        
         setConversations(converted)
         if (converted.length > 0 && !selectedConversation) {
           setSelectedConversation(converted[0])
         }
-      } catch (e) {
-        console.error('Failed to load conversations:', e)
+      } catch (error) {
+        console.error('Failed to load conversations:', error)
+      } finally {
+        setLoading(false)
       }
     }
-  }, [])
 
+    loadConversations()
+  }, [router])
+
+  // Load messages when conversation is selected
   useEffect(() => {
-    // Save conversations to localStorage whenever they change
-    localStorage.setItem('employerConversations', JSON.stringify(conversations))
-  }, [conversations])
+    if (!selectedConversation) return
+
+    const loadMessages = async () => {
+      try {
+        const data = await apiFetch<{ messages: Message[] }>(
+          `/api/messages/conversations/${selectedConversation.id}/messages`
+        )
+        
+        // Convert timestamp strings to Date objects
+        const converted = data.messages.map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp),
+        }))
+
+        // Update conversation with messages
+        setSelectedConversation({
+          ...selectedConversation,
+          messages: converted,
+        })
+
+        // Update conversations list
+        setConversations((prev) =>
+          prev.map((conv) =>
+            conv.id === selectedConversation.id
+              ? { ...conv, messages: converted }
+              : conv
+          )
+        )
+      } catch (error) {
+        console.error('Failed to load messages:', error)
+      }
+    }
+
+    loadMessages()
+  }, [selectedConversation?.id])
 
   useEffect(() => {
     // Scroll to bottom when messages change
@@ -355,62 +426,67 @@ export default function MessagesPage() {
     conv.candidateName.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedConversation) return
 
-    const employerProfile = JSON.parse(localStorage.getItem('employerProfileData') || '{}')
-    const employerName = employerProfile.name || 'Sarah Johnson'
-    const employerInitials = employerProfile.companyName
-      ? employerProfile.companyName.charAt(0).toUpperCase()
-      : 'SJ'
-
-    const newMsg: Message = {
-      id: Date.now().toString(),
-      senderId: 'employer',
-      senderName: employerName,
-      senderInitials: employerInitials,
-      text: newMessage.trim(),
-      timestamp: new Date(),
-      isEmployer: true,
-    }
-
-    const updatedConversations = conversations.map((conv) => {
-      if (conv.id === selectedConversation.id) {
-        return {
-          ...conv,
-          lastMessage: newMessage.trim(),
-          lastMessageTime: new Date(),
-          messages: [...conv.messages, newMsg],
+    try {
+      const data = await apiFetch<{ message: Message }>(
+        `/api/messages/conversations/${selectedConversation.id}/messages`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ text: newMessage.trim() }),
         }
-      }
-      return conv
-    })
+      )
 
-    setConversations(updatedConversations)
-    setSelectedConversation({
-      ...selectedConversation,
-      lastMessage: newMessage.trim(),
-      lastMessageTime: new Date(),
-      messages: [...selectedConversation.messages, newMsg],
-    })
-    setNewMessage('')
+      const newMsg: Message = {
+        ...data.message,
+        timestamp: new Date(data.message.timestamp),
+        senderName: data.message.isEmployer ? 'Company' : 'Candidate',
+        senderInitials: data.message.isEmployer ? 'CO' : 'CA',
+      }
+
+      const updatedConversations = conversations.map((conv) => {
+        if (conv.id === selectedConversation.id) {
+          return {
+            ...conv,
+            lastMessage: newMessage.trim(),
+            lastMessageTime: new Date(),
+            messages: [...conv.messages, newMsg],
+          }
+        }
+        return conv
+      })
+
+      setConversations(updatedConversations)
+      setSelectedConversation({
+        ...selectedConversation,
+        lastMessage: newMessage.trim(),
+        lastMessageTime: new Date(),
+        messages: [...selectedConversation.messages, newMsg],
+      })
+      setNewMessage('')
+    } catch (error) {
+      console.error('Failed to send message:', error)
+    }
   }
 
-  const handleViewProfile = () => {
+  const handleViewProfile = async () => {
     if (!selectedConversation) return
-    const candidate = mockCandidates.find((c) => c.id === selectedConversation.candidateId)
-    if (candidate) {
+    try {
+      const data = await apiFetch<{ candidate: any }>(`/api/candidates/${selectedConversation.candidateId}`)
       setSelectedCandidate({
-        name: candidate.name,
-        role: candidate.role,
-        university: candidate.university,
-        major: candidate.major,
-        graduationDate: candidate.graduationDate,
-        skills: candidate.skills,
-        initials: candidate.initials,
-        email: candidate.email,
-        about: candidate.about,
+        name: data.candidate.name,
+        role: data.candidate.role,
+        university: data.candidate.university,
+        major: data.candidate.major,
+        graduationDate: data.candidate.graduationDate,
+        skills: data.candidate.skills || [],
+        initials: data.candidate.initials,
+        email: data.candidate.email,
+        about: data.candidate.about,
       })
+    } catch (error) {
+      console.error('Failed to load candidate profile:', error)
     }
   }
 
@@ -537,38 +613,42 @@ export default function MessagesPage() {
               {/* Messages */}
               <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-6 bg-gray-50">
                 <div className="space-y-4">
-                  {selectedConversation.messages.map((msg) => (
-                    <div
-                      key={msg.id}
-                      className={`flex items-start space-x-3 ${msg.isEmployer ? 'flex-row-reverse space-x-reverse' : ''}`}
-                    >
+                  {selectedConversation.messages.map((msg) => {
+                    // For employer page: isEmployer/isCompany means it's from the company (current user) - should be on right
+                    const isCurrentUser = msg.isEmployer || msg.isCompany
+                    return (
                       <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0 ${
-                          msg.isEmployer ? 'bg-blue-600' : 'bg-gray-400'
-                        }`}
+                        key={msg.id}
+                        className={`flex items-start space-x-3 ${isCurrentUser ? 'flex-row-reverse space-x-reverse' : ''}`}
                       >
-                        {msg.senderInitials}
-                      </div>
-                      <div className={`flex-1 ${msg.isEmployer ? 'flex justify-end' : ''}`}>
                         <div
-                          className={`inline-block max-w-[70%] rounded-lg px-4 py-2 ${
-                            msg.isEmployer
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-white border border-gray-200 text-gray-900'
+                          className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0 ${
+                            isCurrentUser ? 'bg-blue-600' : 'bg-gray-400'
                           }`}
                         >
-                          <p className="text-sm leading-relaxed">{msg.text}</p>
-                          <p
-                            className={`text-xs mt-1 ${
-                              msg.isEmployer ? 'text-blue-100' : 'text-gray-500'
+                          {msg.senderInitials}
+                        </div>
+                        <div className={`flex-1 ${isCurrentUser ? 'flex justify-end' : ''}`}>
+                          <div
+                            className={`inline-block max-w-[70%] rounded-lg px-4 py-2 ${
+                              isCurrentUser
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-white border border-gray-200 text-gray-900'
                             }`}
                           >
-                            {formatMessageTime(msg.timestamp)}
-                          </p>
+                            <p className="text-sm leading-relaxed">{msg.text}</p>
+                            <p
+                              className={`text-xs mt-1 ${
+                                isCurrentUser ? 'text-blue-100' : 'text-gray-500'
+                              }`}
+                            >
+                              {formatMessageTime(msg.timestamp)}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                   <div ref={messagesEndRef} />
                 </div>
               </div>

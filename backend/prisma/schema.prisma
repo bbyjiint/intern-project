@@ -192,6 +192,7 @@ model CandidateProfile {
   UserSkill            UserSkill[]
   WorkHistory          WorkHistory[]
   Bookmarks            Bookmark[]
+  Conversations        Conversation[]
 
   @@index([universityId])
 }
@@ -213,6 +214,7 @@ model CompanyProfile {
   CompanyPhones     CompanyPhone[] @relation("CompanyPhones")
   JobPosts          JobPost[]
   Bookmarks         Bookmark[]
+  Conversations     Conversation[]
   User              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
@@ -336,4 +338,36 @@ model Bookmark {
   @@unique([companyId, candidateId])
   @@index([companyId])
   @@index([candidateId])
+}
+
+model Conversation {
+  id            String           @id @default(uuid()) @db.Uuid
+  companyId     String           @db.Uuid
+  candidateId   String           @db.Uuid
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  Company       CompanyProfile   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  Candidate     CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  Messages      Message[]
+
+  @@unique([companyId, candidateId])
+  @@index([companyId])
+  @@index([candidateId])
+  @@index([updatedAt])
+}
+
+model Message {
+  id             String       @id @default(uuid()) @db.Uuid
+  conversationId String       @db.Uuid
+  senderId       String       @db.Uuid
+  senderRole     UserRole
+  text           String       @db.Text
+  read           Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  Conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([conversationId, createdAt])
+  @@index([senderId])
 }

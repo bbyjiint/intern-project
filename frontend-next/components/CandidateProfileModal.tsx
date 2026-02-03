@@ -1,9 +1,12 @@
 'use client'
 
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { apiFetch } from '@/lib/api'
 
 interface CandidateProfileModalProps {
   candidate: {
+    id?: string
     name: string
     role: string
     university: string
@@ -19,9 +22,50 @@ interface CandidateProfileModalProps {
 
 export default function CandidateProfileModal({ candidate, onClose }: CandidateProfileModalProps) {
   const router = useRouter()
+  const [isStartingConversation, setIsStartingConversation] = useState(false)
+  const [conversationStarted, setConversationStarted] = useState(false)
 
   const handleViewFullProfile = () => {
     router.push(`/employer/candidate/${encodeURIComponent(candidate.name)}`)
+  }
+
+  const handleStartConversation = async () => {
+    if (!candidate.id) {
+      alert('Candidate ID is required to start a conversation')
+      return
+    }
+
+    setIsStartingConversation(true)
+    try {
+      // Create conversation without initial message - user will send first message from messages page
+      const data = await apiFetch<{ conversation: any }>('/api/messages/conversations', {
+        method: 'POST',
+        body: JSON.stringify({
+          candidateId: candidate.id,
+        }),
+      })
+
+      setConversationStarted(true)
+      // Navigate to messages page
+      router.push('/employer/messages')
+      onClose()
+    } catch (error: any) {
+      console.error('Error starting conversation:', error)
+      
+      // Check for specific error cases
+      if (error.message?.includes('already exists') || error.details?.includes('already exists')) {
+        // Conversation already exists, just navigate to messages
+        router.push('/employer/messages')
+        onClose()
+        return
+      }
+      
+      // Show more detailed error message
+      const errorMessage = error.details || error.message || 'Unknown error'
+      alert(`Failed to start conversation: ${errorMessage}`)
+    } finally {
+      setIsStartingConversation(false)
+    }
   }
 
   return (
@@ -129,8 +173,12 @@ export default function CandidateProfileModal({ candidate, onClose }: CandidateP
           >
             View Full Profile
           </button>
-          <button className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors">
-            Send Message
+          <button
+            onClick={handleStartConversation}
+            disabled={isStartingConversation || !candidate.id}
+            className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isStartingConversation ? 'Starting...' : conversationStarted ? 'Go to Messages' : 'Start Conversation'}
           </button>
         </div>
       </div>
