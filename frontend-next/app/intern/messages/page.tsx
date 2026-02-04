@@ -25,7 +25,7 @@ interface Conversation {
   lastMessage: string
   lastMessageTime: Date
   unreadCount: number
-  messages: Message[]
+  messages?: Message[]
 }
 
 // Mock conversations - only companies that initiated contact
@@ -163,6 +163,11 @@ export default function InternMessagesPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const chatContainerRef = useRef<HTMLDivElement>(null)
   const abortControllerRef = useRef<AbortController | null>(null)
+  const selectedConversationRef = useRef<Conversation | null>(null)
+
+  useEffect(() => {
+    selectedConversationRef.current = selectedConversation
+  }, [selectedConversation])
 
   // Check role and load conversations (only on mount)
   useEffect(() => {
@@ -200,7 +205,6 @@ export default function InternMessagesPage() {
         const converted = data.conversations.map((conv: any) => ({
           ...conv,
           lastMessageTime: new Date(conv.lastMessageTime),
-          messages: [], // Will be loaded when conversation is selected
         }))
         
         setConversations(converted)
@@ -208,8 +212,7 @@ export default function InternMessagesPage() {
         // Set first conversation as selected if we have conversations
         // Do this synchronously to prevent flicker
         if (converted.length > 0) {
-          const firstConv = { ...converted[0], messages: [] }
-          setSelectedConversation(firstConv)
+          setSelectedConversation(converted[0])
         }
         setLoading(false)
       } catch (error) {
@@ -227,23 +230,39 @@ export default function InternMessagesPage() {
           try {
             const data = await apiFetch<{ conversations: Conversation[] }>('/api/messages/conversations')
             setConversations((prevConversations) => {
-              const converted = data.conversations.map((conv: any) => ({
-                ...conv,
-                lastMessageTime: new Date(conv.lastMessageTime),
-                messages: prevConversations.find(c => c.id === conv.id)?.messages || [],
-              }))
-              
-              // Update selected conversation if it exists
-              if (selectedConversation) {
-                const updated = converted.find(c => c.id === selectedConversation.id)
+              const converted = data.conversations.map((conv: any) => {
+                const prev = prevConversations.find(c => c.id === conv.id)
+                return {
+                  ...conv,
+                  lastMessageTime: new Date(conv.lastMessageTime),
+                  messages: prev?.messages,
+                }
+              })
+
+              // Update selected conversation only when metadata changes
+              const currentSelected = selectedConversationRef.current
+              if (currentSelected) {
+                const updated = converted.find(c => c.id === currentSelected.id)
                 if (updated) {
-                  setSelectedConversation({
-                    ...updated,
-                    messages: selectedConversation.messages,
+                  setSelectedConversation((prev) => {
+                    if (!prev || prev.id !== updated.id) return prev
+                    const changed =
+                      prev.lastMessage !== updated.lastMessage ||
+                      prev.unreadCount !== updated.unreadCount ||
+                      prev.companyName !== updated.companyName ||
+                      prev.companyInitials !== updated.companyInitials ||
+                      prev.jobTitle !== updated.jobTitle ||
+                      prev.lastMessageTime?.getTime?.() !== updated.lastMessageTime?.getTime?.()
+                    if (!changed) return prev
+                    return {
+                      ...prev,
+                      ...updated,
+                      messages: prev.messages,
+                    }
                   })
                 }
               }
-              
+
               return converted
             })
           } catch (error) {
@@ -255,8 +274,13 @@ export default function InternMessagesPage() {
     }, 3000)
 
     return () => clearInterval(interval)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router, selectedConversation])
+  }, [router])
+
+  useEffect(() => {
+    if (selectedConversation?.messages === undefined) {
+      setIsLoadingMessages(true)
+    }
+  }, [selectedConversation?.id])
 
   // Load messages when conversation is selected
   useEffect(() => {
@@ -274,7 +298,7 @@ export default function InternMessagesPage() {
       abortControllerRef.current = abortController
 
       // Only set loading on initial load, not during polling
-      const isInitialLoad = !selectedConversation.messages || selectedConversation.messages.length === 0
+      const isInitialLoad = selectedConversation.messages === undefined
       if (isInitialLoad) {
         setIsLoadingMessages(true)
       }
@@ -329,7 +353,7 @@ export default function InternMessagesPage() {
             return current
           }
 
-          const prevMessages = current.messages || []
+          const prevMessages = current.messages ?? []
           const hasNewMessages = 
             prevMessages.length === 0 || 
             converted.length !== prevMessages.length ||
@@ -366,8 +390,10 @@ export default function InternMessagesPage() {
           return
         }
         console.error('Failed to load messages:', error)
-        // Keep previous messages, just stop loading indicator
-        setIsLoadingMessages(false)
+        // Keep previous messages, just stop loading indicator if we already had data
+        if (selectedConversation.messages !== undefined) {
+          setIsLoadingMessages(false)
+        }
         // Could show a toast here: "Failed to refresh messages"
       }
     }
@@ -424,7 +450,7 @@ export default function InternMessagesPage() {
             ...conv,
             lastMessage: newMessage.trim(),
             lastMessageTime: new Date(),
-            messages: [...conv.messages, newMsg],
+            messages: [...(conv.messages ?? []), newMsg],
           }
         }
         return conv
@@ -435,7 +461,7 @@ export default function InternMessagesPage() {
         ...selectedConversation,
         lastMessage: newMessage.trim(),
         lastMessageTime: new Date(),
-        messages: [...selectedConversation.messages, newMsg],
+        messages: [...(selectedConversation.messages ?? []), newMsg],
       })
       setNewMessage('')
     } catch (error) {
@@ -582,7 +608,7 @@ export default function InternMessagesPage() {
               {/* Messages */}
               <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-6 bg-gray-50">
                 <div className="space-y-4">
-                  {selectedConversation.messages && selectedConversation.messages.length > 0 ? (
+                  {Array.isArray(selectedConversation.messages) && selectedConversation.messages.length > 0 ? (
                     <>
                       {selectedConversation.messages.map((msg) => {
                     // For intern page: isCompany means it's from the company (other person) - should be on left
@@ -627,7 +653,7 @@ export default function InternMessagesPage() {
                       </div>
                     )}
                     </>
-                  ) : !isLoadingMessages ? (
+                  ) : Array.isArray(selectedConversation.messages) && selectedConversation.messages.length === 0 && !isLoadingMessages ? (
                     // Only show empty state when we're sure there are no messages (not loading)
                     <div className="flex items-center justify-center h-full text-gray-500">
                       <p>No messages yet. Start the conversation!</p>
