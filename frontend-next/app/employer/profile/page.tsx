@@ -149,9 +149,18 @@ export default function EmployerProfilePage() {
         const updatedData = { ...profileData!, profileImage: imageUrl }
         setProfileData(updatedData)
         localStorage.setItem('employerProfileData', JSON.stringify(updatedData))
-        
         // Dispatch custom event to update navbar
         window.dispatchEvent(new Event('profileImageUpdated'))
+        ;(async () => {
+          try {
+            await apiFetch('/api/companies/profile', {
+              method: 'PUT',
+              body: JSON.stringify({ profileImage: imageUrl }),
+            })
+          } catch (error) {
+            console.error('Failed to save profile image:', error)
+          }
+        })()
       }
       reader.readAsDataURL(file)
     }
@@ -200,6 +209,10 @@ export default function EmployerProfilePage() {
       default:
         return size
     }
+  }
+
+  const goToStep = (step: number) => {
+    router.push(`/employer/profile-setup?step=${step}`)
   }
 
   const getInitials = (name: string) => {
@@ -350,16 +363,16 @@ export default function EmployerProfilePage() {
                     />
                   </div>
                   <div className="flex-1">
-                    <h2 className="text-xl font-bold text-gray-900 mb-1">
+                    <h2 className="text-xl font-bold text-gray-900 mb-1 cursor-pointer" onClick={() => goToStep(1)}>
                       {profileData?.companyName || 'Company Name'}
                     </h2>
-                    <p className="text-gray-600 mb-3">
+                    <p className="text-gray-600 mb-3 cursor-pointer" onClick={() => goToStep(3)}>
                       {profileData?.email || 'email@company.com'}
                     </p>
                   </div>
                 </div>
                 <button
-                  onClick={() => router.push('/employer/profile-setup?step=1')}
+                  onClick={() => goToStep(1)}
                   className="px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
                   style={{
                     backgroundColor: 'white',
@@ -379,14 +392,14 @@ export default function EmployerProfilePage() {
                   Company Description
                 </h2>
                 <button 
-                  onClick={() => router.push('/employer/profile-setup?step=1')}
+                  onClick={() => goToStep(1)}
                   className="px-4 py-2 border-2 rounded-lg font-medium text-sm transition-colors" 
                   style={{ borderColor: '#0273B1', color: '#0273B1' }}
                 >
                   Edit
                 </button>
               </div>
-              <p className="text-gray-700">
+              <p className="text-gray-700 cursor-pointer" onClick={() => goToStep(1)}>
                 {profileData.companyDescription || 'No description provided.'}
               </p>
             </div>
@@ -398,7 +411,7 @@ export default function EmployerProfilePage() {
                   Company Information
                 </h2>
                 <button 
-                  onClick={() => router.push('/employer/profile-setup?step=1')}
+                  onClick={() => goToStep(1)}
                   className="px-4 py-2 border-2 rounded-lg font-medium text-sm transition-colors" 
                   style={{ borderColor: '#0273B1', color: '#0273B1' }}
                 >
@@ -407,14 +420,14 @@ export default function EmployerProfilePage() {
               </div>
               <div className="space-y-2">
                 {profileData.businessType ? (
-                  <p className="text-gray-700">
+                  <p className="text-gray-700 cursor-pointer" onClick={() => goToStep(1)}>
                     <span className="font-medium">Business Type:</span> {getBusinessTypeLabel(profileData.businessType)}
                   </p>
                 ) : (
                   <p className="text-gray-500">No data provided.</p>
                 )}
                 {profileData.companySize && (
-                  <p className="text-gray-700">
+                  <p className="text-gray-700 cursor-pointer" onClick={() => goToStep(1)}>
                     <span className="font-medium">Company Size:</span> {getCompanySizeLabel(profileData.companySize)}
                   </p>
                 )}
@@ -428,7 +441,7 @@ export default function EmployerProfilePage() {
                   Company Address
                 </h2>
                 <button 
-                  onClick={() => router.push('/employer/profile-setup?step=2')}
+                  onClick={() => goToStep(2)}
                   className="px-4 py-2 border-2 rounded-lg font-medium text-sm transition-colors" 
                   style={{ borderColor: '#0273B1', color: '#0273B1' }}
                 >
@@ -438,10 +451,10 @@ export default function EmployerProfilePage() {
               {profileData.addressDetails || profileData.subDistrict || profileData.district || profileData.province || profileData.postcode ? (
                 <div className="space-y-2">
                   {profileData.addressDetails && (
-                    <p className="text-gray-700">{profileData.addressDetails}</p>
+                    <p className="text-gray-700 cursor-pointer" onClick={() => goToStep(2)}>{profileData.addressDetails}</p>
                   )}
                   {[profileData.subDistrict, profileData.district, profileData.province, profileData.postcode].filter(Boolean).length > 0 && (
-                    <p className="text-gray-700">
+                    <p className="text-gray-700 cursor-pointer" onClick={() => goToStep(2)}>
                       {[profileData.subDistrict, profileData.district, profileData.province, profileData.postcode].filter(Boolean).join(', ')}
                     </p>
                   )}
@@ -458,7 +471,7 @@ export default function EmployerProfilePage() {
                   Contact Information
                 </h2>
                 <button 
-                  onClick={() => router.push('/employer/profile-setup?step=3')}
+                  onClick={() => goToStep(3)}
                   className="px-4 py-2 border-2 rounded-lg font-medium text-sm transition-colors" 
                   style={{ borderColor: '#0273B1', color: '#0273B1' }}
                 >
@@ -468,17 +481,17 @@ export default function EmployerProfilePage() {
               {profileData.phoneNumber || profileData.email || profileData.websiteUrl || profileData.contactName ? (
                 <div className="space-y-2">
                   {profileData.phoneNumber && (
-                    <p className="text-gray-700">
+                    <p className="text-gray-700 cursor-pointer" onClick={() => goToStep(3)}>
                       <span className="font-medium">Phone:</span> {profileData.phoneNumber}
                     </p>
                   )}
                   {profileData.email && (
-                    <p className="text-gray-700">
+                    <p className="text-gray-700 cursor-pointer" onClick={() => goToStep(3)}>
                       <span className="font-medium">Email:</span> {profileData.email}
                     </p>
                   )}
                   {profileData.websiteUrl && (
-                    <p className="text-gray-700">
+                    <p className="text-gray-700 cursor-pointer" onClick={() => goToStep(3)}>
                       <span className="font-medium">Website:</span>{' '}
                       <a href={profileData.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
                         {profileData.websiteUrl}
@@ -486,7 +499,7 @@ export default function EmployerProfilePage() {
                     </p>
                   )}
                   {profileData.contactName && (
-                    <p className="text-gray-700">
+                    <p className="text-gray-700 cursor-pointer" onClick={() => goToStep(3)}>
                       <span className="font-medium">Contact Name:</span> {profileData.contactName}
                     </p>
                   )}

@@ -92,6 +92,7 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
       studentCode: candidateProfile.studentCode || null,
       email: candidateProfile.contactEmail || candidateProfile.User.email,
       phoneNumber: candidateProfile.phoneNumber || null,
+      profileImage: candidateProfile.profileImage || null,
       desiredPosition: candidateProfile.desiredPosition || null,
       bio: candidateProfile.bio || null,
       major: candidateProfile.major || null,

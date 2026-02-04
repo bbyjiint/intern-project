@@ -97,9 +97,18 @@ export default function InternProfilePage() {
         const updatedData = { ...profileData!, profileImage: imageUrl }
         setProfileData(updatedData)
         localStorage.setItem('internProfileData', JSON.stringify(updatedData))
-        
         // Dispatch custom event to update navbar
         window.dispatchEvent(new Event('profileImageUpdated'))
+        ;(async () => {
+          try {
+            await apiFetch('/api/candidates/profile', {
+              method: 'PUT',
+              body: JSON.stringify({ profileImage: imageUrl }),
+            })
+          } catch (error) {
+            console.error('Failed to save profile image:', error)
+          }
+        })()
       }
       reader.readAsDataURL(file)
     }
@@ -112,6 +121,10 @@ export default function InternProfilePage() {
       return (parts[0][0] + parts[1][0]).toUpperCase()
     }
     return name.charAt(0).toUpperCase()
+  }
+
+  const goToStep = (step: number) => {
+    router.push(`/intern/profile-setup?step=${step}`)
   }
 
   const formatDate = (dateString: string) => {
@@ -267,15 +280,28 @@ export default function InternProfilePage() {
                   />
                 </div>
                 <div className="flex-1">
-                  <h2 className="text-xl font-bold text-gray-900 mb-1">{profileData?.fullName || 'Intern Name'}</h2>
-                  <p className="text-gray-600 mb-3">{profileData?.email || 'email@example.com'}</p>
-                  <p className="text-gray-700 leading-relaxed">
+                  <h2
+                    className="text-xl font-bold text-gray-900 mb-1 cursor-pointer"
+                    onClick={() => goToStep(1)}
+                  >
+                    {profileData?.fullName || 'Intern Name'}
+                  </h2>
+                  <p
+                    className="text-gray-600 mb-3 cursor-pointer"
+                    onClick={() => goToStep(1)}
+                  >
+                    {profileData?.email || 'email@example.com'}
+                  </p>
+                  <p
+                    className="text-gray-700 leading-relaxed cursor-pointer"
+                    onClick={() => goToStep(1)}
+                  >
                     {profileData?.professionalSummary || profileData?.aboutYou || 'No professional summary provided.'}
                   </p>
                 </div>
               </div>
               <button
-                onClick={() => router.push('/intern/profile-setup?step=2')}
+                onClick={() => goToStep(1)}
                 className="px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
                 style={{
                   backgroundColor: 'white',
@@ -291,17 +317,23 @@ export default function InternProfilePage() {
           {/* Education Section */}
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold" style={{ color: '#1C2D4F' }}>Education</h3>
+              <h3
+                className="text-xl font-bold cursor-pointer"
+                style={{ color: '#1C2D4F' }}
+                onClick={() => goToStep(2)}
+              >
+                Education
+              </h3>
               <div className="flex items-center space-x-2">
                 <button
-                  onClick={() => router.push('/intern/profile-setup?step=2')}
+                  onClick={() => goToStep(2)}
                   className="px-4 py-2 rounded-lg font-semibold text-sm text-white transition-colors"
                   style={{ backgroundColor: '#0273B1' }}
                 >
                   + Add Education
                 </button>
                 <button
-                  onClick={() => router.push('/intern/profile-setup?step=2')}
+                  onClick={() => goToStep(2)}
                   className="px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
                   style={{
                     backgroundColor: 'white',
@@ -315,7 +347,7 @@ export default function InternProfilePage() {
             </div>
             {profileData?.education && profileData.education.length > 0 ? (
               profileData.education.map((edu: any, index: number) => (
-                <div key={index} className="mb-4 last:mb-0">
+                <div key={index} className="mb-4 last:mb-0 cursor-pointer" onClick={() => goToStep(2)}>
                   <p className="font-semibold text-gray-900">{edu.university || 'University Name'}</p>
                   <p className="text-gray-700">
                     {edu.degree || 'Degree'} | GPA: {edu.gpa || 'N/A'}/4.0 | {formatDateRange(edu.startDate, edu.endDate)}
@@ -342,17 +374,23 @@ export default function InternProfilePage() {
           {/* Experience Section */}
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold" style={{ color: '#1C2D4F' }}>Experience</h3>
+              <h3
+                className="text-xl font-bold cursor-pointer"
+                style={{ color: '#1C2D4F' }}
+                onClick={() => goToStep(3)}
+              >
+                Experience
+              </h3>
               <div className="flex items-center space-x-2">
                 <button
-                  onClick={() => router.push('/intern/profile-setup?step=2')}
+                  onClick={() => goToStep(3)}
                   className="px-4 py-2 rounded-lg font-semibold text-sm text-white transition-colors"
                   style={{ backgroundColor: '#0273B1' }}
                 >
                   + Add Experience
                 </button>
                 <button
-                  onClick={() => router.push('/intern/profile-setup?step=2')}
+                  onClick={() => goToStep(3)}
                   className="px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
                   style={{
                     backgroundColor: 'white',
@@ -366,7 +404,7 @@ export default function InternProfilePage() {
             </div>
             {profileData?.experience && profileData.experience.length > 0 ? (
               profileData.experience.map((exp: any, index: number) => (
-                <div key={index} className="mb-4 last:mb-0">
+                <div key={index} className="mb-4 last:mb-0 cursor-pointer" onClick={() => goToStep(3)}>
                   <p className="font-semibold text-gray-900">{exp.position || 'Position'} ({exp.companyName || 'Company'})</p>
                   <p className="text-gray-700">
                     {exp.department || 'Department'} | {formatDateRange(exp.startDate, exp.endDate)} {exp.manager ? `| Manager: ${exp.manager}` : ''}
@@ -393,17 +431,23 @@ export default function InternProfilePage() {
           {/* Projects Section */}
           <div className="bg-white rounded-lg shadow-md p-6 mb-6">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold" style={{ color: '#1C2D4F' }}>Projects</h3>
+              <h3
+                className="text-xl font-bold cursor-pointer"
+                style={{ color: '#1C2D4F' }}
+                onClick={() => goToStep(2)}
+              >
+                Projects
+              </h3>
               <div className="flex items-center space-x-2">
                 <button
-                  onClick={() => router.push('/intern/profile-setup?step=3')}
+                  onClick={() => goToStep(2)}
                   className="px-4 py-2 rounded-lg font-semibold text-sm text-white transition-colors"
                   style={{ backgroundColor: '#0273B1' }}
                 >
                   + Add Project
                 </button>
                 <button
-                  onClick={() => router.push('/intern/profile-setup?step=3')}
+                  onClick={() => goToStep(2)}
                   className="px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
                   style={{
                     backgroundColor: 'white',
@@ -417,7 +461,7 @@ export default function InternProfilePage() {
             </div>
             {profileData?.projects && profileData.projects.length > 0 ? (
               profileData.projects.map((project: any, index: number) => (
-                <div key={index} className="mb-4 last:mb-0">
+                <div key={index} className="mb-4 last:mb-0 cursor-pointer" onClick={() => goToStep(2)}>
                   <p className="font-semibold text-gray-900">{project.name || 'Project Name'} - {project.role || 'Role'}</p>
                   {project.linkedTo && (
                     <p className="text-gray-600 text-sm">
@@ -447,7 +491,13 @@ export default function InternProfilePage() {
           {/* Skills Section */}
           <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold" style={{ color: '#1C2D4F' }}>Skills</h3>
+              <h3
+                className="text-xl font-bold cursor-pointer"
+                style={{ color: '#1C2D4F' }}
+                onClick={() => goToStep(3)}
+              >
+                Skills
+              </h3>
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => router.push('/intern/profile-setup?step=3')}

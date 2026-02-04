@@ -38,6 +38,7 @@ profilesRouter.get("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
       phoneNumber: candidateProfile.phoneNumber || null,
       aboutYou: candidateProfile.bio || null,
       professionalSummary: candidateProfile.bio || null,
+      profileImage: candidateProfile.profileImage || null,
       location: null, // Not stored in CandidateProfile currently
       education: candidateProfile.CandidateUniversity.map((cu) => ({
         id: cu.id,
@@ -95,6 +96,7 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
     phoneNumber,
     aboutYou,
     professionalSummary,
+    profileImage,
     education,
     experience,
     skills,
@@ -119,6 +121,7 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
           ...(contactEmail && { contactEmail }),
           ...(phone && { phoneNumber: phone }),
           ...(bio && { bio }),
+          ...(profileImage && { profileImage }),
           updatedAt: new Date(),
         },
       });
@@ -132,6 +135,7 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
           ...(contactEmail && { contactEmail }),
           ...(phone && { phoneNumber: phone }),
           ...(bio && { bio }),
+          ...(profileImage && { profileImage }),
           updatedAt: new Date(),
         },
       });
@@ -326,6 +330,7 @@ profilesRouter.get("/companies/profile", requireAuth, requireRole("COMPANY"), as
       email: companyProfile.CompanyEmails[0]?.email || companyProfile.User.email,
       websiteUrl: "", // Not stored in schema currently
       contactName: companyProfile.recruiterName || "",
+      profileImage: companyProfile.logoURL || "",
     };
 
     // Always return profile data if profile exists, even if some fields are empty
@@ -351,6 +356,7 @@ profilesRouter.put("/companies/profile", requireAuth, requireRole("COMPANY"), as
     email,
     websiteUrl,
     contactName,
+    profileImage,
   } = req.body ?? {};
 
   try {
@@ -373,6 +379,7 @@ profilesRouter.put("/companies/profile", requireAuth, requireRole("COMPANY"), as
           location,
           province: province || undefined,
           recruiterName: contactName || undefined,
+          ...(profileImage && { logoURL: profileImage }),
           updatedAt: new Date(),
         },
       });
@@ -387,6 +394,7 @@ profilesRouter.put("/companies/profile", requireAuth, requireRole("COMPANY"), as
           location,
           province: province || undefined,
           recruiterName: contactName || undefined,
+          ...(profileImage && { logoURL: profileImage }),
           updatedAt: new Date(),
         },
       });

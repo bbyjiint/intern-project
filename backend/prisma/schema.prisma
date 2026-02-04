@@ -181,6 +181,7 @@ model CandidateProfile {
   bio                  String?
   major                String?
   studyYear            Int?
+  profileImage         String?
   createdAt            DateTime               @default(now())
   updatedAt            DateTime
   universityId         String?                @db.Uuid
