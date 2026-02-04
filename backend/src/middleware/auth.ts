@@ -1,15 +1,18 @@
 import type { Request, Response, NextFunction } from "express";
 import { verifyAuthToken } from "../utils/jwt";
+import { AUTH_COOKIE_NAME } from "../utils/auth_cookie";
 
 export type AuthedRequest = Request & { user?: { id: string; role: "CANDIDATE" | "COMPANY" } };
 
 export function requireAuth(req: AuthedRequest, res: Response, next: NextFunction) {
   const header = req.headers.authorization;
-  const token = header?.startsWith("Bearer ") ? header.slice("Bearer ".length) : undefined;
+  const bearer = header?.startsWith("Bearer ") ? header.slice("Bearer ".length) : undefined;
+  const cookieToken = (req as any)?.cookies?.[AUTH_COOKIE_NAME] as string | undefined;
+  const token = bearer || cookieToken;
 
   if (!token) {
     console.log(`[Auth] Missing token for ${req.method} ${req.path}`);
-    return res.status(401).json({ error: "Missing Bearer token" });
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
   try {

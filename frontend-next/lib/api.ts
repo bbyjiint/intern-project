@@ -7,24 +7,15 @@ export type AuthUser = {
   role: "CANDIDATE" | "COMPANY";
 };
 
-export function getToken() {
-  if (typeof window === "undefined") return null;
-  return window.localStorage.getItem("auth_token");
-}
-
-export function setToken(token: string) {
-  window.localStorage.setItem("auth_token", token);
-}
-
 export async function apiFetch<T>(
   path: string,
   init: RequestInit = {}
 ): Promise<T> {
-  const token = getToken();
   const headers = new Headers(init.headers);
-  if (!headers.has("Content-Type")) headers.set("Content-Type", "application/json");
-  if (token) {
-    headers.set("Authorization", `Bearer ${token}`);
+  const hasBody = init.body !== undefined && init.body !== null;
+  const isFormData = typeof FormData !== "undefined" && init.body instanceof FormData;
+  if (hasBody && !isFormData && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
   }
 
   let res: Response;
@@ -32,6 +23,7 @@ export async function apiFetch<T>(
     res = await fetch(`${API_BASE_URL}${path}`, {
       ...init,
       headers,
+      credentials: "include",
     });
   } catch (err) {
     // Network error - backend might not be running
@@ -60,27 +52,22 @@ export async function apiFetch<T>(
   }
 
   if (!res.ok) {
-    // If unauthorized, clear token and redirect to login
-    if (res.status === 401 && token) {
-      // Token is invalid or expired
-      if (typeof window !== "undefined") {
-        window.localStorage.removeItem("auth_token");
-        // Only redirect if we're not already on login/register page
-        if (!window.location.pathname.includes("/login") && !window.location.pathname.includes("/register")) {
-          console.warn("Token expired or invalid, redirecting to login");
-          window.location.href = "/login";
-        }
+    // If unauthorized, redirect to login (cookie-based auth)
+    if (res.status === 401 && typeof window !== "undefined") {
+      if (!window.location.pathname.includes("/login") && !window.location.pathname.includes("/register")) {
+        console.warn("Unauthorized, redirecting to login");
+        window.location.href = "/login";
       }
     }
-    
+
     // If forbidden (403), it might be a role mismatch - don't clear token immediately
     // Let the error propagate so the UI can handle it appropriately
     if (res.status === 403) {
       console.warn(`Access forbidden: ${data?.message || data?.error || "Insufficient permissions"}`);
     }
     
-    // If unauthorized and no token, provide helpful error
-    if (res.status === 401 && !token) {
+    // If unauthorized, provide helpful error
+    if (res.status === 401) {
       const error: any = new Error("Please log in to continue");
       error.status = 401;
       throw error;

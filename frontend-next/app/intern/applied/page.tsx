@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import InternNavbar from '@/components/InternNavbar'
 import Link from 'next/link'
+import { apiFetch } from '@/lib/api'
 
 interface JobApplication {
   id: string
@@ -84,18 +85,30 @@ export default function InternAppliedPage() {
   const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
-    // Load applications from localStorage if available
-    const savedApplications = localStorage.getItem('internApplications')
-    if (savedApplications) {
+    const load = async () => {
       try {
-        setApplications(JSON.parse(savedApplications))
+        const data = await apiFetch<{ applications: JobApplication[] }>(`/api/intern/applications`)
+        setApplications(data.applications || [])
+        return
       } catch (e) {
-        console.error('Failed to load applications:', e)
+        console.error('Failed to load applications from API, falling back to localStorage/mock:', e)
       }
-    } else {
-      // Save mock data to localStorage
+
+      const savedApplications = localStorage.getItem('internApplications')
+      if (savedApplications) {
+        try {
+          setApplications(JSON.parse(savedApplications))
+          return
+        } catch (e) {
+          console.error('Failed to load applications:', e)
+        }
+      }
+
       localStorage.setItem('internApplications', JSON.stringify(mockApplications))
+      setApplications(mockApplications)
     }
+
+    load()
   }, [])
 
   const filteredApplications = useMemo(() => {
@@ -144,40 +157,18 @@ export default function InternAppliedPage() {
     )
     setApplications(updated)
     localStorage.setItem('internApplications', JSON.stringify(updated))
-    
-    // Also update bookmarked jobs list for bookmark page
-    const savedBookmarks = localStorage.getItem('internBookmarkedJobs')
-    const bookmarkedJobs = savedBookmarks ? new Set(JSON.parse(savedBookmarks)) : new Set<string>()
-    
-    if (newBookmarkedStatus) {
-      // Add to bookmarks
-      bookmarkedJobs.add(id)
-      
-      // Also save job details to bookmark page
-      const savedJobs = localStorage.getItem('internBookmarkedJobsList')
-      const jobsList = savedJobs ? JSON.parse(savedJobs) : []
-      const jobExists = jobsList.find((job: any) => job.id === id)
-      if (!jobExists) {
-        jobsList.push({
-          id: application.id,
-          jobTitle: application.jobTitle,
-          companyName: application.companyName,
-          companyLogo: application.companyLogo,
-          location: application.location,
-          workType: application.workType,
-          skills: application.skills,
-          description: application.description,
-          postedDate: application.appliedDate,
-          status: application.status,
-          isApplied: true,
-        })
-        localStorage.setItem('internBookmarkedJobsList', JSON.stringify(jobsList))
+
+    ;(async () => {
+      try {
+        if (newBookmarkedStatus) {
+          await apiFetch(`/api/intern/job-bookmarks/${id}`, { method: 'POST' })
+        } else {
+          await apiFetch(`/api/intern/job-bookmarks/${id}`, { method: 'DELETE' })
+        }
+      } catch (e) {
+        console.error('Failed to sync bookmark to API:', e)
       }
-    } else {
-      // Remove from bookmarks
-      bookmarkedJobs.delete(id)
-    }
-    localStorage.setItem('internBookmarkedJobs', JSON.stringify(Array.from(bookmarkedJobs)))
+    })()
   }
 
   return (

@@ -5,16 +5,17 @@ import { useRouter } from 'next/navigation'
 import EmployerNavbar from '@/components/EmployerNavbar'
 import CandidateCard from '@/components/CandidateCard'
 import CandidateProfileModal from '@/components/CandidateProfileModal'
-import { apiFetch, getToken } from '@/lib/api'
+import { apiFetch } from '@/lib/api'
 import Link from 'next/link'
 
 interface Candidate {
+  id: string
   name: string
-  role?: string
-  university?: string
-  major?: string
-  graduationDate?: string
-  skills?: string[]
+  role: string
+  university: string
+  major: string
+  graduationDate: string
+  skills: string[]
   initials: string
   email?: string
   about?: string
@@ -33,12 +34,6 @@ export default function EmployerDashboardPage() {
   useEffect(() => {
     const checkRole = async () => {
       try {
-        const token = getToken()
-        if (!token) {
-          router.push('/login')
-          return
-        }
-
         const userData = await apiFetch<{ user: { role: string | null } }>('/api/auth/me')
         
         // If user has CANDIDATE role, redirect to intern pages
@@ -86,7 +81,16 @@ export default function EmployerDashboardPage() {
       // Load all candidates
       try {
         const data = await apiFetch<{ candidates: Candidate[] }>(`/api/candidates`)
-        setApiCandidates(data.candidates || [])
+        const normalized = (data.candidates || []).map((c) => ({
+          ...c,
+          role: c.role || 'Intern',
+          university: c.university || 'Unknown University',
+          major: c.major || 'N/A',
+          graduationDate: c.graduationDate || 'N/A',
+          skills: Array.isArray(c.skills) ? c.skills : [],
+          initials: c.initials || (c.name ? c.name.slice(0, 2).toUpperCase() : 'U'),
+        }))
+        setApiCandidates(normalized)
       } catch (err) {
         setApiError(err instanceof Error ? err.message : 'Failed to load candidates')
         setApiCandidates([])

@@ -193,27 +193,41 @@ export default function FindCompaniesPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Load bookmarked jobs from localStorage
-    const savedBookmarks = localStorage.getItem('internBookmarkedJobs')
     let bookmarksSet = new Set<string>()
-    if (savedBookmarks) {
-      try {
-        const bookmarks = JSON.parse(savedBookmarks)
-        bookmarksSet = new Set(bookmarks)
-        setBookmarkedJobs(bookmarksSet)
-      } catch (e) {
-        console.error('Failed to parse bookmarked jobs:', e)
-      }
-    }
 
-    // Load ignored jobs from localStorage
-    const savedIgnored = localStorage.getItem('internIgnoredJobs')
-    if (savedIgnored) {
+    const loadSaved = async () => {
       try {
-        const ignored = JSON.parse(savedIgnored)
-        setIgnoredJobs(new Set(ignored))
+        const [bm, ig] = await Promise.all([
+          apiFetch<{ jobIds: string[] }>(`/api/intern/job-bookmarks`),
+          apiFetch<{ jobIds: string[] }>(`/api/intern/job-ignored`),
+        ])
+        bookmarksSet = new Set(bm.jobIds || [])
+        setBookmarkedJobs(bookmarksSet)
+        setIgnoredJobs(new Set(ig.jobIds || []))
       } catch (e) {
-        console.error('Failed to parse ignored jobs:', e)
+        console.error('Failed to load intern bookmark/ignore from API, falling back to localStorage:', e)
+
+        // Fallback: localStorage (legacy demo behavior)
+        const savedBookmarks = localStorage.getItem('internBookmarkedJobs')
+        if (savedBookmarks) {
+          try {
+            const bookmarks = JSON.parse(savedBookmarks)
+            bookmarksSet = new Set(bookmarks)
+            setBookmarkedJobs(bookmarksSet)
+          } catch (err) {
+            console.error('Failed to parse bookmarked jobs:', err)
+          }
+        }
+
+        const savedIgnored = localStorage.getItem('internIgnoredJobs')
+        if (savedIgnored) {
+          try {
+            const ignored = JSON.parse(savedIgnored)
+            setIgnoredJobs(new Set(ignored))
+          } catch (err) {
+            console.error('Failed to parse ignored jobs:', err)
+          }
+        }
       }
     }
 
@@ -237,41 +251,31 @@ export default function FindCompaniesPage() {
       }
     }
 
-    loadJobPosts()
+    ;(async () => {
+      await loadSaved()
+      await loadJobPosts()
+    })()
   }, [])
 
-  const handleBookmark = (id: string) => {
+  const handleBookmark = async (id: string) => {
     const newBookmarks = new Set(bookmarkedJobs)
     if (newBookmarks.has(id)) {
+      try {
+        await apiFetch(`/api/intern/job-bookmarks/${id}`, { method: 'DELETE' })
+      } catch (e) {
+        console.error('Failed to remove bookmark:', e)
+      }
       newBookmarks.delete(id)
     } else {
-      newBookmarks.add(id)
-      
-      // Save job details to bookmark page
-      const job = jobs.find(j => j.id === id)
-      if (job) {
-        const savedJobs = localStorage.getItem('internBookmarkedJobsList')
-        const jobsList = savedJobs ? JSON.parse(savedJobs) : []
-        const jobExists = jobsList.find((j: any) => j.id === id)
-        if (!jobExists) {
-          jobsList.push({
-            id: job.id,
-            jobTitle: job.jobTitle,
-            companyName: job.companyName,
-            companyLogo: job.companyLogo,
-            location: job.location,
-            workType: job.workType,
-            skills: job.skills,
-            description: '',
-            postedDate: job.postedDate,
-            status: undefined,
-            isApplied: false,
-          })
-          localStorage.setItem('internBookmarkedJobsList', JSON.stringify(jobsList))
-        }
+      try {
+        await apiFetch(`/api/intern/job-bookmarks/${id}`, { method: 'POST' })
+      } catch (e) {
+        console.error('Failed to bookmark:', e)
       }
+      newBookmarks.add(id)
     }
     setBookmarkedJobs(newBookmarks)
+    // Keep legacy localStorage in sync for backward compatibility
     localStorage.setItem('internBookmarkedJobs', JSON.stringify(Array.from(newBookmarks)))
     
     // Update job's bookmark status
@@ -280,11 +284,21 @@ export default function FindCompaniesPage() {
     ))
   }
 
-  const handleIgnore = (id: string) => {
+  const handleIgnore = async (id: string) => {
     const newIgnored = new Set(ignoredJobs)
     if (newIgnored.has(id)) {
+      try {
+        await apiFetch(`/api/intern/job-ignored/${id}`, { method: 'DELETE' })
+      } catch (e) {
+        console.error('Failed to un-ignore job:', e)
+      }
       newIgnored.delete(id)
     } else {
+      try {
+        await apiFetch(`/api/intern/job-ignored/${id}`, { method: 'POST' })
+      } catch (e) {
+        console.error('Failed to ignore job:', e)
+      }
       newIgnored.add(id)
     }
     setIgnoredJobs(newIgnored)
@@ -961,8 +975,15 @@ function JobDetailModal({ job, isBookmarked, onClose, onBookmark }: JobDetailMod
           </button>
           <button
             onClick={() => {
-              // Handle apply logic here
-              onClose()
+              ;(async () => {
+                try {
+                  await apiFetch(`/api/job-posts/${job.id}/apply`, { method: 'POST' })
+                } catch (e) {
+                  console.error('Failed to apply:', e)
+                } finally {
+                  onClose()
+                }
+              })()
             }}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
             style={{ backgroundColor: '#0273B1' }}

@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import EmployerNavbar from '@/components/EmployerNavbar'
-import { apiFetch, getToken } from '@/lib/api'
+import { apiFetch } from '@/lib/api'
 
 interface CompanyProfileData {
   companyName: string
@@ -54,12 +54,6 @@ export default function EmployerProfilePage() {
     // Check user role first, then fetch profile data
     const checkRoleAndLoadProfile = async () => {
       try {
-        const token = getToken()
-        if (!token) {
-          router.push('/login')
-          return
-        }
-
         // Check user role
         const userData = await apiFetch<{ user: { role: string | null } }>('/api/auth/me')
         

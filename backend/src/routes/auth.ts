@@ -2,11 +2,12 @@ import { Router } from "express";
 import { randomUUID } from "crypto";
 import prisma from "../utils/prisma";
 import { hashPassword, verifyPassword } from "../utils/password";
-import { signAuthToken } from "../utils/jwt";
+import { signAuthToken, verifyAuthToken } from "../utils/jwt";
 import { requireAuth, type AuthedRequest } from "../middleware/auth";
 import { createOAuthState, normalizeEmail, requireEnv, verifyOAuthState, type OAuthProvider } from "../utils/oauth";
 import { verifyGoogleIdToken } from "../utils/oauth_google";
 import { exchangeLineCodeForTokens, verifyLineIdToken } from "../utils/oauth_line";
+import { AUTH_COOKIE_NAME, clearAuthCookie, setAuthCookie } from "../utils/auth_cookie";
 
 export const authRouter = Router();
 
@@ -48,7 +49,7 @@ async function findOrCreateSocialUser(args: {
 }
 
 authRouter.post("/register", async (req, res) => {
-  const { email, password, confirmPassword } = req.body ?? {};
+  const { email, password, confirmPassword, rememberMe } = req.body ?? {};
   if (typeof email !== "string" || !email.includes("@")) {
     return res.status(400).json({ error: "email is required" });
   }
@@ -58,6 +59,7 @@ authRouter.post("/register", async (req, res) => {
   if (confirmPassword !== undefined && confirmPassword !== password) {
     return res.status(400).json({ error: "passwords do not match" });
   }
+  const remember = rememberMe === true;
 
   const normalizedEmail = email.trim().toLowerCase();
   const socialID = `local:${normalizedEmail}`;
@@ -79,12 +81,16 @@ authRouter.post("/register", async (req, res) => {
   });
 
   // Sign token without role (role is null initially)
-  const token = signAuthToken({ sub: user.id, role: user.role ?? "CANDIDATE" });
-  return res.status(201).json({ token, user });
+  const token = signAuthToken(
+    { sub: user.id, role: user.role ?? "CANDIDATE" },
+    { expiresIn: remember ? "30d" : "7d" }
+  );
+  setAuthCookie(res, token, { rememberMe: remember });
+  return res.status(201).json({ user });
 });
 
 authRouter.post("/login", async (req, res) => {
-  const { email, password } = req.body ?? {};
+  const { email, password, rememberMe } = req.body ?? {};
 
   if (typeof email !== "string" || !email.includes("@")) {
     return res.status(400).json({ error: "email is required" });
@@ -108,8 +114,13 @@ authRouter.post("/login", async (req, res) => {
   if (!ok) return res.status(401).json({ error: "invalid credentials" });
 
   // Use temporary role for token if user hasn't selected role yet
-  const token = signAuthToken({ sub: user.id, role: user.role ?? "CANDIDATE" });
-  return res.json({ token, user: { id: user.id, email: user.email, role: user.role } });
+  const remember = rememberMe === true;
+  const token = signAuthToken(
+    { sub: user.id, role: user.role ?? "CANDIDATE" },
+    { expiresIn: remember ? "30d" : "7d" }
+  );
+  setAuthCookie(res, token, { rememberMe: remember });
+  return res.json({ user: { id: user.id, email: user.email, role: user.role } });
 });
 
 // ---------- Google ----------
@@ -132,7 +143,8 @@ authRouter.post("/google", async (req, res) => {
 
     // Use temporary role for token if user hasn't selected role yet
     const token = signAuthToken({ sub: user.id, role: user.role ?? "CANDIDATE" });
-    return res.json({ token, user });
+    setAuthCookie(res, token);
+    return res.json({ user });
   } catch (e: any) {
     if (e?.message === "EMAIL_ALREADY_IN_USE_WITH_DIFFERENT_PROVIDER") {
       return res.status(409).json({ error: "email already in use with a different login method" });
@@ -210,12 +222,12 @@ authRouter.get("/google/callback", async (req, res) => {
     const token = signAuthToken({ sub: user.id, role: user.role ?? "CANDIDATE" });
 
     if (returnTo) {
-      const url = new URL(returnTo);
-      url.searchParams.set("token", token);
-      return res.redirect(url.toString());
+      setAuthCookie(res, token);
+      return res.redirect(returnTo);
     }
 
-    return res.json({ token, user });
+    setAuthCookie(res, token);
+    return res.json({ user });
   } catch (e: any) {
     if (e?.message === "EMAIL_ALREADY_IN_USE_WITH_DIFFERENT_PROVIDER") {
       return res.status(409).json({ error: "email already in use with a different login method" });
@@ -244,7 +256,8 @@ authRouter.post("/line", async (req, res) => {
 
     // Use temporary role for token if user hasn't selected role yet
     const token = signAuthToken({ sub: user.id, role: user.role ?? "CANDIDATE" });
-    return res.json({ token, user });
+    setAuthCookie(res, token);
+    return res.json({ user });
   } catch (e: any) {
     if (e?.message === "EMAIL_ALREADY_IN_USE_WITH_DIFFERENT_PROVIDER") {
       return res.status(409).json({ error: "email already in use with a different login method" });
@@ -302,12 +315,12 @@ authRouter.get("/line/callback", async (req, res) => {
     const token = signAuthToken({ sub: user.id, role: user.role ?? "CANDIDATE" });
 
     if (returnTo) {
-      const url = new URL(returnTo);
-      url.searchParams.set("token", token);
-      return res.redirect(url.toString());
+      setAuthCookie(res, token);
+      return res.redirect(returnTo);
     }
 
-    return res.json({ token, user });
+    setAuthCookie(res, token);
+    return res.json({ user });
   } catch (e: any) {
     if (e?.message === "EMAIL_ALREADY_IN_USE_WITH_DIFFERENT_PROVIDER") {
       return res.status(409).json({ error: "email already in use with a different login method" });
@@ -339,7 +352,8 @@ authRouter.post("/line/code", async (req, res) => {
 
     // Use temporary role for token if user hasn't selected role yet
     const token = signAuthToken({ sub: user.id, role: user.role ?? "CANDIDATE" });
-    return res.json({ token, user });
+    setAuthCookie(res, token);
+    return res.json({ user });
   } catch (e: any) {
     if (e?.message === "EMAIL_ALREADY_IN_USE_WITH_DIFFERENT_PROVIDER") {
       return res.status(409).json({ error: "email already in use with a different login method" });
@@ -376,6 +390,36 @@ authRouter.get("/me", requireAuth, async (req: AuthedRequest, res) => {
   });
 });
 
+// Session helper endpoint (nice for frontend bootstrapping)
+authRouter.get("/session", async (req, res) => {
+  try {
+    // We reuse /me logic by calling requireAuth-style verification, but without throwing 401.
+    // If no/invalid cookie, just report unauthenticated.
+    const header = req.headers.authorization;
+    const bearer = header?.startsWith("Bearer ") ? header.slice("Bearer ".length) : undefined;
+    const cookieToken = (req as any)?.cookies?.[AUTH_COOKIE_NAME] as string | undefined;
+    const token = bearer || cookieToken;
+    if (!token) return res.json({ authenticated: false });
+
+    const payload = verifyAuthToken(token);
+
+    const user = await prisma.user.findUnique({
+      where: { id: payload.sub },
+      select: { id: true, email: true, role: true },
+    });
+
+    if (!user) return res.json({ authenticated: false });
+    return res.json({ authenticated: true, user });
+  } catch {
+    return res.json({ authenticated: false });
+  }
+});
+
+authRouter.post("/logout", async (req, res) => {
+  clearAuthCookie(res);
+  return res.json({ ok: true });
+});
+
 authRouter.patch("/me/role", requireAuth, async (req: AuthedRequest, res) => {
   const { role } = req.body ?? {};
   if (role !== "CANDIDATE" && role !== "COMPANY") {
@@ -410,6 +454,7 @@ authRouter.patch("/me/role", requireAuth, async (req: AuthedRequest, res) => {
   });
 
   const token = signAuthToken({ sub: updated.id, role: updated.role! });
-  return res.json({ token, user: updated });
+  setAuthCookie(res, token);
+  return res.json({ user: updated });
 });
 

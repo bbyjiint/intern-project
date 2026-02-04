@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import EmployerNavbar from '@/components/EmployerNavbar'
+import { apiFetch } from '@/lib/api'
 
 interface JobPost {
   id: string
@@ -35,49 +36,107 @@ export default function JobPostPage() {
   const [jobPosts, setJobPosts] = useState<JobPost[]>(mockJobPosts)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [jobToDelete, setJobToDelete] = useState<JobPost | null>(null)
+  const [submittedQuery, setSubmittedQuery] = useState('')
 
   useEffect(() => {
-    // Load job posts from localStorage
-    const savedJobPosts = localStorage.getItem('jobPosts')
-    if (savedJobPosts) {
+    const load = async () => {
       try {
-        const posts = JSON.parse(savedJobPosts)
-        // Convert to JobPost format and calculate postedDate
-        const formattedPosts = posts.map((post: any) => {
-          const postedDate = new Date(post.postedDate || post.createdAt)
+        const [postsResp, companyResp] = await Promise.all([
+          apiFetch<{ jobPosts: any[] }>(`/api/job-posts`),
+          apiFetch<{ profile: { companyName?: string } }>(`/api/companies/profile`),
+        ])
+
+        const companyName = companyResp?.profile?.companyName || 'Company Name'
+
+        // Convert to UI format and calculate postedDate
+        const formatted = (postsResp.jobPosts || []).map((post: any) => {
+          const createdAt = new Date(post.createdAt || post.updatedAt || Date.now())
           const now = new Date()
-          const diffTime = Math.abs(now.getTime() - postedDate.getTime())
+          const diffTime = Math.abs(now.getTime() - createdAt.getTime())
           const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-          
+
+          const workplaceType =
+            post.workplaceType === 'ON_SITE'
+              ? 'On-site'
+              : post.workplaceType === 'HYBRID'
+              ? 'Hybrid'
+              : post.workplaceType === 'REMOTE'
+              ? 'Remote'
+              : 'Not specified'
+
+          const location = [post.locationDistrict, post.locationProvince]
+            .filter(Boolean)
+            .join(', ')
+            .trim()
+
           return {
-            id: post.id || Date.now().toString(),
-            title: post.jobTitle || post.title || 'Untitled Job Post',
-            companyName: post.companyName || (() => {
-              try {
-                return JSON.parse(localStorage.getItem('employerProfileData') || '{}').companyName || 'Company Name'
-              } catch {
-                return 'Company Name'
-              }
-            })(),
-            companyLogo: post.companyLogo || 'TRINITY',
-            location: post.location || `${post.locationDistrict || ''}, ${post.locationProvince || ''}`.replace(/^,\s*|,\s*$/g, '') || 'Location not specified',
-            workType: post.workplaceType === 'on-site' ? 'On-site' : post.workplaceType === 'hybrid' ? 'Hybrid' : post.workplaceType === 'remote' ? 'Remote' : 'Not specified',
-            skills: post.skills || [],
-            description: post.jobDescription || post.description || '',
+            id: post.id,
+            title: post.jobTitle || 'Untitled Job Post',
+            companyName,
+            companyLogo: 'TRINITY',
+            location: location || 'Location not specified',
+            workType: workplaceType,
+            skills: [],
+            description: post.jobDescription || '',
             postedDate: diffDays === 0 ? 'Today' : diffDays === 1 ? '1 day ago' : `${diffDays} days ago`,
-          }
+          } as JobPost
         })
-        setJobPosts(formattedPosts.length > 0 ? formattedPosts : mockJobPosts)
+
+        setJobPosts(formatted.length > 0 ? formatted : [])
       } catch (e) {
-        console.error('Failed to parse job posts:', e)
+        console.error('Failed to load job posts from API, falling back to mock/local:', e)
+
+        // Fallback to localStorage (older demo behavior) if API fails
+        const savedJobPosts = localStorage.getItem('jobPosts')
+        if (savedJobPosts) {
+          try {
+            const posts = JSON.parse(savedJobPosts)
+            const formattedPosts = posts.map((post: any) => {
+              const postedDate = new Date(post.postedDate || post.createdAt)
+              const now = new Date()
+              const diffTime = Math.abs(now.getTime() - postedDate.getTime())
+              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+              return {
+                id: post.id || Date.now().toString(),
+                title: post.jobTitle || post.title || 'Untitled Job Post',
+                companyName: post.companyName || 'Company Name',
+                companyLogo: post.companyLogo || 'TRINITY',
+                location:
+                  post.location ||
+                  `${post.locationDistrict || ''}, ${post.locationProvince || ''}`.replace(/^,\s*|,\s*$/g, '') ||
+                  'Location not specified',
+                workType:
+                  post.workplaceType === 'on-site'
+                    ? 'On-site'
+                    : post.workplaceType === 'hybrid'
+                    ? 'Hybrid'
+                    : post.workplaceType === 'remote'
+                    ? 'Remote'
+                    : 'Not specified',
+                skills: post.skills || [],
+                description: post.jobDescription || post.description || '',
+                postedDate: diffDays === 0 ? 'Today' : diffDays === 1 ? '1 day ago' : `${diffDays} days ago`,
+              }
+            })
+            setJobPosts(formattedPosts.length > 0 ? formattedPosts : mockJobPosts)
+            return
+          } catch (err) {
+            console.error('Failed to parse job posts localStorage fallback:', err)
+          }
+        }
+
+        setJobPosts(mockJobPosts)
       }
     }
+
+    load()
   }, [])
 
   const filteredJobPosts = jobPosts.filter((post) => {
     const title = (post.title || '').toLowerCase()
     const companyName = (post.companyName || '').toLowerCase()
-    const query = searchQuery.toLowerCase()
+    const query = (submittedQuery || searchQuery).toLowerCase()
     return title.includes(query) || companyName.includes(query)
   })
 
@@ -86,27 +145,14 @@ export default function JobPostPage() {
     setShowDeleteModal(true)
   }
 
-  const handleConfirmDelete = () => {
-    if (jobToDelete) {
-      // Remove from state
-      const updatedPosts = jobPosts.filter((p) => p.id !== jobToDelete.id)
-      setJobPosts(updatedPosts)
-      
-      // Update localStorage
-      const savedJobPosts = localStorage.getItem('jobPosts')
-      if (savedJobPosts) {
-        try {
-          const posts = JSON.parse(savedJobPosts)
-          const filtered = posts.filter((p: any) => {
-            const postId = p.id || Date.now().toString()
-            return postId !== jobToDelete.id
-          })
-          localStorage.setItem('jobPosts', JSON.stringify(filtered))
-        } catch (e) {
-          console.error('Failed to update localStorage:', e)
-        }
-      }
-      
+  const handleConfirmDelete = async () => {
+    if (!jobToDelete) return
+    try {
+      await apiFetch(`/api/job-posts/${jobToDelete.id}`, { method: 'DELETE' })
+      setJobPosts(jobPosts.filter((p) => p.id !== jobToDelete.id))
+    } catch (e) {
+      console.error('Failed to delete job post:', e)
+    } finally {
       setShowDeleteModal(false)
       setJobToDelete(null)
     }
@@ -209,6 +255,7 @@ export default function JobPostPage() {
               <button
                 className="px-6 py-3 rounded-lg font-semibold text-sm text-white transition-colors"
                 style={{ backgroundColor: '#0273B1', minWidth: '120px' }}
+                onClick={() => setSubmittedQuery(searchQuery.trim())}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.backgroundColor = '#025a8f'
                 }}

@@ -184,7 +184,7 @@ export default function Step3SkillsProjects({ data, onUpdate }: Step3SkillsProje
           {(showExperienceForm || editingExperienceIndex !== null) && (
             <ExperienceForm
               experience={editingExperienceIndex !== null ? formData.experience[editingExperienceIndex] : null}
-              onSave={(exp) => {
+              onSave={(exp: any) => {
                 if (editingExperienceIndex !== null) {
                   handleEditExperience(editingExperienceIndex, exp)
                 } else {
@@ -292,7 +292,7 @@ export default function Step3SkillsProjects({ data, onUpdate }: Step3SkillsProje
               experience={formData.experience}
               education={formData.education}
               projects={formData.projects}
-              onSave={(skill) => {
+              onSave={(skill: any) => {
                 if (editingSkillIndex !== null) {
                   handleEditSkill(editingSkillIndex, skill)
                 } else {

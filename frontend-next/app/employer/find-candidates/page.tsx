@@ -6,12 +6,13 @@ import EmployerNavbar from '@/components/EmployerNavbar'
 import CandidateCard from '@/components/CandidateCard'
 import CandidateProfileModal from '@/components/CandidateProfileModal'
 import SearchableDropdown from '@/components/SearchableDropdown'
-import { apiFetch, getToken } from '@/lib/api'
+import { apiFetch } from '@/lib/api'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 const mockCandidates = [
   {
+    id: 'mock-1',
     name: 'Alex Patel',
     role: 'Data Science Intern',
     university: 'Georgia Tech',
@@ -23,6 +24,7 @@ const mockCandidates = [
     about: 'Passionate data science intern with expertise in machine learning and deep learning. Experienced in building predictive models and analyzing large datasets.',
   },
   {
+    id: 'mock-2',
     name: 'Amanda Wong',
     role: 'UX Design Intern',
     university: 'Stanford University',
@@ -34,6 +36,7 @@ const mockCandidates = [
     about: 'Creative UX design intern focused on creating intuitive and user-friendly interfaces. Passionate about design thinking and user research.',
   },
   {
+    id: 'mock-3',
     name: 'David Kim',
     role: 'Software Engineering Intern',
     university: 'UCLA',
@@ -45,6 +48,7 @@ const mockCandidates = [
     about: 'Software engineering intern specializing in backend development and cloud infrastructure. Experienced with microservices architecture.',
   },
   {
+    id: 'mock-4',
     name: 'Emily Chen',
     role: 'Data Science Intern',
     university: 'Stanford University',
@@ -56,6 +60,7 @@ const mockCandidates = [
     about: 'Data science intern with strong analytical skills and experience in statistical modeling. Passionate about turning data into actionable insights.',
   },
   {
+    id: 'mock-5',
     name: 'Jessica Martinez',
     role: 'Marketing Intern',
     university: 'University of Washington',
@@ -67,6 +72,7 @@ const mockCandidates = [
     about: 'Marketing intern with expertise in digital marketing and content strategy. Experienced in SEO optimization and social media management.',
   },
   {
+    id: 'mock-6',
     name: 'John Smith',
     role: 'Software Engineering Intern',
     university: 'UC Berkeley',
@@ -99,12 +105,6 @@ export default function FindCandidatesPage() {
   useEffect(() => {
     const checkRole = async () => {
       try {
-        const token = getToken()
-        if (!token) {
-          router.push('/login')
-          return
-        }
-
         const userData = await apiFetch<{ user: { role: string | null } }>('/api/auth/me')
         
         // If user has CANDIDATE role, redirect to intern pages

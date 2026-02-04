@@ -76,7 +76,7 @@ export default function Step2BackgroundExperience({ data, onUpdate }: Step2Backg
           </h3>
           <EducationForm
             education={formData.education.length > 0 ? formData.education[0] : null}
-            onSave={(edu) => {
+            onSave={(edu: any) => {
               const educationData = {
                 university: edu.institution,
                 fieldOfStudy: edu.fieldOfStudy,
@@ -156,7 +156,7 @@ export default function Step2BackgroundExperience({ data, onUpdate }: Step2Backg
           {(showProjectForm || editingProjectIndex !== null) && (
             <ProjectForm
               project={editingProjectIndex !== null ? formData.projects[editingProjectIndex] : null}
-              onSave={(project) => {
+              onSave={(project: any) => {
                 if (editingProjectIndex !== null) {
                   handleEditProject(editingProjectIndex, project)
                 } else {

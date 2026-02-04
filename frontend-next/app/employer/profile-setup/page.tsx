@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { apiFetch, getToken } from '@/lib/api'
+import { apiFetch } from '@/lib/api'
 import Step1GeneralInfo from '@/components/employer-profile-setup/Step1GeneralInfo'
 import Step2CompanyAddress from '@/components/employer-profile-setup/Step2CompanyAddress'
 import Step3ContactInfo from '@/components/employer-profile-setup/Step3ContactInfo'
@@ -18,12 +18,6 @@ export default function EmployerProfileSetupPage() {
   
   // Check if user has correct role and load existing data
   useEffect(() => {
-    const token = getToken()
-    if (!token) {
-      router.push('/login')
-      return
-    }
-
     // Check user role
     apiFetch<{ user: { role: string | null } }>('/api/auth/me')
       .then((data) => {

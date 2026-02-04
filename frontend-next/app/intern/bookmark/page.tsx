@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react'
 import InternNavbar from '@/components/InternNavbar'
 import Link from 'next/link'
+import { apiFetch } from '@/lib/api'
 
 interface BookmarkedJob {
   id: string
@@ -73,31 +74,43 @@ export default function InternBookmarkPage() {
   const [bookmarkedJobs, setBookmarkedJobs] = useState<Set<string>>(new Set())
   const [jobs, setJobs] = useState<BookmarkedJob[]>(mockJobs)
 
-  // Load bookmarked jobs from localStorage
+  // Load bookmarked jobs from API (fallback to localStorage for legacy demo)
   useEffect(() => {
-    const savedBookmarks = localStorage.getItem('internBookmarkedJobs')
-    if (savedBookmarks) {
+    const load = async () => {
       try {
-        const bookmarks = JSON.parse(savedBookmarks)
-        setBookmarkedJobs(new Set(bookmarks))
+        const data = await apiFetch<{ jobs: BookmarkedJob[] }>(`/api/intern/job-bookmarks/jobs`)
+        const ids = new Set((data.jobs || []).map((j) => j.id))
+        setJobs(data.jobs || [])
+        setBookmarkedJobs(ids)
+        return
       } catch (e) {
-        console.error('Failed to parse bookmarked jobs:', e)
+        console.error('Failed to load bookmarked jobs from API, falling back to localStorage:', e)
       }
-    }
-    // Don't initialize with all jobs - start empty
 
-    // Load jobs from localStorage if available
-    const savedJobs = localStorage.getItem('internBookmarkedJobsList')
-    if (savedJobs) {
-      try {
-        setJobs(JSON.parse(savedJobs))
-      } catch (e) {
-        console.error('Failed to parse jobs:', e)
+      const savedBookmarks = localStorage.getItem('internBookmarkedJobs')
+      if (savedBookmarks) {
+        try {
+          const bookmarks = JSON.parse(savedBookmarks)
+          setBookmarkedJobs(new Set(bookmarks))
+        } catch (e) {
+          console.error('Failed to parse bookmarked jobs:', e)
+        }
+      }
+
+      const savedJobs = localStorage.getItem('internBookmarkedJobsList')
+      if (savedJobs) {
+        try {
+          setJobs(JSON.parse(savedJobs))
+        } catch (e) {
+          console.error('Failed to parse jobs:', e)
+        }
       }
     }
+
+    load()
   }, [])
 
-  // Save bookmarked jobs to localStorage
+  // Save bookmarked jobs to localStorage (legacy demo sync)
   useEffect(() => {
     if (bookmarkedJobs.size > 0) {
       localStorage.setItem('internBookmarkedJobs', JSON.stringify(Array.from(bookmarkedJobs)))
@@ -106,11 +119,21 @@ export default function InternBookmarkPage() {
     }
   }, [bookmarkedJobs])
 
-  const handleBookmark = (id: string) => {
+  const handleBookmark = async (id: string) => {
     const newBookmarks = new Set(bookmarkedJobs)
     if (newBookmarks.has(id)) {
+      try {
+        await apiFetch(`/api/intern/job-bookmarks/${id}`, { method: 'DELETE' })
+      } catch (e) {
+        console.error('Failed to remove bookmark:', e)
+      }
       newBookmarks.delete(id)
     } else {
+      try {
+        await apiFetch(`/api/intern/job-bookmarks/${id}`, { method: 'POST' })
+      } catch (e) {
+        console.error('Failed to bookmark:', e)
+      }
       newBookmarks.add(id)
     }
     setBookmarkedJobs(newBookmarks)
@@ -368,7 +391,7 @@ export default function InternBookmarkPage() {
                                 border: `1px solid ${statusColor.border}`,
                               }}
                             >
-                              {job.status?.charAt(0).toUpperCase() + job.status.slice(1)}
+                              {job.status ? job.status.charAt(0).toUpperCase() + job.status.slice(1) : ''}
                             </span>
                           )}
                         </div>

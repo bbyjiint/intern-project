@@ -9,7 +9,7 @@ import Step2JobDescription from '@/components/job-post/Step2JobDescription'
 import Step3PostSettings from '@/components/job-post/Step3PostSettings'
 import Step4PostPreview from '@/components/job-post/Step4PostPreview'
 import ConfirmationModal from '@/components/job-post/ConfirmationModal'
-import { apiFetch, getToken } from '@/lib/api'
+import { apiFetch } from '@/lib/api'
 
 const initialFormData = {
   // Step 1: Job Details
@@ -43,17 +43,12 @@ export default function CreateJobPostPage() {
   const [currentStep, setCurrentStep] = useState(1)
   const [showConfirmationModal, setShowConfirmationModal] = useState(false)
   const [formData, setFormData] = useState(initialFormData)
+  const [isPublishing, setIsPublishing] = useState(false)
 
   // Check user role and redirect if necessary
   useEffect(() => {
     const checkRole = async () => {
       try {
-        const token = getToken()
-        if (!token) {
-          router.push('/login')
-          return
-        }
-
         const userData = await apiFetch<{ user: { role: string | null } }>('/api/auth/me')
         
         // If user has CANDIDATE role, redirect to intern pages
@@ -98,23 +93,28 @@ export default function CreateJobPostPage() {
     }
   }
 
-  const handlePublish = () => {
-    // Save job post to localStorage (will be replaced with API call later)
-    const jobPosts = JSON.parse(localStorage.getItem('jobPosts') || '[]')
-    const newJobPost = {
-      id: Date.now().toString(),
-      ...formData,
-      companyName: JSON.parse(localStorage.getItem('employerProfileData') || '{}').companyName || 'Company Name',
-      companyLogo: 'TRINITY',
-      location: `${formData.locationDistrict}, ${formData.locationProvince}`,
-      postedDate: new Date().toISOString(),
-      createdAt: new Date().toISOString(),
+  const handlePublish = async () => {
+    if (isPublishing) return
+    setIsPublishing(true)
+    try {
+      await apiFetch(`/api/job-posts`, {
+        method: 'POST',
+        body: JSON.stringify({
+          ...formData,
+          // The UI is a "publish" flow; make it visible to interns immediately.
+          state: 'PUBLISHED',
+        }),
+      })
+
+      // Redirect to success page
+      router.push('/employer/create-job-post/success')
+    } catch (e) {
+      console.error('Failed to publish job post:', e)
+      // Keep same UI (no new components): just close modal so user can retry/edit.
+      setShowConfirmationModal(false)
+    } finally {
+      setIsPublishing(false)
     }
-    jobPosts.push(newJobPost)
-    localStorage.setItem('jobPosts', JSON.stringify(jobPosts))
-    
-    // Redirect to success page
-    router.push('/employer/create-job-post/success')
   }
 
   const updateFormData = useCallback((stepData: any) => {

@@ -44,7 +44,7 @@ export default function Step4PostPreview({ data }: Step4PostPreviewProps) {
   }
 
   // Get company data from localStorage (employer profile)
-  let employerProfile = {}
+  let employerProfile: any = {}
   try {
     employerProfile = JSON.parse(localStorage.getItem('employerProfileData') || '{}')
   } catch (e) {

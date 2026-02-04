@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import EmployerNavbar from '@/components/EmployerNavbar'
 import CandidateProfileModal from '@/components/CandidateProfileModal'
-import { apiFetch, getToken } from '@/lib/api'
+import { apiFetch } from '@/lib/api'
 
 interface Message {
   id: string
@@ -14,6 +14,7 @@ interface Message {
   text: string
   timestamp: Date
   isEmployer: boolean
+  isCompany?: boolean
 }
 
 interface Conversation {
@@ -324,12 +325,6 @@ export default function MessagesPage() {
   useEffect(() => {
     const loadConversations = async () => {
       try {
-        const token = getToken()
-        if (!token) {
-          router.push('/login')
-          return
-        }
-
         const userData = await apiFetch<{ user: { role: string | null } }>('/api/auth/me')
         
         // Only redirect if role doesn't match the current page
@@ -366,18 +361,56 @@ export default function MessagesPage() {
         }))
         
         setConversations(converted)
+        // Set first conversation as selected if we have conversations and none is selected
+        // Do this synchronously to prevent flicker
         if (converted.length > 0 && !selectedConversation) {
           setSelectedConversation(converted[0])
         }
+        setLoading(false)
       } catch (error) {
         console.error('Failed to load conversations:', error)
-      } finally {
         setLoading(false)
       }
     }
 
     loadConversations()
-  }, [router])
+
+    // Poll for conversation list updates every 3 seconds
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        const refreshConversations = async () => {
+          try {
+            const data = await apiFetch<{ conversations: Conversation[] }>('/api/messages/conversations')
+            setConversations((prevConversations) => {
+              const converted = data.conversations.map((conv: any) => ({
+                ...conv,
+                lastMessageTime: new Date(conv.lastMessageTime),
+                messages: prevConversations.find(c => c.id === conv.id)?.messages || [],
+              }))
+              
+              // Update selected conversation if it exists
+              if (selectedConversation) {
+                const updated = converted.find(c => c.id === selectedConversation.id)
+                if (updated) {
+                  setSelectedConversation({
+                    ...updated,
+                    messages: selectedConversation.messages,
+                  })
+                }
+              }
+              
+              return converted
+            })
+          } catch (error) {
+            // Silently fail - don't spam console
+          }
+        }
+        refreshConversations()
+      }
+    }, 3000)
+
+    return () => clearInterval(interval)
+  }, [router, selectedConversation])
 
   // Load messages when conversation is selected
   useEffect(() => {
@@ -395,6 +428,13 @@ export default function MessagesPage() {
           timestamp: new Date(msg.timestamp),
         }))
 
+        // Check if we have new messages (compare by length or last message ID)
+        const hasNewMessages = 
+          !selectedConversation.messages || 
+          converted.length !== selectedConversation.messages.length ||
+          (converted.length > 0 && selectedConversation.messages.length > 0 &&
+           converted[converted.length - 1].id !== selectedConversation.messages[selectedConversation.messages.length - 1].id)
+
         // Update conversation with messages
         setSelectedConversation({
           ...selectedConversation,
@@ -409,12 +449,28 @@ export default function MessagesPage() {
               : conv
           )
         )
+
+        // Scroll to bottom if new messages arrived
+        if (hasNewMessages) {
+          setTimeout(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+          }, 100)
+        }
       } catch (error) {
         console.error('Failed to load messages:', error)
       }
     }
 
     loadMessages()
+
+    // Poll for new messages every 2 seconds
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        loadMessages()
+      }
+    }, 2000)
+
+    return () => clearInterval(interval)
   }, [selectedConversation?.id])
 
   useEffect(() => {
@@ -475,6 +531,7 @@ export default function MessagesPage() {
     try {
       const data = await apiFetch<{ candidate: any }>(`/api/candidates/${selectedConversation.candidateId}`)
       setSelectedCandidate({
+        id: data.candidate.id || selectedConversation.candidateId,
         name: data.candidate.name,
         role: data.candidate.role,
         university: data.candidate.university,
@@ -579,7 +636,14 @@ export default function MessagesPage() {
 
         {/* Main Content - Chat Area */}
         <div className="flex-1 flex flex-col bg-white">
-          {selectedConversation ? (
+          {loading ? (
+            <div className="flex-1 flex items-center justify-center text-gray-500">
+              <div className="text-center">
+                <div className="w-16 h-16 mx-auto mb-4 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin"></div>
+                <p className="text-lg">Loading messages...</p>
+              </div>
+            </div>
+          ) : selectedConversation ? (
             <>
               {/* Chat Header */}
               <div className="p-4 border-b border-gray-200 flex items-center justify-between">

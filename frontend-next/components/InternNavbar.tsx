@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { apiFetch, getToken } from '@/lib/api'
+import { apiFetch } from '@/lib/api'
 
 interface InternNavbarProps {
   searchQuery?: string
@@ -19,6 +19,7 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
   const [userData, setUserData] = useState<{ displayName?: string; email?: string } | null>(null)
   const [profileData, setProfileData] = useState<any>(null)
   const [showDropdown, setShowDropdown] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [localSearchQuery, setLocalSearchQuery] = useState('')
 
@@ -26,11 +27,8 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
     // Load user data from API
     const loadUserData = async () => {
       try {
-        const token = getToken()
-        if (token) {
-          const data = await apiFetch<{ user: { displayName?: string; email?: string } }>('/api/auth/me')
-          setUserData(data.user)
-        }
+        const data = await apiFetch<{ user: { displayName?: string; email?: string } }>('/api/auth/me')
+        setUserData(data.user)
       } catch (error) {
         console.error('Failed to load user data:', error)
       }
@@ -71,6 +69,26 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
       window.removeEventListener('storage', handleStorageChange)
       window.removeEventListener('profileImageUpdated', handleProfileUpdate)
     }
+  }, [])
+
+  // Poll for unread message count
+  useEffect(() => {
+    const fetchUnreadCount = async () => {
+      try {
+        const data = await apiFetch<{ unreadCount: number }>('/api/messages/unread-count')
+        setUnreadCount(data.unreadCount)
+      } catch (error) {
+        // Silently fail - don't show errors for unread count
+      }
+    }
+
+    // Fetch immediately
+    fetchUnreadCount()
+
+    // Poll every 5 seconds
+    const interval = setInterval(fetchUnreadCount, 5000)
+
+    return () => clearInterval(interval)
   }, [])
 
   useEffect(() => {
@@ -148,7 +166,7 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
               </Link>
               <Link
                 href="/intern/messages"
-                className="font-medium pb-1 transition-colors"
+                className="font-medium pb-1 transition-colors relative"
                 style={{ color: isMessagesPage ? '#0273B1' : '#A9B4CD' }}
                 onMouseEnter={(e) => {
                   if (!isMessagesPage) {
@@ -162,6 +180,11 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
                 }}
               >
                 Message
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-6 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
               </Link>
             </div>
             {isFindCompaniesPage && (
@@ -288,15 +311,20 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
                   <div className="border-t border-gray-200 my-1"></div>
                   <button
                     onClick={() => {
-                      // Clear authentication data
-                      localStorage.removeItem('auth_token')
-                      localStorage.removeItem('user')
-                      localStorage.removeItem('internProfileData')
-                      localStorage.removeItem('internConversations')
-                      localStorage.removeItem('savedJobs')
-                      // Redirect to home page
-                      router.push('/')
-                      setShowDropdown(false)
+                      ;(async () => {
+                        try {
+                          await apiFetch(`/api/auth/logout`, { method: 'POST' })
+                        } catch {
+                          // ignore
+                        } finally {
+                          localStorage.removeItem('user')
+                          localStorage.removeItem('internProfileData')
+                          localStorage.removeItem('internConversations')
+                          localStorage.removeItem('savedJobs')
+                          router.push('/')
+                          setShowDropdown(false)
+                        }
+                      })()
                     }}
                     className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                   >

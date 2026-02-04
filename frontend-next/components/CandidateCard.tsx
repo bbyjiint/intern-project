@@ -6,6 +6,7 @@ interface CandidateCardProps {
   graduationDate: string
   skills: string[]
   initials: string
+  variant?: string
   isBookmarked?: boolean
   onBookmark?: (e: React.MouseEvent) => void
   onClick?: () => void

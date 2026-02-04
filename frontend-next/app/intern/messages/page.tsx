@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import InternNavbar from '@/components/InternNavbar'
-import { apiFetch, getToken } from '@/lib/api'
+import { apiFetch } from '@/lib/api'
 
 interface Message {
   id: string
@@ -159,19 +159,15 @@ export default function InternMessagesPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [newMessage, setNewMessage] = useState('')
   const [loading, setLoading] = useState(true)
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const chatContainerRef = useRef<HTMLDivElement>(null)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
   // Check role and load conversations (only on mount)
   useEffect(() => {
     const loadConversations = async () => {
       try {
-        const token = getToken()
-        if (!token) {
-          router.push('/login')
-          return
-        }
-
         const userData = await apiFetch<{ user: { role: string | null } }>('/api/auth/me')
         
         // Only redirect if role doesn't match the current page
@@ -210,59 +206,187 @@ export default function InternMessagesPage() {
         setConversations(converted)
         
         // Set first conversation as selected if we have conversations
+        // Do this synchronously to prevent flicker
         if (converted.length > 0) {
-          setSelectedConversation(converted[0])
+          const firstConv = { ...converted[0], messages: [] }
+          setSelectedConversation(firstConv)
         }
+        setLoading(false)
       } catch (error) {
         console.error('Failed to load conversations:', error)
-      } finally {
         setLoading(false)
       }
     }
 
     loadConversations()
+
+    // Poll for conversation list updates every 3 seconds
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        const refreshConversations = async () => {
+          try {
+            const data = await apiFetch<{ conversations: Conversation[] }>('/api/messages/conversations')
+            setConversations((prevConversations) => {
+              const converted = data.conversations.map((conv: any) => ({
+                ...conv,
+                lastMessageTime: new Date(conv.lastMessageTime),
+                messages: prevConversations.find(c => c.id === conv.id)?.messages || [],
+              }))
+              
+              // Update selected conversation if it exists
+              if (selectedConversation) {
+                const updated = converted.find(c => c.id === selectedConversation.id)
+                if (updated) {
+                  setSelectedConversation({
+                    ...updated,
+                    messages: selectedConversation.messages,
+                  })
+                }
+              }
+              
+              return converted
+            })
+          } catch (error) {
+            // Silently fail - don't spam console
+          }
+        }
+        refreshConversations()
+      }
+    }, 3000)
+
+    return () => clearInterval(interval)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router])
+  }, [router, selectedConversation])
 
   // Load messages when conversation is selected
   useEffect(() => {
-    if (!selectedConversation?.id) return
+    if (!selectedConversation) return
 
+    // Cancel any in-flight requests for previous conversation
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+
+    const conversationId = selectedConversation.id
     const loadMessages = async () => {
+      // Create new AbortController for this request
+      const abortController = new AbortController()
+      abortControllerRef.current = abortController
+
+      // Only set loading on initial load, not during polling
+      const isInitialLoad = !selectedConversation.messages || selectedConversation.messages.length === 0
+      if (isInitialLoad) {
+        setIsLoadingMessages(true)
+      }
+
       try {
-        const data = await apiFetch<{ messages: Message[] }>(
-          `/api/messages/conversations/${selectedConversation.id}/messages`
+        // Create a custom fetch that supports AbortController
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'}/api/messages/conversations/${conversationId}/messages`,
+          {
+            signal: abortController.signal,
+            credentials: 'include',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
         )
+
+        // Check if request was aborted
+        if (abortController.signal.aborted) {
+          return
+        }
+
+        if (!response.ok) {
+          throw new Error(`Request failed: ${response.status}`)
+        }
+
+        const data = await response.json() as { messages: Message[] }
         
+        // Double-check conversation hasn't changed (race condition protection)
+        setSelectedConversation((current) => {
+          if (!current || current.id !== conversationId) {
+            // Conversation changed, ignore this response
+            return current
+          }
+          return current
+        })
+
+        // Ignore if conversation changed while request was in-flight
+        if (abortController.signal.aborted) {
+          return
+        }
+
         // Convert timestamp strings to Date objects
         const converted = data.messages.map((msg: any) => ({
           ...msg,
           timestamp: new Date(msg.timestamp),
         }))
 
-        // Update conversations list first
+        // Check if we have new messages (compare by length or last message ID)
+        setSelectedConversation((current) => {
+          if (!current || current.id !== conversationId) {
+            return current
+          }
+
+          const prevMessages = current.messages || []
+          const hasNewMessages = 
+            prevMessages.length === 0 || 
+            converted.length !== prevMessages.length ||
+            (converted.length > 0 && prevMessages.length > 0 &&
+             converted[converted.length - 1].id !== prevMessages[prevMessages.length - 1].id)
+
+          // Scroll to bottom if new messages arrived
+          if (hasNewMessages) {
+            setTimeout(() => {
+              messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+            }, 100)
+          }
+
+          return {
+            ...current,
+            messages: converted, // Only update when we have valid data
+          }
+        })
+
+        // Update conversations list
         setConversations((prev) =>
           prev.map((conv) =>
-            conv.id === selectedConversation.id
+            conv.id === conversationId
               ? { ...conv, messages: converted }
               : conv
           )
         )
 
-        // Then update selected conversation to match
-        setSelectedConversation((prev) => {
-          if (!prev || prev.id !== selectedConversation.id) return prev
-          return {
-            ...prev,
-            messages: converted,
-          }
-        })
-      } catch (error) {
+        setIsLoadingMessages(false)
+      } catch (error: any) {
+        // Don't clear messages on error - keep previous messages visible
+        if (error.name === 'AbortError') {
+          // Request was cancelled, ignore
+          return
+        }
         console.error('Failed to load messages:', error)
+        // Keep previous messages, just stop loading indicator
+        setIsLoadingMessages(false)
+        // Could show a toast here: "Failed to refresh messages"
       }
     }
 
     loadMessages()
+
+    // Poll for new messages every 2 seconds
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        loadMessages()
+      }
+    }, 2000)
+
+    return () => {
+      clearInterval(interval)
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+    }
   }, [selectedConversation?.id])
 
   useEffect(() => {
@@ -415,7 +539,14 @@ export default function InternMessagesPage() {
 
         {/* Main Content - Chat Area */}
         <div className="flex-1 flex flex-col bg-white">
-          {selectedConversation ? (
+          {loading ? (
+            <div className="flex-1 flex items-center justify-center text-gray-500">
+              <div className="text-center">
+                <div className="w-16 h-16 mx-auto mb-4 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin"></div>
+                <p className="text-lg">Loading messages...</p>
+              </div>
+            </div>
+          ) : selectedConversation ? (
             <>
               {/* Chat Header */}
               <div className="p-4 border-b border-gray-200 flex items-center justify-between">
@@ -451,7 +582,9 @@ export default function InternMessagesPage() {
               {/* Messages */}
               <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-6 bg-gray-50">
                 <div className="space-y-4">
-                  {selectedConversation.messages.map((msg) => {
+                  {selectedConversation.messages && selectedConversation.messages.length > 0 ? (
+                    <>
+                      {selectedConversation.messages.map((msg) => {
                     // For intern page: isCompany means it's from the company (other person) - should be on left
                     // !isCompany means it's from the intern (current user) - should be on right
                     const isCurrentUser = !msg.isCompany
@@ -486,8 +619,28 @@ export default function InternMessagesPage() {
                           </div>
                         </div>
                       </div>
-                    )
-                  })}
+                      )
+                    })}
+                    {isLoadingMessages && (
+                      <div className="flex justify-center py-2">
+                        <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
+                      </div>
+                    )}
+                    </>
+                  ) : !isLoadingMessages ? (
+                    // Only show empty state when we're sure there are no messages (not loading)
+                    <div className="flex items-center justify-center h-full text-gray-500">
+                      <p>No messages yet. Start the conversation!</p>
+                    </div>
+                  ) : (
+                    // Show loading state instead of empty state
+                    <div className="flex items-center justify-center h-full text-gray-500">
+                      <div className="text-center">
+                        <div className="w-8 h-8 mx-auto mb-2 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin"></div>
+                        <p className="text-sm">Loading messages...</p>
+                      </div>
+                    </div>
+                  )}
                   <div ref={messagesEndRef} />
                 </div>
               </div>

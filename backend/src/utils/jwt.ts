@@ -1,17 +1,21 @@
-import jwt from "jsonwebtoken";
+import jwt, { type Secret, type SignOptions } from "jsonwebtoken";
 
 export type AuthTokenPayload = {
   sub: string; // userId
   role: "CANDIDATE" | "COMPANY";
 };
 
-export function signAuthToken(payload: AuthTokenPayload): string {
-  const secret = process.env.JWT_SECRET || "dev-secret-change-me";
-  return jwt.sign(payload, secret, { algorithm: "HS256", expiresIn: "7d" });
+export function signAuthToken(payload: AuthTokenPayload, opts?: { expiresIn?: SignOptions["expiresIn"] }): string {
+  const secret: Secret = process.env.JWT_SECRET || "dev-secret-change-me";
+  const options: SignOptions = {
+    algorithm: "HS256",
+    expiresIn: opts?.expiresIn ?? "7d",
+  };
+  return jwt.sign(payload, secret, options);
 }
 
 export function verifyAuthToken(token: string): AuthTokenPayload {
-  const secret = process.env.JWT_SECRET || "dev-secret-change-me";
+  const secret: Secret = process.env.JWT_SECRET || "dev-secret-change-me";
   try {
     const payload = jwt.verify(token, secret, { algorithms: ["HS256"] }) as AuthTokenPayload;
     

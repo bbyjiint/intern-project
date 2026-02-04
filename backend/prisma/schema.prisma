@@ -193,6 +193,9 @@ model CandidateProfile {
   WorkHistory          WorkHistory[]
   Bookmarks            Bookmark[]
   Conversations        Conversation[]
+  JobApplications      JobApplication[]
+  JobBookmarks         JobBookmark[]
+  JobIgnores           JobIgnore[]
 
   @@index([universityId])
 }
@@ -265,6 +268,13 @@ enum JobPostState {
   CLOSED
 }
 
+enum ApplicationStatus {
+  NEW
+  SHORTLISTED
+  REVIEWED
+  REJECTED
+}
+
 enum QuestionType {
   TEXT
   MULTIPLE_CHOICE
@@ -290,9 +300,60 @@ model JobPost {
   updatedAt         DateTime               @updatedAt
   Company           CompanyProfile         @relation(fields: [companyId], references: [id], onDelete: Cascade)
   ScreeningQuestions ScreeningQuestion[]
+  Applications      JobApplication[]
+  Bookmarks         JobBookmark[]
+  Ignores           JobIgnore[]
 
   @@index([companyId])
   @@index([state])
+  @@index([createdAt])
+}
+
+model JobBookmark {
+  id          String           @id @default(uuid()) @db.Uuid
+  jobPostId   String           @db.Uuid
+  candidateId String           @db.Uuid
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  JobPost     JobPost          @relation(fields: [jobPostId], references: [id], onDelete: Cascade)
+  Candidate   CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@unique([jobPostId, candidateId])
+  @@index([jobPostId])
+  @@index([candidateId])
+}
+
+model JobIgnore {
+  id          String           @id @default(uuid()) @db.Uuid
+  jobPostId   String           @db.Uuid
+  candidateId String           @db.Uuid
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  JobPost     JobPost          @relation(fields: [jobPostId], references: [id], onDelete: Cascade)
+  Candidate   CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@unique([jobPostId, candidateId])
+  @@index([jobPostId])
+  @@index([candidateId])
+}
+
+model JobApplication {
+  id          String            @id @default(uuid()) @db.Uuid
+  jobPostId   String            @db.Uuid
+  candidateId String            @db.Uuid
+  status      ApplicationStatus @default(NEW)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  JobPost     JobPost           @relation(fields: [jobPostId], references: [id], onDelete: Cascade)
+  Candidate   CandidateProfile  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@unique([jobPostId, candidateId])
+  @@index([jobPostId])
+  @@index([candidateId])
+  @@index([status])
   @@index([createdAt])
 }
 

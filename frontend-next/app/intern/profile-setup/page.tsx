@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { apiFetch, getToken } from '@/lib/api'
+import { apiFetch } from '@/lib/api'
 import Step1GeneralInfo from '@/components/profile-setup/Step1GeneralInfo'
 import Step2BackgroundExperience from '@/components/profile-setup/Step2BackgroundExperience'
 import Step3SkillsProjects from '@/components/profile-setup/Step3SkillsProjects'
@@ -18,12 +18,6 @@ export default function ProfileSetupPage() {
 
   // Check if user has correct role
   useEffect(() => {
-    const token = getToken()
-    if (!token) {
-      router.push('/login')
-      return
-    }
-
     // Check user role
     apiFetch<{ user: { role: string | null } }>('/api/auth/me')
       .then((data) => {

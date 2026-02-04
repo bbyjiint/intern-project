@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import InternNavbar from '@/components/InternNavbar'
-import { apiFetch, getToken } from '@/lib/api'
+import { apiFetch } from '@/lib/api'
 
 export default function InternProfilePage() {
   const router = useRouter()
@@ -17,12 +17,6 @@ export default function InternProfilePage() {
     // Check user role first
     const checkRoleAndLoadProfile = async () => {
       try {
-        const token = getToken()
-        if (!token) {
-          router.push('/login')
-          return
-        }
-
         // Check user role first
         const userData = await apiFetch<{ user: { role: string | null } }>('/api/auth/me')
         

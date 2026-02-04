@@ -5,9 +5,11 @@ import { useParams, useRouter } from 'next/navigation'
 import EmployerNavbar from '@/components/EmployerNavbar'
 import CandidateProfileModal from '@/components/CandidateProfileModal'
 import Link from 'next/link'
+import { apiFetch } from '@/lib/api'
 
 interface Applicant {
   id: string
+  candidateId: string
   name: string
   email: string
   initials: string
@@ -28,6 +30,7 @@ interface JobPost {
 const mockApplicants: Applicant[] = [
   {
     id: '1',
+    candidateId: '1',
     name: 'John Doe',
     email: 'johndoe@email.com',
     initials: 'JD',
@@ -37,6 +40,7 @@ const mockApplicants: Applicant[] = [
   },
   {
     id: '2',
+    candidateId: '2',
     name: 'Jane Smith',
     email: 'jane.smith@mail.com',
     initials: 'JS',
@@ -46,6 +50,7 @@ const mockApplicants: Applicant[] = [
   },
   {
     id: '3',
+    candidateId: '3',
     name: 'Emily Johnson',
     email: 'emily.johnson@mail.com',
     initials: 'EJ',
@@ -55,6 +60,7 @@ const mockApplicants: Applicant[] = [
   },
   {
     id: '4',
+    candidateId: '4',
     name: 'Michael Brown',
     email: 'michael.brown@mail.com',
     initials: 'MB',
@@ -64,6 +70,7 @@ const mockApplicants: Applicant[] = [
   },
   {
     id: '5',
+    candidateId: '5',
     name: 'Sarah Lee',
     email: 'sarah.lee@email.com',
     initials: 'SL',
@@ -73,6 +80,7 @@ const mockApplicants: Applicant[] = [
   },
   {
     id: '6',
+    candidateId: '6',
     name: 'Sarah Lee',
     email: 'sarah.lee@email.com',
     initials: 'SL',
@@ -123,29 +131,19 @@ export default function ViewApplicantsPage() {
   const [selectedApplicants, setSelectedApplicants] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    // Load job post from localStorage
-    const savedJobPosts = localStorage.getItem('jobPosts')
-    if (savedJobPosts && jobPostId) {
+    const load = async () => {
+      if (!jobPostId) return
       try {
-        const posts = JSON.parse(savedJobPosts)
-        const post = posts.find((p: any) => (p.id || Date.now().toString()) === jobPostId)
-        if (post) {
-          setJobPost({
-            id: jobPostId,
-            title: post.jobTitle || post.title || 'Untitled Job Post',
-            companyName: post.companyName || 'Company Name',
-            location: post.location || `${post.locationDistrict || ''}, ${post.locationProvince || ''}`.replace(/^,\s*|,\s*$/g, '') || 'Location not specified',
-            workType: post.workplaceType === 'on-site' ? 'On-site' : post.workplaceType === 'hybrid' ? 'Hybrid' : post.workplaceType === 'remote' ? 'Remote' : 'Not specified',
-          })
-        }
+        const data = await apiFetch<{ jobPost: JobPost; applicants: Applicant[] }>(`/api/job-posts/${jobPostId}/applicants`)
+        setJobPost(data.jobPost)
+        setApplicants(data.applicants || [])
       } catch (e) {
-        console.error('Failed to parse job posts:', e)
+        console.error('Failed to load applicants:', e)
+        setApplicants(mockApplicants as any)
       }
     }
 
-    // Load applicants - in real app, this would come from API
-    // For now, use mock data
-    setApplicants(mockApplicants)
+    load()
   }, [jobPostId])
 
   const filteredApplicants = useMemo(() => {
@@ -170,16 +168,28 @@ export default function ViewApplicantsPage() {
     }
   }, [applicants])
 
-  const handleShortlist = (applicantId: string) => {
-    setApplicants(applicants.map(a => 
-      a.id === applicantId ? { ...a, status: 'shortlisted' as const } : a
-    ))
+  const handleShortlist = async (applicantId: string) => {
+    try {
+      await apiFetch(`/api/job-posts/${jobPostId}/applicants/${applicantId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'shortlisted' }),
+      })
+      setApplicants(applicants.map(a => a.id === applicantId ? { ...a, status: 'shortlisted' as const } : a))
+    } catch (e) {
+      console.error('Failed to shortlist applicant:', e)
+    }
   }
 
-  const handleReject = (applicantId: string) => {
-    setApplicants(applicants.map(a => 
-      a.id === applicantId ? { ...a, status: 'rejected' as const } : a
-    ))
+  const handleReject = async (applicantId: string) => {
+    try {
+      await apiFetch(`/api/job-posts/${jobPostId}/applicants/${applicantId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'rejected' }),
+      })
+      setApplicants(applicants.map(a => a.id === applicantId ? { ...a, status: 'rejected' as const } : a))
+    } catch (e) {
+      console.error('Failed to reject applicant:', e)
+    }
   }
 
   const handleViewProfile = (applicant: Applicant) => {
@@ -495,6 +505,7 @@ export default function ViewApplicantsPage() {
       {selectedApplicant && (
         <CandidateProfileModal
           candidate={{
+            id: selectedApplicant.candidateId,
             name: selectedApplicant.name,
             role: '',
             university: '',

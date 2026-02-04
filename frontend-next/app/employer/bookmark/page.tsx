@@ -5,8 +5,21 @@ import { useRouter } from 'next/navigation'
 import EmployerNavbar from '@/components/EmployerNavbar'
 import CandidateCard from '@/components/CandidateCard'
 import CandidateProfileModal from '@/components/CandidateProfileModal'
-import { apiFetch, getToken } from '@/lib/api'
+import { apiFetch } from '@/lib/api'
 import Link from 'next/link'
+
+type Candidate = {
+  id: string
+  name: string
+  role: string
+  university: string
+  major: string
+  graduationDate: string
+  skills: string[]
+  initials: string
+  email?: string
+  about?: string
+}
 
 export default function BookmarkPage() {
   const router = useRouter()
@@ -16,19 +29,13 @@ export default function BookmarkPage() {
   const [university, setUniversity] = useState('')
   const [bookmarkedCandidates, setBookmarkedCandidates] = useState<Set<string>>(new Set()) // Using candidate IDs
   const [selectedCandidate, setSelectedCandidate] = useState<any | null>(null)
-  const [apiCandidates, setApiCandidates] = useState<any[]>([])
+  const [apiCandidates, setApiCandidates] = useState<Candidate[]>([])
   const [apiError, setApiError] = useState<string | null>(null)
 
   // Check user role and redirect if necessary
   useEffect(() => {
     const checkRole = async () => {
       try {
-        const token = getToken()
-        if (!token) {
-          router.push('/login')
-          return
-        }
-
         const userData = await apiFetch<{ user: { role: string | null } }>('/api/auth/me')
         
         // If user has CANDIDATE role, redirect to intern pages
@@ -57,8 +64,14 @@ export default function BookmarkPage() {
     ;(async () => {
       try {
         // Fetch bookmarked candidates directly from bookmarks API
-        const data = await apiFetch<{ candidates: any[] }>(`/api/bookmarks`)
-        setApiCandidates(data.candidates || [])
+        const data = await apiFetch<{ candidates: Candidate[] }>(`/api/bookmarks`)
+        const normalized = (data.candidates || []).map((c) => ({
+          ...c,
+          initials:
+            c.initials ||
+            (c.name ? c.name.split(' ').map((p) => p[0]).join('').toUpperCase().slice(0, 2) : 'U'),
+        }))
+        setApiCandidates(normalized)
         // Set bookmarked IDs for the bookmark toggle functionality
         const bookmarkIds = new Set(data.candidates.map((c) => c.id))
         setBookmarkedCandidates(bookmarkIds)
@@ -95,7 +108,7 @@ export default function BookmarkPage() {
     }
   }
 
-  const handleCardClick = (candidate: typeof mockCandidates[0]) => {
+  const handleCardClick = (candidate: any) => {
     setSelectedCandidate(candidate)
   }
 

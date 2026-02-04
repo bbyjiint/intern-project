@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import prisma from "./prisma";
 import { loadDotEnv } from "./env";
 import { authRouter } from "../routes/auth";
@@ -9,17 +10,23 @@ import { jobPostsRouter } from "../routes/job-posts";
 import { universitiesRouter } from "../routes/universities";
 import { bookmarksRouter } from "../routes/bookmarks";
 import messagesRouter from "../routes/messages";
+import { internRouter } from "../routes/intern";
 
 const app = express();
 
 loadDotEnv();
 
+// If deploying behind a proxy (common in production), this allows secure cookies to work correctly.
+app.set("trust proxy", 1);
+
 app.use(
   cors({
-    origin: ["http://localhost:3000"],
+    origin: process.env.CORS_ORIGIN?.split(",").map((s) => s.trim()).filter(Boolean) ?? ["http://localhost:3000"],
+    credentials: true,
   })
 );
 app.use(express.json());
+app.use(cookieParser());
 
 app.get("/api/health", (req, res) => {
   res.json({ ok: true });
@@ -38,6 +45,7 @@ app.use("/api", jobPostsRouter);
 app.use("/api/universities", universitiesRouter);
 app.use("/api/bookmarks", bookmarksRouter);
 app.use("/api/messages", messagesRouter);
+app.use("/api/intern", internRouter);
 
 // 404 handler
 app.use((req, res) => {

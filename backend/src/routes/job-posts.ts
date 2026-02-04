@@ -5,6 +5,18 @@ import { randomUUID } from "crypto";
 
 export const jobPostsRouter = Router();
 
+function relativeDateLabel(date: Date): string {
+  const now = new Date();
+  const diffMs = Math.abs(now.getTime() - date.getTime());
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "1 day ago";
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 14) return "1 week ago";
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+  return date.toLocaleDateString();
+}
+
 // Create Job Post
 jobPostsRouter.post("/job-posts", requireAuth, requireRole("COMPANY"), async (req: AuthedRequest, res) => {
   const userId = req.user!.id;
@@ -149,6 +161,93 @@ jobPostsRouter.post("/job-posts", requireAuth, requireRole("COMPANY"), async (re
   }
 });
 
+// Get public job posts (must be before /job-posts/:id to avoid route conflicts)
+jobPostsRouter.get("/job-posts/public", async (req, res) => {
+  try {
+    const jobPosts = await prisma.jobPost.findMany({
+      where: {
+        state: "PUBLISHED", // Only show published job posts
+      },
+      include: {
+        Company: {
+          select: {
+            companyName: true,
+            logoURL: true,
+          },
+        },
+      },
+      orderBy: [
+        { jobPostStatus: "asc" }, // URGENT first
+        { createdAt: "desc" }, // Then newest first
+      ],
+    });
+
+    // Format job posts for frontend
+    const formattedJobPosts = jobPosts.map((post) => {
+      // Format allowance
+      let allowanceStr = "Not specified";
+      if (post.noAllowance) {
+        allowanceStr = "No allowance";
+      } else if (post.allowance && post.allowancePeriod) {
+        const periodMap: Record<string, string> = {
+          MONTH: "Month",
+          WEEK: "Week",
+          DAY: "Day",
+        };
+        allowanceStr = `${post.allowance} THB/${periodMap[post.allowancePeriod] || post.allowancePeriod}`;
+      } else if (post.allowance) {
+        allowanceStr = `${post.allowance} THB`;
+      }
+
+      // Format workplace type
+      const workplaceTypeMap: Record<string, string> = {
+        ON_SITE: "On-site",
+        HYBRID: "Hybrid",
+        REMOTE: "Remote",
+      };
+
+      // Format location
+      const locationParts = [post.locationDistrict, post.locationProvince].filter(Boolean);
+      const location = locationParts.length > 0 ? locationParts.join(", ") : "Location not specified";
+
+      // Format posted date
+      const postedDate = post.createdAt
+        ? new Date(post.createdAt).toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          })
+        : "Date not available";
+
+      return {
+        id: post.id,
+        jobTitle: post.jobTitle || "Untitled Job",
+        companyName: post.Company?.companyName || "Company Name",
+        companyLogo: post.Company?.logoURL || "TRINITY",
+        location,
+        workType: workplaceTypeMap[post.workplaceType] || "On-site",
+        jobType: post.jobType || "internship",
+        seniorityLevel: "student", // Default, can be enhanced later
+        field: "IT&Software", // Default, can be enhanced later
+        positions: 1, // Default, can be enhanced later
+        allowance: allowanceStr,
+        skills: [], // Can be enhanced later if skills are stored
+        postedDate,
+        jobDescription: post.jobDescription || "",
+        jobSpecification: post.jobSpecification || "",
+        isUrgent: post.jobPostStatus === "URGENT",
+      };
+    });
+
+    return res.json({ jobPosts: formattedJobPosts });
+  } catch (error: any) {
+    console.error("Error fetching public job posts:", error);
+    return res.status(500).json({
+      error: error.message || "Failed to fetch public job posts",
+    });
+  }
+});
+
 // Get all job posts for a company
 jobPostsRouter.get("/job-posts", requireAuth, requireRole("COMPANY"), async (req: AuthedRequest, res) => {
   const userId = req.user!.id;
@@ -189,7 +288,8 @@ jobPostsRouter.get("/job-posts", requireAuth, requireRole("COMPANY"), async (req
 // Get a single job post by ID
 jobPostsRouter.get("/job-posts/:id", requireAuth, requireRole("COMPANY"), async (req: AuthedRequest, res) => {
   const userId = req.user!.id;
-  const { id } = req.params;
+  const id = typeof (req.params as any).id === "string" ? (req.params as any).id : (req.params as any).id?.[0];
+  if (!id) return res.status(400).json({ error: "id is required" });
 
   try {
     const companyProfile = await prisma.companyProfile.findUnique({
@@ -239,7 +339,8 @@ jobPostsRouter.get("/job-posts/:id", requireAuth, requireRole("COMPANY"), async 
 // Update job post
 jobPostsRouter.put("/job-posts/:id", requireAuth, requireRole("COMPANY"), async (req: AuthedRequest, res) => {
   const userId = req.user!.id;
-  const { id } = req.params;
+  const id = typeof (req.params as any).id === "string" ? (req.params as any).id : (req.params as any).id?.[0];
+  if (!id) return res.status(400).json({ error: "id is required" });
 
   try {
     const companyProfile = await prisma.companyProfile.findUnique({
@@ -407,7 +508,8 @@ jobPostsRouter.put("/job-posts/:id", requireAuth, requireRole("COMPANY"), async 
 // Delete job post
 jobPostsRouter.delete("/job-posts/:id", requireAuth, requireRole("COMPANY"), async (req: AuthedRequest, res) => {
   const userId = req.user!.id;
-  const { id } = req.params;
+  const id = typeof (req.params as any).id === "string" ? (req.params as any).id : (req.params as any).id?.[0];
+  if (!id) return res.status(400).json({ error: "id is required" });
 
   try {
     const companyProfile = await prisma.companyProfile.findUnique({
@@ -444,90 +546,209 @@ jobPostsRouter.delete("/job-posts/:id", requireAuth, requireRole("COMPANY"), asy
   }
 });
 
-// Public endpoint: Get all published job posts (for interns/candidates)
-// No authentication required, but optional for bookmarking
-jobPostsRouter.get("/job-posts/public", async (req, res) => {
+// Public endpoint moved to top of file (before /job-posts/:id) to avoid route conflicts
+
+// Candidate applies to a job post
+jobPostsRouter.post("/job-posts/:id/apply", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
+  const userId = req.user!.id;
+  const jobPostId = typeof (req.params as any).id === "string" ? (req.params as any).id : (req.params as any).id?.[0];
+  if (!jobPostId) return res.status(400).json({ error: "id is required" });
+
   try {
-    const jobPosts = await prisma.jobPost.findMany({
+    const candidate = await prisma.candidateProfile.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+    if (!candidate) return res.status(404).json({ error: "Candidate profile not found" });
+
+    const jobPost = await prisma.jobPost.findUnique({
+      where: { id: jobPostId },
+      select: { id: true, state: true },
+    });
+    if (!jobPost) return res.status(404).json({ error: "Job post not found" });
+    if (jobPost.state !== "PUBLISHED") {
+      return res.status(400).json({ error: "Job post is not accepting applications" });
+    }
+
+    const existing = await prisma.jobApplication.findUnique({
       where: {
-        state: "PUBLISHED", // Only show published job posts
+        jobPostId_candidateId: { jobPostId, candidateId: candidate.id },
       },
+      select: { id: true, status: true, createdAt: true },
+    });
+    if (existing) {
+      return res.status(200).json({
+        application: {
+          id: existing.id,
+          status: existing.status,
+          createdAt: existing.createdAt,
+        },
+        alreadyApplied: true,
+      });
+    }
+
+    const application = await prisma.jobApplication.create({
+      data: {
+        id: randomUUID(),
+        jobPostId,
+        candidateId: candidate.id,
+        status: "NEW",
+        updatedAt: new Date(),
+      },
+      select: { id: true, status: true, createdAt: true },
+    });
+
+    return res.status(201).json({ application, alreadyApplied: false });
+  } catch (error: any) {
+    console.error("Error applying to job post:", error);
+    return res.status(500).json({ error: error.message || "Failed to apply to job post" });
+  }
+});
+
+// Company views applicants for their job post
+jobPostsRouter.get("/job-posts/:id/applicants", requireAuth, requireRole("COMPANY"), async (req: AuthedRequest, res) => {
+  const userId = req.user!.id;
+  const jobPostId = typeof (req.params as any).id === "string" ? (req.params as any).id : (req.params as any).id?.[0];
+  if (!jobPostId) return res.status(400).json({ error: "id is required" });
+
+  try {
+    const companyProfile = await prisma.companyProfile.findUnique({
+      where: { userId },
+      select: { id: true, companyName: true },
+    });
+    if (!companyProfile) return res.status(404).json({ error: "Company profile not found" });
+
+    const jobPost = await prisma.jobPost.findFirst({
+      where: { id: jobPostId, companyId: companyProfile.id },
+      select: {
+        id: true,
+        jobTitle: true,
+        locationDistrict: true,
+        locationProvince: true,
+        workplaceType: true,
+      },
+    });
+    if (!jobPost) return res.status(404).json({ error: "Job post not found" });
+
+    const apps = await prisma.jobApplication.findMany({
+      where: { jobPostId },
+      orderBy: { createdAt: "desc" },
       include: {
-        Company: {
-          select: {
-            companyName: true,
-            logoURL: true,
+        Candidate: {
+          include: {
+            User: { select: { email: true } },
+            UserSkill: { include: { Skills: { select: { name: true } } } },
           },
         },
       },
-      orderBy: [
-        { jobPostStatus: "asc" }, // URGENT first
-        { createdAt: "desc" }, // Then newest first
-      ],
     });
 
-    // Format job posts for frontend
-    const formattedJobPosts = jobPosts.map((post) => {
-      // Format allowance
-      let allowanceStr = "Not specified";
-      if (post.noAllowance) {
-        allowanceStr = "No allowance";
-      } else if (post.allowance && post.allowancePeriod) {
-        const periodMap: Record<string, string> = {
-          MONTH: "Month",
-          WEEK: "Week",
-          DAY: "Day",
-        };
-        allowanceStr = `${post.allowance} THB/${periodMap[post.allowancePeriod] || post.allowancePeriod}`;
-      } else if (post.allowance) {
-        allowanceStr = `${post.allowance} THB`;
-      }
+    const statusMap: Record<string, "new" | "shortlisted" | "reviewed" | "rejected"> = {
+      NEW: "new",
+      SHORTLISTED: "shortlisted",
+      REVIEWED: "reviewed",
+      REJECTED: "rejected",
+    };
 
-      // Format workplace type
-      const workplaceTypeMap: Record<string, string> = {
-        ON_SITE: "On-site",
-        HYBRID: "Hybrid",
-        REMOTE: "Remote",
-      };
+    function initialsFromName(name: string) {
+      const parts = name.trim().split(/\s+/).filter(Boolean);
+      const first = parts[0]?.[0] ?? "?";
+      const second = parts.length > 1 ? parts[parts.length - 1]?.[0] : parts[0]?.[1];
+      return (first + (second ?? "")).toUpperCase();
+    }
 
-      // Format location
-      const locationParts = [post.locationDistrict, post.locationProvince].filter(Boolean);
-      const location = locationParts.length > 0 ? locationParts.join(", ") : "Location not specified";
-
-      // Format posted date
-      const postedDate = post.createdAt
-        ? new Date(post.createdAt).toLocaleDateString("en-GB", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          })
-        : "Date not available";
-
+    const applicants = apps.map((a) => {
+      const name = a.Candidate.fullName ?? a.Candidate.User.email;
+      const skills = a.Candidate.UserSkill.map((us) => us.Skills.name).slice(0, 6);
       return {
-        id: post.id,
-        jobTitle: post.jobTitle || "Untitled Job",
-        companyName: post.Company?.companyName || "Company Name",
-        companyLogo: post.Company?.logoURL || "TRINITY",
-        location,
-        workType: workplaceTypeMap[post.workplaceType] || "On-site",
-        jobType: post.jobType || "internship",
-        seniorityLevel: "student", // Default, can be enhanced later
-        field: "IT&Software", // Default, can be enhanced later
-        positions: 1, // Default, can be enhanced later
-        allowance: allowanceStr,
-        skills: [], // Can be enhanced later if skills are stored
-        postedDate,
-        jobDescription: post.jobDescription || "",
-        jobSpecification: post.jobSpecification || "",
-        isUrgent: post.jobPostStatus === "URGENT",
+        id: a.id,
+        candidateId: a.Candidate.id,
+        name,
+        email: a.Candidate.contactEmail || a.Candidate.User.email,
+        initials: initialsFromName(name),
+        appliedDate: relativeDateLabel(a.createdAt),
+        status: statusMap[a.status] ?? "new",
+        skills,
+        appliedAt: a.createdAt,
       };
     });
 
-    return res.json({ jobPosts: formattedJobPosts });
-  } catch (error: any) {
-    console.error("Error fetching public job posts:", error);
-    return res.status(500).json({
-      error: error.message || "Failed to fetch job posts",
+    const workType =
+      jobPost.workplaceType === "ON_SITE"
+        ? "On-site"
+        : jobPost.workplaceType === "HYBRID"
+        ? "Hybrid"
+        : jobPost.workplaceType === "REMOTE"
+        ? "Remote"
+        : "Not specified";
+
+    const location = [jobPost.locationDistrict, jobPost.locationProvince].filter(Boolean).join(", ");
+
+    return res.json({
+      jobPost: {
+        id: jobPost.id,
+        title: jobPost.jobTitle,
+        companyName: companyProfile.companyName,
+        location: location ? `- ${location}` : "",
+        workType,
+      },
+      applicants,
     });
+  } catch (error: any) {
+    console.error("Error fetching applicants:", error);
+    return res.status(500).json({ error: error.message || "Failed to fetch applicants" });
   }
 });
+
+// Company updates an applicant status
+jobPostsRouter.patch(
+  "/job-posts/:id/applicants/:applicationId",
+  requireAuth,
+  requireRole("COMPANY"),
+  async (req: AuthedRequest, res) => {
+    const userId = req.user!.id;
+    const jobPostId = typeof (req.params as any).id === "string" ? (req.params as any).id : (req.params as any).id?.[0];
+    const applicationId =
+      typeof (req.params as any).applicationId === "string"
+        ? (req.params as any).applicationId
+        : (req.params as any).applicationId?.[0];
+    if (!jobPostId || !applicationId) return res.status(400).json({ error: "id and applicationId are required" });
+    const { status } = req.body ?? {};
+
+    const statusIn: Record<string, "NEW" | "SHORTLISTED" | "REVIEWED" | "REJECTED"> = {
+      new: "NEW",
+      shortlisted: "SHORTLISTED",
+      reviewed: "REVIEWED",
+      rejected: "REJECTED",
+    };
+    const nextStatus = typeof status === "string" ? statusIn[status] : undefined;
+    if (!nextStatus) {
+      return res.status(400).json({ error: "status must be one of: new, shortlisted, reviewed, rejected" });
+    }
+
+    try {
+      const companyProfile = await prisma.companyProfile.findUnique({
+        where: { userId },
+        select: { id: true },
+      });
+      if (!companyProfile) return res.status(404).json({ error: "Company profile not found" });
+
+      const jobPost = await prisma.jobPost.findFirst({
+        where: { id: jobPostId, companyId: companyProfile.id },
+        select: { id: true },
+      });
+      if (!jobPost) return res.status(404).json({ error: "Job post not found" });
+
+      const updated = await prisma.jobApplication.update({
+        where: { id: applicationId },
+        data: { status: nextStatus, updatedAt: new Date() },
+        select: { id: true, status: true, createdAt: true },
+      });
+
+      return res.json({ application: updated });
+    } catch (error: any) {
+      console.error("Error updating application status:", error);
+      return res.status(500).json({ error: error.message || "Failed to update application status" });
+    }
+  }
+);

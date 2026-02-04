@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { apiFetch, setToken, getToken } from '@/lib/api'
+import { apiFetch } from '@/lib/api'
 
 interface RoleCardProps {
   icon: React.ReactNode
@@ -92,33 +92,30 @@ export default function RoleSelectionPage() {
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // Check if user has a token, redirect to login if not
+  // Check if user has a session, redirect to login if not
   useEffect(() => {
-    const token = getToken()
-    if (!token) {
-      router.push('/login')
+    const check = async () => {
+      try {
+        const data = await apiFetch<{ authenticated: boolean }>(`/api/auth/session`)
+        if (!data.authenticated) router.push('/login')
+      } catch {
+        router.push('/login')
+      }
     }
+    check()
   }, [router])
 
   const handleInternClick = async () => {
     if (isSubmitting) return
     
-    const token = getToken()
-    if (!token) {
-      setError('Please log in first')
-      router.push('/login')
-      return
-    }
-    
     setIsSubmitting(true)
     setError(null)
     
     try {
-      const data = await apiFetch<{ token: string; user: { id: string; email: string; role: string } }>(`/api/auth/me/role`, {
+      await apiFetch<{ user: { id: string; email: string; role: string } }>(`/api/auth/me/role`, {
         method: 'PATCH',
         body: JSON.stringify({ role: 'CANDIDATE' }),
       })
-      setToken(data.token)
       router.push('/intern/profile-setup')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to set role')
@@ -129,22 +126,14 @@ export default function RoleSelectionPage() {
   const handleEmployerClick = async () => {
     if (isSubmitting) return
     
-    const token = getToken()
-    if (!token) {
-      setError('Please log in first')
-      router.push('/login')
-      return
-    }
-    
     setIsSubmitting(true)
     setError(null)
     
     try {
-      const data = await apiFetch<{ token: string; user: { id: string; email: string; role: string } }>(`/api/auth/me/role`, {
+      await apiFetch<{ user: { id: string; email: string; role: string } }>(`/api/auth/me/role`, {
         method: 'PATCH',
         body: JSON.stringify({ role: 'COMPANY' }),
       })
-      setToken(data.token)
       router.push('/employer/profile-setup')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to set role')

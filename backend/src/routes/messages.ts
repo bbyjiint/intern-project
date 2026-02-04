@@ -1,11 +1,11 @@
 import { Router } from 'express'
-import { requireAuth, requireRole } from '../middleware/auth'
+import { requireAuth, requireRole, type AuthedRequest } from '../middleware/auth'
 import prisma from '../utils/prisma'
 
 const messagesRouter = Router()
 
 // Get all conversations (for both company and candidate)
-messagesRouter.get('/conversations', requireAuth, async (req, res) => {
+messagesRouter.get('/conversations', requireAuth, async (req: AuthedRequest, res) => {
   try {
     const userId = req.user!.id
 
@@ -157,7 +157,7 @@ messagesRouter.post('/conversations', requireAuth, requireRole('COMPANY'), async
       return res.status(500).json({ error: 'Database connection error' })
     }
 
-    const userId = req.user!.id
+    const userId = (req as AuthedRequest).user!.id
     const { candidateId, initialMessage } = req.body
 
     if (!candidateId) {
@@ -190,10 +190,50 @@ messagesRouter.post('/conversations', requireAuth, requireRole('COMPANY'), async
           candidateId: candidateId,
         },
       },
+      include: {
+        Candidate: {
+          include: {
+            University: true,
+          },
+        },
+        Messages: {
+          orderBy: { createdAt: 'desc' },
+          take: 1,
+        },
+      },
     })
 
     if (existingConversation) {
-      return res.status(400).json({ error: 'Conversation already exists' })
+      // Return existing conversation (idempotent)
+      const lastMessage = existingConversation.Messages[0] || null
+      const unreadCount = await prisma.message.count({
+        where: {
+          conversationId: existingConversation.id,
+          senderRole: 'CANDIDATE',
+          read: false,
+        },
+      })
+      
+      return res.status(200).json({
+        conversation: {
+          id: existingConversation.id,
+          candidateId: existingConversation.candidateId,
+          candidateName: existingConversation.Candidate.fullName || 'Unknown',
+          candidateInitials: existingConversation.Candidate.fullName
+            ? existingConversation.Candidate.fullName
+                .split(' ')
+                .map((n) => n[0])
+                .join('')
+                .toUpperCase()
+                .slice(0, 2)
+            : 'U',
+          candidateRole: existingConversation.Candidate.desiredPosition || 'Intern',
+          candidateUniversity: existingConversation.Candidate.University?.name || 'Unknown University',
+          lastMessage: lastMessage?.text || '',
+          lastMessageTime: lastMessage?.createdAt || existingConversation.createdAt,
+          unreadCount,
+        },
+      })
     }
 
     // Create conversation (with optional initial message)
@@ -274,11 +314,92 @@ messagesRouter.post('/conversations', requireAuth, requireRole('COMPANY'), async
   }
 })
 
+// Get total unread message count
+messagesRouter.get('/unread-count', requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.user!.id
+
+    // Get user role
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { role: true },
+    })
+
+    if (!user || !user.role) {
+      return res.status(403).json({ error: 'User role not found' })
+    }
+
+    let totalUnread = 0
+
+    if (user.role === 'COMPANY') {
+      // Get company profile
+      const companyProfile = await prisma.companyProfile.findUnique({
+        where: { userId },
+      })
+
+      if (!companyProfile) {
+        return res.json({ unreadCount: 0 })
+      }
+
+      // Get all conversations for this company
+      const conversations = await prisma.conversation.findMany({
+        where: { companyId: companyProfile.id },
+        select: { id: true },
+      })
+
+      // Count unread messages from candidates
+      for (const conv of conversations) {
+        const unread = await prisma.message.count({
+          where: {
+            conversationId: conv.id,
+            senderRole: 'CANDIDATE',
+            read: false,
+          },
+        })
+        totalUnread += unread
+      }
+    } else if (user.role === 'CANDIDATE') {
+      // Get candidate profile
+      const candidateProfile = await prisma.candidateProfile.findUnique({
+        where: { userId },
+      })
+
+      if (!candidateProfile) {
+        return res.json({ unreadCount: 0 })
+      }
+
+      // Get all conversations for this candidate
+      const conversations = await prisma.conversation.findMany({
+        where: { candidateId: candidateProfile.id },
+        select: { id: true },
+      })
+
+      // Count unread messages from companies
+      for (const conv of conversations) {
+        const unread = await prisma.message.count({
+          where: {
+            conversationId: conv.id,
+            senderRole: 'COMPANY',
+            read: false,
+          },
+        })
+        totalUnread += unread
+      }
+    }
+
+    res.json({ unreadCount: totalUnread })
+  } catch (error) {
+    console.error('Error fetching unread count:', error)
+    res.status(500).json({ error: 'Failed to fetch unread count' })
+  }
+})
+
 // Get messages for a conversation
 messagesRouter.get('/conversations/:conversationId/messages', requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id
-    const { conversationId } = req.params
+    const userId = (req as AuthedRequest).user!.id
+    const conversationId = typeof (req.params as any).conversationId === 'string' ? (req.params as any).conversationId : (req.params as any).conversationId?.[0]
+    if (!conversationId) return res.status(400).json({ error: 'conversationId is required' })
 
     // Get user role
     const user = await prisma.user.findUnique({
@@ -382,8 +503,9 @@ messagesRouter.get('/conversations/:conversationId/messages', requireAuth, async
 // Send a message
 messagesRouter.post('/conversations/:conversationId/messages', requireAuth, async (req, res) => {
   try {
-    const userId = req.user!.id
-    const { conversationId } = req.params
+    const userId = (req as AuthedRequest).user!.id
+    const conversationId = typeof (req.params as any).conversationId === 'string' ? (req.params as any).conversationId : (req.params as any).conversationId?.[0]
+    if (!conversationId) return res.status(400).json({ error: 'conversationId is required' })
     const { text } = req.body
 
     if (!text || !text.trim()) {
