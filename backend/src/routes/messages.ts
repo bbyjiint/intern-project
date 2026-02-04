@@ -156,6 +156,16 @@ messagesRouter.post('/conversations', requireAuth, requireRole('COMPANY'), async
       console.error('Prisma client is not initialized')
       return res.status(500).json({ error: 'Database connection error' })
     }
+    if (
+      !prisma.companyProfile?.findUnique ||
+      !prisma.candidateProfile?.findUnique ||
+      !prisma.conversation?.findUnique
+    ) {
+      console.error('Prisma client is missing expected models. Run prisma generate.')
+      return res.status(500).json({
+        error: 'Server misconfiguration. Prisma client is out of date. Run prisma generate.',
+      })
+    }
 
     const userId = (req as AuthedRequest).user!.id
     const { candidateId, initialMessage } = req.body
