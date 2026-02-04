@@ -30,6 +30,53 @@ export default function ProfileSetupPage() {
         router.push('/login')
       })
   }, [router])
+
+  // Load existing profile data for editing (localStorage + API)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const stepParam = params.get('step')
+    if (stepParam) {
+      const step = parseInt(stepParam, 10)
+      if (step >= 1 && step <= 3) {
+        setCurrentStep(step)
+      }
+    }
+
+    const savedData = localStorage.getItem('internProfileData')
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData)
+        setFormData((prev) => ({ ...prev, ...parsed }))
+      } catch (e) {
+        console.error('Failed to parse profile data:', e)
+      }
+    }
+
+    const loadProfile = async () => {
+      try {
+        const data = await apiFetch<{ profile: any }>('/api/candidates/profile')
+        const profile = data.profile || {}
+        setFormData((prev) => ({
+          ...prev,
+          fullName: prev.fullName || profile.fullName || '',
+          email: prev.email || profile.email || '',
+          phoneNumber: prev.phoneNumber || profile.phoneNumber || '',
+          aboutYou: prev.aboutYou || profile.aboutYou || '',
+          education: prev.education?.length ? prev.education : (profile.education || []),
+          projects: prev.projects?.length ? prev.projects : (profile.projects || []),
+          experience: prev.experience?.length ? prev.experience : (profile.experience || []),
+          skills: prev.skills?.length ? prev.skills : (profile.skills || []),
+        }))
+      } catch (err: any) {
+        if (err?.status === 404) {
+          return
+        }
+        console.error('Failed to load profile data:', err)
+      }
+    }
+
+    loadProfile()
+  }, [])
   const [formData, setFormData] = useState({
     // Step 1
     fullName: '',

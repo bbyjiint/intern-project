@@ -48,6 +48,36 @@ export default function EmployerProfileSetupPage() {
         console.error('Failed to parse profile data:', e)
       }
     }
+
+    const loadProfile = async () => {
+      try {
+        const data = await apiFetch<{ profile: any }>('/api/companies/profile')
+        const profile = data.profile || {}
+        setFormData((prev) => ({
+          ...prev,
+          companyName: prev.companyName || profile.companyName || '',
+          companyDescription: prev.companyDescription || profile.companyDescription || '',
+          businessType: prev.businessType || profile.businessType || '',
+          companySize: prev.companySize || profile.companySize || '',
+          addressDetails: prev.addressDetails || profile.addressDetails || '',
+          subDistrict: prev.subDistrict || profile.subDistrict || '',
+          district: prev.district || profile.district || '',
+          province: prev.province || profile.province || '',
+          postcode: prev.postcode || profile.postcode || '',
+          phoneNumber: prev.phoneNumber || profile.phoneNumber || '',
+          email: prev.email || profile.email || '',
+          websiteUrl: prev.websiteUrl || profile.websiteUrl || '',
+          contactName: prev.contactName || profile.contactName || '',
+        }))
+      } catch (err: any) {
+        if (err?.status === 404) {
+          return
+        }
+        console.error('Failed to load profile data:', err)
+      }
+    }
+
+    loadProfile()
   }, [])
   const [formData, setFormData] = useState({
     // Step 1
