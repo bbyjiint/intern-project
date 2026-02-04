@@ -15,6 +15,14 @@ export default function Step2BackgroundExperience({ data, onUpdate }: Step2Backg
     projects: data.projects || [],
   })
 
+  // Sync formData when data prop changes (e.g., when profile data is loaded from API)
+  useEffect(() => {
+    setFormData({
+      education: data.education || [],
+      projects: data.projects || [],
+    })
+  }, [data.education, data.projects])
+
   const [showEducationForm, setShowEducationForm] = useState(false)
   const [showProjectForm, setShowProjectForm] = useState(false)
   const [editingEducationIndex, setEditingEducationIndex] = useState<number | null>(null)

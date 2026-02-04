@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface Step2CompanyAddressProps {
   data: any
@@ -15,6 +15,17 @@ export default function Step2CompanyAddress({ data, onUpdate }: Step2CompanyAddr
     province: data.province || '',
     postcode: data.postcode || '',
   })
+
+  // Sync formData when data prop changes (e.g., when profile data is loaded from API)
+  useEffect(() => {
+    setFormData({
+      addressDetails: data.addressDetails || '',
+      subDistrict: data.subDistrict || '',
+      district: data.district || '',
+      province: data.province || '',
+      postcode: data.postcode || '',
+    })
+  }, [data.addressDetails, data.subDistrict, data.district, data.province, data.postcode])
 
   const handleChange = (field: string, value: string) => {
     const updated = { ...formData, [field]: value }

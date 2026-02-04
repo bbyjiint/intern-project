@@ -37,43 +37,57 @@ export default function EmployerProfileSetupPage() {
         setCurrentStep(step)
       }
     }
-    
-    // Load existing profile data from localStorage
-    const savedData = localStorage.getItem('employerProfileData')
-    if (savedData) {
-      try {
-        const parsed = JSON.parse(savedData)
-        setFormData(prev => ({ ...prev, ...parsed }))
-      } catch (e) {
-        console.error('Failed to parse profile data:', e)
-      }
-    }
 
     const loadProfile = async () => {
       try {
+        // Try to load from API first (this is the source of truth)
         const data = await apiFetch<{ profile: any }>('/api/companies/profile')
         const profile = data.profile || {}
+        
+        // Prioritize API data, but keep any existing form data if API doesn't have it
         setFormData((prev) => ({
-          ...prev,
-          companyName: prev.companyName || profile.companyName || '',
-          companyDescription: prev.companyDescription || profile.companyDescription || '',
-          businessType: prev.businessType || profile.businessType || '',
-          companySize: prev.companySize || profile.companySize || '',
-          addressDetails: prev.addressDetails || profile.addressDetails || '',
-          subDistrict: prev.subDistrict || profile.subDistrict || '',
-          district: prev.district || profile.district || '',
-          province: prev.province || profile.province || '',
-          postcode: prev.postcode || profile.postcode || '',
-          phoneNumber: prev.phoneNumber || profile.phoneNumber || '',
-          email: prev.email || profile.email || '',
-          websiteUrl: prev.websiteUrl || profile.websiteUrl || '',
-          contactName: prev.contactName || profile.contactName || '',
+          companyName: profile.companyName || prev.companyName || '',
+          companyDescription: profile.companyDescription || prev.companyDescription || '',
+          businessType: profile.businessType || prev.businessType || '',
+          companySize: profile.companySize || prev.companySize || '',
+          addressDetails: profile.addressDetails || prev.addressDetails || '',
+          subDistrict: profile.subDistrict || prev.subDistrict || '',
+          district: profile.district || prev.district || '',
+          province: profile.province || prev.province || '',
+          postcode: profile.postcode || prev.postcode || '',
+          phoneNumber: profile.phoneNumber || prev.phoneNumber || '',
+          email: profile.email || prev.email || '',
+          websiteUrl: profile.websiteUrl || prev.websiteUrl || '',
+          contactName: profile.contactName || prev.contactName || '',
         }))
+        
+        // Update localStorage with API data
+        localStorage.setItem('employerProfileData', JSON.stringify(profile))
       } catch (err: any) {
         if (err?.status === 404) {
+          // Profile doesn't exist yet, try localStorage as fallback
+          const savedData = localStorage.getItem('employerProfileData')
+          if (savedData) {
+            try {
+              const parsed = JSON.parse(savedData)
+              setFormData(prev => ({ ...prev, ...parsed }))
+            } catch (e) {
+              console.error('Failed to parse profile data:', e)
+            }
+          }
           return
         }
         console.error('Failed to load profile data:', err)
+        // On error, try localStorage as fallback
+        const savedData = localStorage.getItem('employerProfileData')
+        if (savedData) {
+          try {
+            const parsed = JSON.parse(savedData)
+            setFormData(prev => ({ ...prev, ...parsed }))
+          } catch (e) {
+            console.error('Failed to parse profile data:', e)
+          }
+        }
       }
     }
 

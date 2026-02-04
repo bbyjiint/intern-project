@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface Step1GeneralInfoProps {
   data: any
@@ -15,6 +15,17 @@ export default function Step1GeneralInfo({ data, onUpdate }: Step1GeneralInfoPro
     aboutYou: data.aboutYou || '',
     photo: data.photo || null,
   })
+
+  // Sync formData when data prop changes (e.g., when profile data is loaded from API)
+  useEffect(() => {
+    setFormData({
+      fullName: data.fullName || '',
+      email: data.email || '',
+      phoneNumber: data.phoneNumber || '',
+      aboutYou: data.aboutYou || data.professionalSummary || '',
+      photo: data.photo || data.profileImage || null,
+    })
+  }, [data.fullName, data.email, data.phoneNumber, data.aboutYou, data.professionalSummary, data.photo, data.profileImage])
 
   const handleChange = (field: string, value: string) => {
     const updated = { ...formData, [field]: value }

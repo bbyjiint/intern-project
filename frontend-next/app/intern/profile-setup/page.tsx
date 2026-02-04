@@ -31,7 +31,7 @@ export default function ProfileSetupPage() {
       })
   }, [router])
 
-  // Load existing profile data for editing (localStorage + API)
+  // Load existing profile data for editing (API first, then localStorage as fallback)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const stepParam = params.get('step')
@@ -42,36 +42,51 @@ export default function ProfileSetupPage() {
       }
     }
 
-    const savedData = localStorage.getItem('internProfileData')
-    if (savedData) {
-      try {
-        const parsed = JSON.parse(savedData)
-        setFormData((prev) => ({ ...prev, ...parsed }))
-      } catch (e) {
-        console.error('Failed to parse profile data:', e)
-      }
-    }
-
     const loadProfile = async () => {
       try {
+        // Try to load from API first (this is the source of truth)
         const data = await apiFetch<{ profile: any }>('/api/candidates/profile')
         const profile = data.profile || {}
+        
+        // Prioritize API data, but keep any existing form data if API doesn't have it
         setFormData((prev) => ({
-          ...prev,
-          fullName: prev.fullName || profile.fullName || '',
-          email: prev.email || profile.email || '',
-          phoneNumber: prev.phoneNumber || profile.phoneNumber || '',
-          aboutYou: prev.aboutYou || profile.aboutYou || '',
-          education: prev.education?.length ? prev.education : (profile.education || []),
-          projects: prev.projects?.length ? prev.projects : (profile.projects || []),
-          experience: prev.experience?.length ? prev.experience : (profile.experience || []),
-          skills: prev.skills?.length ? prev.skills : (profile.skills || []),
+          fullName: profile.fullName || prev.fullName || '',
+          email: profile.email || prev.email || '',
+          phoneNumber: profile.phoneNumber || prev.phoneNumber || '',
+          aboutYou: profile.aboutYou || profile.professionalSummary || prev.aboutYou || '',
+          education: profile.education?.length ? profile.education : (prev.education || []),
+          projects: profile.projects?.length ? profile.projects : (prev.projects || []),
+          experience: profile.experience?.length ? profile.experience : (prev.experience || []),
+          skills: profile.skills?.length ? profile.skills : (prev.skills || []),
         }))
+        
+        // Update localStorage with API data
+        localStorage.setItem('internProfileData', JSON.stringify(profile))
       } catch (err: any) {
         if (err?.status === 404) {
+          // Profile doesn't exist yet, try localStorage as fallback
+          const savedData = localStorage.getItem('internProfileData')
+          if (savedData) {
+            try {
+              const parsed = JSON.parse(savedData)
+              setFormData((prev) => ({ ...prev, ...parsed }))
+            } catch (e) {
+              console.error('Failed to parse profile data:', e)
+            }
+          }
           return
         }
         console.error('Failed to load profile data:', err)
+        // On error, try localStorage as fallback
+        const savedData = localStorage.getItem('internProfileData')
+        if (savedData) {
+          try {
+            const parsed = JSON.parse(savedData)
+            setFormData((prev) => ({ ...prev, ...parsed }))
+          } catch (e) {
+            console.error('Failed to parse profile data:', e)
+          }
+        }
       }
     }
 

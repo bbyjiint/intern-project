@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface Step3ContactInfoProps {
   data: any
@@ -14,6 +14,16 @@ export default function Step3ContactInfo({ data, onUpdate }: Step3ContactInfoPro
     websiteUrl: data.websiteUrl || '',
     contactName: data.contactName || '',
   })
+
+  // Sync formData when data prop changes (e.g., when profile data is loaded from API)
+  useEffect(() => {
+    setFormData({
+      phoneNumber: data.phoneNumber || '',
+      email: data.email || '',
+      websiteUrl: data.websiteUrl || '',
+      contactName: data.contactName || '',
+    })
+  }, [data.phoneNumber, data.email, data.websiteUrl, data.contactName])
 
   const handleChange = (field: string, value: string) => {
     const updated = { ...formData, [field]: value }
