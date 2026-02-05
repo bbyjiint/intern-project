@@ -75,7 +75,7 @@ export default function SearchableDropdown({
         onClick={() => setIsOpen(!isOpen)}
         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-left flex items-center justify-between bg-white"
       >
-        <span className={value === '' || value === 'All Universities' ? 'text-gray-500' : 'text-gray-900'}>
+        <span className={value === '' ? 'text-gray-500' : 'text-gray-900'}>
           {displayValue}
         </span>
         <svg
@@ -101,15 +101,17 @@ export default function SearchableDropdown({
             />
           </div>
           <div className="max-h-48 overflow-y-auto">
-            <button
-              type="button"
-              onClick={() => handleSelect('All Universities')}
-              className={`w-full px-4 py-2 text-left hover:bg-gray-100 transition-colors ${
-                value === 'All Universities' ? 'bg-blue-50 text-blue-600 font-medium' : 'text-gray-900'
-              }`}
-            >
-              {allOptionLabel}
-            </button>
+            {allOptionLabel && (
+              <button
+                type="button"
+                onClick={() => handleSelect('')}
+                className={`w-full px-4 py-2 text-left hover:bg-gray-100 transition-colors ${
+                  value === '' ? 'bg-blue-50 text-blue-600 font-medium' : 'text-gray-900'
+                }`}
+              >
+                {allOptionLabel}
+              </button>
+            )}
             {filteredOptions.length > 0 ? (
               filteredOptions.map((option) => {
                 const searchLower = searchQuery.toLowerCase()

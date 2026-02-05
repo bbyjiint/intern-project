@@ -44,6 +44,15 @@ npm run prisma:migrate
 
 ## การรันโปรเจกต์
 
+## Note: Authentication (production-standard)
+
+- Backend จะตั้งค่า JWT ลงใน **HTTP-only cookie** (ชื่อ cookie: `auth`)  
+  Frontend **ไม่อ่าน/ไม่เก็บ JWT** ใน `localStorage`/`sessionStorage`
+- ทุก request ที่ต้อง auth จะพึ่งพา cookie ที่ browser ส่งให้อัตโนมัติ (`fetch` ใช้ `credentials: "include"`)
+- ข้อดี: login จะ **sync ทุกแท็บ** และลดความเสี่ยงจาก XSS (เพราะ JS อ่าน token ไม่ได้)
+- Logout จะเรียก `POST /api/auth/logout` เพื่อ clear cookie
+- (Optional) “Remember me” จะตั้ง cookie ให้เป็น persistent (ประมาณ 30 วัน); ถ้าไม่เลือกจะเป็น session cookie
+
 ### รัน Frontend และ Backend พร้อมกัน
 
 ```bash
