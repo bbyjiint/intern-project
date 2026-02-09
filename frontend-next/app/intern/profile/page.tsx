@@ -1,81 +1,40 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
+import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import InternNavbar from '@/components/InternNavbar'
-import { apiFetch } from '@/lib/api'
+import { useProfile, ProfileData } from '@/hooks/useProfile'
+import ProfileHeader from '@/components/profile/ProfileHeader'
+import PersonalInfoCard from '@/components/profile/PersonalInfoCard'
+import EducationSection from '@/components/profile/EducationSection'
+import ExperienceSection from '@/components/profile/ExperienceSection'
+import ProjectsSection from '@/components/profile/ProjectsSection'
+import SkillsSection from '@/components/profile/SkillsSection'
+import EditProfileDrawer from '@/components/profile/EditProfileDrawer'
+
+type EditSection = 
+  | 'personal'
+  | 'education'
+  | 'experience'
+  | 'project'
+  | 'skill'
 
 export default function InternProfilePage() {
   const router = useRouter()
-  const [profileData, setProfileData] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const pathname = usePathname()
+  const { profileData, isLoading, completionPercentage, refetch } = useProfile()
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false)
+  const [editDrawerOpen, setEditDrawerOpen] = useState(false)
+  const [editSection, setEditSection] = useState<EditSection | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [currentDate, setCurrentDate] = useState('')
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  
+  const isAIAnalysisPage = pathname === '/intern/ai-analysis'
+  const isJobMatchPage = pathname === '/intern/job-match' || pathname === '/intern/find-companies'
 
   useEffect(() => {
-    // Check user role first
-    const checkRoleAndLoadProfile = async () => {
-      try {
-        // Check user role first
-        const userData = await apiFetch<{ user: { role: string | null } }>('/api/auth/me')
-        
-        // If user has COMPANY role, redirect to employer pages
-        if (userData.user.role === 'COMPANY') {
-          router.push('/employer/profile')
-          return
-        }
-        
-        // If user has no role, redirect to role selection
-        if (!userData.user.role) {
-          router.push('/role-selection')
-          return
-        }
-
-        // User has CANDIDATE role, proceed to load profile
-        const data = await apiFetch<{ profile: any }>('/api/candidates/profile')
-        setProfileData(data.profile)
-        
-        // Also save to localStorage for backward compatibility
-        localStorage.setItem('internProfileData', JSON.stringify(data.profile))
-        setIsLoading(false)
-      } catch (error: any) {
-        console.error('Failed to load profile data:', error)
-        
-        // If 403 Forbidden, it's a role mismatch - redirect based on error message
-        if (error.status === 403) {
-          const errorMessage = error.message || ''
-          if (errorMessage.includes('COMPANY role')) {
-            router.push('/employer/profile')
-            return
-          }
-        }
-        
-        // If 404, profile doesn't exist yet - that's okay
-        if (error.status === 404) {
-          setProfileData(null)
-          setIsLoading(false)
-        } else {
-          // Fallback to localStorage if API fails
-          const savedData = localStorage.getItem('internProfileData')
-          if (savedData) {
-            try {
-              setProfileData(JSON.parse(savedData))
-            } catch (e) {
-              console.error('Failed to parse profile data:', e)
-            }
-          }
-          setIsLoading(false)
-        }
-      }
-    }
-    
-    checkRoleAndLoadProfile()
     // Set current date
-    updateDate()
-  }, [router])
-
-  const updateDate = () => {
     const now = new Date()
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
     const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
@@ -86,71 +45,50 @@ export default function InternProfilePage() {
     const year = now.getFullYear()
     
     setCurrentDate(`${dayName}, ${day} ${month} ${year}`)
-  }
+  }, [])
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => {
-        const imageUrl = reader.result as string
-        const updatedData = { ...profileData!, profileImage: imageUrl }
-        setProfileData(updatedData)
-        localStorage.setItem('internProfileData', JSON.stringify(updatedData))
-        // Dispatch custom event to update navbar
-        window.dispatchEvent(new Event('profileImageUpdated'))
-        ;(async () => {
-          try {
-            await apiFetch('/api/candidates/profile', {
-              method: 'PUT',
-              body: JSON.stringify({ profileImage: imageUrl }),
-            })
-          } catch (error) {
-            console.error('Failed to save profile image:', error)
-          }
-        })()
+  useEffect(() => {
+    // Check user role
+    const checkRole = async () => {
+      try {
+        const { apiFetch } = await import('@/lib/api')
+        const userData = await apiFetch<{ user: { role: string | null } }>('/api/auth/me')
+        
+        if (userData.user.role === 'COMPANY') {
+          router.push('/employer/profile')
+          return
+        }
+        
+        if (!userData.user.role) {
+          router.push('/role-selection')
+          return
+        }
+      } catch (error) {
+        console.error('Failed to check role:', error)
       }
-      reader.readAsDataURL(file)
     }
+
+    checkRole()
+  }, [router])
+
+  const handleEdit = (section: EditSection, id: string | null = null) => {
+    setEditSection(section)
+    setEditingId(id)
+    setEditDrawerOpen(true)
   }
 
-  const getInitials = (name: string) => {
-    if (!name) return 'I'
-    const parts = name.split(' ')
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[1][0]).toUpperCase()
-    }
-    return name.charAt(0).toUpperCase()
+  const handleAdd = (section: EditSection) => {
+    setEditSection(section)
+    setEditingId(null)
+    setEditDrawerOpen(true)
   }
 
-  const goToStep = (step: number) => {
-    router.push(`/intern/profile-setup?step=${step}`)
+  const handleSave = () => {
+    refetch()
+    setEditDrawerOpen(false)
+    setEditSection(null)
+    setEditingId(null)
   }
-
-  const formatDate = (dateString: string) => {
-    if (!dateString) return ''
-    const date = new Date(dateString)
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-    return `${months[date.getMonth()]} ${date.getFullYear()}`
-  }
-
-  const formatDateRange = (startDate: string, endDate: string) => {
-    const start = formatDate(startDate)
-    const end = endDate ? formatDate(endDate) : 'Present'
-    return `${start} - ${end}`
-  }
-
-  const getSkillLevel = (level: string) => {
-    const levels: Record<string, { label: string; description: string; width: string }> = {
-      beginner: { label: 'Beginner', description: 'Learning basics, needs guidance', width: '33%' },
-      intermediate: { label: 'Intermediate', description: 'Can work independently', width: '66%' },
-      advanced: { label: 'Advanced', description: 'Can mentor others', width: '100%' },
-    }
-    return levels[level] || levels.beginner
-  }
-
-  const technicalSkills = profileData?.skills?.filter((s: any) => s.category === 'technical') || []
-  const businessSkills = profileData?.skills?.filter((s: any) => s.category === 'business') || []
 
   if (isLoading) {
     return (
@@ -189,16 +127,92 @@ export default function InternProfilePage() {
         {/* Sidebar Navigation */}
         <div className="w-64 bg-white min-h-screen pt-8 border-r border-gray-200">
           <div className="px-6 space-y-2">
-            <Link
-              href="/intern/profile"
-              className="px-4 py-3 rounded-lg flex items-center space-x-3"
-              style={{ backgroundColor: '#0273B1' }}
-            >
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-              <span className="font-medium text-white">Profile</span>
-            </Link>
+            {/* Profile with Dropdown */}
+            <div>
+              <button
+                onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                className="w-full px-4 py-3 rounded-lg flex items-center justify-between transition-colors"
+                style={{ backgroundColor: '#0273B1' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#025a8f'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#0273B1'
+                }}
+              >
+                <div className="flex items-center space-x-3">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  <span className="font-medium text-white">Profile</span>
+                </div>
+                <svg 
+                  className={`w-4 h-4 text-white transition-transform ${isProfileDropdownOpen ? 'rotate-180' : ''}`}
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {/* Dropdown Menu */}
+              {isProfileDropdownOpen && (
+                <div className="ml-4 mt-2 space-y-1">
+                  <Link
+                    href="/intern/ai-analysis"
+                    className="block px-4 py-3 rounded-lg text-sm transition-colors flex items-center space-x-3"
+                    style={{ 
+                      color: isAIAnalysisPage ? 'white' : '#1C2D4F',
+                      backgroundColor: isAIAnalysisPage ? '#0273B1' : 'transparent'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isAIAnalysisPage) {
+                        e.currentTarget.style.backgroundColor = '#F0F4F8'
+                        e.currentTarget.style.color = '#0273B1'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isAIAnalysisPage) {
+                        e.currentTarget.style.backgroundColor = 'transparent'
+                        e.currentTarget.style.color = '#1C2D4F'
+                      }
+                    }}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <span>AI Analysis</span>
+                  </Link>
+                  <Link
+                    href="/intern/job-match"
+                    className="block px-4 py-3 rounded-lg text-sm transition-colors flex items-center space-x-3"
+                    style={{ 
+                      color: isJobMatchPage ? 'white' : '#1C2D4F',
+                      backgroundColor: isJobMatchPage ? '#0273B1' : 'transparent'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isJobMatchPage) {
+                        e.currentTarget.style.backgroundColor = '#F0F4F8'
+                        e.currentTarget.style.color = '#0273B1'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isJobMatchPage) {
+                        e.currentTarget.style.backgroundColor = 'transparent'
+                        e.currentTarget.style.color = '#1C2D4F'
+                      }
+                    }}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <span>Job Match</span>
+                  </Link>
+                </div>
+              )}
+            </div>
+
             <Link
               href="/intern/applied"
               className="px-4 py-3 rounded-lg flex items-center space-x-3 transition-colors"
@@ -235,350 +249,63 @@ export default function InternProfilePage() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1" style={{ background: 'linear-gradient(to bottom, #E3F2FD 0%, #FFFFFF 300px)' }}>
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Welcome Section */}
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold mb-2" style={{ color: '#1C2D4F' }}>
-              Welcome, {profileData?.fullName || 'Intern'}!
-            </h1>
-            <p className="text-sm text-gray-500">{currentDate}</p>
-          </div>
+        <div className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Header */}
+          <ProfileHeader 
+            fullName={profileData.fullName || 'User'}
+            currentDate={currentDate}
+            completionPercentage={completionPercentage}
+          />
 
-          {/* Profile Summary Card */}
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-start space-x-4 flex-1">
-                <div className="relative">
-                  <div
-                    className="w-20 h-20 rounded-full overflow-hidden cursor-pointer"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    {profileData?.profileImage ? (
-                      <img
-                        src={profileData.profileImage}
-                        alt="Profile"
-                        className="w-20 h-20 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div 
-                        className="w-20 h-20 rounded-full flex items-center justify-center"
-                        style={{ backgroundColor: '#0273B1' }}
-                      >
-                        <span className="text-white font-semibold text-xl">
-                          {getInitials(profileData?.fullName || 'Intern')}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleImageChange}
-                    accept="image/*"
-                    className="hidden"
-                  />
-                </div>
-                <div className="flex-1">
-                  <h2
-                    className="text-xl font-bold text-gray-900 mb-1 cursor-pointer"
-                    onClick={() => goToStep(1)}
-                  >
-                    {profileData?.fullName || 'Intern Name'}
-                  </h2>
-                  <p
-                    className="text-gray-600 mb-3 cursor-pointer"
-                    onClick={() => goToStep(1)}
-                  >
-                    {profileData?.email || 'email@example.com'}
-                  </p>
-                  <p
-                    className="text-gray-700 leading-relaxed cursor-pointer"
-                    onClick={() => goToStep(1)}
-                  >
-                    {profileData?.professionalSummary || profileData?.aboutYou || 'No professional summary provided.'}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => goToStep(1)}
-                className="px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
-                style={{
-                  backgroundColor: 'white',
-                  border: '2px solid #0273B1',
-                  color: '#0273B1'
-                }}
-              >
-                Edit
-              </button>
-            </div>
-          </div>
+          {/* Personal Information */}
+          <PersonalInfoCard 
+            profile={profileData}
+            onEdit={() => handleEdit('personal')}
+          />
 
-          {/* Education Section */}
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3
-                className="text-xl font-bold cursor-pointer"
-                style={{ color: '#1C2D4F' }}
-                onClick={() => goToStep(2)}
-              >
-                Education
-              </h3>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => goToStep(2)}
-                  className="px-4 py-2 rounded-lg font-semibold text-sm text-white transition-colors"
-                  style={{ backgroundColor: '#0273B1' }}
-                >
-                  + Add Education
-                </button>
-                <button
-                  onClick={() => goToStep(2)}
-                  className="px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
-                  style={{
-                    backgroundColor: 'white',
-                    border: '2px solid #0273B1',
-                    color: '#0273B1'
-                  }}
-                >
-                  Edit
-                </button>
-              </div>
-            </div>
-            {profileData?.education && profileData.education.length > 0 ? (
-              profileData.education.map((edu: any, index: number) => (
-                <div key={index} className="mb-4 last:mb-0 cursor-pointer" onClick={() => goToStep(2)}>
-                  <p className="font-semibold text-gray-900">{edu.university || 'University Name'}</p>
-                  <p className="text-gray-700">
-                    {edu.degree || 'Degree'} | GPA: {edu.gpa || 'N/A'}/4.0 | {formatDateRange(edu.startDate, edu.endDate)}
-                  </p>
-                  {edu.coursework && edu.coursework.length > 0 && (
-                    <p className="text-gray-600 mt-1">
-                      Relevant Coursework: {edu.coursework.join(', ')}
-                    </p>
-                  )}
-                  {edu.achievements && edu.achievements.length > 0 && (
-                    <div className="mt-2">
-                      {edu.achievements.map((achievement: string, i: number) => (
-                        <p key={i} className="text-gray-600">{achievement}</p>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))
-            ) : (
-              <p className="text-gray-500">No education information provided.</p>
-            )}
-          </div>
+          {/* Education */}
+          <EducationSection
+            education={profileData.education || []}
+            onAdd={() => handleAdd('education')}
+            onEdit={(id) => handleEdit('education', id)}
+          />
 
-          {/* Experience Section */}
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3
-                className="text-xl font-bold cursor-pointer"
-                style={{ color: '#1C2D4F' }}
-                onClick={() => goToStep(3)}
-              >
-                Experience
-              </h3>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => goToStep(3)}
-                  className="px-4 py-2 rounded-lg font-semibold text-sm text-white transition-colors"
-                  style={{ backgroundColor: '#0273B1' }}
-                >
-                  + Add Experience
-                </button>
-                <button
-                  onClick={() => goToStep(3)}
-                  className="px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
-                  style={{
-                    backgroundColor: 'white',
-                    border: '2px solid #0273B1',
-                    color: '#0273B1'
-                  }}
-                >
-                  Edit
-                </button>
-              </div>
-            </div>
-            {profileData?.experience && profileData.experience.length > 0 ? (
-              profileData.experience.map((exp: any, index: number) => (
-                <div key={index} className="mb-4 last:mb-0 cursor-pointer" onClick={() => goToStep(3)}>
-                  <p className="font-semibold text-gray-900">{exp.position || 'Position'} ({exp.companyName || 'Company'})</p>
-                  <p className="text-gray-700">
-                    {exp.department || 'Department'} | {formatDateRange(exp.startDate, exp.endDate)} {exp.manager ? `| Manager: ${exp.manager}` : ''}
-                  </p>
-                  {exp.description && (
-                    <ul className="list-disc list-inside mt-2 space-y-1 text-gray-600">
-                      {exp.description.split('\n').map((line: string, i: number) => (
-                        line.trim() && <li key={i}>{line.trim()}</li>
-                      ))}
-                    </ul>
-                  )}
-                  {exp.linkedProjects && exp.linkedProjects.length > 0 && (
-                    <p className="text-blue-600 mt-2 cursor-pointer hover:underline">
-                      → {exp.linkedProjects.length} Projects linked to this experience
-                    </p>
-                  )}
-                </div>
-              ))
-            ) : (
-              <p className="text-gray-500">No experience information provided.</p>
-            )}
-          </div>
+          {/* Experience */}
+          <ExperienceSection
+            experience={profileData.experience || []}
+            onAdd={() => handleAdd('experience')}
+            onEdit={(id) => handleEdit('experience', id)}
+          />
 
-          {/* Projects Section */}
-          <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3
-                className="text-xl font-bold cursor-pointer"
-                style={{ color: '#1C2D4F' }}
-                onClick={() => goToStep(2)}
-              >
-                Projects
-              </h3>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => goToStep(2)}
-                  className="px-4 py-2 rounded-lg font-semibold text-sm text-white transition-colors"
-                  style={{ backgroundColor: '#0273B1' }}
-                >
-                  + Add Project
-                </button>
-                <button
-                  onClick={() => goToStep(2)}
-                  className="px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
-                  style={{
-                    backgroundColor: 'white',
-                    border: '2px solid #0273B1',
-                    color: '#0273B1'
-                  }}
-                >
-                  Edit
-                </button>
-              </div>
-            </div>
-            {profileData?.projects && profileData.projects.length > 0 ? (
-              profileData.projects.map((project: any, index: number) => (
-                <div key={index} className="mb-4 last:mb-0 cursor-pointer" onClick={() => goToStep(2)}>
-                  <p className="font-semibold text-gray-900">{project.name || 'Project Name'} - {project.role || 'Role'}</p>
-                  {project.linkedTo && (
-                    <p className="text-gray-600 text-sm">
-                      Linked to: {project.linkedTo} | {formatDateRange(project.startDate, project.endDate)}
-                    </p>
-                  )}
-                  <p className="text-gray-700 mt-2">{project.description || 'No description provided.'}</p>
-                  {project.technologies && project.technologies.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-3">
-                      {project.technologies.map((tech: string, i: number) => (
-                        <span
-                          key={i}
-                          className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
-                        >
-                          {tech}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))
-            ) : (
-              <p className="text-gray-500">No projects provided.</p>
-            )}
-          </div>
+          {/* Projects */}
+          <ProjectsSection
+            projects={profileData.projects || []}
+            onAdd={() => handleAdd('project')}
+            onEdit={(id) => handleEdit('project', id)}
+          />
 
-          {/* Skills Section */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3
-                className="text-xl font-bold cursor-pointer"
-                style={{ color: '#1C2D4F' }}
-                onClick={() => goToStep(3)}
-              >
-                Skills
-              </h3>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => router.push('/intern/profile-setup?step=3')}
-                  className="px-4 py-2 rounded-lg font-semibold text-sm text-white transition-colors"
-                  style={{ backgroundColor: '#0273B1' }}
-                >
-                  + Add Skill
-                </button>
-                <button
-                  onClick={() => router.push('/intern/profile-setup?step=3')}
-                  className="px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
-                  style={{
-                    backgroundColor: 'white',
-                    border: '2px solid #0273B1',
-                    color: '#0273B1'
-                  }}
-                >
-                  Edit
-                </button>
-              </div>
-            </div>
-            
-            {/* Technical Skills */}
-            {technicalSkills.length > 0 && (
-              <div className="mb-6">
-                <h4 className="font-semibold mb-3" style={{ color: '#1C2D4F' }}>Technical Skills</h4>
-                <div className="space-y-4">
-                  {technicalSkills.map((skill: any, index: number) => {
-                    const level = getSkillLevel(skill.level || 'beginner')
-                    return (
-                      <div key={index}>
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="font-medium text-gray-900">{skill.name || 'Skill Name'}</span>
-                          <span className="text-sm text-gray-600">{level.label} | {level.description}</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-blue-600 h-2 rounded-full"
-                            style={{ width: level.width }}
-                          ></div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* Business Skills */}
-            {businessSkills.length > 0 && (
-              <div>
-                <h4 className="font-semibold mb-3" style={{ color: '#1C2D4F' }}>Business Skills</h4>
-                <div className="space-y-4">
-                  {businessSkills.map((skill: any, index: number) => {
-                    const level = getSkillLevel(skill.level || 'beginner')
-                    return (
-                      <div key={index}>
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="font-medium text-gray-900">{skill.name || 'Skill Name'}</span>
-                          <span className="text-sm text-gray-600">{level.label} | {level.description}</span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-blue-600 h-2 rounded-full"
-                            style={{ width: level.width }}
-                          ></div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
-            {technicalSkills.length === 0 && businessSkills.length === 0 && (
-              <p className="text-gray-500">No skills provided.</p>
-            )}
-          </div>
-          </div>
+          {/* Skills */}
+          <SkillsSection
+            skills={profileData.skills || []}
+            onAdd={() => handleAdd('skill')}
+            onEdit={(id) => handleEdit('skill', id)}
+          />
         </div>
       </div>
+
+      {/* Edit Profile Drawer */}
+      <EditProfileDrawer
+        isOpen={editDrawerOpen}
+        section={editSection}
+        editingId={editingId}
+        profileData={profileData}
+        onClose={() => {
+          setEditDrawerOpen(false)
+          setEditSection(null)
+          setEditingId(null)
+        }}
+        onSave={handleSave}
+      />
     </div>
   )
 }
