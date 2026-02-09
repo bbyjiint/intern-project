@@ -32,6 +32,7 @@ profilesRouter.get("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
     }
 
     // Transform database data to match frontend format
+    // Response schema matches what PUT endpoint accepts
     const profileData = {
       fullName: candidateProfile.fullName || null,
       email: candidateProfile.contactEmail || candidateProfile.User.email,
@@ -47,22 +48,20 @@ profilesRouter.get("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
         startDate: cu.startDate ? cu.startDate.toISOString().split("T")[0] : "",
         endDate: cu.endDate ? cu.endDate.toISOString().split("T")[0] : "",
         startYear: cu.startDate ? cu.startDate.getFullYear().toString() : "",
-        endYear: cu.endDate ? cu.endDate.getFullYear().toString() : "",
+        endYear: cu.isCurrent ? null : (cu.endDate ? cu.endDate.getFullYear().toString() : null),
         gpa: cu.gpa ? cu.gpa.toString() : null,
-        coursework: [],
-        achievements: [],
+        // Note: coursework and achievements are not stored in schema currently
+        // TODO: Add fields to CandidateUniversity model if needed
       })),
       experience: candidateProfile.WorkHistory.map((wh) => ({
         id: wh.id,
-        position: wh.position || "",
-        companyName: wh.companyName || "",
-        company: wh.companyName || "",
         title: wh.position || "",
+        company: wh.companyName || "",
         startDate: wh.startDate ? wh.startDate.toISOString().split("T")[0] : "",
-        endDate: wh.endDate ? wh.endDate.toISOString().split("T")[0] : "",
+        endDate: wh.endDate ? wh.endDate.toISOString().split("T")[0] : null,
         description: wh.description || "",
-        department: null,
-        manager: null,
+        // Note: department and manager are not stored in WorkHistory schema
+        // TODO: Add fields to WorkHistory model if needed
       })),
       skills: candidateProfile.UserSkill.map((us) => {
         const ratingMap: Record<number, string> = {
@@ -73,10 +72,13 @@ profilesRouter.get("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
         return {
           name: us.Skills.name,
           level: ratingMap[us.rating || 1] || "beginner",
-          category: "technical", // Default, you might want to add this to the schema
+          // Note: category and usedIn are not stored in UserSkill schema
+          // TODO: Add category field to UserSkill model and junction tables for usedIn if needed
         };
       }),
-      projects: [], // Projects might need a separate table
+      // Note: Projects are not supported in schema currently
+      // TODO: Create Project model and relation if needed
+      projects: null,
     };
 
     return res.json({ profile: profileData });
@@ -87,11 +89,12 @@ profilesRouter.get("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
 });
 
 // Candidate Profile Update
+// Accepts: { fullName, email, phoneNumber, aboutYou, professionalSummary, profileImage, education[], experience[], skills[] }
+// Ignores: location, projects (not in schema)
 profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
   const userId = req.user!.id;
   const {
     fullName,
-    location,
     email,
     phoneNumber,
     aboutYou,
@@ -100,6 +103,8 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
     education,
     experience,
     skills,
+    // Note: location and projects are ignored (not in CandidateProfile schema)
+    // TODO: Add location field to CandidateProfile and create Project model if needed
   } = req.body ?? {};
 
   try {
@@ -142,6 +147,8 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
     }
 
     // Handle education (CandidateUniversity)
+    // Accepts: { university, degree/fieldOfStudy, startYear, endYear }
+    // If endYear is empty/null → treat as current (isCurrent = true, endDate = null)
     if (Array.isArray(education) && education.length > 0) {
       // Delete existing education entries
       await prisma.candidateUniversity.deleteMany({
@@ -173,6 +180,10 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
             });
           }
 
+          // Handle endYear: if empty/null/undefined → current education
+          const hasEndYear = edu.endYear && edu.endYear.trim() !== "";
+          const isCurrent = !hasEndYear;
+
           await prisma.candidateUniversity.create({
             data: {
               id: randomUUID(),
@@ -181,8 +192,10 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
               educationLevel: "BACHELOR", // Default, you might want to map this
               degreeName: (edu.degree && edu.degree.trim()) ? edu.degree : (edu.fieldOfStudy || null),
               startDate: edu.startYear ? new Date(`${edu.startYear}-01-01`) : null,
-              endDate: edu.endYear ? new Date(`${edu.endYear}-12-31`) : null,
-              isCurrent: !edu.endYear || false,
+              endDate: hasEndYear ? new Date(`${edu.endYear}-12-31`) : null,
+              isCurrent: isCurrent,
+              // Note: coursework and achievements are not stored in CandidateUniversity schema
+              // TODO: Add fields to CandidateUniversity model if needed
             },
           });
         }
@@ -190,6 +203,8 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
     }
 
     // Handle work experience (WorkHistory)
+    // Accepts: { title, company, startDate, endDate, description }
+    // Ignores: department, manager (not in schema)
     if (Array.isArray(experience) && experience.length > 0) {
       // Delete existing work history
       await prisma.workHistory.deleteMany({
@@ -198,7 +213,19 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
 
       // Create new work history entries
       for (const exp of experience) {
+        // Only process if required fields are present
         if (exp.company && exp.title) {
+          // If endDate is null or "Present", treat as current position
+          let endDateValue: Date | null = null;
+          if (exp.endDate && exp.endDate !== "Present" && exp.endDate !== "") {
+            try {
+              endDateValue = new Date(exp.endDate);
+            } catch (e) {
+              // Invalid date, treat as null (current position)
+              endDateValue = null;
+            }
+          }
+
           await prisma.workHistory.create({
             data: {
               id: randomUUID(),
@@ -206,8 +233,9 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
               companyName: exp.company,
               position: exp.title,
               startDate: exp.startDate ? new Date(exp.startDate) : null,
-              endDate: exp.endDate ? new Date(exp.endDate) : null,
+              endDate: endDateValue,
               description: exp.description || null,
+              // Note: department and manager fields are ignored (not in WorkHistory schema)
             },
           });
         }
@@ -215,6 +243,8 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
     }
 
     // Handle skills (UserSkill)
+    // Accepts: { name, level }
+    // Ignores: category, usedIn (not in schema)
     if (Array.isArray(skills) && skills.length > 0) {
       // Delete existing skills
       await prisma.userSkill.deleteMany({
@@ -223,6 +253,7 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
 
       // Create new skills
       for (const skill of skills) {
+        // Only process if name is present
         if (skill.name) {
           // Find or create skill
           let skillRecord = await prisma.skills.findUnique({
@@ -251,6 +282,8 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
               candidateId: candidateProfile.id,
               skillId: skillRecord.id,
               rating: ratingMap[skill.level] || null,
+              // Note: category and usedIn fields are ignored (not in UserSkill schema)
+              // TODO: Add category field to UserSkill model and junction tables for usedIn if needed
             },
           });
         }

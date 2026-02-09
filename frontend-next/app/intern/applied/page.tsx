@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useMemo } from 'react'
+import { usePathname } from 'next/navigation'
 import InternNavbar from '@/components/InternNavbar'
 import Link from 'next/link'
 import { apiFetch } from '@/lib/api'
@@ -80,9 +81,14 @@ const mockApplications: JobApplication[] = [
 ]
 
 export default function InternAppliedPage() {
+  const pathname = usePathname()
   const [applications, setApplications] = useState<JobApplication[]>(mockApplications)
   const [statusFilter, setStatusFilter] = useState<'all' | 'viewed' | 'interviewed' | 'accepted' | 'rejected'>('all')
   const [searchQuery, setSearchQuery] = useState('')
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false)
+  
+  const isAIAnalysisPage = pathname === '/intern/ai-analysis'
+  const isJobMatchPage = pathname === '/intern/job-match' || pathname === '/intern/find-companies'
 
   useEffect(() => {
     const load = async () => {
@@ -178,22 +184,93 @@ export default function InternAppliedPage() {
         {/* Sidebar Navigation */}
         <div className="w-64 bg-white min-h-screen pt-8 border-r border-gray-200">
           <div className="px-6 space-y-2">
-            <Link
-              href="/intern/profile"
-              className="px-4 py-3 rounded-lg flex items-center space-x-3 transition-colors"
-              style={{ color: '#1C2D4F' }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = '#0273B1'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = '#1C2D4F'
-              }}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-              <span className="font-medium">Profile</span>
-            </Link>
+            {/* Profile with Dropdown */}
+            <div>
+              <button
+                onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                className="w-full px-4 py-3 rounded-lg flex items-center justify-between transition-colors"
+                style={{ color: '#1C2D4F' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#0273B1'
+                  e.currentTarget.style.backgroundColor = '#F0F4F8'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#1C2D4F'
+                  e.currentTarget.style.backgroundColor = 'transparent'
+                }}
+              >
+                <div className="flex items-center space-x-3">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  <span className="font-medium">Profile</span>
+                </div>
+                <svg 
+                  className={`w-4 h-4 transition-transform ${isProfileDropdownOpen ? 'rotate-180' : ''}`}
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              
+              {/* Dropdown Menu */}
+              {isProfileDropdownOpen && (
+                <div className="ml-4 mt-2 space-y-1">
+                  <Link
+                    href="/intern/ai-analysis"
+                    className="block px-4 py-3 rounded-lg text-sm transition-colors flex items-center space-x-3"
+                    style={{ 
+                      color: isAIAnalysisPage ? 'white' : '#1C2D4F',
+                      backgroundColor: isAIAnalysisPage ? '#0273B1' : 'transparent'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isAIAnalysisPage) {
+                        e.currentTarget.style.backgroundColor = '#F0F4F8'
+                        e.currentTarget.style.color = '#0273B1'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isAIAnalysisPage) {
+                        e.currentTarget.style.backgroundColor = 'transparent'
+                        e.currentTarget.style.color = '#1C2D4F'
+                      }
+                    }}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <span>AI Analysis</span>
+                  </Link>
+                  <Link
+                    href="/intern/job-match"
+                    className="block px-4 py-3 rounded-lg text-sm transition-colors flex items-center space-x-3"
+                    style={{ 
+                      color: isJobMatchPage ? 'white' : '#1C2D4F',
+                      backgroundColor: isJobMatchPage ? '#0273B1' : 'transparent'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isJobMatchPage) {
+                        e.currentTarget.style.backgroundColor = '#F0F4F8'
+                        e.currentTarget.style.color = '#0273B1'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isJobMatchPage) {
+                        e.currentTarget.style.backgroundColor = 'transparent'
+                        e.currentTarget.style.color = '#1C2D4F'
+                      }
+                    }}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <span>Job Match</span>
+                  </Link>
+                </div>
+              )}
+            </div>
             <Link
               href="/intern/applied"
               className="px-4 py-3 rounded-lg flex items-center space-x-3"
