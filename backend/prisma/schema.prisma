@@ -1,35 +1,482 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+}
+
+model CandidateContactFile {
+  id          String            @id @default(uuid()) @db.Uuid
+  candidateId String            @db.Uuid
+  name        String
+  url         String
+  type        CandidateFileType @default(OTHER)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  Profile     CandidateProfile  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+}
+
+model CertificateFile {
+  id          String           @id @default(uuid()) @db.Uuid
+  candidateId String           @db.Uuid
+  name        String
+  url         String
+  type        String?
+  description String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  Profile     CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+}
+
+model CompanyEmail {
+  id        String         @id @default(uuid()) @db.Uuid
+  companyId String         @db.Uuid
+  email     String         @db.VarChar(255)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  Profile   CompanyProfile @relation("CompanyEmails", fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+}
+
+model CompanyPhone {
+  id        String         @id @default(uuid()) @db.Uuid
+  companyId String         @db.Uuid
+  phone     String         @db.VarChar(32)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  Profile   CompanyProfile @relation("CompanyPhones", fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@index([companyId])
+}
+
+model Skills {
+  id        String      @id @default(uuid()) @db.Uuid
+  name      String      @unique
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  UserSkill UserSkill[]
+}
+
+model University {
+  id                  String                @id @default(uuid()) @db.Uuid
+  name                String                @unique
+  code                String?
+  province            String?
+  country             String?
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  thname              String?               @unique
+  CandidateProfile    CandidateProfile[]
+  CandidateUniversity CandidateUniversity[]
+  UniversityFaculty   UniversityFaculty[]
+
+  @@index([code])
+}
+
+model Faculty {
+  id                String              @id @default(uuid()) @db.Uuid
+  name              String              @unique
+  thname            String?             @unique
+  code              String?             @unique
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  UniversityFaculty UniversityFaculty[]
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  email            String            @unique @db.VarChar(255)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  authProvider     AuthProvider      @default(LOCAL)
+  lineUserID       String?
+  password         String?
+  passwordReset    String?
+  role             UserRole?
+  socialID         String            @unique
+  id               String            @id @default(uuid()) @db.Uuid
+  CandidateProfile CandidateProfile?
+  CompanyProfile   CompanyProfile?
 }
 
-model Intern {
-  id          Int      @id @default(autoincrement())
-  name        String
-  email       String   @unique
-  phone       String?
-  university  String?
-  major       String?
-  year        Int?
-  status      String   @default("pending") // pending, approved, rejected
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+model UserSkill {
+  id          String           @id @default(uuid()) @db.Uuid
+  candidateId String           @db.Uuid
+  skillId     String           @db.Uuid
+  rating      Int?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  Profile     CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  Skills      Skills           @relation(fields: [skillId], references: [id], onDelete: Cascade)
+
+  @@unique([candidateId, skillId])
+  @@index([skillId])
 }
 
+model WorkHistory {
+  id          String           @id @default(uuid()) @db.Uuid
+  candidateId String           @db.Uuid
+  companyName String
+  position    String
+  startDate   DateTime?
+  endDate     DateTime?
+  description String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  Profile     CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
 
+  @@index([candidateId])
+}
 
+model UniversityFaculty {
+  id                  String                @id @default(uuid()) @db.Uuid
+  universityId        String                @db.Uuid
+  facultyId           String                @db.Uuid
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  CandidateUniversity CandidateUniversity[]
+  Faculty             Faculty               @relation(fields: [facultyId], references: [id], onDelete: Cascade)
+  University          University            @relation(fields: [universityId], references: [id], onDelete: Cascade)
+
+  @@unique([universityId, facultyId])
+  @@index([universityId])
+  @@index([facultyId])
+}
+
+model CandidateUniversity {
+  id                  String             @id @default(uuid()) @db.Uuid
+  candidateId         String             @db.Uuid
+  universityId        String             @db.Uuid
+  educationLevel      EducationLevel
+  degreeName          String?
+  startDate           DateTime?
+  endDate             DateTime?
+  gpa                 Float?
+  isCurrent           Boolean            @default(false)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  universityFacultyId String?            @db.Uuid
+  Profile             CandidateProfile   @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  UniversityFaculty   UniversityFaculty? @relation(fields: [universityFacultyId], references: [id])
+  University          University         @relation(fields: [universityId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+  @@index([universityId])
+  @@index([universityFacultyId])
+}
+
+model CandidateProfile {
+  id                   String                 @id @db.Uuid
+  userId               String                 @unique @db.Uuid
+  studentCode          String?                @unique
+  fullName             String?
+  contactEmail         String?                @db.VarChar(255)
+  phoneNumber          String?                @db.VarChar(32)
+  desiredPosition      String?
+  bio                  String?
+  major                String?
+  studyYear            Int?
+  profileImage         String?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime
+  universityId         String?                @db.Uuid
+  CandidateContactFile CandidateContactFile[]
+  University           University?            @relation(fields: [universityId], references: [id])
+  User                 User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  CandidateUniversity  CandidateUniversity[]
+  CertificateFile      CertificateFile[]
+  UserSkill            UserSkill[]
+  WorkHistory          WorkHistory[]
+  Bookmarks            Bookmark[]
+  Conversations        Conversation[]
+  JobApplications      JobApplication[]
+  JobBookmarks         JobBookmark[]
+  JobIgnores           JobIgnore[]
+
+  @@index([universityId])
+}
+
+model CompanyProfile {
+  id                String         @id @db.Uuid
+  userId            String         @unique @db.Uuid
+  companyName       String
+  about             String?
+  location          String?
+  province          String?
+  logoURL           String?
+  recruiterName     String?
+  recruiterPosition String?
+  registrationNum   String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime
+  CompanyEmails     CompanyEmail[] @relation("CompanyEmails")
+  CompanyPhones     CompanyPhone[] @relation("CompanyPhones")
+  JobPosts          JobPost[]
+  Bookmarks         Bookmark[]
+  Conversations     Conversation[]
+  User              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+enum AuthProvider {
+  LOCAL
+  GOOGLE
+  LINE
+  FACEBOOK
+}
+
+enum CandidateFileType {
+  RESUME
+  PORTFOLIO
+  OTHER
+}
+
+enum UserRole {
+  CANDIDATE
+  COMPANY
+}
+
+enum EducationLevel {
+  BACHELOR
+  MASTERS
+  PHD
+}
+
+enum WorkplaceType {
+  ON_SITE
+  HYBRID
+  REMOTE
+}
+
+enum AllowancePeriod {
+  MONTH
+  WEEK
+  DAY
+}
+
+enum JobPostStatus {
+  URGENT
+  NOT_URGENT
+}
+
+enum JobPostState {
+  DRAFT
+  PUBLISHED
+  CLOSED
+}
+
+enum ApplicationStatus {
+  NEW
+  SHORTLISTED
+  REVIEWED
+  REJECTED
+}
+
+enum QuestionType {
+  TEXT
+  MULTIPLE_CHOICE
+}
+
+model JobPost {
+  id                String                @id @default(uuid()) @db.Uuid
+  companyId         String                 @db.Uuid
+  jobTitle          String
+  locationProvince  String?
+  locationDistrict  String?
+  jobType           String?
+  workplaceType     WorkplaceType          @default(ON_SITE)
+  allowance         Float?
+  allowancePeriod   AllowancePeriod?
+  noAllowance       Boolean                @default(false)
+  jobPostStatus     JobPostStatus          @default(NOT_URGENT)
+  jobDescription    String?
+  jobSpecification  String?
+  rejectionMessage  String?
+  state             JobPostState           @default(DRAFT)
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+  Company           CompanyProfile         @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  ScreeningQuestions ScreeningQuestion[]
+  Applications      JobApplication[]
+  Bookmarks         JobBookmark[]
+  Ignores           JobIgnore[]
+
+  @@index([companyId])
+  @@index([state])
+  @@index([createdAt])
+}
+
+model JobBookmark {
+  id          String           @id @default(uuid()) @db.Uuid
+  jobPostId   String           @db.Uuid
+  candidateId String           @db.Uuid
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  JobPost     JobPost          @relation(fields: [jobPostId], references: [id], onDelete: Cascade)
+  Candidate   CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@unique([jobPostId, candidateId])
+  @@index([jobPostId])
+  @@index([candidateId])
+}
+
+model JobIgnore {
+  id          String           @id @default(uuid()) @db.Uuid
+  jobPostId   String           @db.Uuid
+  candidateId String           @db.Uuid
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  JobPost     JobPost          @relation(fields: [jobPostId], references: [id], onDelete: Cascade)
+  Candidate   CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@unique([jobPostId, candidateId])
+  @@index([jobPostId])
+  @@index([candidateId])
+}
+
+model JobApplication {
+  id          String            @id @default(uuid()) @db.Uuid
+  jobPostId   String            @db.Uuid
+  candidateId String            @db.Uuid
+  status      ApplicationStatus @default(NEW)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  JobPost     JobPost           @relation(fields: [jobPostId], references: [id], onDelete: Cascade)
+  Candidate   CandidateProfile  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@unique([jobPostId, candidateId])
+  @@index([jobPostId])
+  @@index([candidateId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model ScreeningQuestion {
+  id                  String                   @id @default(uuid()) @db.Uuid
+  jobPostId           String                   @db.Uuid
+  question            String
+  questionType        QuestionType             @default(TEXT)
+  idealAnswer         String?
+  automaticRejection  Boolean                  @default(false)
+  order               Int
+  createdAt           DateTime                 @default(now())
+  updatedAt           DateTime                 @updatedAt
+  JobPost             JobPost                 @relation(fields: [jobPostId], references: [id], onDelete: Cascade)
+  Choices             ScreeningQuestionChoice[]
+
+  @@index([jobPostId])
+  @@index([jobPostId, order])
+}
+
+model ScreeningQuestionChoice {
+  id          String            @id @default(uuid()) @db.Uuid
+  questionId  String            @db.Uuid
+  choice      String
+  order       Int
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  Question    ScreeningQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
+  @@index([questionId, order])
+}
+
+model Bookmark {
+  id            String           @id @default(uuid()) @db.Uuid
+  companyId     String           @db.Uuid
+  candidateId   String           @db.Uuid
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  Company       CompanyProfile   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  Candidate     CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, candidateId])
+  @@index([companyId])
+  @@index([candidateId])
+}
+
+model Conversation {
+  id            String           @id @default(uuid()) @db.Uuid
+  companyId     String           @db.Uuid
+  candidateId   String           @db.Uuid
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  Company       CompanyProfile   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  Candidate     CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  Messages      Message[]
+
+  @@unique([companyId, candidateId])
+  @@index([companyId])
+  @@index([candidateId])
+  @@index([updatedAt])
+}
+
+model Message {
+  id             String       @id @default(uuid()) @db.Uuid
+  conversationId String       @db.Uuid
+  senderId       String       @db.Uuid
+  senderRole     UserRole
+  text           String       @db.Text
+  read           Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  Conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+}
+
+model Province {
+  id        String      @id @default(uuid()) @db.Uuid
+  name      String      @unique
+  thname    String?     @unique
+  code      String?     @unique
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  Districts District[]
+
+  @@map("Province")
+  @@index([code])
+}
+
+model District {
+  id         String       @id @default(uuid()) @db.Uuid
+  provinceId String       @db.Uuid
+  name       String
+  thname     String?
+  code       String?
+  postalCode String?
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  Province   Province     @relation(fields: [provinceId], references: [id], onDelete: Cascade)
+  Subdistricts Subdistrict[]
+
+  @@map("District")
+  @@unique([provinceId, name])
+  @@index([provinceId])
+  @@index([code])
+}
+
+model Subdistrict {
+  id         String    @id @default(uuid()) @db.Uuid
+  districtId String    @db.Uuid
+  name       String
+  thname     String?
+  code       String?
+  createdAt  DateTime @default(now())
+  updatedAt DateTime  @updatedAt
+  District   District  @relation(fields: [districtId], references: [id], onDelete: Cascade)
+
+  @@map("Subdistrict")
+  @@unique([districtId, name])
+  @@index([districtId])
+  @@index([code])
+}

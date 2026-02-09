@@ -1,8 +1,13 @@
 # เว็บเด็กฝึกงาน - Intern Website
 
-เว็บแอปพลิเคชันสำหรับการฝึกงานที่สร้างด้วย next.js 14 + TypeScript + Tailwind CSS สำหรับ Frontend และ Node.js + Express + Prisma + PostgreSQL สำหรับ Backend
+เว็บแอปพลิเคชันสำหรับการฝึกงานที่สร้างด้วย **Next.js 14** + TypeScript + Tailwind CSS สำหรับ Frontend และ Node.js + Express + Prisma + PostgreSQL สำหรับ Backend
 
-## โครงสร้างโปรเจกต์
+## 📍 ตำแหน่งโปรเจกต์
+
+⚠️ **สำคัญ**: โปรเจกต์อยู่ที่ `intern-project/` (ไม่ใช่ root directory)  
+ต้อง `cd intern-project` ก่อนรันคำสั่ง npm
+
+## 🏗️ โครงสร้างโปรเจกต์
 
 ```
 .
@@ -38,6 +43,15 @@ npm run prisma:migrate
 ```
 
 ## การรันโปรเจกต์
+
+## Note: Authentication (production-standard)
+
+- Backend จะตั้งค่า JWT ลงใน **HTTP-only cookie** (ชื่อ cookie: `auth`)  
+  Frontend **ไม่อ่าน/ไม่เก็บ JWT** ใน `localStorage`/`sessionStorage`
+- ทุก request ที่ต้อง auth จะพึ่งพา cookie ที่ browser ส่งให้อัตโนมัติ (`fetch` ใช้ `credentials: "include"`)
+- ข้อดี: login จะ **sync ทุกแท็บ** และลดความเสี่ยงจาก XSS (เพราะ JS อ่าน token ไม่ได้)
+- Logout จะเรียก `POST /api/auth/logout` เพื่อ clear cookie
+- (Optional) “Remember me” จะตั้ง cookie ให้เป็น persistent (ประมาณ 30 วัน); ถ้าไม่เลือกจะเป็น session cookie
 
 ### รัน Frontend และ Backend พร้อมกัน
 
@@ -80,27 +94,3 @@ npm run dev:backend
 
 ### Frontend
 - React 18
-- Vite
-- TypeScript
-- Tailwind CSS
-- React Router
-
-### Backend
-- Node.js
-- Express
-- Prisma ORM
-- PostgreSQL
-- TypeScript
-
-## API Endpoints
-
-- `GET /api/health` - Health check
-- `GET /api/users` - ดึงข้อมูล users
-- `POST /api/users` - สร้าง user ใหม่
-
-## License
-
-MIT
-
-
-
