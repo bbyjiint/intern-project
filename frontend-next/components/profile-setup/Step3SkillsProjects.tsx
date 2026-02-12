@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import SearchableDropdown from '@/components/SearchableDropdown'
+import { apiFetch } from '@/lib/api'
 
 interface Step3SkillsProjectsProps {
   data: any
@@ -428,6 +430,26 @@ function SkillForm({ skill, experience, education, projects, onSave, onCancel }:
       projectIds: []
     },
   })
+  const [skills, setSkills] = useState<Array<{ id: string; name: string }>>([])
+  const [skillsLoading, setSkillsLoading] = useState(false)
+
+  // Load skills from API
+  useEffect(() => {
+    ;(async () => {
+      setSkillsLoading(true)
+      try {
+        const data = await apiFetch<{ skills: Array<{ id: string; name: string }> }>(
+          `/api/skills`
+        )
+        setSkills(data.skills || [])
+      } catch (err) {
+        console.error('Failed to load skills:', err)
+        setSkills([])
+      } finally {
+        setSkillsLoading(false)
+      }
+    })()
+  }, [])
 
   const handleToggleLinkedItem = (type: 'experienceIds' | 'educationIds' | 'projectIds', index: number) => {
     const currentLinked = formData.usedIn[type] || []
@@ -477,13 +499,29 @@ function SkillForm({ skill, experience, education, projects, onSave, onCancel }:
             <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
               Skill Name <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              placeholder="e.g. Python, Excel, Project Management"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            {skillsLoading ? (
+              <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 flex items-center justify-center">
+                <span className="text-gray-500 text-sm">Loading skills...</span>
+              </div>
+            ) : (
+              <SearchableDropdown
+                options={skills.map((skill) => ({
+                  value: skill.name,
+                  label: skill.name,
+                }))}
+                value={formData.name}
+                onChange={(value) => setFormData({ ...formData, name: value })}
+                placeholder="Search by skill name..."
+                className="w-full"
+                allOptionLabel="Select Skill"
+              />
+            )}
+            {/* Allow manual entry if skill not found */}
+            {formData.name && !skills.find(s => s.name === formData.name) && (
+              <p className="text-xs mt-1" style={{ color: '#A9B4CD' }}>
+                Skill not found in list. It will be created when you save.
+              </p>
+            )}
           </div>
 
           {/* Category */}
@@ -862,7 +900,13 @@ function ExperienceForm({ experience, onSave, onCancel, onDelete }: any) {
               </button>
             )}
             <button
-              onClick={() => onSave({ ...formData, endDate: formData.isPresent ? 'Present' : formData.endDate })}
+              onClick={() => onSave({ 
+                title: formData.title,
+                company: formData.company,
+                startDate: formData.startDate,
+                endDate: formData.isPresent ? null : formData.endDate,
+                description: formData.description,
+              })}
               className="px-4 py-2 rounded-lg font-semibold text-sm text-white transition-colors"
               style={{ backgroundColor: '#0273B1' }}
               onMouseEnter={(e) => {

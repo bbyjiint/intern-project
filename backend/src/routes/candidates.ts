@@ -1,6 +1,7 @@
 import { Router } from "express";
 import prisma from "../utils/prisma";
 import { requireAuth, requireRole, type AuthedRequest } from "../middleware/auth";
+import { randomUUID } from "crypto";
 
 export const candidatesRouter = Router();
 
@@ -14,6 +15,16 @@ function initialsFromName(name: string) {
 function formatGradDate(d?: Date | null) {
   if (!d) return "N/A";
   return d.toLocaleString("en-US", { month: "short", year: "numeric" });
+}
+
+// Helper function to get candidateId from userId
+async function getCandidateIdForUser(userId: string): Promise<string> {
+  const candidate = await prisma.candidateProfile.findUnique({
+    where: { userId },
+    select: { id: true },
+  });
+  if (!candidate) throw new Error("CANDIDATE_PROFILE_NOT_FOUND");
+  return candidate.id;
 }
 
 // Get own profile (for candidates/interns)
@@ -75,6 +86,9 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
           orderBy: { createdAt: "desc" },
         },
         CertificateFile: {
+          orderBy: { createdAt: "desc" },
+        },
+        UserProjects: {
           orderBy: { createdAt: "desc" },
         },
       },
@@ -158,6 +172,12 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
           createdAt: file.createdAt.toISOString(),
         })),
       },
+      projects: candidateProfile.UserProjects.map((project) => ({
+        id: project.id,
+        name: project.name,
+        role: project.role,
+        description: project.description,
+      })),
       createdAt: candidateProfile.createdAt.toISOString(),
       updatedAt: candidateProfile.updatedAt.toISOString(),
     };
@@ -286,6 +306,9 @@ candidatesRouter.get("/:id", requireAuth, requireRole("COMPANY"), async (req, re
         CertificateFile: {
           orderBy: { createdAt: "desc" },
         },
+        UserProjects: {
+          orderBy: { createdAt: "desc" },
+        },
       },
     });
 
@@ -366,6 +389,12 @@ candidatesRouter.get("/:id", requireAuth, requireRole("COMPANY"), async (req, re
           createdAt: file.createdAt.toISOString(),
         })),
       },
+      projects: candidateProfile.UserProjects.map((project) => ({
+        id: project.id,
+        name: project.name,
+        role: project.role,
+        description: project.description,
+      })),
       createdAt: candidateProfile.createdAt.toISOString(),
       updatedAt: candidateProfile.updatedAt.toISOString(),
     };
@@ -376,5 +405,119 @@ candidatesRouter.get("/:id", requireAuth, requireRole("COMPANY"), async (req, re
     return res.status(500).json({ 
       error: error.message || "Failed to fetch candidate profile" 
     });
+  }
+});
+
+// Create a new project
+candidatesRouter.post("/projects", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
+  const userId = req.user!.id;
+  const { name, role, description } = req.body ?? {};
+
+  if (!name || !role) {
+    return res.status(400).json({ error: "Name and role are required" });
+  }
+
+  try {
+    const candidateId = await getCandidateIdForUser(userId);
+    
+    const project = await prisma.userProjects.create({
+      data: {
+        id: randomUUID(),
+        candidateId,
+        name,
+        role,
+        description: description || "",
+      },
+    });
+
+    return res.status(201).json({ project });
+  } catch (e: any) {
+    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
+      return res.status(404).json({ error: "Candidate profile not found" });
+    }
+    console.error("Error creating project:", e);
+    return res.status(500).json({ error: e?.message || "Failed to create project" });
+  }
+});
+
+// Update a project
+candidatesRouter.put("/projects/:id", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
+  const userId = req.user!.id;
+  const projectId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
+  const { name, role, description } = req.body ?? {};
+
+  if (!name || !role) {
+    return res.status(400).json({ error: "Name and role are required" });
+  }
+
+  try {
+    const candidateId = await getCandidateIdForUser(userId);
+    
+    // Verify that the project belongs to this candidate
+    const existingProject = await prisma.userProjects.findUnique({
+      where: { id: projectId },
+      select: { candidateId: true },
+    });
+
+    if (!existingProject) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+
+    if (existingProject.candidateId !== candidateId) {
+      return res.status(403).json({ error: "You don't have permission to update this project" });
+    }
+
+    const project = await prisma.userProjects.update({
+      where: { id: projectId },
+      data: {
+        name,
+        role,
+        description: description || "",
+      },
+    });
+
+    return res.json({ project });
+  } catch (e: any) {
+    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
+      return res.status(404).json({ error: "Candidate profile not found" });
+    }
+    console.error("Error updating project:", e);
+    return res.status(500).json({ error: e?.message || "Failed to update project" });
+  }
+});
+
+// Delete a project
+candidatesRouter.delete("/projects/:id", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
+  const userId = req.user!.id;
+  const projectId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
+
+  try {
+    const candidateId = await getCandidateIdForUser(userId);
+    
+    // Verify that the project belongs to this candidate
+    const existingProject = await prisma.userProjects.findUnique({
+      where: { id: projectId },
+      select: { candidateId: true },
+    });
+
+    if (!existingProject) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+
+    if (existingProject.candidateId !== candidateId) {
+      return res.status(403).json({ error: "You don't have permission to delete this project" });
+    }
+
+    await prisma.userProjects.delete({
+      where: { id: projectId },
+    });
+
+    return res.json({ success: true });
+  } catch (e: any) {
+    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
+      return res.status(404).json({ error: "Candidate profile not found" });
+    }
+    console.error("Error deleting project:", e);
+    return res.status(500).json({ error: e?.message || "Failed to delete project" });
   }
 });

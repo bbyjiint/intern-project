@@ -68,16 +68,25 @@ export default function AIAnalysisPage() {
             {/* Profile with Dropdown */}
             <div>
               <button
-                onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+                onClick={() => {
+                  router.push('/intern/profile')
+                }}
                 className="w-full px-4 py-3 rounded-lg flex items-center justify-between transition-colors"
-                style={{ color: '#1C2D4F' }}
+                style={{ 
+                  color: pathname === '/intern/profile' ? 'white' : '#1C2D4F',
+                  backgroundColor: pathname === '/intern/profile' ? '#0273B1' : 'transparent'
+                }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#0273B1'
-                  e.currentTarget.style.backgroundColor = '#F0F4F8'
+                  if (pathname !== '/intern/profile') {
+                    e.currentTarget.style.color = '#0273B1'
+                    e.currentTarget.style.backgroundColor = '#F0F4F8'
+                  }
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#1C2D4F'
-                  e.currentTarget.style.backgroundColor = 'transparent'
+                  if (pathname !== '/intern/profile') {
+                    e.currentTarget.style.color = '#1C2D4F'
+                    e.currentTarget.style.backgroundColor = 'transparent'
+                  }
                 }}
               >
                 <div className="flex items-center space-x-3">
@@ -86,14 +95,22 @@ export default function AIAnalysisPage() {
                   </svg>
                   <span className="font-medium">Profile</span>
                 </div>
-                <svg 
-                  className={`w-4 h-4 transition-transform ${isProfileDropdownOpen ? 'rotate-180' : ''}`}
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsProfileDropdownOpen(!isProfileDropdownOpen)
+                  }}
+                  className="p-1 rounded hover:bg-gray-100"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+                  <svg 
+                    className={`w-4 h-4 transition-transform ${isProfileDropdownOpen ? 'rotate-180' : ''}`}
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
               </button>
               
               {/* Dropdown Menu */}
@@ -201,17 +218,10 @@ export default function AIAnalysisPage() {
           </div>
 
           {/* Resume Analysis Card */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <div className="mb-6">
             <ResumeAnalysisCard onAnalysisComplete={(skills) => {
-              // Pass skills to SkillsSetupCard via parent state if needed
               console.log('Analysis complete:', skills)
             }} />
-            <SkillsSetupCard />
-          </div>
-
-          {/* AI Suggested Skills Card */}
-          <div className="mb-6">
-            <AISuggestedSkillsCard />
           </div>
 
           {/* Video Upload Card */}
@@ -472,411 +482,6 @@ function ResumeAnalysisCard({ onAnalysisComplete }: { onAnalysisComplete?: (skil
               </div>
             </div>
           )}
-        </div>
-      )}
-    </div>
-  )
-}
-
-// Skills Setup Card Component
-function SkillsSetupCard() {
-  const [desiredJobTitle, setDesiredJobTitle] = useState('Software Engineer')
-  const [coreSkills, setCoreSkills] = useState<string[]>(['Physics', 'Mathematics', 'Machine Learning'])
-  const [newSkillInput, setNewSkillInput] = useState('')
-  const [showAddInput, setShowAddInput] = useState(false)
-
-  const handleAddSkill = () => {
-    if (newSkillInput.trim() && !coreSkills.includes(newSkillInput.trim())) {
-      setCoreSkills([...coreSkills, newSkillInput.trim()])
-      setNewSkillInput('')
-      setShowAddInput(false)
-    }
-  }
-
-  const handleRemoveSkill = (skillToRemove: string) => {
-    setCoreSkills(coreSkills.filter(skill => skill !== skillToRemove))
-  }
-
-  return (
-    <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#E8F5E9' }}>
-          <svg className="w-6 h-6" style={{ color: '#4CAF50' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-        <h3 className="text-xl font-bold" style={{ color: '#1C2D4F' }}>
-          Skills Setup
-        </h3>
-      </div>
-
-      {/* Desired Job Title */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium mb-2" style={{ color: '#1C2D4F' }}>
-          Desired Job Title
-        </label>
-        <input
-          type="text"
-          value={desiredJobTitle}
-          onChange={(e) => setDesiredJobTitle(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Enter desired job title"
-        />
-      </div>
-
-      {/* Core Skills */}
-      <div>
-        <label className="block text-sm font-medium mb-2" style={{ color: '#1C2D4F' }}>
-          Core Skills
-        </label>
-        <div className="flex flex-wrap items-center gap-2 mb-2">
-          {coreSkills.map((skill, index) => (
-            <span
-              key={index}
-              className="px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2"
-              style={{ backgroundColor: '#E3F2FD', color: '#0273B1' }}
-            >
-              {skill}
-              <button
-                onClick={() => handleRemoveSkill(skill)}
-                className="hover:text-red-600"
-              >
-                ×
-              </button>
-            </span>
-          ))}
-          {showAddInput ? (
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={newSkillInput}
-                onChange={(e) => setNewSkillInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleAddSkill()
-                  } else if (e.key === 'Escape') {
-                    setShowAddInput(false)
-                    setNewSkillInput('')
-                  }
-                }}
-                className="px-3 py-1 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Type skill name"
-                autoFocus
-              />
-              <button
-                onClick={handleAddSkill}
-                className="px-3 py-1 rounded-lg text-sm font-medium text-white"
-                style={{ backgroundColor: '#0273B1' }}
-              >
-                Add
-              </button>
-              <button
-                onClick={() => {
-                  setShowAddInput(false)
-                  setNewSkillInput('')
-                }}
-                className="px-3 py-1 rounded-lg text-sm font-medium text-gray-600 border border-gray-300"
-              >
-                Cancel
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setShowAddInput(true)}
-              className="px-3 py-1 rounded-lg text-sm font-medium border-2 border-dashed border-gray-300 text-gray-600 hover:border-blue-500 hover:text-blue-500"
-            >
-              + Add Skill
-            </button>
-          )}
-        </div>
-        <button
-          onClick={async () => {
-            // Ask AI to suggest skills based on job title
-            try {
-              const response = await apiFetch<{ skills: string[] }>('/api/ai/suggest-skills', {
-                method: 'POST',
-                body: JSON.stringify({ jobTitle: desiredJobTitle }),
-              })
-              if (response.skills) {
-                setCoreSkills([...coreSkills, ...response.skills.filter(s => !coreSkills.includes(s))])
-              }
-            } catch (error) {
-              console.error('Failed to get AI suggestions:', error)
-              // If API doesn't exist, show message
-              alert('AI suggestion feature will be available soon!')
-            }
-          }}
-          className="px-4 py-1 rounded-lg text-sm font-medium text-white"
-          style={{ backgroundColor: '#0273B1' }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#025a8f'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#0273B1'
-          }}
-        >
-          + Add All (AI Suggested)
-        </button>
-      </div>
-    </div>
-  )
-}
-
-// AI Suggested Skills Card Component
-function AISuggestedSkillsCard() {
-  const [desiredJobTitle, setDesiredJobTitle] = useState('Software Engineer')
-  const [coreSkills] = useState<string[]>(['Physics', 'Mathematics', 'Machine Learning'])
-  const [suggestedSkills, setSuggestedSkills] = useState<Array<{ name: string; enabled: boolean; score: number }>>([])
-  const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false)
-  const [showScoreModal, setShowScoreModal] = useState<{ skill: string; index: number } | null>(null)
-  const [tempScore, setTempScore] = useState(5)
-
-  // Load AI suggestions when component mounts or job title changes
-  useEffect(() => {
-    const loadSuggestions = async () => {
-      if (!desiredJobTitle.trim()) return
-      
-      setIsLoadingSuggestions(true)
-      try {
-        const response = await apiFetch<{ skills: Array<{ name: string; score?: number }> }>('/api/ai/suggest-skills', {
-          method: 'POST',
-          body: JSON.stringify({ jobTitle: desiredJobTitle }),
-        })
-        
-        if (response.skills) {
-          setSuggestedSkills(response.skills.map(skill => ({
-            name: skill.name,
-            enabled: true,
-            score: skill.score || 0
-          })))
-        }
-      } catch (error) {
-        console.error('Failed to load AI suggestions:', error)
-        // If no skills yet, show empty state
-        if (suggestedSkills.length === 0) {
-          // Show message that AI will suggest skills
-        }
-      } finally {
-        setIsLoadingSuggestions(false)
-      }
-    }
-
-    loadSuggestions()
-  }, [desiredJobTitle])
-
-  const handleToggleSkill = (index: number) => {
-    const updated = [...suggestedSkills]
-    updated[index].enabled = !updated[index].enabled
-    setSuggestedSkills(updated)
-  }
-
-  const handleScoreChange = (index: number, score: number) => {
-    const updated = [...suggestedSkills]
-    updated[index].score = Math.max(0, Math.min(10, score))
-    setSuggestedSkills(updated)
-  }
-
-  const handleAddSkill = (index: number) => {
-    // Add skill to user's profile
-    const skill = suggestedSkills[index]
-    console.log('Adding skill:', skill)
-    // TODO: Call API to save skill
-  }
-
-  const openScoreModal = (skill: string, index: number) => {
-    setTempScore(suggestedSkills[index].score)
-    setShowScoreModal({ skill, index })
-  }
-
-  const saveScore = () => {
-    if (showScoreModal) {
-      handleScoreChange(showScoreModal.index, tempScore)
-      setShowScoreModal(null)
-    }
-  }
-
-  return (
-    <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: '#E8F5E9' }}>
-          <svg className="w-6 h-6" style={{ color: '#4CAF50' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
-        <h3 className="text-xl font-bold" style={{ color: '#1C2D4F' }}>
-          Skills Setup
-        </h3>
-      </div>
-
-      {/* Desired Job Title */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium mb-2" style={{ color: '#1C2D4F' }}>
-          Desired Job Title
-        </label>
-        <input
-          type="text"
-          value={desiredJobTitle}
-          onChange={(e) => setDesiredJobTitle(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="Enter desired job title"
-        />
-      </div>
-
-      {/* Core Skills */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium mb-2" style={{ color: '#1C2D4F' }}>
-          Core Skills
-        </label>
-        <div className="flex flex-wrap gap-2">
-          {coreSkills.map((skill, index) => (
-            <span
-              key={index}
-              className="px-3 py-1 rounded-full text-sm font-medium"
-              style={{ backgroundColor: '#E3F2FD', color: '#0273B1' }}
-            >
-              {skill}
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* AI Suggested Skills */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <label className="block text-sm font-medium" style={{ color: '#1C2D4F' }}>
-            AI Suggested Skills
-          </label>
-          {suggestedSkills.length === 0 && !isLoadingSuggestions && (
-            <button
-              onClick={async () => {
-                setIsLoadingSuggestions(true)
-                try {
-                  const response = await apiFetch<{ skills: Array<{ name: string; score?: number }> }>('/api/ai/suggest-skills', {
-                    method: 'POST',
-                    body: JSON.stringify({ jobTitle: desiredJobTitle }),
-                  })
-                  if (response.skills) {
-                    setSuggestedSkills(response.skills.map(skill => ({
-                      name: skill.name,
-                      enabled: true,
-                      score: skill.score || 0
-                    })))
-                  }
-                } catch (error) {
-                  console.error('Failed to get AI suggestions:', error)
-                  // Mock data for demo
-                  setSuggestedSkills([
-                    { name: 'Python', enabled: true, score: 8.5 },
-                    { name: 'Data Analysis', enabled: true, score: 6.5 },
-                    { name: 'Problem Solving', enabled: true, score: 7.0 },
-                  ])
-                } finally {
-                  setIsLoadingSuggestions(false)
-                }
-              }}
-              className="text-sm font-medium"
-              style={{ color: '#0273B1' }}
-            >
-              Ask AI to Suggest Skills
-            </button>
-          )}
-        </div>
-
-        {isLoadingSuggestions ? (
-          <div className="flex items-center justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: '#0273B1' }}></div>
-          </div>
-        ) : suggestedSkills.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <p>No skills suggested yet. Enter a job title and click "Ask AI to Suggest Skills"</p>
-          </div>
-        ) : (
-          <div className="space-y-4">
-            {suggestedSkills.map((skill, index) => (
-              <div key={index} className="flex items-center gap-4">
-                <div className="flex items-center gap-3 flex-1">
-                  <input
-                    type="checkbox"
-                    checked={skill.enabled}
-                    onChange={() => handleToggleSkill(index)}
-                    className="w-5 h-5 rounded border-gray-300"
-                    style={{ accentColor: '#0273B1' }}
-                  />
-                  <span className="font-medium text-gray-900 flex-1 min-w-[120px]">{skill.name}</span>
-                  <button
-                    onClick={() => openScoreModal(skill.name, index)}
-                    className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50"
-                  >
-                    Score: {skill.score.toFixed(1)}/10
-                  </button>
-                  <div className="w-32 bg-gray-200 rounded-full h-2">
-                    <div
-                      className="h-2 rounded-full transition-all duration-300"
-                      style={{
-                        width: `${(skill.score / 10) * 100}%`,
-                        backgroundColor: skill.enabled ? '#0273B1' : '#9CA3AF',
-                      }}
-                    ></div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleAddSkill(index)}
-                  className="px-3 py-1 text-sm font-medium rounded-lg text-white"
-                  style={{ backgroundColor: '#0273B1' }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#025a8f'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = '#0273B1'
-                  }}
-                >
-                  + Add
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Score Modal */}
-      {showScoreModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-bold mb-4" style={{ color: '#1C2D4F' }}>
-              Rate Your Skill: {showScoreModal.skill}
-            </h3>
-            <div className="mb-4">
-              <input
-                type="range"
-                min="0"
-                max="10"
-                step="0.1"
-                value={tempScore}
-                onChange={(e) => setTempScore(parseFloat(e.target.value))}
-                className="w-full"
-              />
-              <div className="flex justify-between text-sm text-gray-600 mt-1">
-                <span>0</span>
-                <span className="font-bold text-lg" style={{ color: '#0273B1' }}>{tempScore.toFixed(1)}</span>
-                <span>10</span>
-              </div>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={saveScore}
-                className="flex-1 px-4 py-2 rounded-lg font-medium text-white"
-                style={{ backgroundColor: '#0273B1' }}
-              >
-                Save
-              </button>
-              <button
-                onClick={() => setShowScoreModal(null)}
-                className="flex-1 px-4 py-2 rounded-lg font-medium border border-gray-300 text-gray-700"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
         </div>
       )}
     </div>

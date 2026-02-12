@@ -24,6 +24,9 @@ profilesRouter.get("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
         UserSkill: {
           include: { Skills: { select: { name: true } } },
         },
+        UserProjects: {
+          orderBy: { createdAt: "desc" },
+        },
       },
     });
 
@@ -76,9 +79,12 @@ profilesRouter.get("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
           // TODO: Add category field to UserSkill model and junction tables for usedIn if needed
         };
       }),
-      // Note: Projects are not supported in schema currently
-      // TODO: Create Project model and relation if needed
-      projects: null,
+      projects: candidateProfile.UserProjects.map((project) => ({
+        id: project.id,
+        name: project.name || "",
+        role: project.role || "",
+        description: project.description || "",
+      })),
     };
 
     return res.json({ profile: profileData });
@@ -89,8 +95,8 @@ profilesRouter.get("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
 });
 
 // Candidate Profile Update
-// Accepts: { fullName, email, phoneNumber, aboutYou, professionalSummary, profileImage, education[], experience[], skills[] }
-// Ignores: location, projects (not in schema)
+// Accepts: { fullName, email, phoneNumber, aboutYou, professionalSummary, profileImage, education[], experience[], skills[], projects[] }
+// Ignores: location (not in schema)
 profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
   const userId = req.user!.id;
   const {
@@ -103,8 +109,8 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
     education,
     experience,
     skills,
-    // Note: location and projects are ignored (not in CandidateProfile schema)
-    // TODO: Add location field to CandidateProfile and create Project model if needed
+    projects,
+    // Note: location is ignored (not in CandidateProfile schema)
   } = req.body ?? {};
 
   try {
@@ -194,6 +200,7 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
               startDate: edu.startYear ? new Date(`${edu.startYear}-01-01`) : null,
               endDate: hasEndYear ? new Date(`${edu.endYear}-12-31`) : null,
               isCurrent: isCurrent,
+              gpa: edu.gpa ? parseFloat(edu.gpa) : null,
               // Note: coursework and achievements are not stored in CandidateUniversity schema
               // TODO: Add fields to CandidateUniversity model if needed
             },
@@ -284,6 +291,31 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
               rating: ratingMap[skill.level] || null,
               // Note: category and usedIn fields are ignored (not in UserSkill schema)
               // TODO: Add category field to UserSkill model and junction tables for usedIn if needed
+            },
+          });
+        }
+      }
+    }
+
+    // Handle projects (UserProjects)
+    // Accepts: { name, role, description }
+    if (Array.isArray(projects) && projects.length >= 0) {
+      // Delete existing projects
+      await prisma.userProjects.deleteMany({
+        where: { candidateId: candidateProfile.id },
+      });
+
+      // Create new projects
+      for (const project of projects) {
+        // Only process if required fields are present
+        if (project.name && project.role) {
+          await prisma.userProjects.create({
+            data: {
+              id: randomUUID(),
+              candidateId: candidateProfile.id,
+              name: project.name,
+              role: project.role,
+              description: project.description || "",
             },
           });
         }

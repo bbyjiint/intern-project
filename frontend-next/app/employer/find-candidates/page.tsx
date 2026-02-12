@@ -6,6 +6,7 @@ import EmployerNavbar from '@/components/EmployerNavbar'
 import CandidateCard from '@/components/CandidateCard'
 import CandidateProfileModal from '@/components/CandidateProfileModal'
 import SearchableDropdown from '@/components/SearchableDropdown'
+import LoadingSpinner from '@/components/LoadingSpinner'
 import { apiFetch } from '@/lib/api'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -98,6 +99,7 @@ export default function FindCandidatesPage() {
   const [selectedCandidate, setSelectedCandidate] = useState<typeof mockCandidates[0] | null>(null)
   const [apiCandidates, setApiCandidates] = useState<typeof mockCandidates | null>(null)
   const [apiError, setApiError] = useState<string | null>(null)
+  const [candidatesLoading, setCandidatesLoading] = useState(true)
   const [universities, setUniversities] = useState<Array<{ id: string; name: string; thname: string | null; code: string | null }>>([])
   const [universitiesLoading, setUniversitiesLoading] = useState(false)
 
@@ -153,6 +155,8 @@ export default function FindCandidatesPage() {
 
   useEffect(() => {
     ;(async () => {
+      setCandidatesLoading(true)
+      setApiError(null)
       try {
         const data = await apiFetch<{ candidates: typeof mockCandidates }>(`/api/candidates`)
         setApiCandidates(data.candidates)
@@ -160,6 +164,8 @@ export default function FindCandidatesPage() {
         // If not logged in / wrong role, keep mock list but show message.
         setApiError(err instanceof Error ? err.message : 'Failed to load candidates')
         setApiCandidates(null)
+      } finally {
+        setCandidatesLoading(false)
       }
     })()
   }, [])
@@ -404,10 +410,16 @@ export default function FindCandidatesPage() {
             </div>
 
             <div className="border-t border-blue-200 pt-6">
-              <div className="mb-6 flex justify-between items-center">
-                <p className="text-lg font-medium text-gray-700">
-                  {sortedCandidates.length} intern{sortedCandidates.length !== 1 ? 's' : ''} found
-                </p>
+              {candidatesLoading ? (
+                <div className="py-20">
+                  <LoadingSpinner size="lg" text="Loading candidates..." />
+                </div>
+              ) : (
+                <>
+                  <div className="mb-6 flex justify-between items-center">
+                    <p className="text-lg font-medium text-gray-700">
+                      {sortedCandidates.length} intern{sortedCandidates.length !== 1 ? 's' : ''} found
+                    </p>
                 <div className="flex gap-4">
                   <div className="flex gap-2">
                     <button
@@ -443,24 +455,26 @@ export default function FindCandidatesPage() {
                 </div>
               </div>
 
-              {sortedCandidates.length === 0 && (
-                <div className="text-center py-10 text-gray-500">
-                  No candidates found matching your criteria.
-                </div>
-              )}
+                    {sortedCandidates.length === 0 && (
+                      <div className="text-center py-10 text-gray-500">
+                        No candidates found matching your criteria.
+                      </div>
+                    )}
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {sortedCandidates.map((candidate) => (
-                  <CandidateCard
-                    key={candidate.id || candidate.name}
-                    {...candidate}
-                    variant="find-candidates"
-                    isBookmarked={bookmarkedCandidates.has(candidate.id || candidate.name)}
-                    onBookmark={(e) => handleBookmark(e, candidate.id || candidate.name)}
-                    onClick={() => handleCardClick(candidate)}
-                  />
-                ))}
-              </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {sortedCandidates.map((candidate) => (
+                        <CandidateCard
+                          key={candidate.id || candidate.name}
+                          {...candidate}
+                          variant="find-candidates"
+                          isBookmarked={bookmarkedCandidates.has(candidate.id || candidate.name)}
+                          onBookmark={(e) => handleBookmark(e, candidate.id || candidate.name)}
+                          onClick={() => handleCardClick(candidate)}
+                        />
+                      ))}
+                    </div>
+                  </>
+              )}
             </div>
           </div>
         </div>

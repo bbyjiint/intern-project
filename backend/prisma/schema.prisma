@@ -192,6 +192,7 @@ model CandidateProfile {
   CertificateFile      CertificateFile[]
   UserSkill            UserSkill[]
   WorkHistory          WorkHistory[]
+  UserProjects         UserProjects[]
   Bookmarks            Bookmark[]
   Conversations        Conversation[]
   JobApplications      JobApplication[]
@@ -479,4 +480,18 @@ model Subdistrict {
   @@unique([districtId, name])
   @@index([districtId])
   @@index([code])
+}
+
+
+model UserProjects {
+  id          String           @id @default(uuid()) @db.Uuid
+  candidateId String           @db.Uuid
+  name        String
+  role        String
+  description String
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  Profile     CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
 }

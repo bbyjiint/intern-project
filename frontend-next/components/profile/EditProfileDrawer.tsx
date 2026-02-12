@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { ProfileData, Education, Experience, Project, Skill } from '@/hooks/useProfile'
 import { apiFetch } from '@/lib/api'
+import SearchableDropdown from '@/components/SearchableDropdown'
 
 type EditSection = 
   | 'personal'
@@ -30,6 +31,47 @@ export default function EditProfileDrawer({
 }: EditProfileDrawerProps) {
   const [formData, setFormData] = useState<any>({})
   const [isSaving, setIsSaving] = useState(false)
+  const [universities, setUniversities] = useState<Array<{ id: string; name: string; thname: string | null; code: string | null }>>([])
+  const [universitiesLoading, setUniversitiesLoading] = useState(false)
+  const [skills, setSkills] = useState<Array<{ id: string; name: string }>>([])
+  const [skillsLoading, setSkillsLoading] = useState(false)
+
+  // Load universities and skills when drawer opens
+  useEffect(() => {
+    if (isOpen) {
+      // Load universities
+      if (section === 'education') {
+        setUniversitiesLoading(true)
+        apiFetch<{ universities: Array<{ id: string; name: string; thname: string | null; code: string | null }> }>('/api/universities')
+          .then((data) => {
+            setUniversities(data.universities || [])
+          })
+          .catch((err) => {
+            console.error('Failed to load universities:', err)
+            setUniversities([])
+          })
+          .finally(() => {
+            setUniversitiesLoading(false)
+          })
+      }
+      
+      // Load skills
+      if (section === 'project' || section === 'skill') {
+        setSkillsLoading(true)
+        apiFetch<{ skills: Array<{ id: string; name: string }> }>('/api/skills')
+          .then((data) => {
+            setSkills(data.skills || [])
+          })
+          .catch((err) => {
+            console.error('Failed to load skills:', err)
+            setSkills([])
+          })
+          .finally(() => {
+            setSkillsLoading(false)
+          })
+      }
+    }
+  }, [isOpen, section])
 
   useEffect(() => {
     if (isOpen && section && profileData) {
@@ -42,48 +84,94 @@ export default function EditProfileDrawer({
           bio: profileData.bio || '',
           introductionVideo: profileData.introductionVideo || '',
         })
-      } else if (section === 'education' && editingId) {
-        const edu = profileData.education?.find(e => e.id === editingId)
-        setFormData({
-          universityName: edu?.universityName || '',
-          degreeName: edu?.degreeName || '',
-          educationLevel: edu?.educationLevel || 'BACHELOR',
-          gpa: edu?.gpa || '',
-          startDate: edu?.startDate || '',
-          endDate: edu?.endDate || '',
-          isCurrent: edu?.isCurrent || false,
-        })
-      } else if (section === 'experience' && editingId) {
-        const exp = profileData.experience?.find(e => e.id === editingId)
-        setFormData({
-          position: exp?.position || '',
-          companyName: exp?.companyName || '',
-          department: exp?.department || '',
-          startDate: exp?.startDate || '',
-          endDate: exp?.endDate || '',
-          manager: exp?.manager || '',
-          description: exp?.description || '',
-        })
-      } else if (section === 'project' && editingId) {
-        const proj = profileData.projects?.find(p => p.id === editingId)
-        setFormData({
-          name: proj?.name || '',
-          role: proj?.role || '',
-          description: proj?.description || '',
-          startDate: proj?.startDate || '',
-          endDate: proj?.endDate || '',
-          skills: proj?.skills?.join(', ') || '',
-        })
-      } else if (section === 'skill' && editingId) {
-        const skill = profileData.skills?.find(s => s.id === editingId)
-        setFormData({
-          name: skill?.name || '',
-          category: skill?.category || 'technical',
-          rating: skill?.rating || 0,
-        })
-      } else {
-        // New item - empty form
-        setFormData({})
+      } else if (section === 'education') {
+        // For new education, start with empty form
+        if (editingId) {
+          const edu = profileData.education?.find(e => e.id === editingId)
+          // Extract year from date if needed - backend returns both formats
+          const startYear = edu?.startYear || (edu?.startDate ? new Date(edu.startDate).getFullYear().toString() : '')
+          const endYear = edu?.endYear || (edu?.endDate ? new Date(edu.endDate).getFullYear().toString() : '')
+          setFormData({
+            universityName: edu?.universityName || edu?.university || '',
+            degreeName: edu?.degreeName || edu?.degree || '',
+            educationLevel: edu?.educationLevel || 'BACHELOR',
+            gpa: edu?.gpa || '',
+            startYear: startYear,
+            endYear: endYear,
+            isCurrent: edu?.isCurrent || (!endYear && !edu?.endDate),
+          })
+        } else {
+          setFormData({
+            universityName: '',
+            degreeName: '',
+            educationLevel: 'BACHELOR',
+            gpa: '',
+            startYear: '',
+            endYear: '',
+            isCurrent: false,
+          })
+        }
+      } else if (section === 'experience') {
+        if (editingId) {
+          const exp = profileData.experience?.find(e => e.id === editingId)
+          setFormData({
+            position: exp?.position || '',
+            companyName: exp?.companyName || '',
+            department: exp?.department || '',
+            startDate: exp?.startDate || '',
+            endDate: exp?.endDate || '',
+            manager: exp?.manager || '',
+            description: exp?.description || '',
+          })
+        } else {
+          setFormData({
+            position: '',
+            companyName: '',
+            department: '',
+            startDate: '',
+            endDate: '',
+            manager: '',
+            description: '',
+          })
+        }
+      } else if (section === 'project') {
+        if (editingId) {
+          const proj = profileData.projects?.find(p => p.id === editingId)
+          setFormData({
+            name: proj?.name || '',
+            role: proj?.role || '',
+            description: proj?.description || '',
+            startDate: proj?.startDate || '',
+            endDate: proj?.endDate || '',
+            skills: proj?.skills?.join(', ') || '',
+          })
+        } else {
+          setFormData({
+            name: '',
+            role: '',
+            description: '',
+            startDate: '',
+            endDate: '',
+            skills: '',
+          })
+        }
+      } else if (section === 'skill') {
+        if (editingId) {
+          const skill = profileData.skills?.find(s => s.id === editingId)
+          setFormData({
+            name: skill?.name || '',
+            category: skill?.category || 'technical',
+            rating: skill?.rating || 0,
+            level: skill?.level || 'beginner',
+          })
+        } else {
+          setFormData({
+            name: '',
+            category: 'technical',
+            rating: 0,
+            level: 'beginner',
+          })
+        }
       }
     }
   }, [isOpen, section, editingId, profileData])
@@ -120,12 +208,14 @@ export default function EditProfileDrawer({
           updatedEducation = updatedEducation.map(edu => 
             edu.id === editingId ? {
               ...edu,
+              university: formData.universityName,
               universityName: formData.universityName,
+              degree: formData.degreeName,
               degreeName: formData.degreeName,
               educationLevel: formData.educationLevel,
               gpa: formData.gpa ? parseFloat(formData.gpa) : undefined,
-              startDate: formData.startDate,
-              endDate: formData.endDate,
+              startYear: formData.startYear,
+              endYear: formData.isCurrent ? null : formData.endYear,
               isCurrent: formData.isCurrent,
             } : edu
           )
@@ -133,24 +223,25 @@ export default function EditProfileDrawer({
           // Add new education
           updatedEducation.push({
             id: `new-${Date.now()}`,
+            university: formData.universityName,
             universityName: formData.universityName,
+            degree: formData.degreeName,
             degreeName: formData.degreeName,
             educationLevel: formData.educationLevel,
             gpa: formData.gpa ? parseFloat(formData.gpa) : undefined,
-            startDate: formData.startDate,
-            endDate: formData.endDate,
+            startYear: formData.startYear,
+            endYear: formData.isCurrent ? null : formData.endYear,
             isCurrent: formData.isCurrent,
           })
         }
         
         // Transform to API format
         const educationForAPI = updatedEducation.map(edu => ({
-          university: edu.universityName,
-          degree: edu.degreeName,
-          educationLevel: edu.educationLevel,
-          gpa: edu.gpa?.toString(),
-          startYear: edu.startDate ? new Date(edu.startDate).getFullYear().toString() : '',
-          endYear: edu.endDate ? new Date(edu.endDate).getFullYear().toString() : '',
+          university: edu.universityName || edu.university,
+          degree: edu.degreeName || edu.degree,
+          gpa: edu.gpa ? edu.gpa.toString() : null,
+          startYear: edu.startYear || (edu.startDate ? new Date(edu.startDate).getFullYear().toString() : ''),
+          endYear: edu.isCurrent ? null : (edu.endYear || (edu.endDate ? new Date(edu.endDate).getFullYear().toString() : '')),
         }))
         
         await apiFetch('/api/candidates/profile', {
@@ -250,9 +341,47 @@ export default function EditProfileDrawer({
           }),
         })
       } else if (section === 'project') {
-        alert('This feature will be implemented soon. Please use the profile setup page.')
-        setIsSaving(false)
-        return
+        const currentProjects = currentProfile?.projects || []
+        let updatedProjects = [...currentProjects]
+        
+        if (editingId) {
+          updatedProjects = updatedProjects.map(proj => 
+            proj.id === editingId ? {
+              ...proj,
+              name: formData.name,
+              role: formData.role,
+              description: formData.description,
+              startDate: formData.startDate,
+              endDate: formData.endDate,
+            } : proj
+          )
+        } else {
+          updatedProjects.push({
+            id: `new-${Date.now()}`,
+            name: formData.name,
+            role: formData.role,
+            description: formData.description || '',
+            startDate: formData.startDate,
+            endDate: formData.endDate,
+          })
+        }
+        
+        const projectsForAPI = updatedProjects.map(proj => ({
+          name: proj.name,
+          role: proj.role,
+          description: proj.description || '',
+        }))
+        
+        await apiFetch('/api/candidates/profile', {
+          method: 'PUT',
+          body: JSON.stringify({
+            ...(currentProfile?.fullName && { fullName: currentProfile.fullName }),
+            education: currentProfile?.education || [],
+            experience: currentProfile?.experience || [],
+            skills: currentProfile?.skills || [],
+            projects: projectsForAPI,
+          }),
+        })
       }
       
       onSave()
@@ -355,12 +484,24 @@ export default function EditProfileDrawer({
               <>
                 <div>
                   <label className="block text-sm font-medium mb-2">University Name</label>
-                  <input
-                    type="text"
-                    value={formData.universityName || ''}
-                    onChange={(e) => setFormData({ ...formData, universityName: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                  />
+                  {universitiesLoading ? (
+                    <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 flex items-center justify-center">
+                      <span className="text-gray-500 text-sm">Loading universities...</span>
+                    </div>
+                  ) : (
+                    <SearchableDropdown
+                      options={universities.map((uni) => ({
+                        value: uni.name,
+                        label: uni.thname ? `${uni.name} (${uni.thname})` : uni.name,
+                        code: uni.code,
+                      }))}
+                      value={formData.universityName || ''}
+                      onChange={(value) => setFormData({ ...formData, universityName: value })}
+                      placeholder="Search by name or code..."
+                      className="w-full"
+                      allOptionLabel="Select University"
+                    />
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">Degree</label>
@@ -368,17 +509,21 @@ export default function EditProfileDrawer({
                     type="text"
                     value={formData.degreeName || ''}
                     onChange={(e) => setFormData({ ...formData, degreeName: e.target.value })}
+                    placeholder="e.g. Computer Science, Business Administration"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">GPA</label>
+                    <label className="block text-sm font-medium mb-2">GPA (Optional)</label>
                     <input
                       type="number"
                       step="0.01"
+                      min="0"
+                      max="4.0"
                       value={formData.gpa || ''}
-                      onChange={(e) => setFormData({ ...formData, gpa: parseFloat(e.target.value) || 0 })}
+                      onChange={(e) => setFormData({ ...formData, gpa: e.target.value })}
+                      placeholder="e.g. 3.5"
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                     />
                   </div>
@@ -397,34 +542,45 @@ export default function EditProfileDrawer({
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Start Date</label>
-                    <input
-                      type="date"
-                      value={formData.startDate || ''}
-                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                    <label className="block text-sm font-medium mb-2">Start Year</label>
+                    <select
+                      value={formData.startYear || ''}
+                      onChange={(e) => setFormData({ ...formData, startYear: e.target.value })}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                    />
+                    >
+                      <option value="">Select Year</option>
+                      {Array.from({ length: 50 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                        <option key={year} value={year.toString()}>{year}</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-2">End Date</label>
-                    <input
-                      type="date"
-                      value={formData.endDate || ''}
-                      onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                      disabled={formData.isCurrent}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                    />
+                    <label className="block text-sm font-medium mb-2">End Year</label>
+                    <div className="flex gap-2">
+                      <select
+                        value={formData.endYear || ''}
+                        onChange={(e) => setFormData({ ...formData, endYear: e.target.value })}
+                        disabled={formData.isCurrent}
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      >
+                        <option value="">Select Year</option>
+                        {Array.from({ length: 50 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                          <option key={year} value={year.toString()}>{year}</option>
+                        ))}
+                      </select>
+                      <label className="flex items-center gap-2 px-3">
+                        <input
+                          type="checkbox"
+                          checked={formData.isCurrent || false}
+                          onChange={(e) => {
+                            setFormData({ ...formData, isCurrent: e.target.checked, endYear: e.target.checked ? '' : formData.endYear })
+                          }}
+                          className="w-4 h-4"
+                        />
+                        <span className="text-sm whitespace-nowrap">Current</span>
+                      </label>
+                    </div>
                   </div>
-                </div>
-                <div>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={formData.isCurrent || false}
-                      onChange={(e) => setFormData({ ...formData, isCurrent: e.target.checked })}
-                    />
-                    <span className="text-sm">Currently studying</span>
-                  </label>
                 </div>
               </>
             )}
@@ -558,6 +714,9 @@ export default function EditProfileDrawer({
                     placeholder="SQL, Python, Tableau"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Note: Skills are stored as comma-separated text. For full skill management, use the Skills section.
+                  </p>
                 </div>
               </>
             )}
@@ -566,12 +725,28 @@ export default function EditProfileDrawer({
               <>
                 <div>
                   <label className="block text-sm font-medium mb-2">Skill Name</label>
-                  <input
-                    type="text"
-                    value={formData.name || ''}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                  />
+                  {skillsLoading ? (
+                    <div className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 flex items-center justify-center">
+                      <span className="text-gray-500 text-sm">Loading skills...</span>
+                    </div>
+                  ) : (
+                    <SearchableDropdown
+                      options={skills.map((skill) => ({
+                        value: skill.name,
+                        label: skill.name,
+                      }))}
+                      value={formData.name || ''}
+                      onChange={(value) => setFormData({ ...formData, name: value })}
+                      placeholder="Search by skill name..."
+                      className="w-full"
+                      allOptionLabel="Select Skill"
+                    />
+                  )}
+                  {formData.name && !skills.find((s: { name: string }) => s.name === formData.name) && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Skill not found in list. It will be created when you save.
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2">Category</label>
