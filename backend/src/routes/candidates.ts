@@ -579,23 +579,37 @@ const upload = multer({
 });
 
 // Upload a certificate (file upload)
-candidatesRouter.post("/certificates", requireAuth, requireRole("CANDIDATE"), upload.single("file"), async (req: AuthedRequest, res) => {
+candidatesRouter.post("/certificates", requireAuth, requireRole("CANDIDATE"), (req: AuthedRequest, res, next) => {
+  upload.single("file")(req as any, res, (err: any) => {
+    if (err) {
+      if (err instanceof multer.MulterError) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(400).json({ error: "File size exceeds 10MB limit" });
+        }
+        return res.status(400).json({ error: err.message });
+      }
+      return res.status(400).json({ error: err.message || "File upload error" });
+    }
+    next();
+  });
+}, async (req: AuthedRequest, res) => {
   const userId = req.user!.id;
 
   try {
     const candidateId = await getCandidateIdForUser(userId);
     
-    if (!req.file) {
+    const file = (req as any).file;
+    if (!file) {
       return res.status(400).json({ error: "File is required" });
     }
 
-    const { name, description } = req.body ?? {};
-    const fileName = name || req.file.originalname;
+    const { name, description } = (req as any).body ?? {};
+    const fileName = name || file.originalname;
     
     // Generate URL for the uploaded file
     // In production, you'd upload to S3 or similar and use that URL
-    const fileUrl = `/uploads/certificates/${req.file.filename}`;
-    const fileType = req.file.mimetype;
+    const fileUrl = `/uploads/certificates/${file.filename}`;
+    const fileType = file.mimetype;
 
     const certificate = await prisma.certificateFile.create({
       data: {
@@ -611,8 +625,13 @@ candidatesRouter.post("/certificates", requireAuth, requireRole("CANDIDATE"), up
     return res.status(201).json({ certificate });
   } catch (e: any) {
     // Clean up uploaded file if database operation fails
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
+    const file = (req as any).file;
+    if (file && fs.existsSync(file.path)) {
+      try {
+        fs.unlinkSync(file.path);
+      } catch (unlinkError) {
+        console.error("Error cleaning up file:", unlinkError);
+      }
     }
     
     if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
@@ -634,7 +653,7 @@ candidatesRouter.delete("/certificates/:id", requireAuth, requireRole("CANDIDATE
     // Verify that the certificate belongs to this candidate
     const existingCertificate = await prisma.certificateFile.findUnique({
       where: { id: certificateId },
-      select: { candidateId: true },
+      select: { candidateId: true, url: true },
     });
 
     if (!existingCertificate) {
@@ -643,6 +662,19 @@ candidatesRouter.delete("/certificates/:id", requireAuth, requireRole("CANDIDATE
 
     if (existingCertificate.candidateId !== candidateId) {
       return res.status(403).json({ error: "You don't have permission to delete this certificate" });
+    }
+
+    // Delete the file from filesystem if it exists
+    if (existingCertificate.url.startsWith("/uploads/")) {
+      const filePath = path.join(process.cwd(), existingCertificate.url);
+      if (fs.existsSync(filePath)) {
+        try {
+          fs.unlinkSync(filePath);
+        } catch (fileError) {
+          console.error("Error deleting file:", fileError);
+          // Continue with database deletion even if file deletion fails
+        }
+      }
     }
 
     await prisma.certificateFile.delete({
