@@ -59,6 +59,9 @@ app.use("/api/bookmarks", bookmarksRouter);
 app.use("/api/messages", messagesRouter);
 app.use("/api/intern", internRouter);
 
+// Serve uploaded files
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+
 // 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });

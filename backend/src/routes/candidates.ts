@@ -582,18 +582,32 @@ const upload = multer({
 });
 
 // Upload a certificate (file upload)
-candidatesRouter.post("/certificates", requireAuth, requireRole("CANDIDATE"), upload.single("file"), async (req: AuthedRequest, res) => {
+candidatesRouter.post("/certificates", requireAuth, requireRole("CANDIDATE"), (req: AuthedRequest, res, next) => {
+  upload.single("file")(req as any, res, (err: any) => {
+    if (err) {
+      if (err instanceof multer.MulterError) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(400).json({ error: "File size exceeds 10MB limit" });
+        }
+        return res.status(400).json({ error: err.message });
+      }
+      return res.status(400).json({ error: err.message || "File upload error" });
+    }
+    next();
+  });
+}, async (req: AuthedRequest, res) => {
   const userId = req.user!.id;
 
   try {
     const candidateId = await getCandidateIdForUser(userId);
     
-    if (!req.file) {
+    const file = (req as any).file;
+    if (!file) {
       return res.status(400).json({ error: "File is required" });
     }
 
-    const { name, description } = req.body ?? {};
-    const fileName = name || req.file.originalname;
+    const { name, description } = (req as any).body ?? {};
+    const fileName = name || file.originalname;
     
     // Upload file to storage (S3 or local)
     // For memory storage (S3), use buffer directly; for disk storage (local), read from path
@@ -654,6 +668,7 @@ candidatesRouter.delete("/certificates/:id", requireAuth, requireRole("CANDIDATE
     // Get certificate with file URL
     const existingCertificate = await prisma.certificateFile.findUnique({
       where: { id: certificateId },
+      select: { candidateId: true, url: true },
       select: { candidateId: true, url: true },
     });
 

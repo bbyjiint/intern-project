@@ -141,6 +141,7 @@ export default function CertificatesPage() {
       setCertificateDescription('')
       setShowUploadForm(false)
       e.target.value = ''
+      setUploadError(null)
       
       // Reload certificates
       await loadCertificates()
@@ -552,7 +553,7 @@ export default function CertificatesPage() {
                   </div>
 
                   <a
-                    href={certificate.url}
+                    href={`${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'}${certificate.url}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="block w-full px-4 py-2 text-center rounded-lg font-medium transition-colors"
