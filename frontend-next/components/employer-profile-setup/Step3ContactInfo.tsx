@@ -33,14 +33,14 @@ export default function Step3ContactInfo({ data, onUpdate }: Step3ContactInfoPro
 
   return (
     <div>
-      <h2 className="text-xl sm:text-2xl font-bold mb-6 sm:mb-8" style={{ color: '#1C2D4F', fontWeight: 700 }}>
+      <h2 className="text-xl sm:text-2xl font-bold mb-6 sm:mb-8" style={{ color: '#0273B1', fontWeight: 700 }}>
         Contact Information
       </h2>
 
       <div className="space-y-6">
         {/* Phone Number */}
         <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: '#1C2D4F' }}>
+          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
             Phone Number
           </label>
           <div className="flex flex-col sm:flex-row gap-2">
@@ -66,7 +66,7 @@ export default function Step3ContactInfo({ data, onUpdate }: Step3ContactInfoPro
 
         {/* Email */}
         <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: '#1C2D4F' }}>
+          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
             Email
           </label>
           <input
@@ -80,7 +80,7 @@ export default function Step3ContactInfo({ data, onUpdate }: Step3ContactInfoPro
 
         {/* Website URL */}
         <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: '#1C2D4F' }}>
+          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
             Website URL <span className="text-xs font-normal" style={{ color: '#A9B4CD' }}>(Optional)</span>
           </label>
           <input
@@ -94,7 +94,7 @@ export default function Step3ContactInfo({ data, onUpdate }: Step3ContactInfoPro
 
         {/* Contact Name */}
         <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: '#1C2D4F' }}>
+          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
             Contact Name
           </label>
           <input

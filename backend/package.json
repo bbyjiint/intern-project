@@ -21,8 +21,9 @@
     "seed:addresses-direct": "tsx prisma/seed-addresses-direct.ts"
   },
   "dependencies": {
-    "@prisma/client": "^7.2.0",
     "@prisma/adapter-pg": "^7.2.0",
+    "@prisma/client": "^7.2.0",
+    "@types/multer": "^2.0.0",
     "argon2": "^0.44.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
@@ -30,12 +31,17 @@
     "google-auth-library": "^10.4.1",
     "jose": "^6.1.0",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
     "pg": "^8.16.3"
   },
   "devDependencies": {
+<<<<<<< Updated upstream
     "@types/cookie-parser": "^1.4.9",
     "@types/express": "^5.0.6",
+=======
+>>>>>>> Stashed changes
     "@types/cors": "^2.8.18",
+    "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.0.9",
     "@types/pg": "^8.15.5",
@@ -44,4 +50,3 @@
     "typescript": "^5.9.3"
   }
 }
-

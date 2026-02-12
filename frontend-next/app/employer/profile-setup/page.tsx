@@ -185,8 +185,8 @@ export default function EmployerProfileSetupPage() {
 
       {/* Main Content */}
       <div className="max-w-[800px] mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-center" style={{ color: '#1C2D4F' }}>
-          Start building your profile
+        <h1 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-center" style={{ color: '#0273B1' }}>
+          Company Registration
         </h1>
 
         {/* Progress Indicator */}

@@ -52,6 +52,7 @@ export default function Step4PostPreview({ data }: Step4PostPreviewProps) {
   }
   const companyName = employerProfile.companyName || ''
   const companyLogo = companyName ? companyName.substring(0, 7).toUpperCase() : ''
+  const profileImage = employerProfile.profileImage || null
 
   // Format location
   const locationParts = []
@@ -85,16 +86,24 @@ export default function Step4PostPreview({ data }: Step4PostPreviewProps) {
         {/* Company Logo and Job Title Section */}
         <div className="flex items-start gap-6 mb-6 pr-40">
           <div className="flex-shrink-0">
-            <div className="w-20 h-20 bg-red-600 rounded-lg flex flex-col items-center justify-center border-2 border-black shadow-sm relative overflow-hidden">
-              <div className="absolute top-2 left-1/2 transform -translate-x-1/2">
-                <div className="w-0 h-0 border-l-[12px] border-r-[12px] border-b-[16px] border-l-transparent border-r-transparent border-b-white"></div>
+            {profileImage ? (
+              <img
+                src={profileImage}
+                alt={companyName || 'Company Logo'}
+                className="w-20 h-20 rounded-lg object-cover border-2 border-black shadow-sm"
+              />
+            ) : (
+              <div className="w-20 h-20 bg-red-600 rounded-lg flex flex-col items-center justify-center border-2 border-black shadow-sm relative overflow-hidden">
+                <div className="absolute top-2 left-1/2 transform -translate-x-1/2">
+                  <div className="w-0 h-0 border-l-[12px] border-r-[12px] border-b-[16px] border-l-transparent border-r-transparent border-b-white"></div>
+                </div>
+                <div className="absolute bottom-0 left-0 right-0 bg-black py-1 flex items-center justify-center">
+                  <span className="text-white text-[10px] font-bold uppercase tracking-tight">
+                    {companyLogo}
+                  </span>
+                </div>
               </div>
-              <div className="absolute bottom-0 left-0 right-0 bg-black py-1 flex items-center justify-center">
-                <span className="text-white text-[10px] font-bold uppercase tracking-tight">
-                  {companyLogo}
-                </span>
-              </div>
-            </div>
+            )}
           </div>
           <div className="flex-1">
             {/* Job Title */}
