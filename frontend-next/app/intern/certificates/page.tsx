@@ -6,25 +6,26 @@ import Link from 'next/link'
 import InternNavbar from '@/components/InternNavbar'
 import { apiFetch } from '@/lib/api'
 
-interface JobMatch {
+interface Certificate {
   id: string
-  jobTitle: string
-  companyName: string
-  companyInitial: string
-  matchPercentage: number
-  description: string
-  location: string
-  employmentType: string
-  salary: string
-  companyColor: string
+  name: string
+  url: string
+  type?: string | null
+  description?: string | null
+  createdAt: string
 }
 
-export default function JobMatchPage() {
+export default function CertificatesPage() {
   const router = useRouter()
   const pathname = usePathname()
   const [isLoading, setIsLoading] = useState(true)
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false)
-  const [jobMatches, setJobMatches] = useState<JobMatch[]>([])
+  const [certificates, setCertificates] = useState<Certificate[]>([])
+  const [isUploading, setIsUploading] = useState(false)
+  const [showUploadForm, setShowUploadForm] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [certificateName, setCertificateName] = useState('')
+  const [certificateDescription, setCertificateDescription] = useState('')
   
   const isAIAnalysisPage = pathname === '/intern/ai-analysis'
   const isJobMatchPage = pathname === '/intern/job-match' || pathname === '/intern/find-companies'
@@ -65,6 +66,7 @@ export default function JobMatchPage() {
         }
 
         setIsLoading(false)
+        loadCertificates()
       } catch (error) {
         console.error('Failed to check auth:', error)
         const errorMessage = error instanceof Error ? error.message : String(error)
@@ -79,74 +81,108 @@ export default function JobMatchPage() {
     checkAuth()
   }, [router])
 
-  useEffect(() => {
-    const loadJobMatches = async () => {
-      try {
-        // Try to fetch AI-recommended jobs
-        const response = await apiFetch<{ jobs: JobMatch[] }>('/api/ai/job-matches')
-        if (response.jobs) {
-          setJobMatches(response.jobs)
-        }
-      } catch (error) {
-        console.error('Failed to load job matches:', error)
-        // Use mock data if API doesn't exist yet
-        setJobMatches([
-          {
-            id: '1',
-            jobTitle: 'Machine Learning Engineer',
-            companyName: 'Tech Innovate',
-            companyInitial: 'M',
-            matchPercentage: 87,
-            description: 'Strong match clue to your skills in Python, TensorFlow, and Machine Learning. Matches well with your analytics and problem-solving abilities.',
-            location: 'San Francisco, CA',
-            employmentType: 'Full-Time',
-            salary: '$120k-$150k/year',
-            companyColor: '#0273B1',
-          },
-          {
-            id: '2',
-            jobTitle: 'Data Scientist',
-            companyName: 'DataWorks',
-            companyInitial: 'D',
-            matchPercentage: 78,
-            description: 'Good fit based on your expertise in Python, SQL, data analysis, and mathematical skills.',
-            location: 'New York, NY',
-            employmentType: 'Full-Time',
-            salary: '$110k-$140k/year',
-            companyColor: '#4CAF50',
-          },
-          {
-            id: '3',
-            jobTitle: 'AI Researcher',
-            companyName: 'Innovate AI',
-            companyInitial: 'A',
-            matchPercentage: 72,
-            description: 'Potential match based on your knowledge of machine learning and mathematics. Consider gaining more research experience.',
-            location: 'Seattle, WA',
-            employmentType: 'Full-Time',
-            salary: '$130k-$160k/year',
-            companyColor: '#FF9800',
-          },
-          {
-            id: '4',
-            jobTitle: 'Software Engineer',
-            companyName: 'CodeCrafters',
-            companyInitial: 'C',
-            matchPercentage: 68,
-            description: 'Skills in Python and problem-solving suggested, but consider further developing your software engineering and mathematics.',
-            location: 'Los Angeles, CA',
-            employmentType: 'Full-Time',
-            salary: '$100k-$130k/year',
-            companyColor: '#FF9800',
-          },
-        ])
-      }
+  const loadCertificates = async () => {
+    try {
+      const data = await apiFetch<{ certificates: Certificate[] }>('/api/candidates/certificates')
+      setCertificates(data.certificates || [])
+    } catch (error) {
+      console.error('Failed to load certificates:', error)
+      setCertificates([])
+    }
+  }
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    const validTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+    const fileExtension = file.name.split('.').pop()?.toLowerCase()
+    
+    if (!validTypes.includes(file.type) && !['pdf', 'jpg', 'jpeg', 'png', 'webp'].includes(fileExtension || '')) {
+      setUploadError('Invalid file type. Please upload a PDF or image file (JPG, PNG, WEBP).')
+      return
     }
 
-    if (!isLoading) {
-      loadJobMatches()
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      setUploadError('File size exceeds 10MB limit.')
+      return
     }
-  }, [isLoading])
+
+    setIsUploading(true)
+    setUploadError(null)
+
+    try {
+      // Create FormData for file upload
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('name', certificateName || file.name)
+      if (certificateDescription) {
+        formData.append('description', certificateDescription)
+      }
+
+      const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'
+      const response = await fetch(`${apiBase}/api/candidates/certificates`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Failed to upload certificate' }))
+        throw new Error(errorData.error || 'Failed to upload certificate')
+      }
+
+      const data = await response.json()
+      
+      // Reset form
+      setCertificateName('')
+      setCertificateDescription('')
+      setShowUploadForm(false)
+      e.target.value = ''
+      
+      // Reload certificates
+      await loadCertificates()
+    } catch (error) {
+      console.error('Error uploading certificate:', error)
+      setUploadError(error instanceof Error ? error.message : 'Failed to upload certificate. Please try again.')
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  const handleDelete = async (certificateId: string) => {
+    if (!confirm('Are you sure you want to delete this certificate?')) {
+      return
+    }
+
+    try {
+      await apiFetch(`/api/candidates/certificates/${certificateId}`, {
+        method: 'DELETE',
+      })
+      
+      await loadCertificates()
+    } catch (error) {
+      console.error('Failed to delete certificate:', error)
+      alert('Failed to delete certificate. Please try again.')
+    }
+  }
+
+  const getFileIcon = (type?: string | null, url?: string) => {
+    if (type === 'application/pdf' || url?.toLowerCase().endsWith('.pdf')) {
+      return (
+        <svg className="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+        </svg>
+      )
+    }
+    return (
+      <svg className="w-12 h-12 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+      </svg>
+    )
+  }
 
   if (isLoading) {
     return (
@@ -359,152 +395,184 @@ export default function JobMatchPage() {
         {/* Main Content */}
         <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2" style={{ color: '#1C2D4F' }}>
-              Job Match
+          <div className="mb-6 flex items-center justify-between">
+            <h1 className="text-3xl font-bold" style={{ color: '#1C2D4F' }}>
+              Certificates
             </h1>
-            <p className="text-gray-600">
-              AI-recommended job positions tailored for you
-            </p>
-          </div>
-
-          {/* Job Match Cards */}
-          <div className="space-y-4">
-            {jobMatches.map((job) => (
-              <JobMatchCard key={job.id} job={job} />
-            ))}
-          </div>
-
-          {/* Footer */}
-          <div className="mt-16 pt-8 border-t border-gray-200">
-            <div className="flex flex-wrap justify-center gap-6 text-sm text-gray-500">
-              <Link href="/contact" className="hover:text-gray-700">
-                Contact
-              </Link>
-              <Link href="/about" className="hover:text-gray-700">
-                About Us
-              </Link>
-              <Link href="/privacy" className="hover:text-gray-700">
-                Privacy Policy
-              </Link>
-              <Link href="/terms" className="hover:text-gray-700">
-                Terms of Service
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// Job Match Card Component
-function JobMatchCard({ job }: { job: JobMatch }) {
-  const router = useRouter()
-  const matchColor = job.matchPercentage >= 80 ? '#4CAF50' : '#FF9800'
-  const borderColor = job.matchPercentage >= 80 ? '#4CAF50' : '#FF9800'
-  const buttonBgColor = job.companyColor
-
-  const handleViewDetails = () => {
-    // Navigate to job details page
-    router.push(`/intern/job-details/${job.id}`)
-  }
-
-  const handleApply = () => {
-    // Navigate to apply page or open apply modal
-    router.push(`/intern/apply/${job.id}`)
-  }
-
-  return (
-    <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-      <div className="flex items-start gap-4">
-        {/* Company Icon */}
-        <div 
-          className="w-16 h-16 rounded-full flex items-center justify-center flex-shrink-0 text-white font-bold text-xl"
-          style={{ backgroundColor: job.companyColor }}
-        >
-          {job.companyInitial}
-        </div>
-
-        {/* Job Info */}
-        <div className="flex-1">
-          <div className="flex items-start justify-between mb-2">
-            <div>
-              <h3 className="text-xl font-bold mb-1" style={{ color: '#1C2D4F' }}>
-                {job.jobTitle}
-              </h3>
-              <p className="text-gray-600 text-sm">{job.companyName}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <svg className="w-5 h-5" style={{ color: matchColor }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="font-semibold" style={{ color: matchColor }}>
-                {job.matchPercentage}% Match
-              </span>
-            </div>
-          </div>
-
-          <p className="text-gray-700 mb-4 text-sm leading-relaxed">
-            {job.description}
-          </p>
-
-          {/* Job Details */}
-          <div className="flex flex-wrap items-center gap-4 mb-4 text-sm text-gray-600">
-            <div className="flex items-center gap-1">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <span>{job.location}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              <span>{job.employmentType}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span>{job.salary}</span>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-3">
             <button
-              onClick={handleViewDetails}
-              className="px-6 py-2 rounded-lg font-medium border-2 transition-colors"
-              style={{ 
-                borderColor: borderColor,
-                color: borderColor,
-                backgroundColor: 'white'
-              }}
+              onClick={() => setShowUploadForm(!showUploadForm)}
+              className="px-4 py-2 rounded-lg font-semibold text-white transition-colors flex items-center space-x-2"
+              style={{ backgroundColor: '#0273B1' }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#F5F5F5'
+                e.currentTarget.style.backgroundColor = '#025a8f'
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'white'
+                e.currentTarget.style.backgroundColor = '#0273B1'
               }}
             >
-              View Details
-            </button>
-            <button
-              onClick={handleApply}
-              className="px-6 py-2 rounded-lg font-medium text-white transition-colors"
-              style={{ backgroundColor: buttonBgColor }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.opacity = '0.9'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.opacity = '1'
-              }}
-            >
-              Apply
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              <span>Add Certificate</span>
             </button>
           </div>
+
+          {/* Upload Form */}
+          {showUploadForm && (
+            <div className="bg-white rounded-lg shadow-md p-6 border border-gray-200 mb-6">
+              <h2 className="text-xl font-semibold mb-4" style={{ color: '#1C2D4F' }}>
+                Upload Certificate
+              </h2>
+              
+              {uploadError && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-600">{uploadError}</p>
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Certificate Name
+                  </label>
+                  <input
+                    type="text"
+                    value={certificateName}
+                    onChange={(e) => setCertificateName(e.target.value)}
+                    placeholder="e.g., AWS Certified Solutions Architect"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Description (Optional)
+                  </label>
+                  <textarea
+                    value={certificateDescription}
+                    onChange={(e) => setCertificateDescription(e.target.value)}
+                    placeholder="Add a description..."
+                    rows={3}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Upload File (PDF or Image)
+                  </label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
+                      onChange={handleFileSelect}
+                      disabled={isUploading}
+                      className="hidden"
+                      id="certificate-upload"
+                    />
+                    <label
+                      htmlFor="certificate-upload"
+                      className="cursor-pointer flex flex-col items-center"
+                    >
+                      <svg className="w-12 h-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
+                      <p className="text-sm text-gray-600 mb-1">
+                        {isUploading ? 'Uploading...' : 'Click to upload or drag and drop'}
+                      </p>
+                      <p className="text-xs text-gray-500">PDF, JPG, PNG, WEBP (Max 10MB)</p>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setShowUploadForm(false)
+                      setCertificateName('')
+                      setCertificateDescription('')
+                      setUploadError(null)
+                    }}
+                    className="px-4 py-2 rounded-lg font-medium border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Certificates List */}
+          {certificates.length === 0 ? (
+            <div className="bg-white rounded-lg shadow-md p-12 border border-gray-200 text-center">
+              <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <p className="text-gray-600 mb-4">No certificates uploaded yet.</p>
+              <button
+                onClick={() => setShowUploadForm(true)}
+                className="px-4 py-2 rounded-lg font-semibold text-white"
+                style={{ backgroundColor: '#0273B1' }}
+              >
+                Add Your First Certificate
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {certificates.map((certificate) => (
+                <div
+                  key={certificate.id}
+                  className="bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-lg mb-1" style={{ color: '#1C2D4F' }}>
+                        {certificate.name}
+                      </h3>
+                      {certificate.description && (
+                        <p className="text-sm text-gray-600 mb-2">{certificate.description}</p>
+                      )}
+                      <p className="text-xs text-gray-500">
+                        {new Date(certificate.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => handleDelete(certificate.id)}
+                      className="text-gray-400 hover:text-red-600 transition-colors"
+                      title="Delete certificate"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-center mb-4 bg-gray-50 rounded-lg p-4">
+                    {getFileIcon(certificate.type, certificate.url)}
+                  </div>
+
+                  <a
+                    href={certificate.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full px-4 py-2 text-center rounded-lg font-medium transition-colors"
+                    style={{
+                      backgroundColor: '#F0F4F8',
+                      color: '#0273B1'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.backgroundColor = '#E3F2FD'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = '#F0F4F8'
+                    }}
+                  >
+                    View Certificate
+                  </a>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

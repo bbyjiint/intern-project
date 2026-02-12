@@ -420,60 +420,60 @@ export default function FindCandidatesPage() {
                     <p className="text-lg font-medium text-gray-700">
                       {sortedCandidates.length} intern{sortedCandidates.length !== 1 ? 's' : ''} found
                     </p>
-                <div className="flex gap-4">
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setViewMode('all')}
-                      className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-                        viewMode === 'all'
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-white text-gray-700 border border-gray-300'
-                      }`}
-                    >
-                      Show All
-                    </button>
-                    <button
-                      onClick={() => setViewMode('shortlist')}
-                      className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-                        viewMode === 'shortlist'
-                          ? 'bg-blue-600 text-white'
-                          : 'bg-white text-gray-700 border border-gray-300'
-                      }`}
-                    >
-                      Shortlist
-                    </button>
-                  </div>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="Name">Sort by Name</option>
-                    <option value="University">Sort by University</option>
-                    <option value="Position">Sort by Position</option>
-                  </select>
-                </div>
-              </div>
-
-                    {sortedCandidates.length === 0 && (
-                      <div className="text-center py-10 text-gray-500">
-                        No candidates found matching your criteria.
+                    <div className="flex gap-4">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setViewMode('all')}
+                          className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                            viewMode === 'all'
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-white text-gray-700 border border-gray-300'
+                          }`}
+                        >
+                          Show All
+                        </button>
+                        <button
+                          onClick={() => setViewMode('shortlist')}
+                          className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
+                            viewMode === 'shortlist'
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-white text-gray-700 border border-gray-300'
+                          }`}
+                        >
+                          Shortlist
+                        </button>
                       </div>
-                    )}
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {sortedCandidates.map((candidate) => (
-                        <CandidateCard
-                          key={candidate.id || candidate.name}
-                          {...candidate}
-                          variant="find-candidates"
-                          isBookmarked={bookmarkedCandidates.has(candidate.id || candidate.name)}
-                          onBookmark={(e) => handleBookmark(e, candidate.id || candidate.name)}
-                          onClick={() => handleCardClick(candidate)}
-                        />
-                      ))}
+                      <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      >
+                        <option value="Name">Sort by Name</option>
+                        <option value="University">Sort by University</option>
+                        <option value="Position">Sort by Position</option>
+                      </select>
                     </div>
-                  </>
+                  </div>
+
+                  {sortedCandidates.length === 0 && (
+                    <div className="text-center py-10 text-gray-500">
+                      No candidates found matching your criteria.
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {sortedCandidates.map((candidate) => (
+                      <CandidateCard
+                        key={candidate.id || candidate.name}
+                        {...candidate}
+                        variant="find-candidates"
+                        isBookmarked={bookmarkedCandidates.has(candidate.id || candidate.name)}
+                        onBookmark={(e) => handleBookmark(e, candidate.id || candidate.name)}
+                        onClick={() => handleCardClick(candidate)}
+                      />
+                    ))}
+                  </div>
+                </>
               )}
             </div>
           </div>

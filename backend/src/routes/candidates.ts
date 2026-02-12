@@ -2,6 +2,9 @@ import { Router } from "express";
 import prisma from "../utils/prisma";
 import { requireAuth, requireRole, type AuthedRequest } from "../middleware/auth";
 import { randomUUID } from "crypto";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 
 export const candidatesRouter = Router();
 
@@ -519,5 +522,139 @@ candidatesRouter.delete("/projects/:id", requireAuth, requireRole("CANDIDATE"), 
     }
     console.error("Error deleting project:", e);
     return res.status(500).json({ error: e?.message || "Failed to delete project" });
+  }
+});
+
+// Get all certificates for the authenticated candidate
+candidatesRouter.get("/certificates", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
+  const userId = req.user!.id;
+
+  try {
+    const candidateId = await getCandidateIdForUser(userId);
+    
+    const certificates = await prisma.certificateFile.findMany({
+      where: { candidateId },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return res.json({ certificates });
+  } catch (e: any) {
+    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
+      return res.status(404).json({ error: "Candidate profile not found" });
+    }
+    console.error("Error fetching certificates:", e);
+    return res.status(500).json({ error: e?.message || "Failed to fetch certificates" });
+  }
+});
+
+// Configure multer for file uploads
+const uploadsDir = path.join(process.cwd(), "uploads", "certificates");
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadsDir);
+  },
+  filename: (req, file, cb) => {
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    const ext = path.extname(file.originalname);
+    cb(null, `certificate-${uniqueSuffix}${ext}`);
+  },
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /\.(pdf|jpg|jpeg|png|webp)$/i;
+    const mimetype = allowedTypes.test(file.mimetype) || allowedTypes.test(file.originalname);
+    if (mimetype) {
+      cb(null, true);
+    } else {
+      cb(new Error("Invalid file type. Only PDF and image files are allowed."));
+    }
+  },
+});
+
+// Upload a certificate (file upload)
+candidatesRouter.post("/certificates", requireAuth, requireRole("CANDIDATE"), upload.single("file"), async (req: AuthedRequest, res) => {
+  const userId = req.user!.id;
+
+  try {
+    const candidateId = await getCandidateIdForUser(userId);
+    
+    if (!req.file) {
+      return res.status(400).json({ error: "File is required" });
+    }
+
+    const { name, description } = req.body ?? {};
+    const fileName = name || req.file.originalname;
+    
+    // Generate URL for the uploaded file
+    // In production, you'd upload to S3 or similar and use that URL
+    const fileUrl = `/uploads/certificates/${req.file.filename}`;
+    const fileType = req.file.mimetype;
+
+    const certificate = await prisma.certificateFile.create({
+      data: {
+        id: randomUUID(),
+        candidateId,
+        name: fileName,
+        url: fileUrl,
+        type: fileType,
+        description: description || null,
+      },
+    });
+
+    return res.status(201).json({ certificate });
+  } catch (e: any) {
+    // Clean up uploaded file if database operation fails
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    
+    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
+      return res.status(404).json({ error: "Candidate profile not found" });
+    }
+    console.error("Error creating certificate:", e);
+    return res.status(500).json({ error: e?.message || "Failed to create certificate" });
+  }
+});
+
+// Delete a certificate
+candidatesRouter.delete("/certificates/:id", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
+  const userId = req.user!.id;
+  const certificateId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
+
+  try {
+    const candidateId = await getCandidateIdForUser(userId);
+    
+    // Verify that the certificate belongs to this candidate
+    const existingCertificate = await prisma.certificateFile.findUnique({
+      where: { id: certificateId },
+      select: { candidateId: true },
+    });
+
+    if (!existingCertificate) {
+      return res.status(404).json({ error: "Certificate not found" });
+    }
+
+    if (existingCertificate.candidateId !== candidateId) {
+      return res.status(403).json({ error: "You don't have permission to delete this certificate" });
+    }
+
+    await prisma.certificateFile.delete({
+      where: { id: certificateId },
+    });
+
+    return res.json({ success: true });
+  } catch (e: any) {
+    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
+      return res.status(404).json({ error: "Candidate profile not found" });
+    }
+    console.error("Error deleting certificate:", e);
+    return res.status(500).json({ error: e?.message || "Failed to delete certificate" });
   }
 });
