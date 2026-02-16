@@ -173,9 +173,9 @@ const mockJobs: JobPost[] = [
 
 export default function FindCompaniesPage() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [fullTime, setFullTime] = useState(false)
-  const [partTime, setPartTime] = useState(true)
-  const [internship, setInternship] = useState(true)
+  const [onSite, setOnSite] = useState(true)
+  const [hybrid, setHybrid] = useState(true)
+  const [remote, setRemote] = useState(true)
   const [studentLevel, setStudentLevel] = useState(true)
   const [entryLevel, setEntryLevel] = useState(true)
   const [midLevel, setMidLevel] = useState(false)
@@ -344,12 +344,12 @@ export default function FindCompaniesPage() {
         job.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         job.skills.some((skill) => skill.toLowerCase().includes(searchQuery.toLowerCase()))
 
-      // Job type filter - show all if none selected, otherwise match selected types
-      const hasJobTypeSelected = fullTime || partTime || internship
-      const matchesJobType = !hasJobTypeSelected ||
-        (fullTime && job.jobType === 'full-time') ||
-        (partTime && job.jobType === 'part-time') ||
-        (internship && job.jobType === 'internship')
+      // Workplace type filter - show all if none selected, otherwise match selected types
+      const hasWorkplaceTypeSelected = onSite || hybrid || remote
+      const matchesWorkplaceType = !hasWorkplaceTypeSelected ||
+        (onSite && job.workType === 'On-site') ||
+        (hybrid && job.workType === 'Hybrid') ||
+        (remote && job.workType === 'Remote')
 
       // Seniority level filter - show all if none selected, otherwise match selected levels
       const hasSenioritySelected = studentLevel || entryLevel || midLevel || seniorLevel || directors || vpOrAbove
@@ -377,12 +377,12 @@ export default function FindCompaniesPage() {
       const maxSalaryNum = parseInt(maxSalary.replace(/,/g, ''), 10) || 1000000
       const matchesSalary = jobSalary >= minSalaryNum && jobSalary <= maxSalaryNum
 
-      return matchesSearch && matchesJobType && matchesSeniority && matchesSalary
+      return matchesSearch && matchesWorkplaceType && matchesSeniority && matchesSalary
     })
-  }, [jobs, ignoredJobs, searchQuery, fullTime, partTime, internship, studentLevel, entryLevel, midLevel, seniorLevel, directors, vpOrAbove, minSalary, maxSalary])
+  }, [jobs, ignoredJobs, searchQuery, onSite, hybrid, remote, studentLevel, entryLevel, midLevel, seniorLevel, directors, vpOrAbove, minSalary, maxSalary])
 
-  const getJobTypeCount = (type: 'full-time' | 'part-time' | 'internship') => {
-    return jobs.filter(job => job.jobType === type).length
+  const getWorkplaceTypeCount = (type: string) => {
+    return jobs.filter(job => job.workType === type).length
   }
 
   const getSeniorityCount = (level: string) => {
@@ -422,10 +422,10 @@ export default function FindCompaniesPage() {
       <div className="flex">
         {/* Left Sidebar - Filters */}
         <div className="w-80 bg-white min-h-screen border-r border-gray-200 p-6">
-          {/* Type of Employment */}
+          {/* Workplace Type */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Type of Employment</h3>
+              <h3 className="font-semibold text-gray-900">Workplace Type</h3>
               <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
               </svg>
@@ -435,121 +435,37 @@ export default function FindCompaniesPage() {
                 <div className="flex items-center">
                   <input
                     type="checkbox"
-                    checked={fullTime}
-                    onChange={(e) => setFullTime(e.target.checked)}
+                    checked={onSite}
+                    onChange={(e) => setOnSite(e.target.checked)}
                     className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
-                  <span className="ml-2 text-gray-700">Full Time Jobs</span>
+                  <span className="ml-2 text-gray-700">On-site</span>
                 </div>
-                <span className="text-gray-500 text-sm">{getJobTypeCount('full-time')}</span>
+                <span className="text-gray-500 text-sm">{getWorkplaceTypeCount('On-site')}</span>
               </label>
               <label className="flex items-center justify-between cursor-pointer">
                 <div className="flex items-center">
                   <input
                     type="checkbox"
-                    checked={partTime}
-                    onChange={(e) => setPartTime(e.target.checked)}
+                    checked={hybrid}
+                    onChange={(e) => setHybrid(e.target.checked)}
                     className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
-                  <span className="ml-2 text-gray-700">Part Time Jobs</span>
+                  <span className="ml-2 text-gray-700">Hybrid</span>
                 </div>
-                <span className="text-gray-500 text-sm">{getJobTypeCount('part-time')}</span>
+                <span className="text-gray-500 text-sm">{getWorkplaceTypeCount('Hybrid')}</span>
               </label>
               <label className="flex items-center justify-between cursor-pointer">
                 <div className="flex items-center">
                   <input
                     type="checkbox"
-                    checked={internship}
-                    onChange={(e) => setInternship(e.target.checked)}
+                    checked={remote}
+                    onChange={(e) => setRemote(e.target.checked)}
                     className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                   />
-                  <span className="ml-2 text-gray-700">Internship Jobs</span>
+                  <span className="ml-2 text-gray-700">Remote</span>
                 </div>
-                <span className="text-gray-500 text-sm">{getJobTypeCount('internship')}</span>
-              </label>
-            </div>
-          </div>
-
-          {/* Seniority Level */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Seniority Level</h3>
-              <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-              </svg>
-            </div>
-            <div className="space-y-3">
-              <label className="flex items-center justify-between cursor-pointer">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={studentLevel}
-                    onChange={(e) => setStudentLevel(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <span className="ml-2 text-gray-700">Student Level</span>
-                </div>
-                <span className="text-gray-500 text-sm">{getSeniorityCount('student')}</span>
-              </label>
-              <label className="flex items-center justify-between cursor-pointer">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={entryLevel}
-                    onChange={(e) => setEntryLevel(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <span className="ml-2 text-gray-700">Entry Level</span>
-                </div>
-                <span className="text-gray-500 text-sm">{getSeniorityCount('entry')}</span>
-              </label>
-              <label className="flex items-center justify-between cursor-pointer">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={midLevel}
-                    onChange={(e) => setMidLevel(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <span className="ml-2 text-gray-700">Mid Level</span>
-                </div>
-                <span className="text-gray-500 text-sm">{getSeniorityCount('mid')}</span>
-              </label>
-              <label className="flex items-center justify-between cursor-pointer">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={seniorLevel}
-                    onChange={(e) => setSeniorLevel(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <span className="ml-2 text-gray-700">Senior Level</span>
-                </div>
-                <span className="text-gray-500 text-sm">{getSeniorityCount('senior')}</span>
-              </label>
-              <label className="flex items-center justify-between cursor-pointer">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={directors}
-                    onChange={(e) => setDirectors(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <span className="ml-2 text-gray-700">Directors</span>
-                </div>
-                <span className="text-gray-500 text-sm">{getSeniorityCount('director')}</span>
-              </label>
-              <label className="flex items-center justify-between cursor-pointer">
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={vpOrAbove}
-                    onChange={(e) => setVpOrAbove(e.target.checked)}
-                    className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                  />
-                  <span className="ml-2 text-gray-700">VP or Above</span>
-                </div>
-                <span className="text-gray-500 text-sm">{getSeniorityCount('vp')}</span>
+                <span className="text-gray-500 text-sm">{getWorkplaceTypeCount('Remote')}</span>
               </label>
             </div>
           </div>
