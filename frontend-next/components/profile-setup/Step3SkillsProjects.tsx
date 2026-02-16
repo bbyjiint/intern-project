@@ -509,7 +509,7 @@ function SkillForm({ skill, experience, education, projects, onSave, onCancel }:
                   value: skill.name,
                   label: skill.name,
                 }))}
-                value={formData.name}
+              value={formData.name}
                 onChange={(value) => setFormData({ ...formData, name: value })}
                 placeholder="Search by skill name..."
                 className="w-full"

@@ -18,25 +18,19 @@ export default function AIAnalysisPage() {
   const isJobMatchPage = pathname === '/intern/job-match' || pathname === '/intern/find-companies'
   const isCertificatesPage = pathname === '/intern/certificates'
   const isExperiencePage = pathname === '/intern/experience'
+  const isProjectPage = pathname === '/intern/project'
+  
+  // Check if current page is one of the dropdown menu pages
+  const isProfileDropdownPage = isAIAnalysisPage || isJobMatchPage || isCertificatesPage || isExperiencePage || isProjectPage
 
-  // Close dropdown when clicking outside
+  // Keep dropdown open when navigating to dropdown menu pages
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement
-      // Check if click is outside the dropdown area
-      if (isProfileDropdownOpen && !target.closest('.profile-dropdown-container')) {
-        setIsProfileDropdownOpen(false)
-      }
+    if (isProfileDropdownPage) {
+      setIsProfileDropdownOpen(true)
     }
+  }, [isProfileDropdownPage])
 
-    if (isProfileDropdownOpen) {
-      document.addEventListener('mousedown', handleClickOutside)
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside)
-    }
-  }, [isProfileDropdownOpen])
+  // Dropdown stays open when clicked - no auto-close on outside click
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -119,7 +113,8 @@ export default function AIAnalysisPage() {
                 <button
                   onClick={(e) => {
                     e.stopPropagation()
-                    setIsProfileDropdownOpen(!isProfileDropdownOpen)
+                    // Open dropdown and keep it open - don't toggle
+                    setIsProfileDropdownOpen(true)
                   }}
                   className="p-1 rounded hover:bg-gray-100"
                 >

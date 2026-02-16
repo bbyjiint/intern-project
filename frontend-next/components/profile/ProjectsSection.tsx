@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { Project } from '@/hooks/useProfile'
 
 interface ProjectsSectionProps {
@@ -9,6 +10,8 @@ interface ProjectsSectionProps {
 }
 
 export default function ProjectsSection({ projects, onAdd, onEdit }: ProjectsSectionProps) {
+  // Show maximum 3 projects in profile page
+  const displayedProjects = projects.slice(0, 3)
   const formatDate = (dateString?: string) => {
     if (!dateString) return ''
     const date = new Date(dateString)
@@ -41,7 +44,7 @@ export default function ProjectsSection({ projects, onAdd, onEdit }: ProjectsSec
         <p className="text-gray-400 italic py-4">No projects provided.</p>
       ) : (
         <div className="space-y-6">
-          {projects.map((project) => (
+          {displayedProjects.map((project) => (
             <div key={project.id} className="border-b border-gray-200 last:border-b-0 pb-4 last:pb-0">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -96,6 +99,26 @@ export default function ProjectsSection({ projects, onAdd, onEdit }: ProjectsSec
               </div>
             </div>
           ))}
+          {projects.length > 3 && (
+            <div className="pt-4 border-t border-gray-200">
+              <Link
+                href="/intern/project"
+                className="text-sm font-medium flex items-center space-x-1 justify-center"
+                style={{ color: '#0273B1' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#025a8f'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#0273B1'
+                }}
+              >
+                <span>View All Projects ({projects.length})</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -173,28 +173,28 @@ export default function Step2BackgroundExperience({ data, onUpdate }: Step2Backg
             </div>
           ))}
           {(showEducationForm || editingEducationIndex !== null) && (
-            <EducationForm
+          <EducationForm
               education={editingEducationIndex !== null ? formData.education[editingEducationIndex] : null}
-              onSave={(edu: any) => {
-                const educationData = {
+            onSave={(edu: any) => {
+              const educationData = {
                   university: edu.university || edu.institution,
                   degree: edu.degree || edu.fieldOfStudy || '',
                   fieldOfStudy: edu.fieldOfStudy || edu.degree || '',
                   startYear: edu.startYear || edu.startDate?.split('-')[0] || '',
                   endYear: edu.endYear || (edu.endDate ? edu.endDate.split('-')[0] : null),
                   gpa: edu.gpa || null,
-                }
+              }
                 if (editingEducationIndex !== null) {
                   handleEditEducation(editingEducationIndex, educationData)
-                } else {
-                  handleAddEducation(educationData)
-                }
-              }}
+              } else {
+                handleAddEducation(educationData)
+              }
+            }}
               onCancel={() => {
                 setShowEducationForm(false)
                 setEditingEducationIndex(null)
               }}
-              onSkip={() => {
+            onSkip={() => {
                 setShowEducationForm(false)
               }}
             />
@@ -415,44 +415,44 @@ function EducationForm({ education, onSave, onCancel, onSkip }: any) {
           <div>
             <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
               Start Year
-            </label>
-            <div className="relative">
-              <select
+          </label>
+          <div className="relative">
+            <select
                 value={formData.startYear}
                 onChange={(e) => handleFieldChange('startYear', e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
-              >
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
+            >
                 <option value="">Start Year</option>
                 {yearOptions.map((year) => (
                   <option key={year} value={year}>{year}</option>
                 ))}
-              </select>
-              <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
+            </select>
+            <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
           </div>
-          <div>
-            <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
+        </div>
+        <div>
+          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
               End Year
-            </label>
+          </label>
             <div className="flex gap-2">
               <div className="relative flex-1">
-                <select
+            <select
                   value={formData.endYear}
                   onChange={(e) => handleFieldChange('endYear', e.target.value)}
                   disabled={formData.isCurrent}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none disabled:bg-gray-100 disabled:cursor-not-allowed"
-                >
+            >
                   <option value="">End Year</option>
-                  {yearOptions.map((year) => (
-                    <option key={year} value={year}>{year}</option>
-                  ))}
-                </select>
-                <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
+              {yearOptions.map((year) => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
+            <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
               <label className="flex items-center mb-0 pb-3">
                 <input
                   type="checkbox"

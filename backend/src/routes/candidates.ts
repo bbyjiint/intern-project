@@ -603,13 +603,22 @@ candidatesRouter.post("/certificates", requireAuth, requireRole("CANDIDATE"), (r
       return res.status(400).json({ error: "File is required" });
     }
 
-    const { name, description } = (req as any).body ?? {};
+    const { name, issuedBy, issueDate, certificateId, certificateUrl } = (req as any).body ?? {};
     const fileName = name || file.originalname;
     
     // Generate URL for the uploaded file
     // In production, you'd upload to S3 or similar and use that URL
     const fileUrl = `/uploads/certificates/${file.filename}`;
     const fileType = file.mimetype;
+
+    // Store additional fields in description as JSON string
+    // In production, you might want to add these as separate columns in the schema
+    const descriptionData: any = {};
+    if (issuedBy) descriptionData.issuedBy = issuedBy;
+    if (issueDate) descriptionData.issueDate = issueDate;
+    if (certificateId) descriptionData.certificateId = certificateId;
+    if (certificateUrl) descriptionData.certificateUrl = certificateUrl;
+    const description = Object.keys(descriptionData).length > 0 ? JSON.stringify(descriptionData) : null;
 
     const certificate = await prisma.certificateFile.create({
       data: {
@@ -618,7 +627,7 @@ candidatesRouter.post("/certificates", requireAuth, requireRole("CANDIDATE"), (r
         name: fileName,
         url: fileUrl,
         type: fileType,
-        description: description || null,
+        description: description,
       },
     });
 
