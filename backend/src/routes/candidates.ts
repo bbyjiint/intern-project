@@ -5,6 +5,7 @@ import { randomUUID } from "crypto";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { fileStorage } from "../utils/fileStorage";
 
 export const candidatesRouter = Router();
 
@@ -548,21 +549,23 @@ candidatesRouter.get("/certificates", requireAuth, requireRole("CANDIDATE"), asy
 });
 
 // Configure multer for file uploads
-const uploadsDir = path.join(process.cwd(), "uploads", "certificates");
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    const ext = path.extname(file.originalname);
-    cb(null, `certificate-${uniqueSuffix}${ext}`);
-  },
-});
+// Use memory storage for S3, disk storage for local
+const storage = process.env.FILE_STORAGE_PROVIDER === "s3"
+  ? multer.memoryStorage()
+  : multer.diskStorage({
+      destination: (req, file, cb) => {
+        const uploadsDir = path.join(process.cwd(), "uploads", "certificates");
+        if (!fs.existsSync(uploadsDir)) {
+          fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+        cb(null, uploadsDir);
+      },
+      filename: (req, file, cb) => {
+        const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+        const ext = path.extname(file.originalname);
+        cb(null, `certificate-${uniqueSuffix}${ext}`);
+      },
+    });
 
 const upload = multer({
   storage,
@@ -606,10 +609,23 @@ candidatesRouter.post("/certificates", requireAuth, requireRole("CANDIDATE"), (r
     const { name, issuedBy, issueDate, certificateId, certificateUrl } = (req as any).body ?? {};
     const fileName = name || file.originalname;
     
-    // Generate URL for the uploaded file
-    // In production, you'd upload to S3 or similar and use that URL
-    const fileUrl = `/uploads/certificates/${file.filename}`;
-    const fileType = file.mimetype;
+    // Upload file to storage (S3 or local)
+    // For memory storage (S3), use buffer directly; for disk storage (local), read from path
+    const fileBuffer = req.file.buffer || (req.file.path ? fs.readFileSync(req.file.path) : Buffer.from([]));
+    const uploadResult = await fileStorage.uploadFile(
+      { ...req.file, buffer: fileBuffer } as Express.Multer.File,
+      "certificates",
+      undefined // Let storage service generate filename
+    );
+
+    // Clean up local temp file if using disk storage
+    if (req.file.path && fs.existsSync(req.file.path)) {
+      try {
+        fs.unlinkSync(req.file.path);
+      } catch (cleanupError) {
+        console.error("Error cleaning up temp file:", cleanupError);
+      }
+    }
 
     // Store additional fields in description as JSON string
     // In production, you might want to add these as separate columns in the schema
@@ -625,21 +641,20 @@ candidatesRouter.post("/certificates", requireAuth, requireRole("CANDIDATE"), (r
         id: randomUUID(),
         candidateId,
         name: fileName,
-        url: fileUrl,
-        type: fileType,
-        description: description,
+        url: uploadResult.url,
+        type: req.file.mimetype,
+        description: description || null,
       },
     });
 
     return res.status(201).json({ certificate });
   } catch (e: any) {
     // Clean up uploaded file if database operation fails
-    const file = (req as any).file;
-    if (file && fs.existsSync(file.path)) {
+    if (req.file?.path && fs.existsSync(req.file.path)) {
       try {
-        fs.unlinkSync(file.path);
-      } catch (unlinkError) {
-        console.error("Error cleaning up file:", unlinkError);
+        fs.unlinkSync(req.file.path);
+      } catch (cleanupError) {
+        console.error("Error cleaning up file:", cleanupError);
       }
     }
     
@@ -659,9 +674,10 @@ candidatesRouter.delete("/certificates/:id", requireAuth, requireRole("CANDIDATE
   try {
     const candidateId = await getCandidateIdForUser(userId);
     
-    // Verify that the certificate belongs to this candidate
+    // Get certificate with file URL
     const existingCertificate = await prisma.certificateFile.findUnique({
       where: { id: certificateId },
+      select: { candidateId: true, url: true },
       select: { candidateId: true, url: true },
     });
 
@@ -673,19 +689,19 @@ candidatesRouter.delete("/certificates/:id", requireAuth, requireRole("CANDIDATE
       return res.status(403).json({ error: "You don't have permission to delete this certificate" });
     }
 
-    // Delete the file from filesystem if it exists
-    if (existingCertificate.url.startsWith("/uploads/")) {
-      const filePath = path.join(process.cwd(), existingCertificate.url);
-      if (fs.existsSync(filePath)) {
-        try {
-          fs.unlinkSync(filePath);
-        } catch (fileError) {
-          console.error("Error deleting file:", fileError);
-          // Continue with database deletion even if file deletion fails
-        }
+    // Delete file from storage (S3 or local)
+    try {
+      const fileKey = fileStorage.extractKeyFromUrl(existingCertificate.url);
+      if (fileKey) {
+        await fileStorage.deleteFile(fileKey);
       }
+    } catch (storageError: any) {
+      console.error("Error deleting file from storage:", storageError);
+      // Continue with database deletion even if storage deletion fails
+      // (file might have been manually deleted or storage might be unavailable)
     }
 
+    // Delete database record
     await prisma.certificateFile.delete({
       where: { id: certificateId },
     });

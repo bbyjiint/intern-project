@@ -32,6 +32,12 @@ app.use(express.json({ limit: "5mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
 
+// Serve static files from uploads directory only if using local storage
+// For S3, files are served directly from S3/CDN
+if (process.env.FILE_STORAGE_PROVIDER !== "s3") {
+  app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+}
+
 app.get("/api/health", (req, res) => {
   res.json({ ok: true });
 });
