@@ -19,6 +19,7 @@ const mockCandidates = [
     university: 'Georgia Tech',
     major: 'Data Science',
     graduationDate: 'Aug 2024',
+    location: 'Georgia',
     skills: ['Python', 'TensorFlow', 'Deep Learning', 'SQL'],
     initials: 'AP',
     email: 'alex.patel@company.com',
@@ -31,6 +32,7 @@ const mockCandidates = [
     university: 'Stanford University',
     major: 'Design',
     graduationDate: 'Apr 2024',
+    location: 'California',
     skills: ['Adobe XD', 'UI Design', 'Wireframing', 'Figma'],
     initials: 'AW',
     email: 'amanda.wong@company.com',
@@ -43,6 +45,7 @@ const mockCandidates = [
     university: 'UCLA',
     major: 'Engineering',
     graduationDate: 'Jan 2025',
+    location: 'California',
     skills: ['Java', 'Spring Boot', 'AWS', 'Docker'],
     initials: 'DK',
     email: 'david.kim@company.com',
@@ -55,6 +58,7 @@ const mockCandidates = [
     university: 'Stanford University',
     major: 'Data Science',
     graduationDate: 'Jun 2024',
+    location: 'California',
     skills: ['Python', 'R', 'Machine Learning', 'Pandas'],
     initials: 'EC',
     email: 'emily.chen@company.com',
@@ -67,6 +71,7 @@ const mockCandidates = [
     university: 'University of Washington',
     major: 'Marketing',
     graduationDate: 'May 2024',
+    location: 'Washington',
     skills: ['Content Marketing', 'SEO', 'Social Media', 'Analytics'],
     initials: 'JM',
     email: 'jessica.martinez@company.com',
@@ -79,6 +84,7 @@ const mockCandidates = [
     university: 'UC Berkeley',
     major: 'Engineering',
     graduationDate: 'Jan 2024',
+    location: 'California',
     skills: ['Python', 'JavaScript', 'React', 'Node.js'],
     initials: 'JS',
     email: 'john.smith@company.com',
@@ -91,7 +97,7 @@ export default function FindCandidatesPage() {
   const pathname = usePathname()
   const [searchQuery, setSearchQuery] = useState('')
   const [position, setPosition] = useState('All Positions')
-  const [university, setUniversity] = useState('All Universities')
+  const [university, setUniversity] = useState('')
   const [department, setDepartment] = useState('All Departments')
   const [bookmarkedCandidates, setBookmarkedCandidates] = useState<Set<string>>(new Set()) // Using candidate IDs
   const [sortBy, setSortBy] = useState('Name')
@@ -226,7 +232,7 @@ export default function FindCandidatesPage() {
   const handleClearFilters = () => {
     setSearchQuery('')
     setPosition('All Positions')
-    setUniversity('All Universities')
+    setUniversity('')
     setDepartment('All Departments')
   }
 
@@ -240,7 +246,7 @@ export default function FindCandidatesPage() {
       candidate.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
       candidate.skills.some((skill) => skill.toLowerCase().includes(searchQuery.toLowerCase()))
     const matchesPosition = position === 'All Positions' || candidate.role.includes(position)
-    const matchesUniversity = university === 'All Universities' || candidate.university === university
+    const matchesUniversity = university === '' || university === 'All Universities' || candidate.university === university
     const matchesDepartment = department === 'All Departments' || candidate.major.includes(department)
 
     return matchesSearch && matchesPosition && matchesUniversity && matchesDepartment

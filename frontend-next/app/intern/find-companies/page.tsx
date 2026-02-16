@@ -615,7 +615,7 @@ export default function FindCompaniesPage() {
                               <path d="M12 2L22 20H2L12 2Z" fill="#DC2626" stroke="#FCD34D" strokeWidth="1.2"/>
                             </svg>
                           </div>
-                          {/* TRINITY Text on Yellow Background */}
+                          {/* Company Logo Text on Yellow Background */}
                           <div className="absolute bottom-0 left-0 right-0 px-0.5 py-0.5" style={{ backgroundColor: '#FCD34D' }}>
                             <span className="text-[7px] font-bold uppercase leading-tight block text-center" style={{ 
                               color: '#FCD34D',
@@ -623,7 +623,14 @@ export default function FindCompaniesPage() {
                               WebkitTextStroke: '0.4px #000',
                               letterSpacing: '0.02em'
                             }}>
-                              {job.companyLogo}
+                              {(() => {
+                                // Sanitize company logo - extract initials if it's a base64/image URL
+                                const logo = job.companyLogo || ""
+                                if (!logo || logo.startsWith("data:image") || logo.startsWith("http") || logo.includes("base64") || logo.length > 50) {
+                                  return (job.companyName || "COMPANY").substring(0, 7).toUpperCase().replace(/\s+/g, "")
+                                }
+                                return logo.substring(0, 7).toUpperCase()
+                              })()}
                             </span>
                           </div>
                         </div>
@@ -749,6 +756,27 @@ function JobDetailModal({ job, isBookmarked, onClose, onBookmark }: JobDetailMod
     }).filter(line => line.length > 0)
   }
 
+  // Sanitize company logo - extract initials if it's a base64/image URL
+  const getCompanyLogoText = (logo: string, companyName: string): string => {
+    if (!logo) {
+      // Extract initials from company name
+      return companyName.substring(0, 7).toUpperCase().replace(/\s+/g, "") || "COMPANY"
+    }
+    
+    // Check if it's a base64 image or image URL
+    if (logo.startsWith("data:image") || 
+        logo.startsWith("http") ||
+        logo.includes("base64") ||
+        logo.length > 50) {
+      // Extract initials from company name
+      return companyName.substring(0, 7).toUpperCase().replace(/\s+/g, "") || "COMPANY"
+    }
+    
+    // Use logo as-is if it's just text
+    return logo.substring(0, 7).toUpperCase()
+  }
+
+  const companyLogoText = getCompanyLogoText(job.companyLogo || "", job.companyName || "")
   const jobDescriptionList = parseToList(job.jobDescription || '')
   const jobSpecificationList = parseToList(job.jobSpecification || '')
 
@@ -810,7 +838,7 @@ function JobDetailModal({ job, isBookmarked, onClose, onBookmark }: JobDetailMod
                       <path d="M12 2L22 20H2L12 2Z" fill="#DC2626" stroke="#FCD34D" strokeWidth="1.2"/>
                     </svg>
                   </div>
-                  {/* TRINITY Text */}
+                  {/* Company Logo Text */}
                   <div className="absolute bottom-0 left-0 right-0 px-1 py-1" style={{ backgroundColor: '#FCD34D' }}>
                     <span className="text-[8px] font-bold uppercase leading-tight block text-center" style={{ 
                       color: '#FCD34D',
@@ -818,7 +846,7 @@ function JobDetailModal({ job, isBookmarked, onClose, onBookmark }: JobDetailMod
                       WebkitTextStroke: '0.4px #000',
                       letterSpacing: '0.02em'
                     }}>
-                      {job.companyLogo}
+                      {companyLogoText}
                     </span>
                   </div>
                 </div>

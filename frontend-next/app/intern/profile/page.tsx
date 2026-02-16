@@ -105,35 +105,8 @@ export default function InternProfilePage() {
     setEditingId(null)
   }
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <InternNavbar />
-        <div className="flex items-center justify-center min-h-screen">
-          <p className="text-gray-600">Loading profile...</p>
-        </div>
-      </div>
-    )
-  }
+  // Don't return early - keep layout visible
 
-  if (!profileData) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <InternNavbar />
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <p className="text-gray-600 mb-4">No profile data found. Please complete your profile setup.</p>
-            <button
-              onClick={() => router.push('/intern/profile-setup')}
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Go to Profile Setup
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -360,46 +333,69 @@ export default function InternProfilePage() {
 
         {/* Main Content */}
         <div className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header */}
-          <ProfileHeader 
-            fullName={profileData.fullName || 'User'}
-            currentDate={currentDate}
-            completionPercentage={completionPercentage}
-          />
+          {isLoading ? (
+            <div className="flex items-center justify-center min-h-[60vh]">
+              <div className="text-center">
+                <div className="w-16 h-16 mx-auto mb-4 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin"></div>
+                <p className="text-gray-500">Loading profile...</p>
+              </div>
+            </div>
+          ) : !profileData ? (
+            <div className="flex items-center justify-center min-h-[60vh]">
+              <div className="text-center">
+                <p className="text-gray-600 mb-4">No profile data found. Please complete your profile setup.</p>
+                <button
+                  onClick={() => router.push('/intern/profile-setup')}
+                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Go to Profile Setup
+                </button>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Header */}
+              <ProfileHeader 
+                fullName={profileData.fullName || 'User'}
+                currentDate={currentDate}
+                completionPercentage={completionPercentage}
+              />
 
-          {/* Personal Information */}
-          <PersonalInfoCard 
-            profile={profileData}
-            onEdit={() => handleEdit('personal')}
-          />
+              {/* Personal Information */}
+              <PersonalInfoCard 
+                profile={profileData}
+                onEdit={() => handleEdit('personal')}
+              />
 
-          {/* Education */}
-          <EducationSection
-            education={profileData.education || []}
-            onAdd={() => handleAdd('education')}
-            onEdit={(id) => handleEdit('education', id)}
-          />
+              {/* Education */}
+              <EducationSection
+                education={profileData.education || []}
+                onAdd={() => handleAdd('education')}
+                onEdit={(id) => handleEdit('education', id)}
+              />
 
-          {/* Experience */}
-          <ExperienceSection
-            experience={profileData.experience || []}
-            onAdd={() => handleAdd('experience')}
-            onEdit={(id) => handleEdit('experience', id)}
-          />
+              {/* Experience */}
+              <ExperienceSection
+                experience={profileData.experience || []}
+                onAdd={() => handleAdd('experience')}
+                onEdit={(id) => handleEdit('experience', id)}
+              />
 
-          {/* Projects */}
-          <ProjectsSection
-            projects={profileData.projects || []}
-            onAdd={() => handleAdd('project')}
-            onEdit={(id) => handleEdit('project', id)}
-          />
+              {/* Projects */}
+              <ProjectsSection
+                projects={profileData.projects || []}
+                onAdd={() => handleAdd('project')}
+                onEdit={(id) => handleEdit('project', id)}
+              />
 
-          {/* Skills */}
-          <SkillsSection
-            skills={profileData.skills || []}
-            onAdd={() => handleAdd('skill')}
-            onEdit={(id) => handleEdit('skill', id)}
-          />
+              {/* Skills */}
+              <SkillsSection
+                skills={profileData.skills || []}
+                onAdd={() => handleAdd('skill')}
+                onEdit={(id) => handleEdit('skill', id)}
+              />
+            </>
+          )}
         </div>
       </div>
 

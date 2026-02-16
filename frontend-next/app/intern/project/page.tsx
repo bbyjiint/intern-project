@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import Link from 'next/link'
 import InternNavbar from '@/components/InternNavbar'
@@ -15,6 +15,7 @@ export default function ProjectPage() {
   const [projects, setProjects] = useState<Project[]>([])
   const [selectedTechFilter, setSelectedTechFilter] = useState<string>('All Tech')
   const [profileData, setProfileData] = useState<any>(null)
+  const [dataLoading, setDataLoading] = useState(false)
   
   const isAIAnalysisPage = pathname === '/intern/ai-analysis'
   const isJobMatchPage = pathname === '/intern/job-match' || pathname === '/intern/find-companies'
@@ -31,6 +32,20 @@ export default function ProjectPage() {
       setIsProfileDropdownOpen(true)
     }
   }, [isProfileDropdownPage])
+
+  const loadProjects = useCallback(async () => {
+    setDataLoading(true)
+    try {
+      const data = await apiFetch<{ profile: any }>('/api/candidates/profile')
+      setProfileData(data.profile)
+      setProjects(data.profile?.projects || [])
+    } catch (error) {
+      console.error('Failed to load projects:', error)
+      setProjects([])
+    } finally {
+      setDataLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -61,18 +76,7 @@ export default function ProjectPage() {
     }
 
     checkAuth()
-  }, [router])
-
-  const loadProjects = async () => {
-    try {
-      const data = await apiFetch<{ profile: any }>('/api/candidates/profile')
-      setProfileData(data.profile)
-      setProjects(data.profile?.projects || [])
-    } catch (error) {
-      console.error('Failed to load projects:', error)
-      setProjects([])
-    }
-  }
+  }, [router, loadProjects])
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return ''
@@ -105,16 +109,7 @@ export default function ProjectPage() {
   // Featured projects (first 3-4 projects)
   const featuredProjects = projects.slice(0, 4)
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <InternNavbar />
-        <div className="flex items-center justify-center min-h-screen">
-          <p className="text-gray-600">Loading...</p>
-        </div>
-      </div>
-    )
-  }
+  // Don't return early - keep layout visible
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -340,21 +335,30 @@ export default function ProjectPage() {
 
         {/* Main Content */}
         <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Profile Header */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold mb-2" style={{ color: '#1C2D4F' }}>
-              {profileData?.fullName || 'John Doe'}
-            </h1>
-            <p className="text-xl text-gray-600 mb-4">
-              {profileData?.desiredPosition || 'Software Engineer Intern'}
-            </p>
-            <p className="text-gray-700 max-w-3xl">
-              {profileData?.bio || profileData?.aboutYou || 'Aspiring software engineer with hands-on experience in developing data-driven applications. Skilled in Python, SQL, and Tableau.'}
-            </p>
-          </div>
+          {isLoading ? (
+            <div className="flex items-center justify-center min-h-[60vh]">
+              <div className="text-center">
+                <div className="w-16 h-16 mx-auto mb-4 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin"></div>
+                <p className="text-gray-500">Loading...</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Profile Header */}
+              <div className="mb-8">
+                <h1 className="text-4xl font-bold mb-2" style={{ color: '#1C2D4F' }}>
+                  {profileData?.fullName || 'John Doe'}
+                </h1>
+                <p className="text-xl text-gray-600 mb-4">
+                  {profileData?.desiredPosition || 'Software Engineer Intern'}
+                </p>
+                <p className="text-gray-700 max-w-3xl">
+                  {profileData?.bio || profileData?.aboutYou || 'Aspiring software engineer with hands-on experience in developing data-driven applications. Skilled in Python, SQL, and Tableau.'}
+                </p>
+              </div>
 
-          {/* Featured Projects Section */}
-          {featuredProjects.length > 0 && (
+              {/* Featured Projects Section */}
+              {!dataLoading && featuredProjects.length > 0 && (
             <div className="mb-12">
               <h2 className="text-2xl font-bold mb-6" style={{ color: '#1C2D4F' }}>
                 Featured Projects
@@ -508,7 +512,14 @@ export default function ProjectPage() {
             </div>
 
             {/* Projects List */}
-            {filteredProjects.length === 0 ? (
+            {dataLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <div className="w-12 h-12 mx-auto mb-3 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin"></div>
+                  <p className="text-gray-500">Loading projects...</p>
+                </div>
+              </div>
+            ) : filteredProjects.length === 0 ? (
               <div className="bg-white rounded-lg shadow-md p-12 border border-gray-200 text-center">
                 <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />

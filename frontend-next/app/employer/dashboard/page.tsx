@@ -13,8 +13,9 @@ interface Candidate {
   name: string
   role: string
   university: string
-  major: string
-  graduationDate: string
+  major: string | null
+  graduationDate: string | null
+  location?: string | null
   skills: string[]
   initials: string
   email?: string
@@ -85,8 +86,9 @@ export default function EmployerDashboardPage() {
           ...c,
           role: c.role || 'Intern',
           university: c.university || 'Unknown University',
-          major: c.major || 'N/A',
-          graduationDate: c.graduationDate || 'N/A',
+          major: c.major ?? null,
+          graduationDate: c.graduationDate ?? null,
+          location: c.location ?? null,
           skills: Array.isArray(c.skills) ? c.skills : [],
           initials: c.initials || (c.name ? c.name.slice(0, 2).toUpperCase() : 'U'),
         }))

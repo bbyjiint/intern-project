@@ -81,6 +81,22 @@ export default function Step2CompanyAddress({ data, onUpdate }: Step2CompanyAddr
     loadProvinces()
   }, [])
 
+  // Auto-match province ID from province name when provinces are loaded
+  useEffect(() => {
+    if (provinces.length > 0 && formData.province && !formData.provinceId) {
+      // Try to find matching province by name (case-insensitive)
+      const matchedProvince = provinces.find(
+        (p) => p.name.toLowerCase() === formData.province.toLowerCase() ||
+               p.thname?.toLowerCase() === formData.province.toLowerCase()
+      )
+      if (matchedProvince) {
+        const updated = { ...formData, provinceId: matchedProvince.id }
+        setFormData(updated)
+        onUpdate(updated)
+      }
+    }
+  }, [provinces, formData.province, formData.provinceId])
+
   // Load districts when province is selected
   useEffect(() => {
     if (formData.provinceId) {
@@ -113,6 +129,27 @@ export default function Step2CompanyAddress({ data, onUpdate }: Step2CompanyAddr
     }
   }, [formData.provinceId])
 
+  // Auto-match district ID from district name when districts are loaded
+  useEffect(() => {
+    if (districts.length > 0 && formData.district && !formData.districtId) {
+      // Try to find matching district by name (case-insensitive)
+      const matchedDistrict = districts.find(
+        (d) => d.name.toLowerCase() === formData.district.toLowerCase() ||
+               d.thname?.toLowerCase() === formData.district.toLowerCase()
+      )
+      if (matchedDistrict) {
+        const updated = { 
+          ...formData, 
+          districtId: matchedDistrict.id,
+          district: matchedDistrict.name,
+          postcode: matchedDistrict.postalCode || formData.postcode
+        }
+        setFormData(updated)
+        onUpdate(updated)
+      }
+    }
+  }, [districts, formData.district, formData.districtId])
+
   // Load subdistricts when district is selected
   useEffect(() => {
     if (formData.districtId) {
@@ -141,6 +178,26 @@ export default function Step2CompanyAddress({ data, onUpdate }: Step2CompanyAddr
       }
     }
   }, [formData.districtId])
+
+  // Auto-match subdistrict ID from subdistrict name when subdistricts are loaded
+  useEffect(() => {
+    if (subdistricts.length > 0 && formData.subDistrict && !formData.subdistrictId) {
+      // Try to find matching subdistrict by name (case-insensitive)
+      const matchedSubdistrict = subdistricts.find(
+        (s) => s.name.toLowerCase() === formData.subDistrict.toLowerCase() ||
+               s.thname?.toLowerCase() === formData.subDistrict.toLowerCase()
+      )
+      if (matchedSubdistrict) {
+        const updated = { 
+          ...formData, 
+          subdistrictId: matchedSubdistrict.id,
+          subDistrict: matchedSubdistrict.name
+        }
+        setFormData(updated)
+        onUpdate(updated)
+      }
+    }
+  }, [subdistricts, formData.subDistrict, formData.subdistrictId])
 
   // Auto-fill postal code when district is selected
   useEffect(() => {

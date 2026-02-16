@@ -68,6 +68,17 @@ jobPostsRouter.post("/job-posts", requireAuth, requireRole("COMPANY"), async (re
       "not-urgent": "NOT_URGENT",
     };
 
+    // Map frontend state to database enum
+    const stateMap: Record<string, "DRAFT" | "PUBLISHED" | "CLOSED"> = {
+      DRAFT: "DRAFT",
+      PUBLISHED: "PUBLISHED",
+      CLOSED: "CLOSED",
+      draft: "DRAFT",
+      published: "PUBLISHED",
+      closed: "CLOSED",
+    };
+    const jobPostState = state && stateMap[state] ? stateMap[state] : "DRAFT";
+
     // Create job post
     const jobPost = await prisma.jobPost.create({
       data: {
@@ -85,7 +96,7 @@ jobPostsRouter.post("/job-posts", requireAuth, requireRole("COMPANY"), async (re
         jobDescription: jobDescription || null,
         jobSpecification: jobSpecification || null,
         rejectionMessage: rejectionMessage || null,
-        state: state || "DRAFT", // Default to DRAFT, can be changed to PUBLISHED
+        state: jobPostState, // Use mapped state, defaults to DRAFT if not provided or invalid
       },
     });
 
@@ -219,11 +230,31 @@ jobPostsRouter.get("/job-posts/public", async (req, res) => {
           })
         : "Date not available";
 
+      // Extract company logo initials from company name if logoURL is an image
+      const companyName = post.Company?.companyName || "Company Name";
+      let companyLogo = "TRINITY"; // Default fallback
+      
+      if (post.Company?.logoURL) {
+        // Check if logoURL is a base64 image or image URL
+        if (post.Company.logoURL.startsWith("data:image") || 
+            post.Company.logoURL.startsWith("http") ||
+            post.Company.logoURL.includes("base64")) {
+          // Extract initials from company name (first 7 characters max, uppercase)
+          companyLogo = companyName.substring(0, 7).toUpperCase().replace(/\s+/g, "");
+        } else {
+          // Use logoURL as-is if it's just text
+          companyLogo = post.Company.logoURL;
+        }
+      } else if (companyName) {
+        // Extract initials from company name if no logoURL
+        companyLogo = companyName.substring(0, 7).toUpperCase().replace(/\s+/g, "");
+      }
+
       return {
         id: post.id,
         jobTitle: post.jobTitle || "Untitled Job",
-        companyName: post.Company?.companyName || "Company Name",
-        companyLogo: post.Company?.logoURL || "TRINITY",
+        companyName,
+        companyLogo,
         location,
         workType: workplaceTypeMap[post.workplaceType] || "On-site",
         jobType: post.jobType || "internship",
@@ -398,6 +429,16 @@ jobPostsRouter.put("/job-posts/:id", requireAuth, requireRole("COMPANY"), async 
       "not-urgent": "NOT_URGENT",
     };
 
+    // Map frontend state to database enum
+    const stateMap: Record<string, "DRAFT" | "PUBLISHED" | "CLOSED"> = {
+      DRAFT: "DRAFT",
+      PUBLISHED: "PUBLISHED",
+      CLOSED: "CLOSED",
+      draft: "DRAFT",
+      published: "PUBLISHED",
+      closed: "CLOSED",
+    };
+
     // Update job post
     const updateData: any = {};
     if (jobTitle !== undefined) updateData.jobTitle = jobTitle;
@@ -417,7 +458,9 @@ jobPostsRouter.put("/job-posts/:id", requireAuth, requireRole("COMPANY"), async 
     if (jobDescription !== undefined) updateData.jobDescription = jobDescription;
     if (jobSpecification !== undefined) updateData.jobSpecification = jobSpecification;
     if (rejectionMessage !== undefined) updateData.rejectionMessage = rejectionMessage;
-    if (state !== undefined) updateData.state = state;
+    if (state !== undefined) {
+      updateData.state = stateMap[state] || state; // Use mapped state if available, otherwise use the provided value
+    }
 
     const updatedJobPost = await prisma.jobPost.update({
       where: { id },

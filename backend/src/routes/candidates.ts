@@ -17,7 +17,7 @@ function initialsFromName(name: string) {
 }
 
 function formatGradDate(d?: Date | null) {
-  if (!d) return "N/A";
+  if (!d) return null;
   return d.toLocaleString("en-US", { month: "short", year: "numeric" });
 }
 
@@ -212,11 +212,11 @@ candidatesRouter.get("/", requireAuth, requireRole("COMPANY"), async (req, res) 
       : undefined,
     include: {
       User: { select: { email: true } },
-      University: { select: { name: true } },
+      University: { select: { name: true, province: true } },
       CandidateUniversity: {
         orderBy: [{ isCurrent: "desc" }, { endDate: "desc" }],
         take: 1,
-        include: { University: { select: { name: true } } },
+        include: { University: { select: { name: true, province: true } } },
       },
       UserSkill: { include: { Skills: { select: { name: true } } } },
     },
@@ -228,7 +228,11 @@ candidatesRouter.get("/", requireAuth, requireRole("COMPANY"), async (req, res) 
     const uni =
       c.CandidateUniversity[0]?.University?.name ??
       c.University?.name ??
-      "Unknown University";
+      null;
+    const location =
+      c.CandidateUniversity[0]?.University?.province ??
+      c.University?.province ??
+      null;
     const skills = c.UserSkill.map((us: typeof c.UserSkill[0]) => us.Skills.name);
     const endDate = c.CandidateUniversity[0]?.endDate ?? null;
 
@@ -236,9 +240,10 @@ candidatesRouter.get("/", requireAuth, requireRole("COMPANY"), async (req, res) 
       id: c.id,
       name,
       role: c.desiredPosition ?? "Intern",
-      university: uni,
-      major: c.major ?? "N/A",
-      graduationDate: formatGradDate(endDate),
+      university: uni ?? "Unknown University",
+      major: c.major ?? null,
+      location: location ?? null,
+      graduationDate: endDate ? formatGradDate(endDate) : null,
       skills,
       initials: initialsFromName(name),
       email: c.User.email,
