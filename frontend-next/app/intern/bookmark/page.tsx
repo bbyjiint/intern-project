@@ -18,6 +18,7 @@ interface BookmarkedJob {
   postedDate: string
   status?: 'viewed' | 'interviewed' | 'accepted' | 'rejected'
   isApplied?: boolean
+  matchScore?: number
 }
 
 const mockJobs: BookmarkedJob[] = [
@@ -33,6 +34,7 @@ const mockJobs: BookmarkedJob[] = [
     postedDate: '5 January 2026',
     status: 'viewed',
     isApplied: true,
+    matchScore: 85,
   },
   {
     id: '2',
@@ -51,6 +53,7 @@ const mockJobs: BookmarkedJob[] = [
     postedDate: '3 January 2026',
     status: 'accepted',
     isApplied: true,
+    matchScore: 92,
   },
   {
     id: '3',
@@ -63,6 +66,7 @@ const mockJobs: BookmarkedJob[] = [
     description: 'Join our engineering team to build innovative web applications.',
     postedDate: '2 January 2026',
     isApplied: false,
+    matchScore: 78,
   },
 ]
 
@@ -85,10 +89,13 @@ export default function InternBookmarkPage() {
     const load = async () => {
       try {
         const data = await apiFetch<{ jobs: BookmarkedJob[] }>(`/api/intern/job-bookmarks/jobs`)
-        const ids = new Set((data.jobs || []).map((j) => j.id))
-        setJobs(data.jobs || [])
-        setBookmarkedJobs(ids)
-        return
+        if (data.jobs && data.jobs.length > 0) {
+          const ids = new Set(data.jobs.map((j) => j.id))
+          setJobs(data.jobs)
+          setBookmarkedJobs(ids)
+          return
+        }
+        // If API returns empty list, we fall through to use mock data for demo
       } catch (e) {
         console.error('Failed to load bookmarked jobs from API, falling back to localStorage:', e)
       }
@@ -101,6 +108,9 @@ export default function InternBookmarkPage() {
         } catch (e) {
           console.error('Failed to parse bookmarked jobs:', e)
         }
+      } else {
+        // Default to mock data if no local storage found
+        setBookmarkedJobs(new Set(mockJobs.map(j => j.id)))
       }
 
       const savedJobs = localStorage.getItem('internBookmarkedJobsList')
@@ -110,6 +120,9 @@ export default function InternBookmarkPage() {
         } catch (e) {
           console.error('Failed to parse jobs:', e)
         }
+      } else {
+        // Default to mock jobs if no local storage found
+        setJobs(mockJobs)
       }
     }
 
@@ -469,6 +482,11 @@ export default function InternBookmarkPage() {
                               }}
                             >
                               {job.status ? job.status.charAt(0).toUpperCase() + job.status.slice(1) : ''}
+                            </span>
+                          )}
+                          {job.matchScore && (
+                            <span className="px-3 py-1 rounded-full text-sm font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                              Match: {job.matchScore}%
                             </span>
                           )}
                         </div>

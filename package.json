@@ -4,11 +4,16 @@
   "description": "เว็บเด็กฝึกงาน - Intern Website",
   "private": true,
   "workspaces": [
-    "frontend-next"
+    "frontend-next",
+    "backend"
   ],
   "scripts": {
-    "dev": "cd frontend-next && npm run dev",
-    "build": "cd frontend-next && npm run build"
+    "dev:frontend": "cd frontend-next && npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "build:frontend": "cd frontend-next && npm run build",
+    "build:backend": "cd backend && npm run build",
+    "build": "npm run build:backend && npm run build:frontend"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

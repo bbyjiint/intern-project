@@ -197,8 +197,47 @@ model CandidateProfile {
   JobApplications      JobApplication[]
   JobBookmarks         JobBookmark[]
   JobIgnores           JobIgnore[]
+  UserTestResults      UserTestResult[]
+
+  // AI & Scoring
+  aiParsedData         Json?
+  verificationFlags    Json?
+  profileStrength      Float?
+  skillScore           Float?
+  overallScore         Float?
 
   @@index([universityId])
+}
+
+model SkillTest {
+  id          String         @id @default(uuid()) @db.Uuid
+  skillName   String
+  difficulty  String
+  questions   TestQuestion[]
+  results     UserTestResult[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model TestQuestion {
+  id          String    @id @default(uuid()) @db.Uuid
+  testId      String    @db.Uuid
+  question    String
+  options     Json
+  correctIdx  Int
+  Test        SkillTest @relation(fields: [testId], references: [id], onDelete: Cascade)
+}
+
+model UserTestResult {
+  id          String           @id @default(uuid()) @db.Uuid
+  candidateId String           @db.Uuid
+  testId      String           @db.Uuid
+  score       Float
+  proficiency String
+  createdAt   DateTime         @default(now())
+
+  Candidate   CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  Test        SkillTest        @relation(fields: [testId], references: [id], onDelete: Cascade)
 }
 
 model CompanyProfile {
@@ -350,6 +389,10 @@ model JobApplication {
 
   JobPost     JobPost           @relation(fields: [jobPostId], references: [id], onDelete: Cascade)
   Candidate   CandidateProfile  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  
+  // AI & Scoring
+  matchScore  Float?
+  aiInsights  String?
 
   @@unique([jobPostId, candidateId])
   @@index([jobPostId])

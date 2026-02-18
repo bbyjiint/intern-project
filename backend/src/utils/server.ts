@@ -12,6 +12,7 @@ import { addressesRouter } from "../routes/addresses";
 import { bookmarksRouter } from "../routes/bookmarks";
 import messagesRouter from "../routes/messages";
 import { internRouter } from "../routes/intern";
+import { aiRouter } from "../routes/ai";
 
 const app = express();
 
@@ -48,6 +49,7 @@ app.use("/api/addresses", addressesRouter);
 app.use("/api/bookmarks", bookmarksRouter);
 app.use("/api/messages", messagesRouter);
 app.use("/api/intern", internRouter);
+app.use("/api/ai", aiRouter);
 
 // 404 handler
 app.use((req, res) => {

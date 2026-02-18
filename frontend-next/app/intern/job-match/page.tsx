@@ -17,6 +17,14 @@ interface JobMatch {
   employmentType: string
   salary: string
   companyColor: string
+  matchingSkills?: string[]
+  missingSkills?: string[]
+}
+
+interface AnalysisAdvice {
+  strengths: string[]
+  weaknesses: string[]
+  improvements: string[]
 }
 
 export default function JobMatchPage() {
@@ -25,6 +33,7 @@ export default function JobMatchPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false)
   const [jobMatches, setJobMatches] = useState<JobMatch[]>([])
+  const [analysisAdvice, setAnalysisAdvice] = useState<AnalysisAdvice | null>(null)
   
   const isAIAnalysisPage = pathname === '/intern/ai-analysis'
   const isJobMatchPage = pathname === '/intern/job-match' || pathname === '/intern/find-companies'
@@ -61,66 +70,112 @@ export default function JobMatchPage() {
 
   useEffect(() => {
     const loadJobMatches = async () => {
-      try {
-        // Try to fetch AI-recommended jobs
-        const response = await apiFetch<{ jobs: JobMatch[] }>('/api/ai/job-matches')
-        if (response.jobs) {
-          setJobMatches(response.jobs)
+      const resumeText = localStorage.getItem('internResumeText')
+      const analysisResultStr = localStorage.getItem('internAnalysisResult')
+      
+      if (analysisResultStr) {
+        try {
+          const analysisResult = JSON.parse(analysisResultStr)
+          if (analysisResult.feedback) {
+            setAnalysisAdvice(analysisResult.feedback)
+          }
+        } catch (e) {
+          console.error('Failed to parse analysis result', e)
         }
-      } catch (error) {
-        console.error('Failed to load job matches:', error)
-        // Use mock data if API doesn't exist yet
-        setJobMatches([
-          {
-            id: '1',
-            jobTitle: 'Machine Learning Engineer',
-            companyName: 'Tech Innovate',
-            companyInitial: 'M',
-            matchPercentage: 87,
-            description: 'Strong match clue to your skills in Python, TensorFlow, and Machine Learning. Matches well with your analytics and problem-solving abilities.',
-            location: 'San Francisco, CA',
-            employmentType: 'Full-Time',
-            salary: '$120k-$150k/year',
-            companyColor: '#0273B1',
-          },
-          {
-            id: '2',
-            jobTitle: 'Data Scientist',
-            companyName: 'DataWorks',
-            companyInitial: 'D',
-            matchPercentage: 78,
-            description: 'Good fit based on your expertise in Python, SQL, data analysis, and mathematical skills.',
-            location: 'New York, NY',
-            employmentType: 'Full-Time',
-            salary: '$110k-$140k/year',
-            companyColor: '#4CAF50',
-          },
-          {
-            id: '3',
-            jobTitle: 'AI Researcher',
-            companyName: 'Innovate AI',
-            companyInitial: 'A',
-            matchPercentage: 72,
-            description: 'Potential match based on your knowledge of machine learning and mathematics. Consider gaining more research experience.',
-            location: 'Seattle, WA',
-            employmentType: 'Full-Time',
-            salary: '$130k-$160k/year',
-            companyColor: '#FF9800',
-          },
-          {
-            id: '4',
-            jobTitle: 'Software Engineer',
-            companyName: 'CodeCrafters',
-            companyInitial: 'C',
-            matchPercentage: 68,
-            description: 'Skills in Python and problem-solving suggested, but consider further developing your software engineering and mathematics.',
-            location: 'Los Angeles, CA',
-            employmentType: 'Full-Time',
-            salary: '$100k-$130k/year',
-            companyColor: '#FF9800',
-          },
-        ])
       }
+      
+      if (resumeText) {
+        try {
+          // Fetch AI-recommended jobs based on resume
+          const response = await apiFetch<{ suggestions: any[] }>('/api/ai/suggest-jobs', {
+            method: 'POST',
+            body: JSON.stringify({ resumeText })
+          })
+          
+          if (response.suggestions && response.suggestions.length > 0) {
+            // Transform AI suggestions to JobMatch format
+            const aiJobs: JobMatch[] = response.suggestions.map((suggestion, index) => ({
+              id: `ai-${index}`,
+              jobTitle: suggestion.jobTitle,
+              companyName: 'AI Recommended Opportunity',
+              companyInitial: suggestion.jobTitle.charAt(0),
+              matchPercentage: suggestion.matchScore,
+              description: suggestion.reasoning,
+              location: 'Remote / Hybrid',
+              employmentType: 'Full-Time',
+              salary: 'Competitive Salary',
+              companyColor: ['#0273B1', '#4CAF50', '#FF9800', '#9C27B0', '#F44336'][index % 5],
+              matchingSkills: suggestion.matchingSkills,
+              missingSkills: suggestion.missingSkills
+            }))
+            
+            setJobMatches(aiJobs)
+            return // Exit if successful
+          }
+        } catch (error) {
+          console.error('Failed to load AI job matches:', error)
+        }
+      }
+
+      // Fallback to mock data if no resume or API fails
+      setJobMatches([
+        {
+          id: '1',
+          jobTitle: 'Machine Learning Engineer',
+          companyName: 'Tech Innovate',
+          companyInitial: 'M',
+          matchPercentage: 87,
+          description: 'Strong match clue to your skills in Python, TensorFlow, and Machine Learning. Matches well with your analytics and problem-solving abilities.',
+          location: 'San Francisco, CA',
+          employmentType: 'Full-Time',
+          salary: '$120k-$150k/year',
+          companyColor: '#0273B1',
+          matchingSkills: ['Python', 'TensorFlow', 'Machine Learning', 'Data Analysis'],
+          missingSkills: ['PyTorch', 'Cloud Computing (AWS/GCP)']
+        },
+        {
+          id: '2',
+          jobTitle: 'Data Scientist',
+          companyName: 'DataWorks',
+          companyInitial: 'D',
+          matchPercentage: 78,
+          description: 'Good fit based on your expertise in Python, SQL, data analysis, and mathematical skills.',
+          location: 'New York, NY',
+          employmentType: 'Full-Time',
+          salary: '$110k-$140k/year',
+          companyColor: '#4CAF50',
+          matchingSkills: ['Python', 'SQL', 'Data Analysis', 'Mathematics'],
+          missingSkills: ['Big Data Tools (Spark/Hadoop)', 'Tableau']
+        },
+        {
+          id: '3',
+          jobTitle: 'AI Researcher',
+          companyName: 'Innovate AI',
+          companyInitial: 'A',
+          matchPercentage: 72,
+          description: 'Potential match based on your knowledge of machine learning and mathematics. Consider gaining more research experience.',
+          location: 'Seattle, WA',
+          employmentType: 'Full-Time',
+          salary: '$130k-$160k/year',
+          companyColor: '#FF9800',
+          matchingSkills: ['Machine Learning', 'Mathematics', 'Research'],
+          missingSkills: ['Publications', 'Deep Learning Advanced']
+        },
+        {
+          id: '4',
+          jobTitle: 'Software Engineer',
+          companyName: 'CodeCrafters',
+          companyInitial: 'C',
+          matchPercentage: 68,
+          description: 'Skills in Python and problem-solving suggested, but consider further developing your software engineering and mathematics.',
+          location: 'Los Angeles, CA',
+          employmentType: 'Full-Time',
+          salary: '$100k-$130k/year',
+          companyColor: '#FF9800',
+          matchingSkills: ['Python', 'Problem Solving'],
+          missingSkills: ['System Design', 'CI/CD', 'JavaScript/React']
+        },
+      ])
     }
 
     if (!isLoading) {
@@ -281,6 +336,53 @@ export default function JobMatchPage() {
             </p>
           </div>
 
+          {/* AI Advice Section */}
+          {analysisAdvice && (
+            <div className="bg-white rounded-xl border border-blue-100 p-6 mb-8 shadow-sm relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full -mr-16 -mt-16 opacity-50"></div>
+              <h2 className="text-xl font-bold mb-4 flex items-center gap-2 relative z-10" style={{ color: '#1C2D4F' }}>
+                <svg className="w-6 h-6 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                AI Career Advice & Profile Insights
+              </h2>
+              <div className="grid md:grid-cols-2 gap-8 relative z-10">
+                <div className="bg-green-50/50 p-4 rounded-lg border border-green-100">
+                  <h3 className="font-semibold text-green-700 mb-3 flex items-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Your Strengths
+                  </h3>
+                  <ul className="space-y-2">
+                    {analysisAdvice.strengths.map((s, i) => (
+                      <li key={i} className="text-gray-700 text-sm flex items-start gap-2">
+                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-green-400 flex-shrink-0"></span>
+                        {s}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="bg-blue-50/50 p-4 rounded-lg border border-blue-100">
+                  <h3 className="font-semibold text-blue-700 mb-3 flex items-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                    Areas for Improvement
+                  </h3>
+                  <ul className="space-y-2">
+                    {analysisAdvice.improvements.map((s, i) => (
+                      <li key={i} className="text-gray-700 text-sm flex items-start gap-2">
+                        <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0"></span>
+                        {s}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Job Match Cards */}
           <div className="space-y-4">
             {jobMatches.map((job) => (
@@ -384,6 +486,49 @@ function JobMatchCard({ job }: { job: JobMatch }) {
               <span>{job.salary}</span>
             </div>
           </div>
+
+          {/* AI Skill Analysis */}
+          {(job.matchingSkills?.length || job.missingSkills?.length) ? (
+            <div className="mb-5 p-4 bg-gray-50 rounded-lg border border-gray-100">
+              <div className="grid md:grid-cols-2 gap-4">
+                {job.matchingSkills && job.matchingSkills.length > 0 && (
+                  <div>
+                    <span className="text-xs font-bold text-green-700 uppercase tracking-wider flex items-center gap-1 mb-2">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Matched Qualifications
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {job.matchingSkills.map((skill, idx) => (
+                        <span key={idx} className="px-2.5 py-1 bg-white text-green-700 rounded shadow-sm text-xs font-medium border border-green-100">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {job.missingSkills && job.missingSkills.length > 0 && (
+                  <div>
+                    <span className="text-xs font-bold text-orange-700 uppercase tracking-wider flex items-center gap-1 mb-2">
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      Recommended to Learn
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      {job.missingSkills.map((skill, idx) => (
+                        <span key={idx} className="px-2.5 py-1 bg-white text-orange-700 rounded shadow-sm text-xs font-medium border border-orange-100">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : null}
 
           {/* Action Buttons */}
           <div className="flex gap-3">
