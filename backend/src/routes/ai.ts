@@ -147,6 +147,7 @@ aiRouter.post("/analyze-resume", requireAuth, async (req, res) => {
       }
 
       STEP 3: If VALID, extract key profile data.
+      - Extract Skills: You MUST estimate a proficiency score (1-10) for each skill based on context (e.g. project usage, years of experience). If unsure, assign a default of 5.
       Return:
       {
         "isValidResume": true,
@@ -200,6 +201,26 @@ aiRouter.post("/analyze-resume", requireAuth, async (req, res) => {
       
       if (parsedData.isValidResume === false) {
         return res.status(400).json({ error: parsedData.reason || "The uploaded file does not appear to be a valid resume." });
+      }
+
+      // Save to database
+      if ((req as AuthedRequest).user && (req as AuthedRequest).user?.role === 'CANDIDATE') {
+        const userId = (req as AuthedRequest).user!.id;
+        const candidate = await prisma.candidateProfile.findUnique({
+          where: { userId }
+        });
+
+        if (candidate) {
+          await prisma.resumeAnalysis.create({
+            data: {
+              candidateId: candidate.id,
+              resumeText: text,
+              analysisResult: parsedData,
+              skills: parsedData.skills || [],
+              jobTitle: 'General Analysis'
+            }
+          });
+        }
       }
 
       return res.json(parsedData);
@@ -352,6 +373,27 @@ aiRouter.post("/suggest-skills", requireAuth, async (req, res) => {
     
     try {
       const parsedData = JSON.parse(cleanJson);
+
+      // Save to database if resume text was analyzed
+      if (resumeText && (req as AuthedRequest).user && (req as AuthedRequest).user?.role === 'CANDIDATE') {
+        const userId = (req as AuthedRequest).user!.id;
+        const candidate = await prisma.candidateProfile.findUnique({
+          where: { userId }
+        });
+
+        if (candidate) {
+          await prisma.resumeAnalysis.create({
+            data: {
+              candidateId: candidate.id,
+              resumeText: resumeText,
+              analysisResult: parsedData.analysis || {},
+              skills: parsedData.skills || [],
+              jobTitle: jobTitle
+            }
+          });
+        }
+      }
+
       return res.json(parsedData);
     } catch (e) {
       console.error("Failed to parse Gemini response for suggestions:", textResponse);
@@ -397,11 +439,20 @@ aiRouter.post("/suggest-jobs", requireAuth, async (req: AuthedRequest, res) => {
             }
           },
           CertificateFile: true,
-          CandidateContactFile: true
+          CandidateContactFile: true,
+          ResumeAnalysis: {
+            orderBy: { createdAt: 'desc' },
+            take: 1
+          }
         }
       });
 
       if (profile) {
+        // Use stored resume text if not provided in request
+        if (!resumeText && profile.ResumeAnalysis.length > 0) {
+          resumeText = profile.ResumeAnalysis[0].resumeText;
+        }
+
         // Prepare Verification Data for AI Scoring
         const transcriptFile = profile.CandidateContactFile.find(f => 
           f.type === "OTHER" && (f.name.toLowerCase().includes("transcript") || f.name.toLowerCase().includes("grade"))

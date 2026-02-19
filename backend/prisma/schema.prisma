@@ -198,6 +198,7 @@ model CandidateProfile {
   JobBookmarks         JobBookmark[]
   JobIgnores           JobIgnore[]
   UserTestResults      UserTestResult[]
+  ResumeAnalysis       ResumeAnalysis[]
 
   // AI & Scoring
   aiParsedData         Json?
@@ -207,6 +208,20 @@ model CandidateProfile {
   overallScore         Float?
 
   @@index([universityId])
+}
+
+model ResumeAnalysis {
+  id                String           @id @default(uuid()) @db.Uuid
+  candidateId       String           @db.Uuid
+  resumeText        String           @db.Text
+  analysisResult    Json
+  skills            Json             @default("[]")
+  jobTitle          String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  CandidateProfile  CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
 }
 
 model SkillTest {

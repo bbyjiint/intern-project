@@ -38,7 +38,7 @@ interface AnalysisResult {
 
 function buildFallbackAnalysis(skills: Skill[], desiredJobTitle: string): AnalysisResult {
   const scoredSkills = skills.filter(
-    (s) => s.score !== undefined && !Number.isNaN(Number(s.score))
+    (s) => s.score !== undefined && s.score !== null && !Number.isNaN(Number(s.score))
   )
   if (scoredSkills.length === 0) {
     return {
@@ -152,7 +152,7 @@ export default function AIAnalysisPage() {
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i)
         const textContent = await page.getTextContent()
-        const pageText = textContent.items.map((item: any) => item.str).join(' ')
+        const pageText = textContent.items.map((item: { str: string }) => item.str).join(' ')
         fullText += pageText + ' '
       }
       return fullText
@@ -198,6 +198,21 @@ export default function AIAnalysisPage() {
     setCertificateFiles(prev => prev.filter((_, i) => i !== index))
   }
 
+  const removeResume = (id: string) => {
+    setUploadedResumes(prev => {
+      const remaining = prev.filter((resume) => resume.id !== id)
+      if (remaining.length === 0) {
+        setResumeText('')
+        setSkills([])
+        setAnalysisResult(null)
+        setAnalyzed(false)
+        localStorage.removeItem('internResumeText')
+        localStorage.removeItem('internAnalysisResult')
+      }
+      return remaining
+    })
+  }
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
@@ -216,7 +231,7 @@ export default function AIAnalysisPage() {
       for (let i = 1; i <= pdf.numPages; i++) {
         const page = await pdf.getPage(i)
         const textContent = await page.getTextContent()
-        const pageText = textContent.items.map((item: any) => item.str).join(' ')
+        const pageText = textContent.items.map((item: { str: string }) => item.str).join(' ')
         fullText += pageText + ' '
       }
 
@@ -251,11 +266,10 @@ export default function AIAnalysisPage() {
       const targetJobTitle = overrideJobTitle ?? desiredJobTitle
       
       let endpoint = '/api/ai/analyze-resume'
-      let body = { text }
+      let body: any = { text }
 
       if (targetJobTitle) {
         endpoint = '/api/ai/suggest-skills'
-        // @ts-ignore
         body = {
           jobTitle: targetJobTitle,
           resumeText: text,
@@ -292,9 +306,10 @@ export default function AIAnalysisPage() {
       }
       
       setAnalyzed(true)
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Analysis failed:', err)
-      setError(err.message || 'Failed to analyze resume')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to analyze resume'
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -447,10 +462,13 @@ export default function AIAnalysisPage() {
                             <p className="text-xs text-gray-500">{(resume.size / 1024).toFixed(2)} KB • {resume.date}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <button className="text-gray-400 hover:text-gray-600">
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => removeResume(resume.id)}
+                            className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                             </svg>
                           </button>
                         </div>
@@ -595,11 +613,12 @@ export default function AIAnalysisPage() {
             
             {/* Detailed Analysis Section */}
             {effectiveAnalysis && !loading && (
-              <div className="mb-8 border-t border-gray-100 pt-6">
-                <h3 className="font-bold text-[#1C2D4F] mb-4 text-xl">Comprehensive Analysis</h3>
-                
-                {/* Overall Score */}
-                <div className="flex flex-col md:flex-row gap-6 mb-8 items-center">
+              effectiveAnalysis.overallScore > 0 || desiredJobTitle ? (
+                <div className="mb-8 border-t border-gray-100 pt-6">
+                  <h3 className="font-bold text-[#1C2D4F] mb-4 text-xl">Comprehensive Analysis</h3>
+                  
+                  {/* Overall Score */}
+                  <div className="flex flex-col md:flex-row gap-6 mb-8 items-center">
                   <div className="relative w-32 h-32 flex-shrink-0">
                     <svg className="w-full h-full transform -rotate-90">
                       <circle cx="64" cy="64" r="56" stroke="#E5E7EB" strokeWidth="12" fill="none" />
@@ -763,7 +782,16 @@ export default function AIAnalysisPage() {
                   </div>
                 </div>
               </div>
-            )}
+            ) : (
+              <div className="mb-8 border-t border-gray-100 pt-6 text-center py-8">
+                <div className="bg-blue-50 rounded-lg p-6 border border-blue-100 inline-block max-w-lg">
+                  <h3 className="font-semibold text-[#1C2D4F] mb-2">Ready for Analysis</h3>
+                  <p className="text-gray-600 text-sm">
+                    We have extracted skills from your resume. Select a <strong>Job Title</strong> above to see how well you match specific roles and get a detailed score.
+                  </p>
+                </div>
+              </div>
+            ))}
             
             <div className="mb-4">
               <div className="flex justify-between items-center mb-4">
@@ -780,7 +808,11 @@ export default function AIAnalysisPage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <span className="text-sm font-medium">AI is analyzing your fit for {desiredJobTitle || 'this role'}...</span>
+                    <span className="text-sm font-medium">
+                      {desiredJobTitle 
+                        ? `AI is analyzing your fit for ${desiredJobTitle}...` 
+                        : 'AI is analyzing skills from your resume...'}
+                    </span>
                   </div>
                 ) : analyzed ? (
                   <>
@@ -868,20 +900,25 @@ export default function AIAnalysisPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                           {skills.filter(s => !s.type).map((skill, idx) => (
                             <div key={idx} className="flex items-center gap-3">
-                              <div className="w-24 flex-shrink-0 flex items-center gap-2 text-sm text-gray-600 truncate" title={skill.name}>
+                              <div className="w-40 flex-shrink-0 flex items-center gap-2 text-sm text-gray-600 truncate" title={skill.name}>
                                 <span className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0"></span>
                                 <span className="truncate">{skill.name}</span>
                               </div>
                               <div className="w-8 h-6 bg-gray-100 rounded flex items-center justify-center text-xs font-bold text-gray-600 flex-shrink-0">
-                                {skill.score}
+                                {skill.score ?? '-'}
                               </div>
                               <div className="flex-1 min-w-0">
                                 <div className="bg-gray-100 rounded-full h-2">
                                   <div 
                                     className="bg-[#2563EB] h-2 rounded-full" 
-                                    style={{ width: `${(skill.score / 10) * 100}%` }}
+                                    style={{ width: `${(skill.score ? (skill.score / 10) * 100 : 0)}%` }}
                                   ></div>
                                 </div>
+                                {skill.reason && (
+                                  <p className="text-[10px] text-gray-500 mt-1 italic truncate max-w-xs" title={skill.reason}>
+                                    AI: {skill.reason}
+                                  </p>
+                                )}
                               </div>
                             </div>
                           ))}

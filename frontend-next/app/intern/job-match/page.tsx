@@ -19,6 +19,7 @@ interface JobMatch {
   companyColor: string
   matchingSkills?: string[]
   missingSkills?: string[]
+  isMock?: boolean
 }
 
 interface AnalysisAdvice {
@@ -84,37 +85,36 @@ export default function JobMatchPage() {
         }
       }
       
-      if (resumeText) {
-        try {
-          // Fetch AI-recommended jobs based on resume
-          const response = await apiFetch<{ suggestions: any[] }>('/api/ai/suggest-jobs', {
-            method: 'POST',
-            body: JSON.stringify({ resumeText })
-          })
+      try {
+        // Fetch AI-recommended jobs based on resume (from localStorage or DB)
+        const response = await apiFetch<{ suggestions: any[] }>('/api/ai/suggest-jobs', {
+          method: 'POST',
+          body: JSON.stringify({ resumeText: resumeText || undefined })
+        })
+        
+        if (response.suggestions && response.suggestions.length > 0) {
+          // Transform AI suggestions to JobMatch format
+          const aiJobs: JobMatch[] = response.suggestions.map((suggestion, index) => ({
+            id: `ai-${index}`,
+            jobTitle: suggestion.jobTitle,
+            companyName: 'AI Recommended Opportunity',
+            companyInitial: suggestion.jobTitle.charAt(0),
+            matchPercentage: suggestion.matchScore,
+            description: suggestion.reasoning,
+            location: 'Remote / Hybrid',
+            employmentType: 'Full-Time',
+            salary: 'Competitive Salary',
+            companyColor: ['#0273B1', '#4CAF50', '#FF9800', '#9C27B0', '#F44336'][index % 5],
+            matchingSkills: suggestion.matchingSkills,
+            missingSkills: suggestion.missingSkills,
+            isMock: false
+          }))
           
-          if (response.suggestions && response.suggestions.length > 0) {
-            // Transform AI suggestions to JobMatch format
-            const aiJobs: JobMatch[] = response.suggestions.map((suggestion, index) => ({
-              id: `ai-${index}`,
-              jobTitle: suggestion.jobTitle,
-              companyName: 'AI Recommended Opportunity',
-              companyInitial: suggestion.jobTitle.charAt(0),
-              matchPercentage: suggestion.matchScore,
-              description: suggestion.reasoning,
-              location: 'Remote / Hybrid',
-              employmentType: 'Full-Time',
-              salary: 'Competitive Salary',
-              companyColor: ['#0273B1', '#4CAF50', '#FF9800', '#9C27B0', '#F44336'][index % 5],
-              matchingSkills: suggestion.matchingSkills,
-              missingSkills: suggestion.missingSkills
-            }))
-            
-            setJobMatches(aiJobs)
-            return // Exit if successful
-          }
-        } catch (error) {
-          console.error('Failed to load AI job matches:', error)
+          setJobMatches(aiJobs)
+          return // Exit if successful
         }
+      } catch (error) {
+        console.error('Failed to load AI job matches:', error)
       }
 
       // Fallback to mock data if no resume or API fails
@@ -131,7 +131,8 @@ export default function JobMatchPage() {
           salary: '$120k-$150k/year',
           companyColor: '#0273B1',
           matchingSkills: ['Python', 'TensorFlow', 'Machine Learning', 'Data Analysis'],
-          missingSkills: ['PyTorch', 'Cloud Computing (AWS/GCP)']
+          missingSkills: ['PyTorch', 'Cloud Computing (AWS/GCP)'],
+          isMock: true
         },
         {
           id: '2',
@@ -335,6 +336,40 @@ export default function JobMatchPage() {
               AI-recommended job positions tailored for you
             </p>
           </div>
+
+          {/* Connection Status Banner */}
+          {jobMatches.length > 0 && (
+            <div className={`mb-6 p-4 rounded-lg border ${jobMatches[0].isMock ? 'bg-yellow-50 border-yellow-200 text-yellow-800' : 'bg-green-50 border-green-200 text-green-800'}`}>
+              <div className="flex items-center gap-3">
+                <div className={`p-2 rounded-full ${jobMatches[0].isMock ? 'bg-yellow-100' : 'bg-green-100'}`}>
+                  {jobMatches[0].isMock ? (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-sm">
+                    {jobMatches[0].isMock ? 'Showing Example Matches' : 'Personalized AI Recommendations'}
+                  </h3>
+                  <p className="text-xs opacity-90">
+                    {jobMatches[0].isMock 
+                      ? 'We couldn\'t find your resume analysis. Please upload your resume in "AI Analysis" page to get real AI-powered recommendations.' 
+                      : 'These jobs are selected based on your resume analysis and skills profile.'}
+                  </p>
+                </div>
+                {jobMatches[0].isMock && (
+                  <Link href="/intern/ai-analysis" className="ml-auto px-4 py-2 bg-white border border-yellow-300 rounded-md text-xs font-medium hover:bg-yellow-50 transition-colors">
+                    Go to AI Analysis
+                  </Link>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* AI Advice Section */}
           {analysisAdvice && (
