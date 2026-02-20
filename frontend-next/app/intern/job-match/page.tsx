@@ -37,8 +37,9 @@ export default function JobMatchPage() {
   const [analysisAdvice, setAnalysisAdvice] = useState<AnalysisAdvice | null>(null)
   
   const isAIAnalysisPage = pathname === '/intern/ai-analysis'
+  const isHistoryPage = pathname === '/intern/history'
   const isJobMatchPage = pathname === '/intern/job-match' || pathname === '/intern/find-companies'
-
+  
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -86,13 +87,46 @@ export default function JobMatchPage() {
       }
       
       try {
-        // Fetch AI-recommended jobs based on resume (from localStorage or DB)
+        // 1. Try to load cached matches first for speed
+        const cachedMatchesStr = localStorage.getItem('internJobMatches')
+        if (cachedMatchesStr) {
+          try {
+            const cachedSuggestions = JSON.parse(cachedMatchesStr)
+            if (Array.isArray(cachedSuggestions) && cachedSuggestions.length > 0) {
+              const aiJobs: JobMatch[] = cachedSuggestions.map((suggestion, index) => ({
+                id: `ai-${index}`,
+                jobTitle: suggestion.jobTitle,
+                companyName: 'AI Recommended Opportunity',
+                companyInitial: suggestion.jobTitle.charAt(0),
+                matchPercentage: suggestion.matchScore,
+                description: suggestion.reasoning,
+                location: 'Remote / Hybrid',
+                employmentType: 'Full-Time',
+                salary: 'Competitive Salary',
+                companyColor: ['#0273B1', '#4CAF50', '#FF9800', '#9C27B0', '#F44336'][index % 5],
+                matchingSkills: suggestion.matchingSkills,
+                missingSkills: suggestion.missingSkills,
+                isMock: false
+              }))
+              setJobMatches(aiJobs)
+              setIsLoading(false)
+              return // Return early if cache found
+            }
+          } catch (e) {
+            console.error('Failed to parse cached job matches', e)
+          }
+        }
+
+        // 2. If no cache, fetch from API
         const response = await apiFetch<{ suggestions: any[] }>('/api/ai/suggest-jobs', {
           method: 'POST',
           body: JSON.stringify({ resumeText: resumeText || undefined })
         })
         
         if (response.suggestions && response.suggestions.length > 0) {
+          // Cache the new results
+          localStorage.setItem('internJobMatches', JSON.stringify(response.suggestions))
+          
           // Transform AI suggestions to JobMatch format
           const aiJobs: JobMatch[] = response.suggestions.map((suggestion, index) => ({
             id: `ai-${index}`,
@@ -257,10 +291,63 @@ export default function JobMatchPage() {
                     }}
                   >
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
                     </svg>
                     <span>AI Analysis</span>
                   </Link>
+
+                  <Link
+                    href="/intern/history"
+                    className="block px-4 py-3 rounded-lg text-sm transition-colors flex items-center space-x-3"
+                    style={{ 
+                      color: isHistoryPage ? 'white' : '#1C2D4F',
+                      backgroundColor: isHistoryPage ? '#0273B1' : 'transparent'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isHistoryPage) {
+                        e.currentTarget.style.backgroundColor = '#F0F4F8'
+                        e.currentTarget.style.color = '#0273B1'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isHistoryPage) {
+                        e.currentTarget.style.backgroundColor = 'transparent'
+                        e.currentTarget.style.color = '#1C2D4F'
+                      }
+                    }}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>History</span>
+                  </Link>
+
+                  <Link
+                    href="/intern/history"
+                    className="block px-4 py-3 rounded-lg text-sm transition-colors flex items-center space-x-3"
+                    style={{ 
+                      color: isHistoryPage ? 'white' : '#1C2D4F',
+                      backgroundColor: isHistoryPage ? '#0273B1' : 'transparent'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isHistoryPage) {
+                        e.currentTarget.style.backgroundColor = '#F0F4F8'
+                        e.currentTarget.style.color = '#0273B1'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isHistoryPage) {
+                        e.currentTarget.style.backgroundColor = 'transparent'
+                        e.currentTarget.style.color = '#1C2D4F'
+                      }
+                    }}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>History</span>
+                  </Link>
+
                   <Link
                     href="/intern/job-match"
                     className="block px-4 py-3 rounded-lg text-sm transition-colors flex items-center space-x-3"

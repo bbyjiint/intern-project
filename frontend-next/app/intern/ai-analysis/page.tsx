@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import * as pdfjsLib from 'pdfjs-dist'
 import InternNavbar from '@/components/InternNavbar'
@@ -142,49 +142,36 @@ export default function AIAnalysisPage() {
       ? analysisResult ?? buildFallbackAnalysis(skills, desiredJobTitle || 'General Role')
       : null
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return
+  // useEffect(() => {
+  //   if (typeof window === 'undefined') return
 
-    const storedResume = localStorage.getItem('internResumeText')
+  //   const storedResume = localStorage.getItem('internResumeText')
+  //   const storedSkills = localStorage.getItem('internSkills')
+  //   const storedAnalysis = localStorage.getItem('internAnalysisResult')
 
-    const legacySkills = localStorage.getItem('internSkills')
-    const legacyAnalysis = localStorage.getItem('internAnalysisResult')
+  //   if (storedResume) {
+  //     setResumeText(storedResume)
+  //   }
 
-    if (legacySkills) {
-      sessionStorage.setItem('internSkills', legacySkills)
-      localStorage.removeItem('internSkills')
-    }
-    if (legacyAnalysis) {
-      sessionStorage.setItem('internAnalysisResult', legacyAnalysis)
-      localStorage.removeItem('internAnalysisResult')
-    }
+  //   if (storedSkills) {
+  //     try {
+  //       const parsedSkills = JSON.parse(storedSkills) as Skill[]
+  //       if (Array.isArray(parsedSkills) && parsedSkills.length > 0) {
+  //         setSkills(parsedSkills)
+  //       }
+  //     } catch {
+  //     }
+  //   }
 
-    const storedSkills = sessionStorage.getItem('internSkills')
-    const storedAnalysis = sessionStorage.getItem('internAnalysisResult')
-
-    if (storedResume) {
-      setResumeText(storedResume)
-    }
-
-    if (storedSkills) {
-      try {
-        const parsedSkills = JSON.parse(storedSkills) as Skill[]
-        if (Array.isArray(parsedSkills) && parsedSkills.length > 0) {
-          setSkills(parsedSkills)
-        }
-      } catch {
-      }
-    }
-
-    if (storedAnalysis && storedSkills) {
-      try {
-        const parsedAnalysis = JSON.parse(storedAnalysis) as AnalysisResult
-        setAnalysisResult(parsedAnalysis)
-        setAnalyzed(true)
-      } catch {
-      }
-    }
-  }, [])
+  //   if (storedAnalysis && storedSkills) {
+  //     try {
+  //       const parsedAnalysis = JSON.parse(storedAnalysis) as AnalysisResult
+  //       setAnalysisResult(parsedAnalysis)
+  //       setAnalyzed(true)
+  //     } catch {
+  //     }
+  //   }
+  // }, [])
 
   // Helper to extract text from PDF
   const extractPdfText = async (file: File): Promise<string> => {
@@ -258,13 +245,9 @@ export default function AIAnalysisPage() {
         setSkills([])
         setAnalysisResult(null)
         setAnalyzed(false)
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('internResumeText')
-          localStorage.removeItem('internAnalysisResult')
-          localStorage.removeItem('internSkills')
-          sessionStorage.removeItem('internSkills')
-          sessionStorage.removeItem('internAnalysisResult')
-        }
+        localStorage.removeItem('internResumeText')
+        localStorage.removeItem('internAnalysisResult')
+        localStorage.removeItem('internSkills')
       }
       return remaining
     })
@@ -323,6 +306,10 @@ export default function AIAnalysisPage() {
     try {
       setLoading(true)
       setError('')
+      // Clear old job matches cache when starting new analysis
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('internJobMatches')
+      }
       
       const targetJobTitle = overrideJobTitle ?? desiredJobTitle
       const certSource = overrideCertificates ?? certificateFiles
@@ -371,26 +358,33 @@ export default function AIAnalysisPage() {
         setSkills(mappedSkills)
         try {
           if (typeof window !== 'undefined') {
-            const skillsJson = JSON.stringify(mappedSkills)
-            sessionStorage.setItem('internSkills', skillsJson)
-            localStorage.setItem('internSkills', skillsJson)
+            localStorage.setItem('internSkills', JSON.stringify(mappedSkills))
           }
         } catch {
         }
       }
       if (data.analysis) {
         setAnalysisResult(data.analysis)
-        try {
-          if (typeof window !== 'undefined') {
-            const analysisJson = JSON.stringify(data.analysis)
-            sessionStorage.setItem('internAnalysisResult', analysisJson)
-            localStorage.setItem('internAnalysisResult', analysisJson)
-          }
-        } catch {
-        }
+        localStorage.setItem('internAnalysisResult', JSON.stringify(data.analysis))
       }
       
       setAnalyzed(true)
+
+      // Prefetch job matches in background
+      if (text && typeof window !== 'undefined') {
+        const storedResume = text;
+        apiFetch<{ suggestions: any[] }>('/api/ai/suggest-jobs', {
+          method: 'POST',
+          body: JSON.stringify({ resumeText: storedResume })
+        }).then(response => {
+          if (response.suggestions && response.suggestions.length > 0) {
+            localStorage.setItem('internJobMatches', JSON.stringify(response.suggestions))
+          }
+        }).catch(err => {
+          console.error('Background job prefetch failed:', err)
+        })
+      }
+
     } catch (err: unknown) {
       console.error('Analysis failed:', err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to analyze resume'
@@ -433,6 +427,16 @@ export default function AIAnalysisPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
               </svg>
               <span className="font-medium">AI Analysis</span>
+            </Link>
+
+            <Link
+              href="/intern/history"
+              className="px-4 py-3 rounded-lg flex items-center space-x-3 transition-colors text-[#1C2D4F] hover:text-[#0273B1]"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="font-medium">History</span>
             </Link>
 
             <Link
@@ -837,13 +841,13 @@ export default function AIAnalysisPage() {
                               <div className="flex items-center gap-2">
                                 <span
                                   className={`w-2.5 h-2.5 rounded-full ${
-                                    m.matched ? 'bg-green-500' : 'bg-yellow-400'
+                                    m.matched ? 'bg-green-500' : 'bg-red-500'
                                   }`}
                                 ></span>
                                 <span className="font-medium">{m.skill}</span>
                               </div>
                               <span className="text-xs text-gray-500 max-w-xs text-right">
-                                {m.evidence || (m.matched ? '' : 'No strong evidence yet.')}
+                                {m.evidence || (m.matched ? '' : 'Not found in resume.')}
                               </span>
                             </li>
                           ))}

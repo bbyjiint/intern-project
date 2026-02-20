@@ -43,9 +43,8 @@ const JOB_SKILL_PROFILES: Record<
       "Database Design",
       "SQL",
       "Git",
-      "Authentication & Authorization",
     ],
-    niceToHave: ["TypeScript", "Express", "Prisma ORM", "Docker"],
+    niceToHave: ["TypeScript", "Express", "Prisma ORM", "Docker", "Authentication & Authorization"],
   },
   "full stack developer": {
     mustHave: [
@@ -58,6 +57,86 @@ const JOB_SKILL_PROFILES: Record<
       "Git",
     ],
     niceToHave: ["Next.js", "Prisma ORM", "Testing", "CI/CD basics"],
+  },
+  "mobile developer": {
+    mustHave: [
+      "iOS/Android Development",
+      "React Native/Flutter",
+      "API Integration",
+      "Git",
+      "Mobile UI Design",
+    ],
+    niceToHave: ["Publishing Apps", "Performance Optimization", "Firebase"],
+  },
+  "qa engineer": {
+    mustHave: [
+      "Manual Testing",
+      "Automated Testing",
+      "Test Plans",
+      "Bug Tracking",
+      "Git",
+    ],
+    niceToHave: ["Selenium", "Cypress", "Load Testing", "API Testing"],
+  },
+  "devops engineer": {
+    mustHave: [
+      "CI/CD Pipelines",
+      "Docker",
+      "Cloud Services (AWS/GCP)",
+      "Linux Administration",
+      "Scripting (Bash/Python)",
+    ],
+    niceToHave: ["Kubernetes", "Terraform", "Monitoring Tools", "Security Best Practices"],
+  },
+  "business analyst": {
+    mustHave: [
+      "Requirements Gathering",
+      "Data Analysis",
+      "Process Modeling",
+      "Documentation",
+      "Stakeholder Communication",
+    ],
+    niceToHave: ["SQL", "Tableau/PowerBI", "Agile Methodologies", "User Stories"],
+  },
+  "graphic designer": {
+    mustHave: [
+      "Adobe Photoshop",
+      "Adobe Illustrator",
+      "Creativity",
+      "Typography",
+      "Layout Design",
+    ],
+    niceToHave: ["Adobe After Effects", "Figma", "Video Editing", "Branding"],
+  },
+  "human resources": {
+    mustHave: [
+      "Recruitment",
+      "Employee Relations",
+      "Communication",
+      "Labor Laws",
+      "Interviewing",
+    ],
+    niceToHave: ["HR Software", "Onboarding", "Training & Development", "Conflict Resolution"],
+  },
+  "accountant": {
+    mustHave: [
+      "Bookkeeping",
+      "Financial Reporting",
+      "Tax Preparation",
+      "Auditing",
+      "Budgeting & Forecasting",
+    ],
+    niceToHave: ["Excel Proficiency", "Accounting Software", "Attention to Detail", "Compliance"],
+  },
+  "sales representative": {
+    mustHave: [
+      "Lead Generation",
+      "Negotiation",
+      "Communication",
+      "CRM Management",
+      "Closing Deals",
+    ],
+    niceToHave: ["Presentation Skills", "Market Research", "Networking", "Cold Calling"],
   },
   "software engineer": {
     mustHave: [
@@ -423,6 +502,36 @@ aiRouter.post("/suggest-skills", requireAuth, async (req, res) => {
   } catch (error: any) {
     console.error("AI Suggestion Error:", error);
     return res.status(500).json({ error: error.message || "AI Suggestion failed" });
+  }
+});
+
+// New Endpoint: Get Analysis History
+aiRouter.get("/history", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    const candidate = await prisma.candidateProfile.findUnique({
+      where: { userId },
+      select: { id: true }
+    });
+
+    if (!candidate) {
+      return res.status(404).json({ error: "Candidate profile not found" });
+    }
+
+    const history = await prisma.resumeAnalysis.findMany({
+      where: { candidateId: candidate.id },
+      orderBy: { createdAt: 'desc' },
+      take: 20 // Limit to last 20 analyses
+    });
+
+    return res.json({ history });
+  } catch (error) {
+    console.error("Failed to fetch history:", error);
+    return res.status(500).json({ error: "Failed to fetch history" });
   }
 });
 

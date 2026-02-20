@@ -88,6 +88,7 @@ export default function InternAppliedPage() {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false)
   
   const isAIAnalysisPage = pathname === '/intern/ai-analysis'
+  const isHistoryPage = pathname === '/intern/history'
   const isJobMatchPage = pathname === '/intern/job-match' || pathname === '/intern/find-companies'
 
   useEffect(() => {
@@ -242,6 +243,31 @@ export default function InternAppliedPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                     </svg>
                     <span>AI Analysis</span>
+                  </Link>
+                  <Link
+                    href="/intern/history"
+                    className="block px-4 py-3 rounded-lg text-sm transition-colors flex items-center space-x-3"
+                    style={{ 
+                      color: isHistoryPage ? 'white' : '#1C2D4F',
+                      backgroundColor: isHistoryPage ? '#0273B1' : 'transparent'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isHistoryPage) {
+                        e.currentTarget.style.backgroundColor = '#F0F4F8'
+                        e.currentTarget.style.color = '#0273B1'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isHistoryPage) {
+                        e.currentTarget.style.backgroundColor = 'transparent'
+                        e.currentTarget.style.color = '#1C2D4F'
+                      }
+                    }}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>History</span>
                   </Link>
                   <Link
                     href="/intern/job-match"
