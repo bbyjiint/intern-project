@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import * as pdfjsLib from 'pdfjs-dist'
 import InternNavbar from '@/components/InternNavbar'
@@ -142,6 +142,50 @@ export default function AIAnalysisPage() {
       ? analysisResult ?? buildFallbackAnalysis(skills, desiredJobTitle || 'General Role')
       : null
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
+    const storedResume = localStorage.getItem('internResumeText')
+
+    const legacySkills = localStorage.getItem('internSkills')
+    const legacyAnalysis = localStorage.getItem('internAnalysisResult')
+
+    if (legacySkills) {
+      sessionStorage.setItem('internSkills', legacySkills)
+      localStorage.removeItem('internSkills')
+    }
+    if (legacyAnalysis) {
+      sessionStorage.setItem('internAnalysisResult', legacyAnalysis)
+      localStorage.removeItem('internAnalysisResult')
+    }
+
+    const storedSkills = sessionStorage.getItem('internSkills')
+    const storedAnalysis = sessionStorage.getItem('internAnalysisResult')
+
+    if (storedResume) {
+      setResumeText(storedResume)
+    }
+
+    if (storedSkills) {
+      try {
+        const parsedSkills = JSON.parse(storedSkills) as Skill[]
+        if (Array.isArray(parsedSkills) && parsedSkills.length > 0) {
+          setSkills(parsedSkills)
+        }
+      } catch {
+      }
+    }
+
+    if (storedAnalysis && storedSkills) {
+      try {
+        const parsedAnalysis = JSON.parse(storedAnalysis) as AnalysisResult
+        setAnalysisResult(parsedAnalysis)
+        setAnalyzed(true)
+      } catch {
+      }
+    }
+  }, [])
+
   // Helper to extract text from PDF
   const extractPdfText = async (file: File): Promise<string> => {
     try {
@@ -183,14 +227,22 @@ export default function AIAnalysisPage() {
   const handleCertificateUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (files && files.length > 0) {
-      const newFiles = await Promise.all(Array.from(files).map(async (file) => {
-        let text = ''
-        if (file.type === 'application/pdf') {
-          text = await extractPdfText(file)
-        }
-        return { file, text }
-      }))
-      setCertificateFiles(prev => [...prev, ...newFiles])
+      const newFiles = await Promise.all(
+        Array.from(files).map(async (file) => {
+          let text = ''
+          if (file.type === 'application/pdf') {
+            text = await extractPdfText(file)
+          }
+          return { file, text }
+        })
+      )
+
+      const updatedCertificates = [...certificateFiles, ...newFiles]
+      setCertificateFiles(updatedCertificates)
+
+      if (resumeText) {
+        await analyzeResume(resumeText, undefined, updatedCertificates)
+      }
     }
   }
 
@@ -206,8 +258,13 @@ export default function AIAnalysisPage() {
         setSkills([])
         setAnalysisResult(null)
         setAnalyzed(false)
-        localStorage.removeItem('internResumeText')
-        localStorage.removeItem('internAnalysisResult')
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('internResumeText')
+          localStorage.removeItem('internAnalysisResult')
+          localStorage.removeItem('internSkills')
+          sessionStorage.removeItem('internSkills')
+          sessionStorage.removeItem('internAnalysisResult')
+        }
       }
       return remaining
     })
@@ -258,23 +315,36 @@ export default function AIAnalysisPage() {
     }
   }
 
-  const analyzeResume = async (text: string, overrideJobTitle?: string) => {
+  const analyzeResume = async (
+    text: string,
+    overrideJobTitle?: string,
+    overrideCertificates?: { file: File; text: string }[]
+  ) => {
     try {
       setLoading(true)
       setError('')
       
       const targetJobTitle = overrideJobTitle ?? desiredJobTitle
+      const certSource = overrideCertificates ?? certificateFiles
       
       let endpoint = '/api/ai/analyze-resume'
-      let body: any = { text }
+      let body: any = {
+        text,
+        certificates: certSource.map(f => f.file.name),
+        certificateContents: certSource
+          .map(f => `File: ${f.file.name}\nContent: ${f.text || '(No text extracted - likely image or non-PDF)'}`)
+          .join('\n\n')
+      }
 
       if (targetJobTitle) {
         endpoint = '/api/ai/suggest-skills'
         body = {
           jobTitle: targetJobTitle,
           resumeText: text,
-          certificates: certificateFiles.map(f => f.file.name),
-          certificateContents: certificateFiles.map(f => `File: ${f.file.name}\nContent: ${f.text || '(No text extracted - likely image or non-PDF)'}`).join('\n\n')
+          certificates: certSource.map(f => f.file.name),
+          certificateContents: certSource
+            .map(f => `File: ${f.file.name}\nContent: ${f.text || '(No text extracted - likely image or non-PDF)'}`)
+            .join('\n\n')
         }
       }
 
@@ -299,10 +369,25 @@ export default function AIAnalysisPage() {
           return { ...skill, type }
         })
         setSkills(mappedSkills)
+        try {
+          if (typeof window !== 'undefined') {
+            const skillsJson = JSON.stringify(mappedSkills)
+            sessionStorage.setItem('internSkills', skillsJson)
+            localStorage.setItem('internSkills', skillsJson)
+          }
+        } catch {
+        }
       }
       if (data.analysis) {
         setAnalysisResult(data.analysis)
-        localStorage.setItem('internAnalysisResult', JSON.stringify(data.analysis))
+        try {
+          if (typeof window !== 'undefined') {
+            const analysisJson = JSON.stringify(data.analysis)
+            sessionStorage.setItem('internAnalysisResult', analysisJson)
+            localStorage.setItem('internAnalysisResult', analysisJson)
+          }
+        } catch {
+        }
       }
       
       setAnalyzed(true)
@@ -492,65 +577,95 @@ export default function AIAnalysisPage() {
             </div>
 
             {/* Certificates Upload */}
-            <div className="bg-white rounded-xl border border-gray-200 p-8 text-center h-full">
-               <div className="flex items-center justify-center mb-2">
-                 <span className="text-[#F59E0B] font-semibold flex items-center gap-2">
-                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 011.414.586l4 4a1 1 0 01.586 1.414V19a2 2 0 01-2 2z" />
-                   </svg>
-                   Certificates Upload
-                 </span>
-              </div>
-              
-              <div className="flex flex-col items-center justify-center py-6">
-                <div className="mb-4">
-                   <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                   </svg>
-                </div>
-                
-                <label className="cursor-pointer bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2 px-6 rounded-md transition-colors mb-2">
-                  + Add Certificates
-                  <input
-                    type="file"
-                    multiple
-                    onChange={handleCertificateUpload}
-                    className="hidden"
-                  />
-                </label>
-                
-                <div className="text-xs text-yellow-500 font-medium space-x-2 mt-2">
-                  <span>.PDF</span>
-                  <span>.JPG</span>
-                  <span>.PNG</span>
-                </div>
-                <p className="text-xs text-gray-400 mt-2">Upload your certificates, transcripts, or other documents.</p>
-              </div>
-
-              {certificateFiles.length > 0 && (
-                <div className="space-y-2 mt-4 text-left">
-                  {certificateFiles.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                      <div className="flex items-center gap-3 overflow-hidden">
-                        <svg className="w-5 h-5 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 011.414.586l4 4a1 1 0 01.586 1.414V19a2 2 0 01-2 2z" />
-                        </svg>
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-sm text-gray-700 truncate">{item.file.name}</span>
-                          {item.text && <span className="text-[10px] text-green-600">Text extracted</span>}
-                        </div>
-                        <span className="text-xs text-gray-400 flex-shrink-0">({(item.file.size / 1024).toFixed(0)} KB)</span>
-                      </div>
-                      <button 
-                        onClick={() => removeCertificate(index)}
-                        className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
+            <div className="bg-white rounded-xl border border-gray-200 p-8 h-full">
+              {certificateFiles.length === 0 ? (
+                <>
+                  <div className="flex items-center justify-center mb-2">
+                    <span className="text-[#F59E0B] font-semibold flex items-center gap-2">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 011.414.586l4 4a1 1 0 01.586 1.414V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Certificates Upload
+                    </span>
+                  </div>
+                  
+                  <div className="flex flex-col items-center justify-center py-6 text-center">
+                    <div className="mb-4">
+                      <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                      </svg>
                     </div>
-                  ))}
+                    
+                    <label className="cursor-pointer bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2 px-6 rounded-md transition-colors mb-2">
+                      + Add Certificates
+                      <input
+                        type="file"
+                        multiple
+                        onChange={handleCertificateUpload}
+                        className="hidden"
+                      />
+                    </label>
+                    
+                    <div className="text-xs text-yellow-500 font-medium space-x-2 mt-2">
+                      <span>.PDF</span>
+                      <span>.JPG</span>
+                      <span>.PNG</span>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2">
+                      Upload your certificates, transcripts, or other documents.
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <div className="w-full">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-bold text-[#1C2D4F]">
+                      Uploaded Certificates ({certificateFiles.length})
+                    </h3>
+                    <label className="cursor-pointer p-1 rounded-full hover:bg-gray-100 transition-colors">
+                      <svg className="w-6 h-6 text-[#1C2D4F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      <input
+                        type="file"
+                        multiple
+                        onChange={handleCertificateUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="space-y-3 text-left">
+                    {certificateFiles.map((item, index) => (
+                      <div
+                        key={index}
+                        className="bg-[#FFF7ED] border border-[#FED7AA] rounded-xl p-4 flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-4 overflow-hidden">
+                          <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <svg className="w-6 h-6 text-[#F59E0B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 011.414.586l4 4a1 1 0 01.586 1.414V19a2 2 0 01-2 2z" />
+                            </svg>
+                          </div>
+                          <div className="text-left min-w-0">
+                            <h4 className="font-bold text-[#1C2D4F] text-sm truncate">{item.file.name}</h4>
+                            <p className="text-xs text-gray-500">
+                              {(item.file.size / 1024).toFixed(2)} KB
+                              {item.text && ' • Text extracted'}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => removeCertificate(index)}
+                          className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

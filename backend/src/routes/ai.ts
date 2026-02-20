@@ -5,8 +5,19 @@ import prisma from "../utils/prisma";
 
 export const aiRouter = Router();
 
-// Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+
+function parseGeminiJson(raw: string): any {
+  const withoutBackticks = raw.replace(/```json?/gi, "").replace(/```/g, "").trim();
+  const firstBrace = withoutBackticks.indexOf("{");
+  const lastBrace = withoutBackticks.lastIndexOf("}");
+  const jsonCandidate =
+    firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace
+      ? withoutBackticks.slice(firstBrace, lastBrace + 1)
+      : withoutBackticks;
+  const relaxed = jsonCandidate.replace(/,\s*([}\]])/g, "$1");
+  return JSON.parse(relaxed);
+}
 
 // Company-defined skill profiles per job title (can be extended per real company data)
 const JOB_SKILL_PROFILES: Record<
@@ -125,13 +136,23 @@ function getJobSkillProfile(jobTitle: string | undefined) {
 
 aiRouter.post("/analyze-resume", requireAuth, async (req, res) => {
   try {
-    const { text } = req.body;
+    const { text, certificates, certificateContents } = req.body;
 
     if (!text) {
       return res.status(400).json({ error: "No text provided" });
     }
 
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+    const certificateList =
+      certificates && Array.isArray(certificates)
+        ? certificates.join(", ")
+        : "None";
+
+    const certificateText =
+      typeof certificateContents === "string" && certificateContents.trim().length > 0
+        ? certificateContents
+        : "No certificate or transcript text was provided.";
 
     const prompt = `
       Analyze the following text and determine if it is a valid resume or CV (Curriculum Vitae).
@@ -147,7 +168,11 @@ aiRouter.post("/analyze-resume", requireAuth, async (req, res) => {
       }
 
       STEP 3: If VALID, extract key profile data.
-      - Extract Skills: You MUST estimate a proficiency score (1-10) for each skill based on context (e.g. project usage, years of experience). If unsure, assign a default of 5.
+      - Additional Evidence: You also have access to uploaded certificates/transcripts for this candidate.
+        - Uploaded Files List: ${certificateList}
+        - Uploaded Files Content: 
+          ${certificateText}
+      - Extract Skills: You MUST estimate a proficiency score (1-10) for each skill based on combined evidence from the resume text AND the uploaded certificates/transcripts (if relevant). If unsure, assign a default of 5.
       Return:
       {
         "isValidResume": true,
@@ -193,11 +218,8 @@ aiRouter.post("/analyze-resume", requireAuth, async (req, res) => {
     const response = await result.response;
     const textResponse = response.text();
     
-    // Clean up markdown formatting if present
-    const cleanJson = textResponse.replace(/```json/g, "").replace(/```/g, "").trim();
-    
     try {
-      const parsedData = JSON.parse(cleanJson);
+      const parsedData = parseGeminiJson(textResponse);
       
       if (parsedData.isValidResume === false) {
         return res.status(400).json({ error: parsedData.reason || "The uploaded file does not appear to be a valid resume." });
@@ -369,10 +391,8 @@ aiRouter.post("/suggest-skills", requireAuth, async (req, res) => {
     const response = await result.response;
     const textResponse = response.text();
     
-    const cleanJson = textResponse.replace(/```json/g, "").replace(/```/g, "").trim();
-    
     try {
-      const parsedData = JSON.parse(cleanJson);
+      const parsedData = parseGeminiJson(textResponse);
 
       // Save to database if resume text was analyzed
       if (resumeText && (req as AuthedRequest).user && (req as AuthedRequest).user?.role === 'CANDIDATE') {
@@ -561,10 +581,8 @@ aiRouter.post("/suggest-jobs", requireAuth, async (req: AuthedRequest, res) => {
     const response = await result.response;
     const textResponse = response.text();
     
-    const cleanJson = textResponse.replace(/```json/g, "").replace(/```/g, "").trim();
-    
     try {
-      const parsedData = JSON.parse(cleanJson);
+      const parsedData = parseGeminiJson(textResponse);
       return res.json(parsedData);
     } catch (e) {
       console.error("Failed to parse Gemini response for job suggestions:", textResponse);
