@@ -1,14 +1,19 @@
 'use client'
 
+import { useState } from 'react'
 import { Education } from '@/hooks/useProfile'
+import EducationModal from './EducationModal'
 
 interface EducationSectionProps {
   education: Education[]
   onAdd: () => void
   onEdit: (id: string) => void
+  onRefresh?: () => void
 }
 
-export default function EducationSection({ education, onAdd, onEdit }: EducationSectionProps) {
+export default function EducationSection({ education, onAdd, onEdit, onRefresh }: EducationSectionProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingEducation, setEditingEducation] = useState<Education | null>(null)
   const formatDate = (dateString?: string) => {
     if (!dateString) return ''
     const date = new Date(dateString)
@@ -32,7 +37,10 @@ export default function EducationSection({ education, onAdd, onEdit }: Education
           Education
         </h2>
         <button
-          onClick={onAdd}
+          onClick={() => {
+            setEditingEducation(null)
+            setIsModalOpen(true)
+          }}
           className="px-4 py-2 rounded-lg font-semibold text-sm text-white transition-colors"
           style={{ backgroundColor: '#0273B1' }}
           onMouseEnter={(e) => {
@@ -87,7 +95,10 @@ export default function EducationSection({ education, onAdd, onEdit }: Education
                   </div>
                 </div>
                 <button
-                  onClick={() => onEdit(edu.id)}
+                  onClick={() => {
+                    setEditingEducation(edu)
+                    setIsModalOpen(true)
+                  }}
                   className="px-4 py-2 rounded-lg font-semibold text-sm border-2 transition-colors ml-4"
                   style={{ 
                     borderColor: '#0273B1',
@@ -108,6 +119,21 @@ export default function EducationSection({ education, onAdd, onEdit }: Education
           ))}
         </div>
       )}
+
+      {/* Education Modal */}
+      <EducationModal
+        isOpen={isModalOpen}
+        education={editingEducation}
+        onClose={() => {
+          setIsModalOpen(false)
+          setEditingEducation(null)
+        }}
+        onSave={() => {
+          if (onRefresh) {
+            onRefresh()
+          }
+        }}
+      />
     </div>
   )
 }

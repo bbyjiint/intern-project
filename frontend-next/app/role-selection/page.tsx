@@ -31,10 +31,11 @@ function RoleCard({ icon, title, description, buttonText, onClick, isSelected, o
   return (
     <div
       onClick={handleCardClick}
-      className="bg-white border-2 rounded-lg shadow-md p-8 transition-colors cursor-pointer"
-      style={{
-        borderColor: isActive ? '#0273B1' : '#E5E7EB'
-      }}
+      className={`bg-white dark:bg-gray-800 border-2 rounded-lg shadow-md dark:shadow-gray-900/50 p-8 transition-colors cursor-pointer ${
+        isActive 
+          ? 'border-[#0273B1]' 
+          : 'border-gray-200 dark:border-gray-700'
+      }`}
     >
       <div className="text-center">
         {/* Icon */}
@@ -43,40 +44,23 @@ function RoleCard({ icon, title, description, buttonText, onClick, isSelected, o
         </div>
 
         {/* Title */}
-        <h2 className="text-xl font-semibold mb-3" style={{ color: '#1C2D4F', letterSpacing: '0' }}>
+        <h2 className="text-xl font-semibold mb-3 text-[#1C2D4F] dark:text-white transition-colors" style={{ letterSpacing: '0' }}>
           {title}
         </h2>
 
         {/* Description */}
-        <p className="text-sm mb-6 text-center leading-relaxed" style={{ color: '#A9B4CD' }}>
+        <p className="text-sm mb-6 text-center leading-relaxed text-[#A9B4CD] dark:text-gray-300 transition-colors">
           {description}
         </p>
 
         {/* Button */}
         <button
           onClick={handleButtonClick}
-          className="w-full py-3 rounded-lg font-semibold text-sm transition-colors"
-          style={isActive ? {
-            backgroundColor: '#0273B1',
-            color: 'white',
-            border: 'none'
-          } : {
-            backgroundColor: 'transparent',
-            border: '2px solid #1C2D4F',
-            color: '#1C2D4F'
-          }}
-          onMouseEnter={(e) => {
-            if (isActive) {
-              e.currentTarget.style.backgroundColor = '#025a8f'
-              e.currentTarget.style.border = 'none'
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (isActive) {
-              e.currentTarget.style.backgroundColor = '#0273B1'
-              e.currentTarget.style.border = 'none'
-            }
-          }}
+          className={`w-full py-3 rounded-lg font-semibold text-sm transition-colors ${
+            isActive 
+              ? 'bg-[#0273B1] hover:bg-[#025a8f] text-white border-none' 
+              : 'bg-transparent border-2 border-[#1C2D4F] dark:border-gray-300 text-[#1C2D4F] dark:text-gray-300 hover:border-[#0273B1] dark:hover:border-blue-400 hover:text-[#0273B1] dark:hover:text-blue-400'
+          }`}
         >
           {buttonText}
         </button>
@@ -150,20 +134,20 @@ export default function RoleSelectionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4 sm:px-6 lg:px-8 transition-colors">
       <div className="max-w-4xl w-full">
-        <div className="bg-white rounded-lg shadow-lg p-8 md:p-12">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 md:p-12 transition-colors">
           <div className="text-center mb-12">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 transition-colors">
               Ready to get started?
             </h1>
-            <p className="text-base text-gray-600 max-w-2xl mx-auto">
+            <p className="text-base text-gray-600 dark:text-gray-300 max-w-2xl mx-auto transition-colors">
               Join thousands of students and employers already using our platform to build the future of finance.
             </p>
           </div>
 
           {error && (
-            <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div className="mb-6 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-400 transition-colors">
               {error}
             </div>
           )}
@@ -176,12 +160,19 @@ export default function RoleSelectionPage() {
               <RoleCard
                 icon={
                   <div 
-                    className="w-20 h-20 rounded-full flex items-center justify-center"
-                    style={(selectedRole === 'intern' || hoveredRole === 'intern') ? { backgroundColor: '#E3F2FD' } : { backgroundColor: '#F5F5F5' }}
+                    className="w-20 h-20 rounded-full flex items-center justify-center transition-colors"
+                    style={(selectedRole === 'intern' || hoveredRole === 'intern') 
+                      ? { backgroundColor: '#E3F2FD' } 
+                      : { backgroundColor: '#F5F5F5' }
+                    }
                   >
                     <svg
-                      className="w-10 h-10"
-                      style={{ color: (selectedRole === 'intern' || hoveredRole === 'intern') ? '#0273B1' : '#1C2D4F' }}
+                      className="w-10 h-10 transition-colors"
+                      style={{ 
+                        color: (selectedRole === 'intern' || hoveredRole === 'intern') 
+                          ? '#0273B1' 
+                          : '#1C2D4F' 
+                      }}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -224,12 +215,19 @@ export default function RoleSelectionPage() {
               <RoleCard
                 icon={
                   <div 
-                    className="w-20 h-20 rounded-full flex items-center justify-center"
-                    style={(selectedRole === 'employer' || hoveredRole === 'employer') ? { backgroundColor: '#E3F2FD' } : { backgroundColor: '#F5F5F5' }}
+                    className="w-20 h-20 rounded-full flex items-center justify-center transition-colors"
+                    style={(selectedRole === 'employer' || hoveredRole === 'employer') 
+                      ? { backgroundColor: '#E3F2FD' } 
+                      : { backgroundColor: '#F5F5F5' }
+                    }
                   >
                     <svg
-                      className="w-10 h-10"
-                      style={{ color: (selectedRole === 'employer' || hoveredRole === 'employer') ? '#0273B1' : '#1C2D4F' }}
+                      className="w-10 h-10 transition-colors"
+                      style={{ 
+                        color: (selectedRole === 'employer' || hoveredRole === 'employer') 
+                          ? '#0273B1' 
+                          : '#1C2D4F' 
+                      }}
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"

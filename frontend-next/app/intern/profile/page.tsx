@@ -11,23 +11,12 @@ import EducationSection from '@/components/profile/EducationSection'
 import ExperienceSection from '@/components/profile/ExperienceSection'
 import ProjectsSection from '@/components/profile/ProjectsSection'
 import SkillsSection from '@/components/profile/SkillsSection'
-import EditProfileDrawer from '@/components/profile/EditProfileDrawer'
-
-type EditSection = 
-  | 'personal'
-  | 'education'
-  | 'experience'
-  | 'project'
-  | 'skill'
 
 export default function InternProfilePage() {
   const router = useRouter()
   const pathname = usePathname()
   const { profileData, isLoading, completionPercentage, refetch } = useProfile()
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false)
-  const [editDrawerOpen, setEditDrawerOpen] = useState(false)
-  const [editSection, setEditSection] = useState<EditSection | null>(null)
-  const [editingId, setEditingId] = useState<string | null>(null)
   const [currentDate, setCurrentDate] = useState('')
   
   const isAIAnalysisPage = pathname === '/intern/ai-analysis'
@@ -86,24 +75,6 @@ export default function InternProfilePage() {
     checkRole()
   }, [router])
 
-  const handleEdit = (section: EditSection, id: string | null = null) => {
-    setEditSection(section)
-    setEditingId(id)
-    setEditDrawerOpen(true)
-  }
-
-  const handleAdd = (section: EditSection) => {
-    setEditSection(section)
-    setEditingId(null)
-    setEditDrawerOpen(true)
-  }
-
-  const handleSave = () => {
-    refetch()
-    setEditDrawerOpen(false)
-    setEditSection(null)
-    setEditingId(null)
-  }
 
   // Don't return early - keep layout visible
 
@@ -364,54 +335,43 @@ export default function InternProfilePage() {
               {/* Personal Information */}
               <PersonalInfoCard 
                 profile={profileData}
-                onEdit={() => handleEdit('personal')}
+                onEdit={() => {}}
               />
 
               {/* Education */}
               <EducationSection
                 education={profileData.education || []}
-                onAdd={() => handleAdd('education')}
-                onEdit={(id) => handleEdit('education', id)}
+                onAdd={() => {}}
+                onEdit={(id) => {}}
+                onRefresh={refetch}
               />
 
               {/* Experience */}
               <ExperienceSection
                 experience={profileData.experience || []}
-                onAdd={() => handleAdd('experience')}
-                onEdit={(id) => handleEdit('experience', id)}
+                onAdd={() => {}}
+                onEdit={(id) => {}}
+                onRefresh={refetch}
               />
 
               {/* Projects */}
               <ProjectsSection
                 projects={profileData.projects || []}
-                onAdd={() => handleAdd('project')}
-                onEdit={(id) => handleEdit('project', id)}
+                onAdd={() => {}}
+                onEdit={(id) => {}}
               />
 
               {/* Skills */}
               <SkillsSection
                 skills={profileData.skills || []}
-                onAdd={() => handleAdd('skill')}
-                onEdit={(id) => handleEdit('skill', id)}
+                onAdd={() => {}}
+                onEdit={(id) => {}}
               />
             </>
           )}
         </div>
       </div>
 
-      {/* Edit Profile Drawer */}
-      <EditProfileDrawer
-        isOpen={editDrawerOpen}
-        section={editSection}
-        editingId={editingId}
-        profileData={profileData}
-        onClose={() => {
-          setEditDrawerOpen(false)
-          setEditSection(null)
-          setEditingId(null)
-        }}
-        onSave={handleSave}
-      />
     </div>
   )
 }

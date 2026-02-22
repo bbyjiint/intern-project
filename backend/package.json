@@ -14,10 +14,6 @@
     "prisma:migrate": "npx prisma migrate dev --config=./prisma.config.ts",
     "prisma:dbpull": "npx prisma db pull --config=./prisma.config.ts",
     "prisma:validate": "npx prisma validate --config=./prisma.config.ts",
-    "apply:address-migration": "tsx prisma/apply-address-migration.ts",
-    "create:subdistrict-table": "tsx prisma/create-subdistrict-table.ts",
-    "seed:addresses": "tsx prisma/seed-addresses.ts",
-    "generate:address-seed": "tsx prisma/generate-address-seed.ts",
     "seed:addresses-direct": "tsx prisma/seed-addresses-direct.ts",
     "seed:users": "tsx prisma/seed-users.ts"
   },

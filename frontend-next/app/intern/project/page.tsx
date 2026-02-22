@@ -418,10 +418,10 @@ export default function ProjectPage() {
                 ))}
               </div>
             </div>
-          )}
+              )}
 
-          {/* All Projects Section */}
-          <div>
+              {/* All Projects Section */}
+              <div>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-2xl font-bold" style={{ color: '#1C2D4F' }}>
                 All Projects
@@ -589,7 +589,9 @@ export default function ProjectPage() {
                 ))}
               </div>
             )}
-          </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

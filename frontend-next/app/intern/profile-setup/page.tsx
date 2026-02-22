@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { apiFetch } from '@/lib/api'
+import Step0UploadResume from '@/components/profile-setup/Step0UploadResume'
 import Step1GeneralInfo from '@/components/profile-setup/Step1GeneralInfo'
 import Step2BackgroundExperience from '@/components/profile-setup/Step2BackgroundExperience'
 import Step3SkillsProjects from '@/components/profile-setup/Step3SkillsProjects'
@@ -37,7 +38,7 @@ export default function ProfileSetupPage() {
     const stepParam = params.get('step')
     if (stepParam) {
       const step = parseInt(stepParam, 10)
-      if (step >= 1 && step <= 3) {
+      if (step >= 1 && step <= 4) {
         setCurrentStep(step)
       }
     }
@@ -50,6 +51,8 @@ export default function ProfileSetupPage() {
         
         // Prioritize API data, but keep any existing form data if API doesn't have it
         setFormData((prev) => ({
+          resumeUrl: profile.resumeUrl || prev.resumeUrl || null,
+          resumeFile: profile.resumeFile || prev.resumeFile || null,
           fullName: profile.fullName || prev.fullName || '',
           email: profile.email || prev.email || '',
           phoneNumber: profile.phoneNumber || prev.phoneNumber || '',
@@ -96,22 +99,25 @@ export default function ProfileSetupPage() {
   }, [])
   const [formData, setFormData] = useState({
     // Step 1
+    resumeUrl: null,
+    resumeFile: null,
+    // Step 2
     fullName: '',
     email: '',
     phoneNumber: '',
     aboutYou: '',
     photo: null,
     profileImage: null,
-    // Step 2
-    education: [],
-    projects: [],
     // Step 3
+    education: [],
     experience: [],
+    // Step 4
+    projects: [],
     skills: [],
   })
 
   const handleNext = () => {
-    if (currentStep < 3) {
+    if (currentStep < 4) {
       setCurrentStep(currentStep + 1)
     }
   }
@@ -145,6 +151,7 @@ export default function ProfileSetupPage() {
           phoneNumber: formData.phoneNumber,
           aboutYou: formData.aboutYou,
           profileImage: formData.photo || formData.profileImage || null,
+          resumeUrl: formData.resumeUrl || null,
           education: formData.education,
           projects: formData.projects,
           experience: formData.experience,
@@ -187,7 +194,7 @@ export default function ProfileSetupPage() {
 
         {/* Progress Indicator */}
         <div className="mb-4">
-          <ProgressIndicator currentStep={currentStep} totalSteps={3} />
+          <ProgressIndicator currentStep={currentStep} totalSteps={4} />
         </div>
 
         {/* Form Content */}
@@ -198,18 +205,24 @@ export default function ProfileSetupPage() {
             </div>
           )}
           {currentStep === 1 && (
-            <Step1GeneralInfo
+            <Step0UploadResume
               data={formData}
               onUpdate={updateFormData}
             />
           )}
           {currentStep === 2 && (
-            <Step2BackgroundExperience
+            <Step1GeneralInfo
               data={formData}
               onUpdate={updateFormData}
             />
           )}
           {currentStep === 3 && (
+            <Step2BackgroundExperience
+              data={formData}
+              onUpdate={updateFormData}
+            />
+          )}
+          {currentStep === 4 && (
             <Step3SkillsProjects
               data={formData}
               onUpdate={updateFormData}
@@ -240,7 +253,7 @@ export default function ProfileSetupPage() {
               Previous
             </button>
 
-            {currentStep < 3 ? (
+            {currentStep < 4 ? (
               <button
                 onClick={handleNext}
                 className="flex items-center justify-center px-6 py-3 rounded-lg font-semibold text-sm text-white transition-colors h-11"

@@ -5,9 +5,10 @@ interface ProgressIndicatorProps {
 
 export default function ProgressIndicator({ currentStep, totalSteps }: ProgressIndicatorProps) {
   const steps = [
-    { number: 1, label: 'General Information' },
-    { number: 2, label: 'Education & Projects' },
-    { number: 3, label: 'Experience & Skills' },
+    { number: 1, label: 'Upload Resume' },
+    { number: 2, label: 'General Information' },
+    { number: 3, label: 'Education & Experience' },
+    { number: 4, label: 'Projects & Skills' },
   ]
 
   return (
@@ -42,9 +43,18 @@ export default function ProgressIndicator({ currentStep, totalSteps }: ProgressI
                 )}
               </div>
               <span
-                className={`text-[8px] mt-1 font-medium leading-tight ${
+                className={`mt-1 font-medium leading-tight whitespace-nowrap ${
                   isActive ? 'text-gray-900' : 'text-gray-400'
                 }`}
+                style={{
+                  fontSize: '7px',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  maxWidth: '90px',
+                  display: 'block',
+                  lineHeight: '1.2'
+                }}
               >
                 {step.label}
               </span>

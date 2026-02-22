@@ -1,15 +1,20 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { Experience } from '@/hooks/useProfile'
+import ExperienceModal from './ExperienceModal'
 
 interface ExperienceSectionProps {
   experience: Experience[]
   onAdd: () => void
   onEdit: (id: string) => void
+  onRefresh?: () => void
 }
 
-export default function ExperienceSection({ experience, onAdd, onEdit }: ExperienceSectionProps) {
+export default function ExperienceSection({ experience, onAdd, onEdit, onRefresh }: ExperienceSectionProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingExperience, setEditingExperience] = useState<Experience | null>(null)
   // Show maximum 3 experiences in profile page
   const displayedExperiences = experience.slice(0, 3)
   const formatDate = (dateString?: string) => {
@@ -26,7 +31,10 @@ export default function ExperienceSection({ experience, onAdd, onEdit }: Experie
           Experience
         </h2>
         <button
-          onClick={onAdd}
+          onClick={() => {
+            setEditingExperience(null)
+            setIsModalOpen(true)
+          }}
           className="px-4 py-2 rounded-lg font-semibold text-sm text-white transition-colors"
           style={{ backgroundColor: '#0273B1' }}
           onMouseEnter={(e) => {
@@ -84,7 +92,10 @@ export default function ExperienceSection({ experience, onAdd, onEdit }: Experie
                   )}
                 </div>
                 <button
-                  onClick={() => onEdit(exp.id)}
+                  onClick={() => {
+                    setEditingExperience(exp)
+                    setIsModalOpen(true)
+                  }}
                   className="px-4 py-2 rounded-lg font-semibold text-sm border-2 transition-colors ml-4"
                   style={{ 
                     borderColor: '#0273B1',
@@ -125,6 +136,21 @@ export default function ExperienceSection({ experience, onAdd, onEdit }: Experie
           )}
         </div>
       )}
+
+      {/* Experience Modal */}
+      <ExperienceModal
+        isOpen={isModalOpen}
+        experience={editingExperience}
+        onClose={() => {
+          setIsModalOpen(false)
+          setEditingExperience(null)
+        }}
+        onSave={() => {
+          if (onRefresh) {
+            onRefresh()
+          }
+        }}
+      />
     </div>
   )
 }
