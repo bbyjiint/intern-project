@@ -45,7 +45,8 @@ services:
         condition: service_healthy
     networks:
       - intern-network
-    command: npm run dev
+    # Generate Prisma Client and start dev server
+    command: sh -c "npm run prisma:generate && npm run dev"
 
   # Frontend (Next.js)
   frontend:
