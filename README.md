@@ -56,14 +56,22 @@
    
    ดูรายละเอียดที่ [DATABASE_SETUP.md](./DATABASE_SETUP.md) หรือรัน:
    ```bash
-   # สร้าง schema
+   # สร้าง schema (ใช้ db push สำหรับ development - sync schema กับ database)
    docker compose exec backend npx prisma db push --config=./prisma.config.ts
+   
+   # หรือใช้ migrations (แนะนำสำหรับ production)
+   docker compose exec backend npx prisma migrate deploy --config=./prisma.config.ts
+   
+   # Generate Prisma Client (สำคัญ! ต้องรันทุกครั้งที่ schema เปลี่ยน)
+   docker compose exec backend npm run prisma:generate
    
    # Seed ข้อมูลพื้นฐาน (provinces, universities, skills)
    docker compose exec backend npm run seed:users
    ```
    
-   **หมายเหตุ:** สำหรับข้อมูล production ให้ import จาก Neon cloud database (ดู [DATABASE_SETUP.md](./DATABASE_SETUP.md))
+   **หมายเหตุ:** 
+   - สำหรับข้อมูล production ให้ import จาก Neon cloud database (ดู [DATABASE_SETUP.md](./DATABASE_SETUP.md))
+   - **เมื่อ pull code ใหม่ที่มี schema เปลี่ยนแปลง ต้องรัน `prisma db push` และ `prisma:generate` อีกครั้ง**
 
 5. **Generate Prisma Client** (ครั้งแรกเท่านั้น)
    ```bash
