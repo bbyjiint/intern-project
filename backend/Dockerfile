@@ -5,7 +5,8 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Install dependencies for Prisma
-RUN apk add --no-cache openssl libc6-compat
+# Note: libc6-compat removed as it's not available on ARM64 and Prisma works without it
+RUN apk add --no-cache openssl
 
 # Copy package files
 COPY package*.json ./

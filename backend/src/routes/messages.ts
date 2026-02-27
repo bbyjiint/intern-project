@@ -36,7 +36,11 @@ messagesRouter.get('/conversations', requireAuth, async (req: AuthedRequest, res
           Candidate: {
             include: {
               User: true,
-              University: true,
+              CandidateUniversity: {
+                orderBy: [{ isCurrent: 'desc' }, { endDate: 'desc' }],
+                take: 1,
+                include: { University: { select: { name: true } } },
+              },
             },
           },
           Messages: {
@@ -48,38 +52,40 @@ messagesRouter.get('/conversations', requireAuth, async (req: AuthedRequest, res
       })
 
       // Format conversations with unread count
-      const formattedConversations = await Promise.all(
-        conversations.map(async (conv) => {
-          const unreadCount = await prisma.message.count({
-            where: {
-              conversationId: conv.id,
-              senderRole: 'CANDIDATE',
-              read: false,
-            },
+      const formattedConversations = (await Promise.all(
+        conversations
+          .filter((conv) => conv.Candidate !== null) // Filter out conversations with null candidates
+          .map(async (conv) => {
+            const unreadCount = await prisma.message.count({
+              where: {
+                conversationId: conv.id,
+                senderRole: 'CANDIDATE',
+                read: false,
+              },
+            })
+
+            const lastMessage = conv.Messages[0] || null
+
+            return {
+              id: conv.id,
+              candidateId: conv.candidateId,
+              candidateName: conv.Candidate?.fullName || 'Unknown',
+              candidateInitials: conv.Candidate?.fullName
+                ? conv.Candidate.fullName
+                    .split(' ')
+                    .map((n) => n[0])
+                    .join('')
+                    .toUpperCase()
+                    .slice(0, 2)
+                : 'U',
+              candidateRole: conv.Candidate?.desiredPosition || 'Intern',
+              candidateUniversity: conv.Candidate?.CandidateUniversity?.[0]?.University?.name || 'Unknown University',
+              lastMessage: lastMessage?.text || '',
+              lastMessageTime: lastMessage?.createdAt || conv.createdAt,
+              unreadCount,
+            }
           })
-
-          const lastMessage = conv.Messages[0] || null
-
-          return {
-            id: conv.id,
-            candidateId: conv.candidateId,
-            candidateName: conv.Candidate.fullName || 'Unknown',
-            candidateInitials: conv.Candidate.fullName
-              ? conv.Candidate.fullName
-                  .split(' ')
-                  .map((n) => n[0])
-                  .join('')
-                  .toUpperCase()
-                  .slice(0, 2)
-              : 'U',
-            candidateRole: conv.Candidate.desiredPosition || 'Intern',
-            candidateUniversity: conv.Candidate.University?.name || 'Unknown University',
-            lastMessage: lastMessage?.text || '',
-            lastMessageTime: lastMessage?.createdAt || conv.createdAt,
-            unreadCount,
-          }
-        })
-      )
+      )).filter((conv) => conv !== null)
 
       res.json({ conversations: formattedConversations })
     } else if (user.role === 'CANDIDATE') {
@@ -110,7 +116,7 @@ messagesRouter.get('/conversations', requireAuth, async (req: AuthedRequest, res
       })
 
       // Format conversations with unread count
-      const formattedConversations = await Promise.all(
+      const formattedConversations = (await Promise.all(
         conversations.map(async (conv) => {
           const unreadCount = await prisma.message.count({
             where: {
@@ -121,6 +127,11 @@ messagesRouter.get('/conversations', requireAuth, async (req: AuthedRequest, res
           })
 
           const lastMessage = conv.Messages[0] || null
+
+          // Handle null Company (orphaned conversation)
+          if (!conv.Company) {
+            return null // Skip this conversation
+          }
 
           return {
             id: conv.id,
@@ -137,7 +148,7 @@ messagesRouter.get('/conversations', requireAuth, async (req: AuthedRequest, res
             unreadCount,
           }
         })
-      )
+      )).filter((conv) => conv !== null) // Remove null conversations
 
       res.json({ conversations: formattedConversations })
     } else {
@@ -203,7 +214,11 @@ messagesRouter.post('/conversations', requireAuth, requireRole('COMPANY'), async
       include: {
         Candidate: {
           include: {
-            University: true,
+            CandidateUniversity: {
+              orderBy: [{ isCurrent: 'desc' }, { endDate: 'desc' }],
+              take: 1,
+              include: { University: { select: { name: true } } },
+            },
           },
         },
         Messages: {
@@ -238,7 +253,7 @@ messagesRouter.post('/conversations', requireAuth, requireRole('COMPANY'), async
                 .slice(0, 2)
             : 'U',
           candidateRole: existingConversation.Candidate.desiredPosition || 'Intern',
-          candidateUniversity: existingConversation.Candidate.University?.name || 'Unknown University',
+          candidateUniversity: existingConversation.Candidate.CandidateUniversity?.[0]?.University?.name || 'Unknown University',
           lastMessage: lastMessage?.text || '',
           lastMessageTime: lastMessage?.createdAt || existingConversation.createdAt,
           unreadCount,
@@ -268,7 +283,11 @@ messagesRouter.post('/conversations', requireAuth, requireRole('COMPANY'), async
       include: {
         Candidate: {
           include: {
-            University: true,
+            CandidateUniversity: {
+              orderBy: [{ isCurrent: 'desc' }, { endDate: 'desc' }],
+              take: 1,
+              include: { University: { select: { name: true } } },
+            },
           },
         },
         Messages: {
@@ -294,7 +313,7 @@ messagesRouter.post('/conversations', requireAuth, requireRole('COMPANY'), async
               .slice(0, 2)
           : 'U',
         candidateRole: conversation.Candidate.desiredPosition || 'Intern',
-        candidateUniversity: conversation.Candidate.University?.name || 'Unknown University',
+        candidateUniversity: conversation.Candidate.CandidateUniversity?.[0]?.University?.name || 'Unknown University',
         lastMessage: lastMessage?.text || '',
         lastMessageTime: lastMessage?.createdAt || conversation.createdAt,
         unreadCount: 0,

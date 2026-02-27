@@ -45,13 +45,6 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
             createdAt: true,
           } 
         },
-        University: { 
-          select: { 
-            name: true,
-            thname: true,
-            province: true,
-          } 
-        },
         CandidateUniversity: {
           include: { 
             University: { 
@@ -107,19 +100,11 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
       id: candidateProfile.id,
       userId: candidateProfile.userId,
       fullName: candidateProfile.fullName || null,
-      studentCode: candidateProfile.studentCode || null,
       email: candidateProfile.contactEmail || candidateProfile.User.email,
       phoneNumber: candidateProfile.phoneNumber || null,
       profileImage: candidateProfile.profileImage || null,
       desiredPosition: candidateProfile.desiredPosition || null,
       bio: candidateProfile.bio || null,
-      major: candidateProfile.major || null,
-      studyYear: candidateProfile.studyYear || null,
-      university: candidateProfile.University ? {
-        name: candidateProfile.University.name,
-        thname: candidateProfile.University.thname,
-        province: candidateProfile.University.province,
-      } : null,
       education: candidateProfile.CandidateUniversity.map((cu) => ({
         id: cu.id,
         university: cu.University.name,
@@ -204,7 +189,6 @@ candidatesRouter.get("/", requireAuth, requireRole("COMPANY"), async (req, res) 
       ? {
           OR: [
             { fullName: { contains: q, mode: "insensitive" } },
-            { major: { contains: q, mode: "insensitive" } },
             { desiredPosition: { contains: q, mode: "insensitive" } },
             { User: { email: { contains: q, mode: "insensitive" } } },
           ],
@@ -212,7 +196,6 @@ candidatesRouter.get("/", requireAuth, requireRole("COMPANY"), async (req, res) 
       : undefined,
     include: {
       User: { select: { email: true } },
-      University: { select: { name: true, province: true } },
       CandidateUniversity: {
         orderBy: [{ isCurrent: "desc" }, { endDate: "desc" }],
         take: 1,
@@ -225,25 +208,37 @@ candidatesRouter.get("/", requireAuth, requireRole("COMPANY"), async (req, res) 
 
   const items = candidates.map((c: typeof candidates[0]) => {
     const name = c.fullName ?? c.User.email;
-    const uni =
-      c.CandidateUniversity[0]?.University?.name ??
-      c.University?.name ??
-      null;
-    const location =
-      c.CandidateUniversity[0]?.University?.province ??
-      c.University?.province ??
-      null;
+
+    // Pick the primary education record (current one or latest by endDate)
+    const primaryEdu = c.CandidateUniversity[0] ?? null;
+
+    const uni = primaryEdu?.University?.name ?? null;
+
+    const location = primaryEdu?.University?.province ?? null;
+
     const skills = c.UserSkill.map((us: typeof c.UserSkill[0]) => us.Skills.name);
-    const endDate = c.CandidateUniversity[0]?.endDate ?? null;
+
+    const endDate = primaryEdu?.endDate ?? null;
+
+    // If endDate is null but the record is marked as current, show "Present"
+    const graduationDate = endDate
+      ? formatGradDate(endDate)
+      : primaryEdu?.isCurrent
+      ? "Present"
+      : null;
+
+    // Major: derive ONLY from CandidateUniversity.degreeName.
+    // CandidateProfile should not be used as a source of education details.
+    const major = primaryEdu?.degreeName ?? null;
 
     return {
       id: c.id,
       name,
       role: c.desiredPosition ?? "Intern",
       university: uni ?? "Unknown University",
-      major: c.major ?? null,
+      major,
       location: location ?? null,
-      graduationDate: endDate ? formatGradDate(endDate) : null,
+      graduationDate,
       skills,
       initials: initialsFromName(name),
       email: c.User.email,
@@ -266,13 +261,6 @@ candidatesRouter.get("/:id", requireAuth, requireRole("COMPANY"), async (req, re
           select: { 
             email: true,
             createdAt: true,
-          } 
-        },
-        University: { 
-          select: { 
-            name: true,
-            thname: true,
-            province: true,
           } 
         },
         CandidateUniversity: {
@@ -330,18 +318,10 @@ candidatesRouter.get("/:id", requireAuth, requireRole("COMPANY"), async (req, re
       id: candidateProfile.id,
       userId: candidateProfile.userId,
       fullName: candidateProfile.fullName || null,
-      studentCode: candidateProfile.studentCode || null,
       email: candidateProfile.contactEmail || candidateProfile.User.email,
       phoneNumber: candidateProfile.phoneNumber || null,
       desiredPosition: candidateProfile.desiredPosition || null,
       bio: candidateProfile.bio || null,
-      major: candidateProfile.major || null,
-      studyYear: candidateProfile.studyYear || null,
-      university: candidateProfile.University ? {
-        name: candidateProfile.University.name,
-        thname: candidateProfile.University.thname,
-        province: candidateProfile.University.province,
-      } : null,
       education: candidateProfile.CandidateUniversity.map((cu) => ({
         id: cu.id,
         university: cu.University.name,

@@ -156,6 +156,8 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
     // Accepts: { university, degree/fieldOfStudy, startYear, endYear }
     // If endYear is empty/null → treat as current (isCurrent = true, endDate = null)
     if (Array.isArray(education) && education.length > 0) {
+      console.log("Processing education data:", JSON.stringify(education, null, 2));
+      
       // Delete existing education entries
       await prisma.candidateUniversity.deleteMany({
         where: { candidateId: candidateProfile.id },
@@ -163,47 +165,62 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
 
       // Create new education entries
       for (const edu of education) {
-        if (edu.university && (edu.degree || edu.fieldOfStudy)) {
+        // Support both 'university' and 'institution' field names from frontend
+        const universityName = edu.university || edu.institution;
+        
+        if (universityName && (edu.degree || edu.fieldOfStudy)) {
           // Find university by exact name match (since we're using dropdown now)
           let university = await prisma.university.findFirst({
-            where: { name: { equals: edu.university, mode: "insensitive" } },
+            where: { name: { equals: universityName, mode: "insensitive" } },
           });
 
           if (!university) {
             // Fallback: try contains match for backward compatibility
             university = await prisma.university.findFirst({
-              where: { name: { contains: edu.university, mode: "insensitive" } },
+              where: { name: { contains: universityName, mode: "insensitive" } },
             });
           }
 
           if (!university) {
+            console.warn(`University not found: ${universityName}, creating new entry`);
             // Only create if not found - this shouldn't happen with dropdown, but keep for safety
             university = await prisma.university.create({
               data: {
                 id: randomUUID(),
-                name: edu.university,
+                name: universityName,
               },
             });
           }
 
-          // Handle endYear: if empty/null/undefined → current education
-          const hasEndYear = edu.endYear && edu.endYear.trim() !== "";
+          // Handle endYear: if empty/null/undefined/empty string → current education
+          const endYearStr = edu.endYear ? String(edu.endYear).trim() : "";
+          const hasEndYear = endYearStr !== "" && endYearStr !== "null" && endYearStr !== "undefined";
           const isCurrent = !hasEndYear;
 
-          await prisma.candidateUniversity.create({
+          const degreeName = (edu.degree && edu.degree.trim()) ? edu.degree : (edu.fieldOfStudy || null);
+
+          // NOTE: Do NOT write education details back into CandidateProfile.
+          // CandidateProfile should not store education details; they live in CandidateUniversity.
+          const educationRecord = await prisma.candidateUniversity.create({
             data: {
               id: randomUUID(),
               candidateId: candidateProfile.id,
               universityId: university.id,
               educationLevel: "BACHELOR", // Default, you might want to map this
-              degreeName: (edu.degree && edu.degree.trim()) ? edu.degree : (edu.fieldOfStudy || null),
+              degreeName: degreeName,
               startDate: edu.startYear ? new Date(`${edu.startYear}-01-01`) : null,
               endDate: hasEndYear ? new Date(`${edu.endYear}-12-31`) : null,
               isCurrent: isCurrent,
-              gpa: edu.gpa ? parseFloat(edu.gpa) : null,
-              // Note: coursework and achievements are not stored in CandidateUniversity schema
-              // TODO: Add fields to CandidateUniversity model if needed
+              gpa: edu.gpa ? parseFloat(String(edu.gpa)) : null,
             },
+          });
+          
+          console.log(`Created education record: ${educationRecord.id} for university: ${university.name}`);
+        } else {
+          console.warn("Skipping education entry - missing required fields:", {
+            university: universityName,
+            degree: edu.degree,
+            fieldOfStudy: edu.fieldOfStudy,
           });
         }
       }

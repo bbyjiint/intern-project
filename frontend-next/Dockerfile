@@ -5,7 +5,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Install dependencies for Next.js
-RUN apk add --no-cache libc6-compat
+# Note: libc6-compat removed as it's not available on ARM64 and not required for Next.js 14
 
 # Copy package files first (for better Docker layer caching)
 COPY package*.json ./

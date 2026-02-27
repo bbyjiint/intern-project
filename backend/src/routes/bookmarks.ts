@@ -24,7 +24,6 @@ bookmarksRouter.get("/", requireAuth, requireRole("COMPANY"), async (req: Authed
         Candidate: {
           include: {
             User: { select: { email: true } },
-            University: { select: { name: true } },
             CandidateUniversity: {
               orderBy: [{ isCurrent: "desc" }, { endDate: "desc" }],
               take: 1,
@@ -53,20 +52,25 @@ bookmarksRouter.get("/", requireAuth, requireRole("COMPANY"), async (req: Authed
     const candidates = bookmarks.map((bookmark) => {
       const c = bookmark.Candidate;
       const name = c.fullName ?? c.User.email;
-      const uni =
-        c.CandidateUniversity[0]?.University?.name ??
-        c.University?.name ??
-        "Unknown University";
+      
+      // Get primary education record (current or latest)
+      const primaryEdu = c.CandidateUniversity[0] ?? null;
+      
+      const uni = primaryEdu?.University?.name ?? "Unknown University";
       const skills = c.UserSkill.map((us) => us.Skills.name);
-      const endDate = c.CandidateUniversity[0]?.endDate ?? null;
+      const endDate = primaryEdu?.endDate ?? null;
+
+      // Major: derive ONLY from CandidateUniversity.degreeName.
+      // CandidateProfile should not be used as a source of education details.
+      const major = primaryEdu?.degreeName ?? null;
 
       return {
         id: c.id,
         name,
         role: c.desiredPosition ?? "Intern",
         university: uni,
-        major: c.major ?? "N/A",
-        graduationDate: formatGradDate(endDate),
+        major: major ?? "N/A",
+        graduationDate: endDate ? formatGradDate(endDate) : (primaryEdu?.isCurrent ? "Present" : null),
         skills,
         initials: initialsFromName(name),
         email: c.User.email,

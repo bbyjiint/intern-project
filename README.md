@@ -40,7 +40,7 @@
 
    (Optional) สร้างไฟล์ `frontend-next/.env.local`:
    ```env
-   NEXT_PUBLIC_API_BASE_URL=http://localhost:5000
+   NEXT_PUBLIC_API_BASE_URL=http://localhost:5001
    ```
 
 3. **รันด้วย Docker**
@@ -52,15 +52,28 @@
    docker compose up -d
    ```
 
-4. **Generate Prisma Client** (ครั้งแรกเท่านั้น)
+4. **Setup Database** (ครั้งแรกเท่านั้น)
+   
+   ดูรายละเอียดที่ [DATABASE_SETUP.md](./DATABASE_SETUP.md) หรือรัน:
+   ```bash
+   # สร้าง schema
+   docker compose exec backend npx prisma db push --config=./prisma.config.ts
+   
+   # Seed ข้อมูลพื้นฐาน (provinces, universities, skills)
+   docker compose exec backend npm run seed:users
+   ```
+   
+   **หมายเหตุ:** สำหรับข้อมูล production ให้ import จาก Neon cloud database (ดู [DATABASE_SETUP.md](./DATABASE_SETUP.md))
+
+5. **Generate Prisma Client** (ครั้งแรกเท่านั้น)
    ```bash
    docker compose exec backend npm run prisma:generate
    ```
 
-5. **เข้าถึง Services**
+6. **เข้าถึง Services**
    - **Frontend**: http://localhost:3000
-   - **Backend API**: http://localhost:5000
-   - **API Health Check**: http://localhost:5000/api/health
+   - **Backend API**: http://localhost:5001
+   - **API Health Check**: http://localhost:5001/api/health
    - **PostgreSQL**: localhost:5433
 
 ✅ **เสร็จแล้ว!** ทุกอย่างควรทำงานแล้ว
@@ -254,7 +267,7 @@ docker compose exec postgres psql -U postgres -d intern_website
 2. **Setup environment** (optional)
    ```bash
    # สร้างไฟล์ frontend-next/.env.local
-   NEXT_PUBLIC_API_BASE_URL=http://localhost:5000
+   NEXT_PUBLIC_API_BASE_URL=http://localhost:5001
    ```
 
 3. **Start frontend**
@@ -279,7 +292,7 @@ docker compose exec postgres psql -U postgres -d intern_website
 - `docker compose up` - Start ทุก services ด้วย Docker
 
 ### Backend (`backend/`)
-- `npm run dev` - Development server (port 5000)
+- `npm run dev` - Development server (port 5001)
 - `npm run build` - Build TypeScript
 - `npm run start` - Production server
 - `npm run prisma:generate` - Generate Prisma Client
@@ -380,7 +393,7 @@ docker compose restart postgres
 CORS_ORIGIN=http://localhost:3000
 
 # Check if backend is running
-curl http://localhost:5000/api/health
+curl http://localhost:5001/api/health
 ```
 
 ---

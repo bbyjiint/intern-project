@@ -72,7 +72,6 @@ model University {
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
   thname              String?               @unique
-  CandidateProfile    CandidateProfile[]
   CandidateUniversity CandidateUniversity[]
   UniversityFaculty   UniversityFaculty[]
 
@@ -173,20 +172,15 @@ model CandidateUniversity {
 model CandidateProfile {
   id                   String                 @id @db.Uuid
   userId               String                 @unique @db.Uuid
-  studentCode          String?                @unique
   fullName             String?
   contactEmail         String?                @db.VarChar(255)
   phoneNumber          String?                @db.VarChar(32)
   desiredPosition      String?
   bio                  String?
-  major                String?
-  studyYear            Int?
   profileImage         String?
   createdAt            DateTime               @default(now())
   updatedAt            DateTime
-  universityId         String?                @db.Uuid
   CandidateContactFile CandidateContactFile[]
-  University           University?            @relation(fields: [universityId], references: [id])
   User                 User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   CandidateUniversity  CandidateUniversity[]
   CertificateFile      CertificateFile[]
@@ -198,8 +192,6 @@ model CandidateProfile {
   JobApplications      JobApplication[]
   JobBookmarks         JobBookmark[]
   JobIgnores           JobIgnore[]
-
-  @@index([universityId])
 }
 
 model CompanyProfile {
