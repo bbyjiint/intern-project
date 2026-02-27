@@ -1,10 +1,26 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import SearchableDropdown from '@/components/SearchableDropdown'
+import { apiFetch } from '@/lib/api'
 
 interface Step1JobDetailsProps {
   data: any
   onUpdate: (data: any) => void
+}
+
+interface Province {
+  id: string
+  name: string
+  thname: string | null
+  code: string | null
+}
+
+interface District {
+  id: string
+  name: string
+  thname: string | null
+  code: string | null
 }
 
 export default function Step1JobDetails({ data, onUpdate }: Step1JobDetailsProps) {
@@ -18,14 +34,124 @@ export default function Step1JobDetails({ data, onUpdate }: Step1JobDetailsProps
     allowancePeriod: 'Month',
     noAllowance: false,
     jobPostStatus: 'urgent',
+    provinceId: '',
+    districtId: '',
   })
+
+  const [provinces, setProvinces] = useState<Province[]>([])
+  const [districts, setDistricts] = useState<District[]>([])
+  const [provincesLoading, setProvincesLoading] = useState(false)
+  const [districtsLoading, setDistrictsLoading] = useState(false)
+
+  // Sync localData when data prop changes (e.g., when editing existing job post)
+  useEffect(() => {
+    if (data) {
+      setLocalData((prev: any) => ({
+        ...prev,
+        ...data,
+        provinceId: data.provinceId || prev.provinceId || '',
+        districtId: data.districtId || prev.districtId || '',
+      }))
+    }
+  }, [data?.jobTitle, data?.locationProvince, data?.locationDistrict, data?.jobType, data?.workplaceType, data?.allowance, data?.allowancePeriod, data?.noAllowance, data?.jobPostStatus])
+
+  // Load provinces on mount
+  useEffect(() => {
+    const loadProvinces = async () => {
+      setProvincesLoading(true)
+      try {
+        const response = await apiFetch<{ provinces: Province[] }>('/api/addresses/provinces')
+        setProvinces(response.provinces || [])
+      } catch (err) {
+        console.error('Failed to load provinces:', err)
+        setProvinces([])
+      } finally {
+        setProvincesLoading(false)
+      }
+    }
+    loadProvinces()
+  }, [])
+
+  // Auto-match province ID from province name when provinces are loaded
+  useEffect(() => {
+    if (provinces.length > 0 && localData.locationProvince && !localData.provinceId) {
+      const matchedProvince = provinces.find(
+        (p) => p.name.toLowerCase() === localData.locationProvince.toLowerCase() ||
+               p.thname?.toLowerCase() === localData.locationProvince.toLowerCase()
+      )
+      if (matchedProvince) {
+        setLocalData((prev: any) => ({ ...prev, provinceId: matchedProvince.id }))
+      }
+    }
+  }, [provinces, localData.locationProvince, localData.provinceId])
+
+  // Load districts when province is selected
+  useEffect(() => {
+    if (localData.provinceId) {
+      const loadDistricts = async () => {
+        setDistrictsLoading(true)
+        try {
+          const response = await apiFetch<{ districts: District[] }>(
+            `/api/addresses/districts?provinceId=${localData.provinceId}`
+          )
+          setDistricts(response.districts || [])
+        } catch (err) {
+          console.error('Failed to load districts:', err)
+          setDistricts([])
+        } finally {
+          setDistrictsLoading(false)
+        }
+      }
+      loadDistricts()
+    } else {
+      setDistricts([])
+      // Clear district selection when province is cleared
+      if (localData.districtId || localData.locationDistrict) {
+        setLocalData((prev: any) => ({ ...prev, districtId: '', locationDistrict: '' }))
+      }
+    }
+  }, [localData.provinceId])
+
+  // Auto-match district ID from district name when districts are loaded
+  useEffect(() => {
+    if (districts.length > 0 && localData.locationDistrict && !localData.districtId) {
+      const matchedDistrict = districts.find(
+        (d) => d.name.toLowerCase() === localData.locationDistrict.toLowerCase() ||
+               d.thname?.toLowerCase() === localData.locationDistrict.toLowerCase()
+      )
+      if (matchedDistrict) {
+        setLocalData((prev: any) => ({ ...prev, districtId: matchedDistrict.id }))
+      }
+    }
+  }, [districts, localData.locationDistrict, localData.districtId])
 
   useEffect(() => {
     onUpdate(localData)
   }, [localData, onUpdate])
 
   const handleChange = (field: string, value: any) => {
-    setLocalData((prev: any) => ({ ...prev, [field]: value }))
+    setLocalData((prev: any) => {
+      const updated = { ...prev, [field]: value }
+      
+      // When province is selected, find the province name
+      if (field === 'provinceId') {
+        const selectedProvince = provinces.find((p) => p.id === value)
+        updated.locationProvince = selectedProvince?.name || ''
+        // Clear district when province changes
+        if (prev.provinceId !== value) {
+          updated.districtId = ''
+          updated.locationDistrict = ''
+        }
+      }
+      
+      // When district is selected, find the district name
+      if (field === 'districtId') {
+        const selectedDistrict = districts.find((d) => d.id === value)
+        updated.locationDistrict = selectedDistrict?.name || ''
+      }
+      
+      return updated
+    })
   }
 
   return (
@@ -54,20 +180,52 @@ export default function Step1JobDetails({ data, onUpdate }: Step1JobDetailsProps
           Location
         </label>
         <div className="flex gap-4">
-          <input
-            type="text"
-            value={localData.locationProvince || ''}
-            onChange={(e) => handleChange('locationProvince', e.target.value)}
-            placeholder="Bangkok"
-            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-          <input
-            type="text"
-            value={localData.locationDistrict || ''}
-            onChange={(e) => handleChange('locationDistrict', e.target.value)}
-            placeholder="Silom"
-            className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
+          {/* Province */}
+          <div className="flex-1">
+            {provincesLoading ? (
+              <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 flex items-center justify-center">
+                <span className="text-gray-500 text-sm">Loading provinces...</span>
+              </div>
+            ) : (
+              <SearchableDropdown
+                options={provinces.map((prov) => ({
+                  value: prov.id,
+                  label: prov.thname ? `${prov.name} (${prov.thname})` : prov.name,
+                  code: prov.code,
+                }))}
+                value={localData.provinceId || ''}
+                onChange={(value) => handleChange('provinceId', value)}
+                placeholder="Search province..."
+                className="w-full"
+                allOptionLabel="Select Province"
+              />
+            )}
+          </div>
+          {/* District */}
+          <div className="flex-1">
+            {!localData.provinceId ? (
+              <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 flex items-center justify-center">
+                <span className="text-gray-500 text-sm">Select province first</span>
+              </div>
+            ) : districtsLoading ? (
+              <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 flex items-center justify-center">
+                <span className="text-gray-500 text-sm">Loading districts...</span>
+              </div>
+            ) : (
+              <SearchableDropdown
+                options={districts.map((dist) => ({
+                  value: dist.id,
+                  label: dist.thname ? `${dist.name} (${dist.thname})` : dist.name,
+                  code: dist.code,
+                }))}
+                value={localData.districtId || ''}
+                onChange={(value) => handleChange('districtId', value)}
+                placeholder="Search district..."
+                className="w-full"
+                allOptionLabel="Select District"
+              />
+            )}
+          </div>
         </div>
       </div>
 
