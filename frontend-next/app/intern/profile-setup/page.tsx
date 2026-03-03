@@ -168,8 +168,11 @@ export default function ProfileSetupPage() {
           email: formData.email,
           phoneNumber: formData.phoneNumber,
           aboutYou: formData.aboutYou,
+          description: formData.aboutYou, // Also send as description field
           profileImage: formData.photo || formData.profileImage || null,
           resumeUrl: formData.resumeUrl || null,
+          positionsOfInterest: formData.positionsOfInterest || [],
+          preferredLocations: formData.preferredLocations || [],
           education: formData.education,
           projects: formData.projects,
           experience: formData.experience,
@@ -207,8 +210,11 @@ export default function ProfileSetupPage() {
           email: formData.email,
           phoneNumber: formData.phoneNumber,
           aboutYou: formData.aboutYou,
+          description: formData.aboutYou, // Also send as description field
           profileImage: formData.photo || formData.profileImage || null,
           resumeUrl: formData.resumeUrl || null,
+          positionsOfInterest: formData.positionsOfInterest || [],
+          preferredLocations: formData.preferredLocations || [],
           education: formData.education,
           projects: formData.projects,
           experience: formData.experience,

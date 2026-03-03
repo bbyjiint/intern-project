@@ -26,33 +26,61 @@ export default function Step1GeneralInfo({ data, onUpdate, onSkip }: Step1Genera
     internshipPeriod: data.internshipPeriod || '',
   })
 
-  // Dropdown options - will be loaded from database later
+  // Dropdown options - will be loaded from database
   const [positions, setPositions] = useState<string[]>([])
-  const [locations, setLocations] = useState<string[]>([])
+  const [provinces, setProvinces] = useState<Array<{ id: string; name: string; thname: string | null }>>([])
+  const [selectedProvinceIds, setSelectedProvinceIds] = useState<string[]>([])
 
-  // Load dropdown options from database (placeholder for future API integration)
+  // Load dropdown options from database
   useEffect(() => {
     const loadDropdownOptions = async () => {
       try {
-        // TODO: Replace with actual API endpoints when available
-        // const positionsData = await apiFetch<{ positions: string[] }>('/api/positions')
-        // const locationsData = await apiFetch<{ locations: string[] }>('/api/locations')
-        // setPositions(positionsData.positions)
-        // setLocations(locationsData.locations)
-
-        // Temporary mock data - will be replaced with database data
+        // Load positions (static list for now)
         setPositions(['HR', 'Accounting', 'Marketing', 'IT', 'Finance', 'Sales', 'Operations', 'Engineering'])
-        setLocations(['Bangkok', 'Chiang Mai', 'Phuket', 'Pattaya', 'Hua Hin', 'Krabi', 'Ayutthaya', 'Chonburi'])
+
+        // Load provinces from API
+        const provincesData = await apiFetch<{ provinces: Array<{ id: string; name: string; thname: string | null }> }>('/api/addresses/provinces')
+        setProvinces(provincesData.provinces || [])
+
+        // If preferredLocations are province IDs, set them
+        if (Array.isArray(formData.preferredLocations) && formData.preferredLocations.length > 0) {
+          // Check if they're IDs (UUIDs) or names
+          const firstLocation = formData.preferredLocations[0]
+          if (typeof firstLocation === 'string' && firstLocation.length === 36 && firstLocation.includes('-')) {
+            // Likely UUIDs
+            setSelectedProvinceIds(formData.preferredLocations as string[])
+          } else {
+            // Likely names, try to match to IDs
+            const matchedIds = formData.preferredLocations
+              .map((name) => {
+                const province = provincesData.provinces?.find(
+                  (p) => p.name === name || p.thname === name
+                )
+                return province?.id
+              })
+              .filter((id): id is string => !!id)
+            setSelectedProvinceIds(matchedIds)
+          }
+        }
       } catch (error) {
         console.error('Failed to load dropdown options:', error)
         // Fallback to mock data on error
         setPositions(['HR', 'Accounting', 'Marketing', 'IT', 'Finance'])
-        setLocations(['Bangkok', 'Chiang Mai', 'Phuket'])
       }
     }
 
     loadDropdownOptions()
   }, [])
+
+  // Update selectedProvinceIds when formData.preferredLocations changes
+  useEffect(() => {
+    if (Array.isArray(formData.preferredLocations)) {
+      const firstLocation = formData.preferredLocations[0]
+      if (typeof firstLocation === 'string' && firstLocation.length === 36 && firstLocation.includes('-')) {
+        setSelectedProvinceIds(formData.preferredLocations as string[])
+      }
+    }
+  }, [formData.preferredLocations])
 
   // Sync formData when data prop changes (e.g., when profile data is loaded from API)
   useEffect(() => {
@@ -346,10 +374,14 @@ export default function Step1GeneralInfo({ data, onUpdate, onSkip }: Step1Genera
               Preferred Location(s)
             </label>
             <MultiSelectDropdown
-              options={locations.length > 0 ? locations : ['Bangkok', 'Chiang Mai', 'Phuket']}
-              value={formData.preferredLocations}
+              options={provinces.map((p) => ({
+                value: p.id,
+                label: p.thname ? `${p.name} (${p.thname})` : p.name,
+              }))}
+              value={selectedProvinceIds}
               onChange={(selected) => {
                 if (selected.length <= 3) {
+                  setSelectedProvinceIds(selected)
                   handleChange('preferredLocations', selected)
                 }
               }}

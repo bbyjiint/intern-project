@@ -1007,17 +1007,33 @@ candidatesRouter.post("/resumes", requireAuth, requireRole("CANDIDATE"), (req: A
       }
     }
 
-    const contactFile = await prisma.candidateContactFile.create({
+    // Check if this should be the primary resume (if no other resumes exist)
+    const existingResumes = await prisma.candidateResume.findMany({
+      where: { candidateId },
+    });
+    const isPrimary = existingResumes.length === 0;
+
+    // If this is set as primary, unset other primary resumes
+    if (isPrimary) {
+      await prisma.candidateResume.updateMany({
+        where: { candidateId, isPrimary: true },
+        data: { isPrimary: false },
+      });
+    }
+
+    const resume = await prisma.candidateResume.create({
       data: {
         id: randomUUID(),
         candidateId,
         name: fileName,
         url: uploadResult.url,
-        type: fileType,
+        fileSize: file.size || null,
+        fileType: file.mimetype || null,
+        isPrimary,
       },
     });
 
-    return res.status(201).json({ resume: contactFile });
+    return res.status(201).json({ resume });
   } catch (e: any) {
     // Clean up uploaded file if database operation fails
     if (req.file?.path && fs.existsSync(req.file.path)) {
@@ -1045,7 +1061,7 @@ candidatesRouter.delete("/resumes/:id", requireAuth, requireRole("CANDIDATE"), a
     const candidateId = await getCandidateIdForUser(userId);
     
     // Get resume with file URL
-    const existingResume = await prisma.candidateContactFile.findUnique({
+    const existingResume = await prisma.candidateResume.findUnique({
       where: { id: resumeId },
     });
 
@@ -1070,7 +1086,7 @@ candidatesRouter.delete("/resumes/:id", requireAuth, requireRole("CANDIDATE"), a
     }
 
     // Delete from database
-    await prisma.candidateContactFile.delete({
+    await prisma.candidateResume.delete({
       where: { id: resumeId },
     });
 
