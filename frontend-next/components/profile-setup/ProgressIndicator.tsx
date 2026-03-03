@@ -7,8 +7,9 @@ export default function ProgressIndicator({ currentStep, totalSteps }: ProgressI
   const steps = [
     { number: 1, label: 'Upload Resume' },
     { number: 2, label: 'General Information' },
-    { number: 3, label: 'Education & Experience' },
-    { number: 4, label: 'Projects & Skills' },
+    { number: 3, label: 'Education' },
+    { number: 4, label: 'Projects' },
+    { number: 5, label: 'Skills' },
   ]
 
   return (
@@ -23,7 +24,7 @@ export default function ProgressIndicator({ currentStep, totalSteps }: ProgressI
             {/* Step Circle */}
             <div className="flex flex-col items-center">
               <div
-                className={`w-12 h-12 rounded-full flex items-center justify-center font-semibold text-base transition-colors border-2 ${
+                className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold text-sm transition-colors border-2 ${
                   isActive || isCompleted ? 'text-white border-white' : 'text-gray-400 border-gray-300'
                 }`}
                 style={{
@@ -35,7 +36,7 @@ export default function ProgressIndicator({ currentStep, totalSteps }: ProgressI
                 }}
               >
                 {isCompleted ? (
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 ) : (
@@ -43,15 +44,15 @@ export default function ProgressIndicator({ currentStep, totalSteps }: ProgressI
                 )}
               </div>
               <span
-                className={`mt-1 font-medium leading-tight whitespace-nowrap ${
-                  isActive ? 'text-gray-900' : 'text-gray-400'
+                className={`mt-1.5 font-medium leading-tight whitespace-nowrap ${
+                  isActive || isCompleted ? 'text-gray-900' : 'text-gray-400'
                 }`}
                 style={{
-                  fontSize: '7px',
+                  fontSize: '10px',
                   whiteSpace: 'nowrap',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
-                  maxWidth: '90px',
+                  maxWidth: '100px',
                   display: 'block',
                   lineHeight: '1.2'
                 }}
@@ -63,12 +64,13 @@ export default function ProgressIndicator({ currentStep, totalSteps }: ProgressI
             {/* Connector Line */}
             {!isLast && (
               <div
-                className={`h-1 mx-8 transition-colors rounded-full ${
-                  isCompleted ? 'bg-blue-500' : 'bg-gray-200'
-                }`}
+                className="mx-4"
                 style={{
-                  backgroundColor: isCompleted ? '#0273B1' : '#E5E7EB',
-                  width: '120px'
+                  height: '2px',
+                  width: '60px',
+                  background: isCompleted
+                    ? 'repeating-linear-gradient(to right, #0273B1 0, #0273B1 8px, transparent 8px, transparent 16px)'
+                    : 'repeating-linear-gradient(to right, #E5E7EB 0, #E5E7EB 8px, transparent 8px, transparent 16px)'
                 }}
               />
             )}

@@ -6,14 +6,16 @@ import { apiFetch } from '@/lib/api'
 interface Step0UploadResumeProps {
   data: any
   onUpdate: (data: any) => void
+  onSkip?: () => void
 }
 
-export default function Step0UploadResume({ data, onUpdate }: Step0UploadResumeProps) {
+export default function Step0UploadResume({ data, onUpdate, onSkip }: Step0UploadResumeProps) {
   const [resumeFile, setResumeFile] = useState<File | null>(null)
   const [resumeUrl, setResumeUrl] = useState<string | null>(data.resumeUrl || null)
   const [isDragging, setIsDragging] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [useAI, setUseAI] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dropZoneRef = useRef<HTMLDivElement>(null)
 
@@ -121,12 +123,36 @@ export default function Step0UploadResume({ data, onUpdate }: Step0UploadResumeP
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-2" style={{ color: '#1C2D4F', fontWeight: 700 }}>
-        Upload Your Resume
-      </h2>
-      <p className="text-sm mb-6" style={{ color: '#6B7280' }}>
-        Add your resume to provide recruiters with an overview of your skills and experience.
-      </p>
+      {/* Header with Skip Button */}
+      <div className="flex justify-between items-start mb-4">
+        <div>
+          <h2 className="text-2xl font-bold mb-2" style={{ color: '#1C2D4F', fontWeight: 700 }}>
+            Upload Your Resume (Optional)
+          </h2>
+          <p className="text-sm" style={{ color: '#A9B4CD' }}>
+            This step is optional - you can upload your resume at any time.
+          </p>
+        </div>
+        {onSkip && (
+          <button
+            onClick={onSkip}
+            className="flex items-center px-4 py-2 rounded-lg font-medium text-sm transition-colors"
+            style={{
+              border: '2px solid #0273B1',
+              color: '#0273B1',
+              backgroundColor: 'white'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#F0F4F8'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'white'
+            }}
+          >
+            Skip &gt;
+          </button>
+        )}
+      </div>
 
       {error && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -169,16 +195,17 @@ export default function Step0UploadResume({ data, onUpdate }: Step0UploadResumeP
           }`}
         >
           <div className="flex flex-col items-center">
+            {/* Upward Arrow Icon */}
             <svg
-              className="w-16 h-16 mb-4"
+              className="w-12 h-12 mb-4"
               style={{ color: '#0273B1' }}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
             </svg>
-            <p className="text-base mb-4" style={{ color: '#374151' }}>
+            <p className="text-sm font-medium mb-4" style={{ color: '#1C2D4F' }}>
               Drag and drop your resume here, or
             </p>
             <button
@@ -199,12 +226,27 @@ export default function Step0UploadResume({ data, onUpdate }: Step0UploadResumeP
             >
               {isUploading ? 'Uploading...' : 'Select File'}
             </button>
-            <p className="text-xs mt-4" style={{ color: '#9CA3AF' }}>
+            <p className="text-xs mt-2" style={{ color: '#A9B4CD' }}>
               PDF or DOCX format. Max size: 5 MB
             </p>
           </div>
         </div>
       )}
+
+      {/* AI Analysis Checkbox */}
+      <div className="flex items-center mt-6">
+        <input
+          type="checkbox"
+          id="use-ai"
+          checked={useAI}
+          onChange={(e) => setUseAI(e.target.checked)}
+          className="w-4 h-4 rounded border-gray-300"
+          style={{ accentColor: '#0273B1' }}
+        />
+        <label htmlFor="use-ai" className="ml-2 text-sm" style={{ color: '#1C2D4F' }}>
+          Use AI to analyze my resume and autofill my profile
+        </label>
+      </div>
 
       <input
         ref={fileInputRef}
