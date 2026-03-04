@@ -119,6 +119,7 @@ docker compose restart backend
    - **Backend API**: http://localhost:5001
    - **API Health Check**: http://localhost:5001/api/health
    - **PostgreSQL**: localhost:5433
+   - **Prisma Studio**: http://localhost:5555 (รัน `./open-prisma-studio.sh` เพื่อเปิด)
 
 ✅ **เสร็จแล้ว!** ทุกอย่างควรทำงานแล้ว
 
