@@ -8,9 +8,10 @@ import { useProfile, ProfileData } from '@/hooks/useProfile'
 import ProfileHeader from '@/components/profile/ProfileHeader'
 import PersonalInfoCard from '@/components/profile/PersonalInfoCard'
 import EducationSection from '@/components/profile/EducationSection'
-import ExperienceSection from '@/components/profile/ExperienceSection'
+import ResumeSection from '@/components/profile/ResumeSection'
 import ProjectsSection from '@/components/profile/ProjectsSection'
 import SkillsSection from '@/components/profile/SkillsSection'
+import CertificatesSection from '@/components/profile/CertificatesSection'
 
 export default function InternProfilePage() {
   const router = useRouter()
@@ -346,8 +347,8 @@ export default function InternProfilePage() {
                 onRefresh={refetch}
               />
 
-              {/* Experience */}
-              <ExperienceSection
+              {/* Resume */}
+              <ResumeSection
                 experience={profileData.experience || []}
                 onAdd={() => {}}
                 onEdit={(id) => {}}
@@ -357,6 +358,13 @@ export default function InternProfilePage() {
               {/* Projects */}
               <ProjectsSection
                 projects={profileData.projects || []}
+                onAdd={() => {}}
+                onEdit={(id) => {}}
+              />
+
+              {/* Certificates */}
+              <CertificatesSection
+                certificates={profileData.certificates || []}
                 onAdd={() => {}}
                 onEdit={(id) => {}}
               />
