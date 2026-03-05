@@ -1,64 +1,73 @@
 'use client'
 
-import { ResumeFile } from '@/hooks/useProfile'
+import { useState } from 'react'
+import ResumeModal from './ResumeModal' // import ไฟล์ที่สร้างด้านบน
 
 interface ResumeSectionProps {
-  resume: ResumeFile | undefined
-  onEdit: () => void
+  resumeData?: {
+    fileName: string;
+    lastUpdated: string;
+  };
+  onFileChange?: (file: File) => void;
 }
 
-export default function ResumeSection({ resume, onEdit }: ResumeSectionProps) {
+export default function ResumeSection({ resumeData, onFileChange }: ResumeSectionProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
+  const handleUpload = (file: File) => {
+    if (onFileChange) onFileChange(file)
+    // ตรงนี้สามารถเพิ่ม logic อัปโหลดไฟล์ไปที่ Server ได้
+  }
+
   return (
-    <div className="bg-white rounded-lg shadow-md p-6 mb-6 border border-gray-200">
-      <div className="flex items-center justify-between mb-4">
+    <div className="mb-6 rounded-lg border border-gray-100 bg-white p-6 shadow-sm">
+      <div className="mb-4 flex items-center space-x-2">
+        <div className="rounded-md bg-blue-100 p-1.5">
+          <svg className="h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
+          </svg>
+        </div>
         <h2 className="text-xl font-bold" style={{ color: '#1C2D4F' }}>
-          Resume
+          Resume File
         </h2>
+      </div>
+
+      <div className="flex items-center justify-between rounded-xl border border-gray-100 bg-gray-50/50 p-5">
+        <div className="flex items-center space-x-4">
+          <div className="relative flex flex-col items-center">
+            <svg className="h-14 w-12 text-blue-100" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z" />
+            </svg>
+            <div className="absolute bottom-1 rounded-sm bg-blue-600 px-1 text-[8px] font-bold text-white">
+              PDF
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-md font-bold text-gray-800">
+              {resumeData?.fileName || 'Simple Resume.pdf'}
+            </h3>
+            <p className="mt-1 text-xs text-gray-400">
+              Upload lastest: {resumeData?.lastUpdated || '26/2/2026'}
+            </p>
+          </div>
+        </div>
+
         <button
-          onClick={onEdit}
-          className="px-4 py-2 rounded-lg font-semibold text-sm border-2 transition-colors"
-          style={{ 
-            borderColor: '#0273B1',
-            color: '#0273B1',
-            backgroundColor: 'white'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#F0F4F8'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'white'
-          }}
+          onClick={() => setIsModalOpen(true)}
+          className="rounded-lg border-2 border-blue-500 bg-white px-5 py-2 text-sm font-bold text-blue-500 transition-all hover:bg-blue-50"
         >
-          Edit
+          Change File
         </button>
       </div>
 
-      {!resume || !resume.url ? (
-        <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-          <svg className="w-12 h-12 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          <p className="text-gray-400 italic">No resume uploaded.</p>
-        </div>
-      ) : (
-        <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-          <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
-          <div className="flex-1">
-            <p className="font-medium text-gray-900">{resume.name || 'Resume.pdf'}</p>
-            <a
-              href={resume.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-sm"
-              style={{ color: '#0273B1' }}
-            >
-              View / Download
-            </a>
-          </div>
-        </div>
-      )}
+      {/* เรียกใช้งาน Pop-up */}
+      <ResumeModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onUpload={handleUpload}
+        currentFileName={resumeData?.fileName}
+      />
     </div>
   )
 }
