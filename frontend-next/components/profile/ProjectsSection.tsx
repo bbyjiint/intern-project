@@ -3,18 +3,22 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { Project } from '@/hooks/useProfile'
-import ProjectUploadModal from './ProjectUploadModal' // ตรวจสอบ path
+import ProjectUploadModal from './ProjectUploadModal'
+import ProjectsModal from './ProjectsModal'
 
 interface ProjectsSectionProps {
   projects: Project[]
   onAdd: () => void
   onEdit: (id: string) => void
-  onUpdateProject: (id: string, data: any) => Promise<void> // เพิ่ม prop สำหรับ update ข้อมูลไฟล์
+  onUpdateProject: (id: string, data: any) => Promise<void>
+  onRefresh?: () => void
 }
 
-export default function ProjectsSection({ projects, onAdd, onEdit, onUpdateProject }: ProjectsSectionProps) {
+export default function ProjectsSection({ projects, onAdd, onEdit, onUpdateProject, onRefresh }: ProjectsSectionProps) {
   const [isUploadOpen, setIsUploadOpen] = useState(false)
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingProject, setEditingProject] = useState<Project | null>(null)
   
   const displayedProjects = projects.slice(0, 3)
 
@@ -34,7 +38,10 @@ export default function ProjectsSection({ projects, onAdd, onEdit, onUpdateProje
           <h2 className="text-xl font-bold text-gray-900">Projects</h2>
         </div>
         <button
-          onClick={onAdd}
+          onClick={() => {
+            setEditingProject(null)
+            setIsModalOpen(true)
+          }}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm transition-colors shadow-md shadow-blue-100"
         >
           + Add Project
@@ -104,7 +111,10 @@ export default function ProjectsSection({ projects, onAdd, onEdit, onUpdateProje
                       {hasAnyFile ? 'Edit Files' : 'Upload Files'}
                     </button>
                     <button
-                      onClick={() => onEdit(project.id)}
+                      onClick={() => {
+                        setEditingProject(project)
+                        setIsModalOpen(true)
+                      }}
                       className="px-4 py-1.5 bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg text-sm font-bold transition-all"
                     >
                       Edit Project
@@ -135,6 +145,26 @@ export default function ProjectsSection({ projects, onAdd, onEdit, onUpdateProje
         onClose={() => setIsUploadOpen(false)}
         project={selectedProject}
         onUpdate={onUpdateProject}
+      />
+
+      {/* Projects Modal */}
+      <ProjectsModal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false)
+          setEditingProject(null)
+        }}
+        onSave={async (projectData) => {
+          if (editingProject?.id) {
+            // Update existing project
+            await onEdit(editingProject.id)
+          } else {
+            // Add new project
+            await onAdd()
+          }
+          onRefresh?.()
+        }}
+        editingProject={editingProject}
       />
     </div>
   )

@@ -9,7 +9,7 @@ interface Project {
   startDate: string
   endDate: string
   description: string
-  relatedSkills: string[]
+  skills: string[]
   githubUrl?: string
   projectUrl?: string
 }
@@ -30,7 +30,7 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
     startDate: '',
     endDate: '',
     description: '',
-    relatedSkills: [],
+    skills: [],
     githubUrl: '',
     projectUrl: '',
   })
@@ -48,7 +48,7 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
         startDate: '',
         endDate: '',
         description: '',
-        relatedSkills: [],
+        skills: [],
         githubUrl: '',
         projectUrl: '',
       })
@@ -58,14 +58,14 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
   if (!isOpen) return null
 
   const handleAddSkill = () => {
-    if (selectedSkill && !formData.relatedSkills.includes(selectedSkill)) {
-      setFormData({ ...formData, relatedSkills: [...formData.relatedSkills, selectedSkill] })
+    if (selectedSkill && !formData.skills.includes(selectedSkill)) {
+      setFormData({ ...formData, skills: [...formData.skills, selectedSkill] })
       setSelectedSkill('')
     }
   }
 
   const handleRemoveSkill = (skill: string) => {
-    setFormData({ ...formData, relatedSkills: formData.relatedSkills.filter((s) => s !== skill) })
+    setFormData({ ...formData, skills: formData.skills.filter((s) => s !== skill) })
   }
 
   const handleSubmit = async () => {
@@ -183,7 +183,7 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
               </button>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
-              {formData.relatedSkills.map((skill) => (
+              {formData.skills.map((skill) => (
                 <span key={skill} className="flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-600 border border-blue-100">
                   {skill}
                   <button onClick={() => handleRemoveSkill(skill)} className="hover:text-red-500 text-lg leading-none">×</button>
