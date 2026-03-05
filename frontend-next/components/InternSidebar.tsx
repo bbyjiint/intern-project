@@ -58,20 +58,6 @@ export default function Sidebar() {
           {isProfileDropdownOpen && (
             <div className="ml-4 mt-2 space-y-1">
               <Link
-                href="/intern/certificates"
-                className={`block px-4 py-3 rounded-lg text-sm transition-colors flex items-center space-x-3 ${
-                  isCertificatesPage
-                    ? 'bg-[#0273B1] text-white'
-                    : 'bg-transparent text-[#1C2D4F] hover:bg-[#F0F4F8] hover:text-[#0273B1]'
-                }`}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <span>Certificates</span>
-              </Link>
-              
-              <Link
                 href="/intern/project"
                 className={`block px-4 py-3 rounded-lg text-sm transition-colors flex items-center space-x-3 ${
                   isProjectPage
@@ -97,6 +83,19 @@ export default function Sidebar() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                 </svg>
                 <span>Skills</span>
+              </Link>
+              <Link
+                href="/intern/certificates"
+                className={`block px-4 py-3 rounded-lg text-sm transition-colors flex items-center space-x-3 ${
+                  isCertificatesPage
+                    ? 'bg-[#0273B1] text-white'
+                    : 'bg-transparent text-[#1C2D4F] hover:bg-[#F0F4F8] hover:text-[#0273B1]'
+                }`}
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <span>Certificates</span>
               </Link>
             </div>
           )}

@@ -3,11 +3,10 @@
 import { useEffect, useState, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import InternNavbar from "@/components/InternNavbar";
-import Link from "next/link";
+import Sidebar from "@/components/InternSidebar"; // หรือแก้เป็น "@/components/Sidebar" ตามที่โปรเจกต์คุณตั้งชื่อไว้
 import { apiFetch } from "@/lib/api";
-import Sidebar from "@/components/Sidebar";
 
-// 1. อัปเดต Interface ให้รองรับข้อมูลแบบในรูปใหม่
+// 1. อัปเดต Interface ให้รองรับข้อมูลแบบในรูป
 interface JobApplication {
   id: string;
   jobTitle: string;
@@ -21,10 +20,10 @@ interface JobApplication {
   allowance: string;
   appliedDate: string;
   timeAgo: string;
-  status: "Registered" | "Accept" | "Decline";
+  status: "Applied" | "Accept" | "Decline";
 }
 
-// 2. Mock Data ให้ตรงกับในรูปภาพ "Applied"
+// 2. Mock Data ให้ตรงกับในรูปภาพ 4 รายการ
 const mockApplications: JobApplication[] = [
   {
     id: "1",
@@ -36,7 +35,7 @@ const mockApplications: JobApplication[] = [
     workType: "Hybrid",
     roleType: "AI Developer",
     applicants: 4,
-    allowance: "5,000 - 7,000 Baht",
+    allowance: "5,000 - 7,000 THB",
     appliedDate: "5 January 2026",
     timeAgo: "1 hour ago",
     status: "Accept",
@@ -48,10 +47,10 @@ const mockApplications: JobApplication[] = [
     companyEmail: "info@trinitythai.com",
     companyLogo: "TRINITY",
     location: "Bangkok",
-    workType: "Hybrid",
+    workType: "On-Site",
     roleType: "AI Developer",
     applicants: 4,
-    allowance: "5,000 - 7,000 Baht",
+    allowance: "5,000 - 7,000 THB",
     appliedDate: "5 January 2026",
     timeAgo: "1 hour ago",
     status: "Decline",
@@ -63,13 +62,13 @@ const mockApplications: JobApplication[] = [
     companyEmail: "info@trinitythai.com",
     companyLogo: "TRINITY",
     location: "Bangkok",
-    workType: "Hybrid",
+    workType: "Remote",
     roleType: "AI Developer",
     applicants: 4,
-    allowance: "5,000 - 7,000 Baht",
+    allowance: "5,000 - 7,000 THB",
     appliedDate: "5 January 2026",
     timeAgo: "1 hour ago",
-    status: "Registered",
+    status: "Applied",
   },
   {
     id: "4",
@@ -78,13 +77,13 @@ const mockApplications: JobApplication[] = [
     companyEmail: "info@trinitythai.com",
     companyLogo: "TRINITY",
     location: "Bangkok",
-    workType: "Hybrid",
+    workType: "Remote",
     roleType: "AI Developer",
     applicants: 4,
-    allowance: "5,000 - 7,000 Baht",
+    allowance: "5,000 - 7,000 THB",
     appliedDate: "5 January 2026",
     timeAgo: "1 hour ago",
-    status: "Registered",
+    status: "Applied",
   },
 ];
 
@@ -92,12 +91,13 @@ export default function InternAppliedPage() {
   const router = useRouter();
   const pathname = usePathname();
   const [applications, setApplications] = useState<JobApplication[]>(mockApplications);
-  const [statusFilter, setStatusFilter] = useState<"All" | "Registered" | "Accept" | "Decline">("All");
+  const [statusFilter, setStatusFilter] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState("");
 
   const filteredApplications = useMemo(() => {
     return applications.filter((app) => {
-      const matchesStatus = statusFilter === "All" || app.status === statusFilter;
+      // ให้ Lastest กับ All โชว์ทั้งหมดไปก่อนสำหรับการทำ Mockup
+      const matchesStatus = statusFilter === "All" || statusFilter === "Lastest" || app.status === statusFilter;
       const matchesSearch =
         app.jobTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
         app.companyName.toLowerCase().includes(searchQuery.toLowerCase());
@@ -105,16 +105,53 @@ export default function InternAppliedPage() {
     });
   }, [applications, statusFilter, searchQuery]);
 
-  const getStatusStyle = (status: string) => {
-    switch (status) {
-      case "Accept":
-        return "bg-[#8BC34A]"; // สีเขียว
-      case "Decline":
-        return "bg-[#FF5252]"; // สีแดง
-      case "Registered":
+  // ฟังก์ชันแยกสีของ Tag แบบการทำงาน
+  const getWorkTypeStyle = (type: string) => {
+    switch (type.toLowerCase()) {
+      case "hybrid":
+        return "bg-[#3B82F6] text-white"; // สีฟ้า
+      case "on-site":
+        return "bg-[#F59E0B] text-white"; // สีส้ม
+      case "remote":
+        return "bg-[#EF4444] text-white"; // สีแดง
       default:
-        return "bg-[#4A90E2]"; // สีฟ้า
+        return "bg-gray-400 text-white";
     }
+  };
+
+  // ฟังก์ชัน Render ป้ายสถานะแบบ Outline
+  const renderStatusBadge = (status: string) => {
+    if (status === "Accept") {
+      return (
+        <span className="flex items-center gap-1.5 px-3 py-1 bg-[#F0FDF4] text-[#16A34A] border border-[#16A34A] text-xs font-bold rounded-full">
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"></path>
+          </svg>
+          Accept
+        </span>
+      );
+    }
+    if (status === "Decline") {
+      return (
+        <span className="flex items-center gap-1.5 px-3 py-1 bg-[#FEF2F2] text-[#EF4444] border border-[#EF4444] text-xs font-bold rounded-full">
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path>
+          </svg>
+          Decline
+        </span>
+      );
+    }
+    if (status === "Applied") {
+      return (
+        <span className="flex items-center gap-1.5 px-3 py-1 bg-[#F0F7FF] text-[#3B82F6] border border-[#3B82F6] text-xs font-bold rounded-full">
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          </svg>
+          Applied
+        </span>
+      );
+    }
+    return null;
   };
 
   return (
@@ -126,51 +163,47 @@ export default function InternAppliedPage() {
         <Sidebar />
 
         {/* Main Content */}
-        <div className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-y-auto">
+        <div className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 overflow-y-auto">
           
           {/* Header & Search */}
-          <div className="flex flex-col md:flex-row md:items-start justify-between mb-6">
+          <div className="flex flex-col md:flex-row md:items-start justify-between mb-6 gap-4">
             <div>
-              <h1 className="text-3xl font-extrabold text-gray-900 mb-1">
+              <h1 className="text-[36px] font-extrabold text-gray-900 mb-1 tracking-tight">
                 Applied
               </h1>
               <p className="text-gray-500 text-sm">
                 View and track your recent job applications.
               </p>
             </div>
-            <div className="relative mt-4 md:mt-0 w-full md:w-80">
+            
+            <div className="relative w-full md:w-80 lg:w-[400px]">
               <svg
                 className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
               <input
                 type="text"
                 placeholder="Search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-11 pr-4 py-2 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm text-sm"
+                className="w-full pl-12 pr-4 py-2.5 border border-gray-200 rounded-full focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm text-sm"
               />
             </div>
           </div>
 
           {/* Status Filter Tabs */}
-          <div className="flex flex-wrap gap-3 mb-6">
-            {["All", "Registered", "Accept", "Decline"].map((status) => (
+          <div className="flex flex-wrap gap-3 mb-8">
+            {["All", "Lastest", "Applied", "Accept", "Decline"].map((status) => (
               <button
                 key={status}
-                onClick={() => setStatusFilter(status as any)}
-                className={`px-5 py-2 text-sm font-semibold rounded-lg border transition-colors ${
+                onClick={() => setStatusFilter(status)}
+                className={`px-6 py-2 text-sm font-bold rounded-lg border transition-colors ${
                   statusFilter === status
-                    ? "bg-white text-blue-600 border-blue-600 shadow-sm"
+                    ? "bg-white text-[#3B82F6] border-[#3B82F6] shadow-sm"
                     : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50"
                 }`}
               >
@@ -179,9 +212,9 @@ export default function InternAppliedPage() {
             ))}
           </div>
 
-          <p className="text-gray-900 font-bold mb-4">
-            {filteredApplications.length} Total Job Post
-          </p>
+          <h2 className="text-[17px] font-extrabold text-gray-900 mb-4">
+            {filteredApplications.length} Total Applied
+          </h2>
 
           {/* Job Application Cards Grid */}
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -193,77 +226,70 @@ export default function InternAppliedPage() {
               filteredApplications.map((application) => (
                 <div
                   key={application.id}
-                  className="relative bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col"
+                  className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col"
                 >
-                  {/* Status Badge (Absolute Top Right) */}
-                  <div
-                    className={`absolute -top-3 right-6 px-3 py-1 rounded text-white text-xs font-bold shadow-sm ${getStatusStyle(
-                      application.status
-                    )}`}
-                  >
-                    {application.status}
-                    {/* Optional: Add a small triangle to make it look like a folded ribbon if desired */}
-                    <div className={`absolute top-full left-0 w-0 h-0 border-l-[6px] border-l-transparent border-t-[6px] border-t-black opacity-20`} />
-                  </div>
-
-                  {/* Top: Company Info & Options */}
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex items-center space-x-3">
+                  {/* Top Row: Company Info & Badge */}
+                  <div className="flex justify-between items-start mb-5">
+                    <div className="flex items-center space-x-4">
                       {/* Logo Placeholder */}
-                      <div className="w-12 h-12 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                         {/* Trinity Logo Mock */}
-                         <div className="w-6 h-6 relative">
+                      <div className="w-14 h-14 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                         <div className="w-8 h-8 relative flex items-end justify-center">
                             <div className="absolute inset-0 bg-[#1C2D4F]" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }}></div>
                             <div className="absolute inset-[3px] bg-[#E31837]" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }}></div>
+                            <span className="text-[4px] font-bold text-white z-10 mb-0.5">TRINITY</span>
                          </div>
                       </div>
                       <div>
-                        <h3 className="text-base font-bold text-gray-900 leading-tight">
+                        <h3 className="text-[17px] font-bold text-gray-900 leading-tight">
                           {application.companyName}
                         </h3>
-                        <p className="text-xs text-gray-400 mt-0.5">
+                        <p className="text-sm text-gray-400 mt-0.5">
                           {application.companyEmail}
                         </p>
                       </div>
                     </div>
-                    {/* 3 dots menu */}
-                    <button className="text-gray-300 hover:text-gray-500 transition-colors mt-1">
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-                      </svg>
-                    </button>
+                    
+                    {/* Badge and 3-dots */}
+                    <div className="flex flex-col items-end space-y-2">
+                      {renderStatusBadge(application.status)}
+                      <button className="text-gray-300 hover:text-gray-500 transition-colors mt-1 pr-1">
+                        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
 
                   {/* Job Title */}
-                  <h4 className="text-lg font-bold text-gray-900 mb-3">
+                  <h4 className="text-[19px] font-bold text-black mb-3">
                     {application.jobTitle}
                   </h4>
 
                   {/* Tags */}
                   <div className="flex space-x-2 mb-6">
-                    <span className="bg-[#4A90E2] text-white text-[11px] font-semibold px-3 py-1 rounded-md">
+                    <span className={`text-[11px] font-semibold px-4 py-1.5 rounded-md ${getWorkTypeStyle(application.workType)}`}>
                       {application.workType}
                     </span>
-                    <span className="bg-gray-100 text-gray-600 text-[11px] font-semibold px-3 py-1 rounded-md">
+                    <span className="bg-[#E5E7EB] text-gray-700 text-[11px] font-semibold px-4 py-1.5 rounded-md">
                       {application.roleType}
                     </span>
                   </div>
 
                   {/* Job Details Grid */}
                   <div className="space-y-3 mb-6 flex-1">
-                    <div className="flex items-start">
-                      <span className="w-[140px] text-gray-400 text-sm">Preferred</span>
+                    <div className="grid grid-cols-[140px_1fr] items-start">
+                      <span className="text-gray-400 text-sm">Preferred</span>
                       <span className="text-gray-600 text-sm">{application.location}</span>
                     </div>
-                    <div className="flex items-center">
-                      <span className="w-[140px] text-gray-400 text-sm leading-tight">
+                    <div className="grid grid-cols-[140px_1fr] items-center">
+                      <span className="text-gray-400 text-sm leading-tight">
                         Number of<br />applicants
                       </span>
                       <span className="text-gray-600 text-sm">{application.applicants}</span>
                     </div>
-                    <div className="flex items-start">
-                      <span className="w-[140px] text-gray-400 text-sm">Allowance</span>
-                      <span className="text-gray-900 text-sm font-bold">
+                    <div className="grid grid-cols-[140px_1fr] items-start">
+                      <span className="text-gray-400 text-sm">Allowance</span>
+                      <span className="text-black text-[15px] font-bold">
                         {application.allowance}
                       </span>
                     </div>

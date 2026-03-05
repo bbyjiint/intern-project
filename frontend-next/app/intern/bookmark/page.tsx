@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import InternNavbar from "@/components/InternNavbar";
 import { apiFetch } from "@/lib/api";
-import Sidebar from "@/components/Sidebar";
+import Sidebar from "@/components/InternSidebar";
 
 // 1. อัปเดต Interface ให้รองรับข้อมูลแบบในรูปภาพ
 interface BookmarkedJob {

@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
+import ReportBugModal from './ReportBugModal'
 
 interface InternNavbarProps {
   searchQuery?: string
@@ -22,6 +23,13 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
   const [unreadCount, setUnreadCount] = useState(0)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const [localSearchQuery, setLocalSearchQuery] = useState('')
+  const [isBugModalOpen, setIsBugModalOpen] = useState(false);
+
+  const handleSendBugReport = async (description: string) => {
+    // ใส่ Logic ยิง API ไป Backend ตรงนี้
+    console.log("Bug reported:", description);
+    alert("Thank you! Your bug report has been submitted.");
+  };
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -150,23 +158,25 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
                   </span>
                 )}
               </Link>
-              <Link
-                href="/intern/report-bug"
-                className="font-semibold text-[15px] text-[#94A3B8] hover:text-[#0273B1] transition-colors"
+              <button
+                onClick={() => setIsBugModalOpen(true)}
+                className="font-semibold text-[15px] transition-colors"
+                style={{ color: '#A9B4CD' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#0273B1'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#A9B4CD'
+                }}
               >
                 Report bug
-              </Link>
+              </button>
             </div>
           </div>
 
 
           {/* ================= RIGHT SECTION: Button & Profile ================= */}
           <div className="flex items-center gap-6">
-            
-            {/* Tester Button */}
-            <button className="hidden md:flex px-4 py-2 border-[1.5px] border-[#3B82F6] text-[#3B82F6] font-bold rounded-md text-[13px] hover:bg-blue-50 transition-colors items-center justify-center h-10">
-              Tester Company POV
-            </button>
 
             {/* Profile Dropdown Container */}
             <div className="relative" ref={dropdownRef}>
@@ -266,6 +276,11 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
           </div>
         </div>
       </div>
+      <ReportBugModal 
+        isOpen={isBugModalOpen} 
+        onClose={() => setIsBugModalOpen(false)} 
+        onSubmit={handleSendBugReport} 
+      />
     </nav>
   )
 }

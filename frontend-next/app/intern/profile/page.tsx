@@ -12,7 +12,7 @@ import ResumeSection from '@/components/profile/ResumeSection'
 import ProjectsSection from '@/components/profile/ProjectsSection'
 import SkillsSection from '@/components/profile/SkillsSection'
 import CertificatesSection from '@/components/profile/CertificatesSection'
-import Sidebar from '@/components/Sidebar'
+import Sidebar from '@/components/InternSidebar'
 
 export default function InternProfilePage() {
   const router = useRouter()

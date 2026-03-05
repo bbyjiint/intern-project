@@ -3,7 +3,7 @@
 import { useState } from "react";
 import InternNavbar from "@/components/InternNavbar";
 import { usePathname, useRouter } from "next/navigation";
-import Sidebar from "@/components/Sidebar";
+import Sidebar from "@/components/InternSidebar";
 
 // 1. Interface ให้รองรับข้อมูลแบบในรูป
 interface JobRecommendation {
