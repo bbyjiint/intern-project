@@ -1,198 +1,126 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import { Project } from '@/hooks/useProfile'
-import ProjectUploadModal from './ProjectUploadModal'
-import ProjectsModal from './ProjectsModal'
 
 interface ProjectsSectionProps {
   projects: Project[]
   onAdd: () => void
   onEdit: (id: string) => void
-  onUpdateProject: (id: string, data: any) => Promise<void>
-  onRefresh?: () => void
 }
 
-export default function ProjectsSection({ projects, onAdd, onEdit, onUpdateProject, onRefresh }: ProjectsSectionProps) {
-  const [isUploadOpen, setIsUploadOpen] = useState(false)
-  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [editingProject, setEditingProject] = useState<Project | null>(null)
-  
+export default function ProjectsSection({ projects, onAdd, onEdit }: ProjectsSectionProps) {
+  // Show maximum 3 projects in profile page
   const displayedProjects = projects.slice(0, 3)
-
-  const handleOpenUpload = (project: Project) => {
-    setSelectedProject(project)
-    setIsUploadOpen(true)
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return ''
+    const date = new Date(dateString)
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    return `${months[date.getMonth()]} ${date.getFullYear()}`
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-100">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2 text-blue-600">
-          <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
-          </svg>
-          <h2 className="text-xl font-bold text-gray-900">Projects</h2>
-        </div>
+    <div className="bg-white rounded-lg shadow-md p-6 mb-6 border border-gray-200">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold" style={{ color: '#1C2D4F' }}>
+          Projects
+        </h2>
         <button
-          onClick={() => {
-            setEditingProject(null)
-            setIsModalOpen(true)
+          onClick={onAdd}
+          className="px-4 py-2 rounded-lg font-semibold text-sm text-white transition-colors"
+          style={{ backgroundColor: '#0273B1' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#025a8f'
           }}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm transition-colors shadow-md shadow-blue-100"
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#0273B1'
+          }}
         >
           + Add Project
         </button>
       </div>
 
       {projects.length === 0 ? (
-        <p className="text-gray-400 italic py-10 text-center border-2 border-dashed border-gray-50 rounded-xl">No projects provided.</p>
+        <p className="text-gray-400 italic py-4">No projects provided.</p>
       ) : (
-        <div className="space-y-8">
-          {displayedProjects.map((project) => {
-            // เช็คว่ามีไฟล์/ลิงก์อย่างน้อยหนึ่งอย่างหรือไม่
-            const hasAnyFile = !!(project.githubUrl || project.projectUrl || project.fileUrl)
-
-            return (
-              <div key={project.id} className="relative border border-gray-100 rounded-xl p-6 bg-white hover:border-blue-100 transition-all">
-                {/* Status Badge */}
-                <div className="absolute top-6 right-6">
-                  <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border transition-colors ${
-                    hasAnyFile ? 'bg-green-50 text-green-600 border-green-200' : 'bg-blue-50 text-blue-600 border-blue-200'
-                  }`}>
-                    <div className={`w-1.5 h-1.5 rounded-full ${hasAnyFile ? 'bg-green-500' : 'bg-blue-500'}`} />
-                    {hasAnyFile ? 'File Uploaded' : 'No File Uploaded'}
-                  </div>
+        <div className="space-y-6">
+          {displayedProjects.map((project) => (
+            <div key={project.id} className="border-b border-gray-200 last:border-b-0 pb-4 last:pb-0">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold mb-1" style={{ color: '#1C2D4F' }}>
+                    {project.name}
+                    {project.role && ` - ${project.role}`}
+                  </h3>
+                  {project.linkedToExperience && (
+                    <p className="text-sm text-gray-600 mb-2">
+                      Linked to: {project.linkedToExperience}
+                    </p>
+                  )}
+                  {(project.startDate || project.endDate) && (
+                    <p className="text-sm text-gray-600 mb-2">
+                      {formatDate(project.startDate)} - {formatDate(project.endDate)}
+                    </p>
+                  )}
+                  {project.description && (
+                    <p className="text-gray-700 mb-2">{project.description}</p>
+                  )}
+                  {project.skills && project.skills.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {project.skills.map((skill, idx) => (
+                        <span
+                          key={idx}
+                          className="px-3 py-1 rounded-full text-sm font-medium"
+                          style={{ backgroundColor: '#E3F2FD', color: '#0273B1' }}
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
-
-                {/* Project Info */}
-                <div className="mb-4 pr-32">
-                  <h3 className="text-lg font-bold text-gray-900">{project.name}</h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Role: {project.role || 'Contributor'} | {project.startDate || 'N/A'} - {project.endDate || 'Present'}
-                  </p>
-                  <p className="text-gray-600 text-sm mt-3 leading-relaxed line-clamp-2">
-                    {project.description || 'No description provided.'}
-                  </p>
-                </div>
-
-                {/* Credibility Section */}
-                <div className="mb-6">
-                  <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Project Credibility</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <CredibilityItem icon="github" label="Github Linked" active={!!project.githubUrl} />
-                    <CredibilityItem icon="link" label="Project Link" active={!!project.projectUrl} />
-                    <CredibilityItem icon="file" label="Documentation" active={!!project.fileUrl} />
-                  </div>
-                </div>
-
-                {/* Skills & Actions */}
-                <div className="flex items-center justify-between border-t border-gray-50 pt-4">
-                  <div className="flex flex-wrap gap-2">
-                    {project.skills?.map((skill) => (
-                      <span key={skill} className="px-3 py-1 bg-blue-50 text-blue-600 text-[11px] font-bold rounded-md">
-                        {skill}
-                      </span>
-                    )) || <span className="text-gray-300 text-xs italic">No skills tagged</span>}
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <button 
-                      onClick={() => handleOpenUpload(project)}
-                      className={`px-4 py-1.5 border-2 rounded-lg text-sm font-bold transition-all ${
-                        hasAnyFile 
-                        ? 'border-blue-600 text-blue-600 hover:bg-blue-50' 
-                        : 'border-gray-200 text-gray-500 hover:bg-gray-50'
-                      }`}
-                    >
-                      {hasAnyFile ? 'Edit Files' : 'Upload Files'}
-                    </button>
-                    <button
-                      onClick={() => {
-                        setEditingProject(project)
-                        setIsModalOpen(true)
-                      }}
-                      className="px-4 py-1.5 bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg text-sm font-bold transition-all"
-                    >
-                      Edit Project
-                    </button>
-                  </div>
-                </div>
+                <button
+                  onClick={() => onEdit(project.id)}
+                  className="px-4 py-2 rounded-lg font-semibold text-sm border-2 transition-colors ml-4"
+                  style={{ 
+                    borderColor: '#0273B1',
+                    color: '#0273B1',
+                    backgroundColor: 'white'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#F0F4F8'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'white'
+                  }}
+                >
+                  Edit
+                </button>
               </div>
-            )
-          })}
-        </div>
-      )}
-
-      {/* View All Footer */}
-      {projects.length > 3 && (
-        <div className="mt-8 text-center border-t border-gray-50 pt-6">
-          <Link href="/intern/project" className="inline-flex items-center gap-2 text-blue-600 font-bold hover:gap-3 transition-all">
-            View all projects ({projects.length})
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </Link>
-        </div>
-      )}
-
-      {/* Render Upload Modal */}
-      <ProjectUploadModal 
-        isOpen={isUploadOpen}
-        onClose={() => setIsUploadOpen(false)}
-        project={selectedProject}
-        onUpdate={onUpdateProject}
-      />
-
-      {/* Projects Modal */}
-      <ProjectsModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false)
-          setEditingProject(null)
-        }}
-        onSave={async (projectData) => {
-          if (editingProject?.id) {
-            // Update existing project
-            await onEdit(editingProject.id)
-          } else {
-            // Add new project
-            await onAdd()
-          }
-          onRefresh?.()
-        }}
-        editingProject={editingProject}
-      />
-    </div>
-  )
-}
-
-// Helper Component for Credibility Items
-function CredibilityItem({ icon, label, active }: { icon: 'github' | 'link' | 'file', label: string, active: boolean }) {
-  return (
-    <div className={`flex items-center justify-between p-3 border rounded-xl transition-all ${active ? 'bg-white border-green-100 shadow-sm' : 'bg-gray-50/50 border-gray-100 opacity-60'}`}>
-      <div className="flex items-center gap-3">
-        <div className={`p-2 rounded-lg ${active ? 'bg-green-50 text-green-600' : 'bg-gray-200 text-gray-500'}`}>
-          {icon === 'github' && (
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.041-1.416-4.041-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-            </svg>
+            </div>
+          ))}
+          {projects.length > 3 && (
+            <div className="pt-4 border-t border-gray-200">
+              <Link
+                href="/intern/project"
+                className="text-sm font-medium flex items-center space-x-1 justify-center"
+                style={{ color: '#0273B1' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#025a8f'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#0273B1'
+                }}
+              >
+                <span>View All Projects ({projects.length})</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+            </div>
           )}
-          {icon === 'link' && <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>}
-          {icon === 'file' && <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
         </div>
-        <span className={`text-xs font-bold ${active ? 'text-gray-700' : 'text-gray-400'}`}>{label}</span>
-      </div>
-      <div className={`w-5 h-5 rounded-full flex items-center justify-center border-2 transition-all ${active ? 'border-green-500 bg-green-50' : 'border-gray-200'}`}>
-        {active && (
-          <svg className="w-3 h-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-          </svg>
-        )}
-      </div>
+      )}
     </div>
   )
 }

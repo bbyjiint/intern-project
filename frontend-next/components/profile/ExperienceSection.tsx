@@ -1,87 +1,156 @@
-// 'use client'
+'use client'
 
-// import { useState, useRef } from 'react'
+import { useState } from 'react'
+import Link from 'next/link'
+import { Experience } from '@/hooks/useProfile'
+import ExperienceModal from './ExperienceModal'
 
-// interface ResumeSectionProps {
-//   resumeData?: {
-//     fileName: string;
-//     lastUpdated: string;
-//   };
-//   onFileChange?: (file: File) => void;
-// }
+interface ExperienceSectionProps {
+  experience: Experience[]
+  onAdd: () => void
+  onEdit: (id: string) => void
+  onRefresh?: () => void
+}
 
-// export default function ResumeSection({ resumeData, onFileChange }: ResumeSectionProps) {
-//   const fileInputRef = useRef<HTMLInputElement>(null);
+export default function ExperienceSection({ experience, onAdd, onEdit, onRefresh }: ExperienceSectionProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editingExperience, setEditingExperience] = useState<Experience | null>(null)
+  // Show maximum 3 experiences in profile page
+  const displayedExperiences = experience.slice(0, 3)
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return ''
+    const date = new Date(dateString)
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    return `${months[date.getMonth()]} ${date.getFullYear()}`
+  }
 
-//   return (
-//     <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-6">
-//       {/* Header with Icon */}
-//       <div className="flex items-center space-x-2 mb-4">
-//         <div className="p-1.5 bg-blue-100 rounded-md">
-//           <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-//             <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
-//           </svg>
-//         </div>
-//         <h2 className="text-xl font-bold" style={{ color: '#1C2D4F' }}>
-//           Resume File
-//         </h2>
-//       </div>
+  return (
+    <div className="bg-white rounded-lg shadow-md p-6 mb-6 border border-gray-200">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold" style={{ color: '#1C2D4F' }}>
+          Experience
+        </h2>
+        <button
+          onClick={() => {
+            setEditingExperience(null)
+            setIsModalOpen(true)
+          }}
+          className="px-4 py-2 rounded-lg font-semibold text-sm text-white transition-colors"
+          style={{ backgroundColor: '#0273B1' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#025a8f'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#0273B1'
+          }}
+        >
+          + Add Experience
+        </button>
+      </div>
 
-//       {/* File Card Container */}
-//       <div className="bg-gray-50/50 border border-gray-100 rounded-xl p-5 flex items-center justify-between">
-//         <div className="flex items-center space-x-4">
-//           {/* PDF Icon Graphic */}
-//           <div className="relative flex flex-col items-center">
-//             <svg className="w-12 h-14 text-blue-100" fill="currentColor" viewBox="0 0 24 24">
-//               <path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z" />
-//             </svg>
-//             <div className="absolute bottom-1 bg-blue-600 text-[8px] font-bold text-white px-1 rounded-sm">
-//               PDF
-//             </div>
-//           </div>
+      {experience.length === 0 ? (
+        <p className="text-gray-400 italic py-4">No experience provided.</p>
+      ) : (
+        <div className="space-y-6">
+          {displayedExperiences.map((exp) => (
+            <div key={exp.id} className="border-b border-gray-200 last:border-b-0 pb-4 last:pb-0">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold mb-1" style={{ color: '#1C2D4F' }}>
+                    {exp.position}
+                    {exp.companyName && ` (${exp.companyName})`}
+                  </h3>
+                  <div className="text-gray-700 space-y-1 mb-2">
+                    {exp.department && (
+                      <p>{exp.department}</p>
+                    )}
+                    {(exp.startDate || exp.endDate) && (
+                      <p>
+                        {formatDate(exp.startDate)} - {exp.isCurrent ? 'Present' : formatDate(exp.endDate)}
+                        {exp.manager && ` | Manager: ${exp.manager}`}
+                      </p>
+                    )}
+                  </div>
+                  {exp.description && (
+                    <div className="mt-2">
+                      {exp.description.split('\n').map((line, idx) => (
+                        <p key={idx} className="text-gray-700 mb-1">{line}</p>
+                      ))}
+                    </div>
+                  )}
+                  {exp.responsibilities && exp.responsibilities.length > 0 && (
+                    <ul className="list-disc list-inside mt-2 space-y-1 text-gray-700">
+                      {exp.responsibilities.map((resp, idx) => (
+                        <li key={idx}>{resp}</li>
+                      ))}
+                    </ul>
+                  )}
+                  {exp.linkedProjects !== undefined && exp.linkedProjects > 0 && (
+                    <p className="text-sm mt-2" style={{ color: '#0273B1' }}>
+                      → {exp.linkedProjects} Projects linked to this experience
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={() => {
+                    setEditingExperience(exp)
+                    setIsModalOpen(true)
+                  }}
+                  className="px-4 py-2 rounded-lg font-semibold text-sm border-2 transition-colors ml-4"
+                  style={{ 
+                    borderColor: '#0273B1',
+                    color: '#0273B1',
+                    backgroundColor: 'white'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#F0F4F8'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'white'
+                  }}
+                >
+                  Edit
+                </button>
+              </div>
+            </div>
+          ))}
+          {experience.length > 3 && (
+            <div className="pt-4 border-t border-gray-200">
+              <Link
+                href="/intern/experience"
+                className="text-sm font-medium flex items-center space-x-1 justify-center"
+                style={{ color: '#0273B1' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#025a8f'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#0273B1'
+                }}
+              >
+                <span>View All Experiences ({experience.length})</span>
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </Link>
+            </div>
+          )}
+        </div>
+      )}
 
-//           {/* File Information */}
-//           <div>
-//             <h3 className="text-md font-bold text-gray-800">
-//               {resumeData?.fileName || 'Simple Resume.pdf'}
-//             </h3>
-//             <p className="text-xs text-gray-400 mt-1">
-//               Upload lastest: {resumeData?.lastUpdated || '26/2/2026'}
-//             </p>
-//           </div>
-//         </div>
-
-//         {/* Change File Action */}
-//         <div>
-//           <input
-//             type="file"
-//             ref={fileInputRef}
-//             className="hidden"
-//             accept=".pdf,.doc,.docx"
-//             onChange={(e) => {
-//               const file = e.target.files?.[0];
-//               if (file && onFileChange) onFileChange(file);
-//             }}
-//           />
-//           <button
-//             onClick={() => fileInputRef.current?.click()}
-//             className="px-5 py-2 rounded-lg font-bold text-sm border-2 transition-all"
-//             style={{ 
-//               borderColor: '#4285F4',
-//               color: '#4285F4',
-//               backgroundColor: 'white'
-//             }}
-//             onMouseEnter={(e) => {
-//               e.currentTarget.style.backgroundColor = '#f0f7ff';
-//             }}
-//             onMouseLeave={(e) => {
-//               e.currentTarget.style.backgroundColor = 'white';
-//             }}
-//           >
-//             Change File
-//           </button>
-//         </div>
-//       </div>
-//     </div>
-//   )
-// }
+      {/* Experience Modal */}
+      <ExperienceModal
+        isOpen={isModalOpen}
+        experience={editingExperience}
+        onClose={() => {
+          setIsModalOpen(false)
+          setEditingExperience(null)
+        }}
+        onSave={() => {
+          if (onRefresh) {
+            onRefresh()
+          }
+        }}
+      />
+    </div>
+  )
+}

@@ -14,93 +14,103 @@ interface EducationSectionProps {
 export default function EducationSection({ education, onAdd, onEdit, onRefresh }: EducationSectionProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingEducation, setEditingEducation] = useState<Education | null>(null)
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return ''
+    const date = new Date(dateString)
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    return `${months[date.getMonth()]} ${date.getFullYear()}`
+  }
+
+  const formatEducationLevel = (level?: string) => {
+    const levels: Record<string, string> = {
+      BACHELOR: 'Bachelor',
+      MASTERS: 'Master',
+      PHD: 'PhD',
+    }
+    return levels[level || ''] || level || ''
+  }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-100">
-      {/* Section Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-2">
-          <div className="text-blue-600">
-            <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3z" />
-              <path d="M3.88 12.83l7.12 3.88 7.12-3.88-7.12-3.88-7.12 3.88z" opacity=".3" />
-              <path d="M19 13.52V17l-7 4-7-4v-3.48l7 3.82 7-3.82z" />
-            </svg>
-          </div>
-          <h2 className="text-xl font-bold text-gray-900">Education</h2>
-        </div>
+    <div className="bg-white rounded-lg shadow-md p-6 mb-6 border border-gray-200">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold" style={{ color: '#1C2D4F' }}>
+          Education
+        </h2>
         <button
           onClick={() => {
             setEditingEducation(null)
             setIsModalOpen(true)
           }}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm transition-colors"
+          className="px-4 py-2 rounded-lg font-semibold text-sm text-white transition-colors"
+          style={{ backgroundColor: '#0273B1' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.backgroundColor = '#025a8f'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.backgroundColor = '#0273B1'
+          }}
         >
           + Add Education
         </button>
       </div>
 
       {education.length === 0 ? (
-        <div className="text-center py-8 border-2 border-dashed border-gray-100 rounded-xl">
-          <p className="text-gray-400 italic">No education history added yet.</p>
-        </div>
+        <p className="text-gray-400 italic py-4">No education provided.</p>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {education.map((edu) => (
-            <div 
-              key={edu.id} 
-              className="relative border border-gray-100 rounded-xl p-5 hover:border-blue-100 transition-all bg-white"
-            >
-              {/* Status Badge (Top Right) */}
-              <div className="absolute top-5 right-5">
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-600 border border-blue-100 rounded-full text-xs font-medium">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  Not Verified
+            <div key={edu.id} className="border-b border-gray-200 last:border-b-0 pb-4 last:pb-0">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold mb-1" style={{ color: '#1C2D4F' }}>
+                    {edu.universityName || 'University name not provided'}
+                  </h3>
+                  <div className="text-gray-700 space-y-1">
+                    {edu.degreeName && (
+                      <p>
+                        {formatEducationLevel(edu.educationLevel)} {edu.degreeName}
+                        {edu.gpa && ` | GPA: ${edu.gpa}/4.0`}
+                      </p>
+                    )}
+                    {(edu.startDate || edu.endDate) && (
+                      <p>
+                        {formatDate(edu.startDate)} - {edu.isCurrent ? 'Present' : formatDate(edu.endDate)}
+                      </p>
+                    )}
+                    {edu.relevantCoursework && edu.relevantCoursework.length > 0 && (
+                      <p className="text-sm mt-2">
+                        <span className="font-medium">Relevant coursework:</span> {edu.relevantCoursework.join(', ')}
+                      </p>
+                    )}
+                    {edu.achievements && edu.achievements.length > 0 && (
+                      <p className="text-sm mt-1">
+                        <span className="font-medium">Academic achievements:</span> {edu.achievements.join(', ')}
+                      </p>
+                    )}
+                    {edu.extracurriculars && edu.extracurriculars.length > 0 && (
+                      <p className="text-sm mt-1">
+                        <span className="font-medium">Extracurriculars:</span> {edu.extracurriculars.join(', ')}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
-
-              {/* Education Info */}
-              <div className="pr-32"> {/* Space for badge */}
-                <h3 className="text-lg font-bold text-gray-900 mb-1">
-                  {edu.universityName || 'University Name'}
-                </h3>
-                <div className="text-gray-600 text-sm space-y-1">
-                  <p className="font-medium">
-                    {edu.degreeName || 'Bachelor of Engineering in Computer Engineering'}
-                    {edu.gpa && <span className="text-gray-400 font-normal"> | GPA: {edu.gpa}</span>}
-                  </p>
-                  <p className="text-gray-500">
-                    {edu.isCurrent ? 'Year 4 (Currently studying)' : 'Graduated'}
-                  </p>
-                </div>
-              </div>
-
-              {/* Action Buttons (Bottom Right) */}
-              <div className="flex items-center justify-end gap-3 mt-4 pt-2">
-                <button 
-                  className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                  title="Delete"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-                
-                <button
-                  className="px-4 py-1.5 border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-bold transition-colors"
-                  onClick={() => {/* Logic for upload */}}
-                >
-                  Upload Transcript
-                </button>
-                
                 <button
                   onClick={() => {
                     setEditingEducation(edu)
                     setIsModalOpen(true)
                   }}
-                  className="px-6 py-1.5 border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-bold transition-colors"
+                  className="px-4 py-2 rounded-lg font-semibold text-sm border-2 transition-colors ml-4"
+                  style={{ 
+                    borderColor: '#0273B1',
+                    color: '#0273B1',
+                    backgroundColor: 'white'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#F0F4F8'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'white'
+                  }}
                 >
                   Edit
                 </button>
@@ -110,7 +120,7 @@ export default function EducationSection({ education, onAdd, onEdit, onRefresh }
         </div>
       )}
 
-      {/* Modal */}
+      {/* Education Modal */}
       <EducationModal
         isOpen={isModalOpen}
         education={editingEducation}
@@ -118,7 +128,11 @@ export default function EducationSection({ education, onAdd, onEdit, onRefresh }
           setIsModalOpen(false)
           setEditingEducation(null)
         }}
-        onSave={() => onRefresh?.()}
+        onSave={() => {
+          if (onRefresh) {
+            onRefresh()
+          }
+        }}
       />
     </div>
   )

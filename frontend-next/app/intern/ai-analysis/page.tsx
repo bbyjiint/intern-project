@@ -133,6 +133,56 @@ export default function AIAnalysisPage() {
               {isProfileDropdownOpen && (
                 <div className="ml-4 mt-2 space-y-1">
                   <Link
+                    href="/intern/ai-analysis"
+                    className="block px-4 py-3 rounded-lg text-sm transition-colors flex items-center space-x-3"
+                    style={{ 
+                      color: isAIAnalysisPage ? 'white' : '#1C2D4F',
+                      backgroundColor: isAIAnalysisPage ? '#0273B1' : 'transparent'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isAIAnalysisPage) {
+                        e.currentTarget.style.backgroundColor = '#F0F4F8'
+                        e.currentTarget.style.color = '#0273B1'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isAIAnalysisPage) {
+                        e.currentTarget.style.backgroundColor = 'transparent'
+                        e.currentTarget.style.color = '#1C2D4F'
+                      }
+                    }}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <span>AI Analysis</span>
+                  </Link>
+                  <Link
+                    href="/intern/job-match"
+                    className="block px-4 py-3 rounded-lg text-sm transition-colors flex items-center space-x-3"
+                    style={{ 
+                      color: isJobMatchPage ? 'white' : '#1C2D4F',
+                      backgroundColor: isJobMatchPage ? '#0273B1' : 'transparent'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isJobMatchPage) {
+                        e.currentTarget.style.backgroundColor = '#F0F4F8'
+                        e.currentTarget.style.color = '#0273B1'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isJobMatchPage) {
+                        e.currentTarget.style.backgroundColor = 'transparent'
+                        e.currentTarget.style.color = '#1C2D4F'
+                      }
+                    }}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <span>Job Match</span>
+                  </Link>
+                  <Link
                     href="/intern/certificates"
                     className="block px-4 py-3 rounded-lg text-sm transition-colors flex items-center space-x-3"
                     style={{ 
@@ -156,6 +206,31 @@ export default function AIAnalysisPage() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
                     <span>Certificates</span>
+                  </Link>
+                  <Link
+                    href="/intern/experience"
+                    className="block px-4 py-3 rounded-lg text-sm transition-colors flex items-center space-x-3"
+                    style={{ 
+                      color: isExperiencePage ? 'white' : '#1C2D4F',
+                      backgroundColor: isExperiencePage ? '#0273B1' : 'transparent'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isExperiencePage) {
+                        e.currentTarget.style.backgroundColor = '#F0F4F8'
+                        e.currentTarget.style.color = '#0273B1'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isExperiencePage) {
+                        e.currentTarget.style.backgroundColor = 'transparent'
+                        e.currentTarget.style.color = '#1C2D4F'
+                      }
+                    }}
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                    </svg>
+                    <span>Experience</span>
                   </Link>
                 </div>
               )}
