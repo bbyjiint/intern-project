@@ -2,14 +2,14 @@
 
 import { useState, useEffect } from 'react'
 
-interface Project {
+export interface ProjectData {
   id?: string
   name: string
   role: string
   startDate: string
   endDate: string
   description: string
-  skills: string[]
+  skills: string[] // เปลี่ยนเป็น skills ให้ตรงกับหน้าหลัก
   githubUrl?: string
   projectUrl?: string
 }
@@ -17,14 +17,14 @@ interface Project {
 interface ProjectsModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (project: Project) => Promise<void>
-  editingProject?: Project | null
+  onSave: (project: ProjectData) => void // ลบ Promise<void> ออก เพื่อให้เรียกใช้แบบ Synchronous ได้ง่ายในการทำ Mockup
+  editingProject?: ProjectData | null
 }
 
 const AVAILABLE_SKILLS = ['JavaScript', 'React', 'Node.js', 'Python', 'TypeScript', 'SQL', 'Tableau', 'Figma']
 
 export default function ProjectsModal({ isOpen, onClose, onSave, editingProject }: ProjectsModalProps) {
-  const [formData, setFormData] = useState<Project>({
+  const [formData, setFormData] = useState<ProjectData>({
     name: '',
     role: '',
     startDate: '',
@@ -34,7 +34,6 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
     githubUrl: '',
     projectUrl: '',
   })
-  const [isSaving, setIsSaving] = useState(false)
   const [selectedSkill, setSelectedSkill] = useState('')
 
   // Reset or Set data when modal opens/changes mode
@@ -68,20 +67,12 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
     setFormData({ ...formData, skills: formData.skills.filter((s) => s !== skill) })
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!formData.name || !formData.role) {
       alert('Please fill in Project Name and Role')
       return
     }
-    setIsSaving(true)
-    try {
-      await onSave(formData)
-      onClose()
-    } catch (error) {
-      console.error(error)
-    } finally {
-      setIsSaving(false)
-    }
+    onSave(formData) // สั่ง Save กลับไปที่หน้าหลัก
   }
 
   return (
@@ -203,10 +194,9 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
           </button>
           <button
             onClick={handleSubmit}
-            disabled={isSaving}
-            className="rounded-xl bg-[#0273B1] px-8 py-2.5 font-bold text-white shadow-lg shadow-blue-100 hover:bg-[#025a8f] transition-all disabled:opacity-50"
+            className="rounded-xl bg-[#0273B1] px-8 py-2.5 font-bold text-white shadow-lg shadow-blue-100 hover:bg-[#025a8f] transition-all"
           >
-            {isSaving ? 'Saving...' : editingProject ? 'Update Project' : 'Add Project'}
+            {editingProject ? 'Update Project' : 'Add Project'}
           </button>
         </div>
       </div>
