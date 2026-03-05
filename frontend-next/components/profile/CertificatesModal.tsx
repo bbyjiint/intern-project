@@ -161,7 +161,7 @@ export default function CertificatesModal({
                 onClick={handleAddSkill}
                 className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg font-bold hover:bg-blue-100 transition-colors"
               >
-                Skill +
+                ADD +
               </button>
             </div>
             {/* Display Skills */}
