@@ -35,6 +35,7 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
     projectUrl: '',
   })
   const [selectedSkill, setSelectedSkill] = useState('')
+  const [errorMsg, setErrorMsg] = useState('') // State สำหรับเก็บข้อความแจ้งเตือน
 
   // สร้าง Ref สำหรับเรียกเปิดปฏิทิน
   const startPickerRef = useRef<HTMLInputElement>(null)
@@ -55,9 +56,12 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
         projectUrl: '',
       })
     }
+    setErrorMsg('') // ล้างข้อความ Error ทุกครั้งที่เปิด Modal ขึ้นมาใหม่
   }, [editingProject, isOpen])
 
   const handleDateInput = (e: React.ChangeEvent<HTMLInputElement>, field: 'startDate' | 'endDate') => {
+    setErrorMsg(''); // ล้าง Error เมื่อมีการพิมพ์/เลือกวันที่
+
     const rawValue = e.target.value;
 
     if (rawValue.includes('-')) {
@@ -89,6 +93,7 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
     if (selectedSkill && !formData.skills.includes(selectedSkill)) {
       setFormData({ ...formData, skills: [...formData.skills, selectedSkill] })
       setSelectedSkill('')
+      setErrorMsg('') // ล้าง Error เมื่อมีการเพิ่มข้อมูล
     }
   }
 
@@ -97,16 +102,31 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
   }
 
   const handleSubmit = () => {
-    if (!formData.name || !formData.role) {
-      alert('Please fill in Project Name and Role')
+    // Validation: ตรวจสอบว่าทุกช่อง (ยกเว้น URL) ต้องไม่เป็นค่าว่าง
+    if (
+      !formData.name.trim() || 
+      !formData.role.trim() || 
+      !formData.startDate.trim() || 
+      !formData.endDate.trim() || 
+      !formData.description.trim()
+    ) {
+      setErrorMsg('Please fill in all required fields.')
       return
     }
-    onSave(formData)
+
+    // Validation: ตรวจสอบว่ามี Skill อย่างน้อย 1 อัน
+    if (formData.skills.length === 0) {
+      setErrorMsg('Please add at least one related skill.')
+      return
+    }
+
+    setErrorMsg('') // ล้าง Error
+    onSave(formData) // สั่ง Save กลับไปที่หน้าหลัก
   }
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 overflow-y-auto">
-      <div className="relative w-full max-w-2xl rounded-2xl bg-white shadow-2xl my-8">
+      <div className="relative w-full max-w-2xl rounded-2xl bg-white shadow-2xl my-8" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between border-b p-6">
           <h2 className="text-xl font-bold text-[#1C2D4F]">
@@ -121,24 +141,44 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
 
         {/* Body */}
         <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
+          
+          {/* แสดงข้อความ Error สีแดง ถ้ามี */}
+          {errorMsg && (
+            <div className="p-3 mb-2 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm font-medium flex items-center gap-2">
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeWidth="2"></circle><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01"></path></svg>
+              {errorMsg}
+            </div>
+          )}
+
+          {/* Project Name */}
           <div>
-            <label className="mb-1.5 block text-sm font-semibold text-[#0273B1]">Project Name</label>
+            <label className="mb-1.5 block text-sm font-semibold text-[#0273B1]">
+              Project Name <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               placeholder="Project Name"
               value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, name: e.target.value })
+                setErrorMsg('')
+              }}
               className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
           <div>
-            <label className="mb-1.5 block text-sm font-semibold text-[#0273B1]">Role</label>
+            <label className="mb-1.5 block text-sm font-semibold text-[#0273B1]">
+              Role <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               placeholder="e.g., Web developer"
               value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, role: e.target.value })
+                setErrorMsg('')
+              }}
               className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
@@ -147,7 +187,9 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
           <div className="grid grid-cols-2 gap-4">
             {/* Start Date */}
             <div className="relative group">
-              <label className="mb-1.5 block text-sm font-semibold text-[#0273B1]">Start Date</label>
+              <label className="mb-1.5 block text-sm font-semibold text-[#0273B1]">
+                Start Date <span className="text-red-500">*</span>
+              </label>
               <div className="relative">
                 <input
                   type="text"
@@ -181,7 +223,9 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
 
             {/* End Date */}
             <div className="relative group">
-              <label className="mb-1.5 block text-sm font-semibold text-[#0273B1]">End Date</label>
+              <label className="mb-1.5 block text-sm font-semibold text-[#0273B1]">
+                End Date <span className="text-red-500">*</span>
+              </label>
               <div className="relative">
                 <input
                   type="text"
@@ -214,19 +258,26 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
 
           {/* Description */}
           <div>
-            <label className="mb-1.5 block text-sm font-semibold text-[#0273B1]">Description</label>
+            <label className="mb-1.5 block text-sm font-semibold text-[#0273B1]">
+              Description <span className="text-red-500">*</span>
+            </label>
             <textarea
               rows={4}
               placeholder="Description about your project"
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, description: e.target.value })
+                setErrorMsg('')
+              }}
               className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
             />
           </div>
 
           {/* Related Skills */}
           <div>
-            <label className="mb-1.5 block text-sm font-semibold text-[#0273B1]">Related Skills</label>
+            <label className="mb-1.5 block text-sm font-semibold text-[#0273B1]">
+              Related Skills <span className="text-red-500">*</span>
+            </label>
             <div className="flex gap-2">
               <select
                 value={selectedSkill}

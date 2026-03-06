@@ -30,6 +30,9 @@ export default function SkillsModal({
     category: "",
     level: "",
   });
+  
+  // State สำหรับเก็บข้อความแจ้งเตือน Error
+  const [errorMsg, setErrorMsg] = useState("");
 
   // อัปเดตข้อมูลเมื่อมีการแก้ไข (Edit Mode) หรือรีเซ็ตเมื่อเปิดใหม่ (Add Mode)
   useEffect(() => {
@@ -38,15 +41,19 @@ export default function SkillsModal({
     } else {
       setFormData({ name: "", category: "", level: "" });
     }
+    setErrorMsg(""); // ล้าง Error ทุกครั้งที่เปิด Modal ใหม่
   }, [editingSkill, isOpen]);
 
   if (!isOpen) return null;
 
   const handleSubmit = () => {
+    // Validation: ตรวจสอบว่ากรอกข้อมูลครบทุกช่องหรือไม่
     if (!formData.name || !formData.category || !formData.level) {
-      alert("Please fill in all fields and select a proficiency level.");
+      setErrorMsg("Please fill in all required fields and select a proficiency level.");
       return;
     }
+    
+    setErrorMsg(""); // ล้าง Error
     onSave(formData);
   };
 
@@ -74,15 +81,30 @@ export default function SkillsModal({
 
         {/* Body */}
         <div className="p-6 space-y-6">
+          
+          {/* แสดงข้อความ Error สีแดง ถ้ามี */}
+          {errorMsg && (
+            <div className="p-3 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm font-medium flex items-center gap-2">
+              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" strokeWidth="2"></circle>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01"></path>
+              </svg>
+              {errorMsg}
+            </div>
+          )}
+
           {/* Skill Name */}
           <div>
             <label className="block text-[15px] font-bold text-[#1C2D4F] mb-2">
-              Skill Name
+              Skill Name <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <select
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, name: e.target.value });
+                  setErrorMsg(""); // ล้าง Error เมื่อเริ่มกรอก
+                }}
                 className="w-full appearance-none px-4 py-3 bg-white border border-gray-200 rounded-lg text-[15px] text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm cursor-pointer"
               >
                 <option value="" disabled>Select skill</option>
@@ -102,12 +124,15 @@ export default function SkillsModal({
           {/* Category */}
           <div>
             <label className="block text-[15px] font-bold text-[#1C2D4F] mb-2">
-              Category
+              Category <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <select
                 value={formData.category}
-                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, category: e.target.value });
+                  setErrorMsg("");
+                }}
                 className="w-full appearance-none px-4 py-3 bg-white border border-gray-200 rounded-lg text-[15px] text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm cursor-pointer"
               >
                 <option value="" disabled>Select category</option>
@@ -124,13 +149,16 @@ export default function SkillsModal({
           {/* Proficiency Level */}
           <div>
             <label className="block text-[15px] font-bold text-[#1C2D4F] mb-3">
-              Proficiency Level
+              Proficiency Level <span className="text-red-500">*</span>
             </label>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               
               {/* Beginner Card */}
               <div
-                onClick={() => setFormData({ ...formData, level: "Beginner" })}
+                onClick={() => {
+                  setFormData({ ...formData, level: "Beginner" });
+                  setErrorMsg("");
+                }}
                 className={`border rounded-xl p-5 cursor-pointer transition-all duration-200 ${
                   formData.level === "Beginner"
                     ? "border-[#68B383] border-[2px] shadow-sm bg-[#F0FDF4]/30"
@@ -153,7 +181,10 @@ export default function SkillsModal({
 
               {/* Intermediate Card */}
               <div
-                onClick={() => setFormData({ ...formData, level: "Intermediate" })}
+                onClick={() => {
+                  setFormData({ ...formData, level: "Intermediate" });
+                  setErrorMsg("");
+                }}
                 className={`border rounded-xl p-5 cursor-pointer transition-all duration-200 ${
                   formData.level === "Intermediate"
                     ? "border-[#3B82F6] border-[2px] shadow-sm bg-[#EFF6FF]/30"
@@ -176,7 +207,10 @@ export default function SkillsModal({
 
               {/* Advanced Card */}
               <div
-                onClick={() => setFormData({ ...formData, level: "Advanced" })}
+                onClick={() => {
+                  setFormData({ ...formData, level: "Advanced" });
+                  setErrorMsg("");
+                }}
                 className={`border rounded-xl p-5 cursor-pointer transition-all duration-200 ${
                   formData.level === "Advanced"
                     ? "border-[#8B5CF6] border-[2px] shadow-sm bg-[#F5F3FF]/30"

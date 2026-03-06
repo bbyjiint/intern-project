@@ -2,21 +2,11 @@
 
 import { useState, useMemo } from "react";
 import InternNavbar from "@/components/InternNavbar";
+import Sidebar from "@/components/InternSidebar";
+import JobCard, {JobPostData} from "@/components/profile/JobCard"; // แก้ Path ให้ตรงกับ Component ที่เราสร้าง
+import { usePathname, useRouter } from "next/navigation";
 
-interface JobPost {
-  id: string;
-  jobTitle: string;
-  companyName: string;
-  companyEmail: string;
-  location: string;
-  workType: string;
-  roleType: string;
-  applicants: number;
-  allowance: string;
-  timeAgo: string;
-}
-
-const mockJobs: JobPost[] = [
+const mockJobs: JobPostData[] = [
   {
     id: "1",
     jobTitle: "รับนักศึกษาฝึกงาน AI Engineer",
@@ -68,7 +58,9 @@ const mockJobs: JobPost[] = [
 ];
 
 export default function FindCompaniesPage() {
-  const [jobs] = useState<JobPost[]>(mockJobs);
+  const router = useRouter();
+  const [jobs] = useState<JobPostData[]>(mockJobs);
+  const [bookmarkedJobs, setBookmarkedJobs] = useState<Set<string>>(new Set(["1", "2"]));
   const [searchQuery, setSearchQuery] = useState("");
 
   const [positionFilter, setPositionFilter] = useState("");
@@ -77,9 +69,9 @@ export default function FindCompaniesPage() {
     hybrid: true,
     remote: true,
   });
-  
+
   // ตั้งค่าเริ่มต้นเงินเดือน
-  const SLIDER_MAX = 50000; 
+  const SLIDER_MAX = 50000;
   const [minSalary, setMinSalary] = useState("0");
   const [maxSalary, setMaxSalary] = useState(SLIDER_MAX.toString());
 
@@ -93,6 +85,18 @@ export default function FindCompaniesPage() {
     setFormatFilters({ onSite: true, hybrid: true, remote: true });
     setMinSalary("0");
     setMaxSalary(SLIDER_MAX.toString());
+  };
+
+  const handleBookmark = async (id: string) => {
+    const newBookmarks = new Set(bookmarkedJobs);
+    if (newBookmarks.has(id)) {
+      newBookmarks.delete(id);
+      // TODO: Call API to remove bookmark
+    } else {
+      newBookmarks.add(id);
+      // TODO: Call API to add bookmark
+    }
+    setBookmarkedJobs(newBookmarks);
   };
 
   const parseAllowance = (allowanceStr: string) => {
@@ -141,25 +145,18 @@ export default function FindCompaniesPage() {
     return jobs.filter((j) => j.workType === type).length;
   };
 
-  const getWorkTypeStyle = (type: string) => {
-    switch (type) {
-      case "Hybrid":
-        return "bg-[#3B82F6] text-white";
-      case "On Site":
-        return "bg-[#FBBF24] text-white";
-      case "Remote":
-        return "bg-[#EF4444] text-white";
-      default:
-        return "bg-gray-400 text-white";
-    }
-  };
-
   // --- Slider Logic ---
   const currentMin = parseInt(minSalary) || 0;
-  const currentMax = maxSalary === "" ? SLIDER_MAX : (parseInt(maxSalary) || 0);
+  const currentMax = maxSalary === "" ? SLIDER_MAX : parseInt(maxSalary) || 0;
 
-  const minPercent = Math.min(Math.max((currentMin / SLIDER_MAX) * 100, 0), 100);
-  const maxPercent = Math.min(Math.max((currentMax / SLIDER_MAX) * 100, 0), 100);
+  const minPercent = Math.min(
+    Math.max((currentMin / SLIDER_MAX) * 100, 0),
+    100,
+  );
+  const maxPercent = Math.min(
+    Math.max((currentMax / SLIDER_MAX) * 100, 0),
+    100,
+  );
 
   // เมื่อลากวงกลมฝั่งซ้าย (Min)
   const handleMinSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -180,12 +177,11 @@ export default function FindCompaniesPage() {
       <div className="flex flex-1 w-full">
         {/* ================= LEFT SIDEBAR (FILTERS) ================= */}
         <div className="w-[280px] lg:w-[320px] bg-white border-r border-gray-200 py-8 px-6 lg:px-8 flex flex-col gap-8 flex-shrink-0">
-          
           {/* Position Filter */}
           <div>
             <h3 className="text-sm font-bold text-gray-900 mb-3">Positions</h3>
             <div className="relative">
-              <select 
+              <select
                 value={positionFilter}
                 onChange={(e) => setPositionFilter(e.target.value)}
                 className="w-full appearance-none px-4 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-500 focus:outline-none focus:border-blue-500 shadow-sm cursor-pointer"
@@ -195,8 +191,18 @@ export default function FindCompaniesPage() {
                 <option value="backend">Backend Developer</option>
                 <option value="ai">AI Engineer</option>
               </select>
-              <svg className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              <svg
+                className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
               </svg>
             </div>
           </div>
@@ -204,46 +210,127 @@ export default function FindCompaniesPage() {
           {/* Internship Format Filter */}
           <div>
             <div className="flex items-center justify-between mb-4 cursor-pointer">
-              <h3 className="text-sm font-bold text-gray-900">Internship format</h3>
-              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+              <h3 className="text-sm font-bold text-gray-900">
+                Internship format
+              </h3>
+              <svg
+                className="w-4 h-4 text-gray-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 15l7-7 7 7"
+                />
               </svg>
             </div>
             <div className="space-y-3">
               {/* On-Site */}
               <label className="flex items-center justify-between cursor-pointer group">
                 <div className="flex items-center gap-3">
-                  <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${formatFilters.onSite ? 'bg-[#3B82F6] border-[#3B82F6]' : 'border-gray-300 bg-white'}`}>
-                    {formatFilters.onSite && <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                  <div
+                    className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${formatFilters.onSite ? "bg-[#3B82F6] border-[#3B82F6]" : "border-gray-300 bg-white"}`}
+                  >
+                    {formatFilters.onSite && (
+                      <svg
+                        className="w-3.5 h-3.5 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={3}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    )}
                   </div>
-                  <input type="checkbox" className="hidden" checked={formatFilters.onSite} onChange={() => toggleFormat('onSite')} />
+                  <input
+                    type="checkbox"
+                    className="hidden"
+                    checked={formatFilters.onSite}
+                    onChange={() => toggleFormat("onSite")}
+                  />
                   <span className="text-sm text-gray-700">On-Site</span>
                 </div>
-                <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">{countWorkType("On Site")}</span>
+                <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                  {countWorkType("On Site")}
+                </span>
               </label>
 
               {/* Hybrid */}
               <label className="flex items-center justify-between cursor-pointer group">
                 <div className="flex items-center gap-3">
-                  <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${formatFilters.hybrid ? 'bg-[#3B82F6] border-[#3B82F6]' : 'border-gray-300 bg-white'}`}>
-                    {formatFilters.hybrid && <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                  <div
+                    className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${formatFilters.hybrid ? "bg-[#3B82F6] border-[#3B82F6]" : "border-gray-300 bg-white"}`}
+                  >
+                    {formatFilters.hybrid && (
+                      <svg
+                        className="w-3.5 h-3.5 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={3}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    )}
                   </div>
-                  <input type="checkbox" className="hidden" checked={formatFilters.hybrid} onChange={() => toggleFormat('hybrid')} />
+                  <input
+                    type="checkbox"
+                    className="hidden"
+                    checked={formatFilters.hybrid}
+                    onChange={() => toggleFormat("hybrid")}
+                  />
                   <span className="text-sm text-gray-700">Hybrid</span>
                 </div>
-                <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{countWorkType("Hybrid")}</span>
+                <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                  {countWorkType("Hybrid")}
+                </span>
               </label>
 
               {/* Remote */}
               <label className="flex items-center justify-between cursor-pointer group">
                 <div className="flex items-center gap-3">
-                  <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${formatFilters.remote ? 'bg-[#3B82F6] border-[#3B82F6]' : 'border-gray-300 bg-white'}`}>
-                    {formatFilters.remote && <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                  <div
+                    className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${formatFilters.remote ? "bg-[#3B82F6] border-[#3B82F6]" : "border-gray-300 bg-white"}`}
+                  >
+                    {formatFilters.remote && (
+                      <svg
+                        className="w-3.5 h-3.5 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={3}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    )}
                   </div>
-                  <input type="checkbox" className="hidden" checked={formatFilters.remote} onChange={() => toggleFormat('remote')} />
+                  <input
+                    type="checkbox"
+                    className="hidden"
+                    checked={formatFilters.remote}
+                    onChange={() => toggleFormat("remote")}
+                  />
                   <span className="text-sm text-gray-700">Remote</span>
                 </div>
-                <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{countWorkType("Remote")}</span>
+                <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
+                  {countWorkType("Remote")}
+                </span>
               </label>
             </div>
           </div>
@@ -252,18 +339,30 @@ export default function FindCompaniesPage() {
           <div>
             <div className="flex items-center justify-between mb-8 cursor-pointer">
               <h3 className="text-sm font-bold text-gray-900">Allowance</h3>
-              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+              <svg
+                className="w-4 h-4 text-gray-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 15l7-7 7 7"
+                />
               </svg>
             </div>
-            
+
             {/* Interactive Dual Slider */}
             <div className="relative h-1.5 bg-gray-200 rounded-full mb-8 mx-2">
-              
               {/* Active Blue Track */}
-              <div 
+              <div
                 className="absolute top-0 h-full bg-[#3B82F6] rounded-full pointer-events-none"
-                style={{ left: `${minPercent}%`, right: `${100 - maxPercent}%` }}
+                style={{
+                  left: `${minPercent}%`,
+                  right: `${100 - maxPercent}%`,
+                }}
               ></div>
 
               {/* Min Input Slider */}
@@ -325,7 +424,7 @@ export default function FindCompaniesPage() {
               <button className="flex-1 bg-[#3B82F6] text-white text-xs font-bold py-2.5 rounded-lg shadow-sm hover:bg-blue-600 transition-colors">
                 Apply
               </button>
-              <button 
+              <button
                 onClick={handleReset}
                 className="flex-1 bg-[#F1F5F9] text-gray-600 text-xs font-bold py-2.5 rounded-lg shadow-sm hover:bg-gray-200 transition-colors"
               >
@@ -338,12 +437,21 @@ export default function FindCompaniesPage() {
         {/* ================= MAIN CONTENT ================= */}
         <div className="flex-1 p-6 lg:p-10 overflow-y-auto">
           <div className="max-w-6xl mx-auto">
-            
             {/* Header Row: Search */}
             <div className="flex justify-end mb-8">
               <div className="relative w-full max-w-md">
-                <svg className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                <svg
+                  className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
                 </svg>
                 <input
                   type="text"
@@ -363,97 +471,22 @@ export default function FindCompaniesPage() {
             {/* Job Cards Grid */}
             {filteredJobs.length === 0 ? (
               <div className="text-center py-20 text-gray-500 bg-white rounded-xl shadow-sm border border-gray-100">
-                No jobs match your selected filters. Try adjusting your search criteria.
+                No jobs match your selected filters. Try adjusting your search
+                criteria.
               </div>
             ) : (
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 {filteredJobs.map((job) => (
-                  <div
+                  <JobCard
                     key={job.id}
-                    className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col"
-                  >
-                    {/* Top Row: Company Info & Icons */}
-                    <div className="flex justify-between items-start mb-5">
-                      <div className="flex items-center space-x-4">
-                        {/* Logo Placeholder */}
-                        <div className="w-14 h-14 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                           <div className="w-8 h-8 relative flex items-end justify-center">
-                              <div className="absolute inset-0 bg-[#1C2D4F]" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }}></div>
-                              <div className="absolute inset-[3px] bg-[#E31837]" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }}></div>
-                              <span className="text-[4px] font-bold text-white z-10 mb-0.5">LOGO</span>
-                           </div>
-                        </div>
-                        <div>
-                          <h3 className="text-[17px] font-bold text-gray-900 leading-tight">
-                            {job.companyName}
-                          </h3>
-                          <p className="text-sm text-gray-400 mt-0.5">
-                            {job.companyEmail}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      {/* Action Icons */}
-                      <div className="flex flex-col items-center space-y-3 mt-1">
-                        <button className="text-gray-400 hover:text-gray-700 transition-colors">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                          </svg>
-                        </button>
-                        <button className="text-gray-300 hover:text-gray-500 transition-colors">
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* Job Title */}
-                    <h4 className="text-[19px] font-bold text-black mb-3">
-                      {job.jobTitle}
-                    </h4>
-
-                    {/* Tags */}
-                    <div className="flex space-x-2 mb-6">
-                      <span className={`text-[11px] font-semibold px-4 py-1.5 rounded-md ${getWorkTypeStyle(job.workType)}`}>
-                        {job.workType}
-                      </span>
-                      <span className="bg-[#E5E7EB] text-gray-700 text-[11px] font-semibold px-4 py-1.5 rounded-md">
-                        {job.roleType}
-                      </span>
-                    </div>
-
-                    {/* Job Details Grid */}
-                    <div className="space-y-3 mb-6 flex-1">
-                      <div className="grid grid-cols-[140px_1fr] items-start">
-                        <span className="text-gray-400 text-[15px]">Preferred</span>
-                        <span className="text-gray-600 text-[15px]">{job.location}</span>
-                      </div>
-                      <div className="grid grid-cols-[140px_1fr] items-center">
-                        <span className="text-gray-400 text-[15px] leading-tight">
-                          Number of<br />applicants
-                        </span>
-                        <span className="text-gray-600 text-[15px]">{job.applicants}</span>
-                      </div>
-                      <div className="grid grid-cols-[140px_1fr] items-start">
-                        <span className="text-gray-400 text-[15px]">Allowance</span>
-                        <span className="text-black text-[15px] font-bold">
-                          {job.allowance}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Time Ago Footer */}
-                    <div className="text-right mt-auto">
-                      <span className="text-[11px] text-gray-400 font-medium">
-                        {job.timeAgo}
-                      </span>
-                    </div>
-                  </div>
+                    job={{ ...job, isBookmarked: bookmarkedJobs.has(job.id) }} 
+                    onBookmarkClick={handleBookmark} 
+                    onClick={(id) => router.push(`/intern/job-detail/${id}`)}
+                    onMenuClick={(id) => console.log("Clicked menu for:", id)}
+                  />
                 ))}
               </div>
             )}
-
           </div>
         </div>
       </div>
