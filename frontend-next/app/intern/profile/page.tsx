@@ -17,7 +17,10 @@ import Sidebar from '@/components/InternSidebar'
 export default function InternProfilePage() {
   const router = useRouter()
   const pathname = usePathname()
+  
+  // ดึง refetch มาใช้สำหรับอัปเดตข้อมูลใหม่จาก API
   const { profileData, isLoading, completionPercentage, refetch } = useProfile()
+  
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false)
   const [currentDate, setCurrentDate] = useState('')
   
@@ -28,20 +31,15 @@ export default function InternProfilePage() {
   const isProjectPage = pathname === '/intern/project'
   const isSkillPage = pathname === '/intern/skills'
   
-  // Check if current page is one of the dropdown menu pages
   const isProfileDropdownPage = isAIAnalysisPage || isJobMatchPage || isCertificatesPage || isProjectPage || isSkillPage
 
-  // Keep dropdown open when navigating to dropdown menu pages
   useEffect(() => {
     if (isProfileDropdownPage) {
       setIsProfileDropdownOpen(true)
     }
   }, [isProfileDropdownPage])
 
-  // Dropdown stays open when clicked - no auto-close on outside click
-
   useEffect(() => {
-    // Set current date
     const now = new Date()
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
     const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
@@ -55,7 +53,6 @@ export default function InternProfilePage() {
   }, [])
 
   useEffect(() => {
-    // Check user role
     const checkRole = async () => {
       try {
         const { apiFetch } = await import('@/lib/api')
@@ -78,18 +75,11 @@ export default function InternProfilePage() {
     checkRole()
   }, [router])
 
-
-  // Don't return early - keep layout visible
-
-
- return (
+  return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <InternNavbar />
       
-      {/* จับ Sidebar และ Main Content มาใส่รวมกันใน flex */}
       <div className="flex flex-1">
-        
-        {/* Sidebar Navigation */}
         <Sidebar />
 
         {/* Main Content */}
@@ -122,10 +112,10 @@ export default function InternProfilePage() {
                 completionPercentage={completionPercentage}
               />
 
-              {/* Personal Information */}
+              {/* Personal Information - แก้ไขตรงนี้เพื่อให้อัปเดตทันที */}
               <PersonalInfoCard 
                 profile={profileData}
-                onEdit={() => {}}
+                onRefresh={refetch} 
               />
 
               {/* Education */}
@@ -149,6 +139,7 @@ export default function InternProfilePage() {
                 projects={profileData.projects || []}
                 onAdd={() => {}}
                 onEdit={(id) => {}}
+                onRefresh={refetch}
               />
 
               {/* Certificates */}
@@ -156,6 +147,7 @@ export default function InternProfilePage() {
                 certificates={profileData.certificates || []}
                 onAdd={() => {}}
                 onEdit={(id) => {}}
+                onRefresh={refetch}
               />
 
               {/* Skills */}
@@ -163,6 +155,7 @@ export default function InternProfilePage() {
                 skills={profileData.skills || []}
                 onAdd={() => {}}
                 onEdit={(id) => {}}
+                onRefresh={refetch}
               />
             </>
           )}
