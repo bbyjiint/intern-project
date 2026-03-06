@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 export interface ProjectData {
   id?: string
@@ -9,7 +9,7 @@ export interface ProjectData {
   startDate: string
   endDate: string
   description: string
-  skills: string[] // เปลี่ยนเป็น skills ให้ตรงกับหน้าหลัก
+  skills: string[]
   githubUrl?: string
   projectUrl?: string
 }
@@ -17,7 +17,7 @@ export interface ProjectData {
 interface ProjectsModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (project: ProjectData) => void // ลบ Promise<void> ออก เพื่อให้เรียกใช้แบบ Synchronous ได้ง่ายในการทำ Mockup
+  onSave: (project: ProjectData) => void
   editingProject?: ProjectData | null
 }
 
@@ -36,7 +36,10 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
   })
   const [selectedSkill, setSelectedSkill] = useState('')
 
-  // Reset or Set data when modal opens/changes mode
+  // สร้าง Ref สำหรับเรียกเปิดปฏิทิน
+  const startPickerRef = useRef<HTMLInputElement>(null)
+  const endPickerRef = useRef<HTMLInputElement>(null)
+
   useEffect(() => {
     if (editingProject) {
       setFormData(editingProject)
@@ -53,6 +56,32 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
       })
     }
   }, [editingProject, isOpen])
+
+  const handleDateInput = (e: React.ChangeEvent<HTMLInputElement>, field: 'startDate' | 'endDate') => {
+    const rawValue = e.target.value;
+
+    if (rawValue.includes('-')) {
+      const [year, month] = rawValue.split('-');
+      setFormData({ ...formData, [field]: `${month}/${year}` });
+      return;
+    }
+
+    let value = rawValue.replace(/\D/g, '')
+    if (value.length > 6) value = value.slice(0, 6)
+
+    if (value.length >= 3) {
+      value = `${value.slice(0, 2)}/${value.slice(2)}`
+    }
+    setFormData({ ...formData, [field]: value })
+  }
+
+  const formatToMonthValue = (dateStr: string) => {
+    if (dateStr.includes('/')) {
+      const [m, y] = dateStr.split('/');
+      if (y && m && y.length === 4) return `${y}-${m.padStart(2, '0')}`;
+    }
+    return '';
+  }
 
   if (!isOpen) return null
 
@@ -72,7 +101,7 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
       alert('Please fill in Project Name and Role')
       return
     }
-    onSave(formData) // สั่ง Save กลับไปที่หน้าหลัก
+    onSave(formData)
   }
 
   return (
@@ -90,53 +119,96 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
           </button>
         </div>
 
-        {/* Body (Scrollable) */}
+        {/* Body */}
         <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto">
-          {/* Project Name */}
           <div>
             <label className="mb-1.5 block text-sm font-semibold text-[#0273B1]">Project Name</label>
             <input
               type="text"
-              placeholder="Enter project name"
+              placeholder="Project Name"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
-          {/* Role */}
           <div>
             <label className="mb-1.5 block text-sm font-semibold text-[#0273B1]">Role</label>
             <input
               type="text"
-              placeholder="e.g. Full Stack Developer"
+              placeholder="e.g., Web developer"
               value={formData.role}
               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
               className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
           </div>
 
-          {/* Dates */}
+          {/* Date Pickers */}
           <div className="grid grid-cols-2 gap-4">
-            <div>
+            {/* Start Date */}
+            <div className="relative group">
               <label className="mb-1.5 block text-sm font-semibold text-[#0273B1]">Start Date</label>
-              <input
-                type="text"
-                placeholder="MM/YYYY"
-                value={formData.startDate}
-                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="MM/YYYY"
+                  maxLength={7}
+                  value={formData.startDate}
+                  onChange={(e) => handleDateInput(e, 'startDate')}
+                  className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                />
+                
+                {/* ไอคอนปฏิทินที่คลิกได้ */}
+                <div 
+                  className="absolute inset-y-0 right-0 px-3 flex items-center cursor-pointer hover:bg-gray-50 rounded-r-xl transition-colors"
+                  onClick={() => startPickerRef.current?.showPicker()} // สั่งเปิดปฏิทิน
+                >
+                  <svg className="h-5 w-5 text-gray-400 group-focus-within:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+
+                {/* Hidden Date Picker */}
+                <input
+                  ref={startPickerRef}
+                  type="month"
+                  value={formatToMonthValue(formData.startDate)}
+                  onChange={(e) => handleDateInput(e, 'startDate')}
+                  className="absolute opacity-0 pointer-events-none right-0 bottom-0 w-0 h-0"
+                />
+              </div>
             </div>
-            <div>
+
+            {/* End Date */}
+            <div className="relative group">
               <label className="mb-1.5 block text-sm font-semibold text-[#0273B1]">End Date</label>
-              <input
-                type="text"
-                placeholder="MM/YYYY"
-                value={formData.endDate}
-                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="MM/YYYY"
+                  maxLength={7}
+                  value={formData.endDate}
+                  onChange={(e) => handleDateInput(e, 'endDate')}
+                  className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+                />
+                
+                <div 
+                  className="absolute inset-y-0 right-0 px-3 flex items-center cursor-pointer hover:bg-gray-50 rounded-r-xl transition-colors"
+                  onClick={() => endPickerRef.current?.showPicker()}
+                >
+                  <svg className="h-5 w-5 text-gray-400 group-focus-within:text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                </div>
+
+                <input
+                  ref={endPickerRef}
+                  type="month"
+                  value={formatToMonthValue(formData.endDate)}
+                  onChange={(e) => handleDateInput(e, 'endDate')}
+                  className="absolute opacity-0 pointer-events-none right-0 bottom-0 w-0 h-0"
+                />
+              </div>
             </div>
           </div>
 
@@ -145,21 +217,21 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
             <label className="mb-1.5 block text-sm font-semibold text-[#0273B1]">Description</label>
             <textarea
               rows={4}
-              placeholder="Briefly describe your responsibilities and achievements..."
+              placeholder="Description about your project"
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
             />
           </div>
 
-          {/* Skills */}
+          {/* Related Skills */}
           <div>
             <label className="mb-1.5 block text-sm font-semibold text-[#0273B1]">Related Skills</label>
             <div className="flex gap-2">
               <select
                 value={selectedSkill}
                 onChange={(e) => setSelectedSkill(e.target.value)}
-                className="flex-1 rounded-xl border border-gray-200 px-4 py-2 focus:border-blue-500 focus:outline-none"
+                className="flex-1 rounded-xl border border-gray-200 px-4 py-2 focus:border-blue-500 focus:outline-none text-sm text-gray-500 bg-white"
               >
                 <option value="">Select skill</option>
                 {AVAILABLE_SKILLS.map(skill => (
@@ -167,17 +239,18 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
                 ))}
               </select>
               <button
+                type="button"
                 onClick={handleAddSkill}
-                className="rounded-xl bg-[#E3F5FF] px-4 py-2 font-bold text-[#0273B1] hover:bg-[#0273B1] hover:text-white transition-all"
+                className="rounded-xl bg-[#E3F5FF] px-4 py-2 font-bold text-[#0273B1] hover:bg-[#0273B1] hover:text-white transition-all text-sm shrink-0"
               >
-                Add +
+                ADD
               </button>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               {formData.skills.map((skill) => (
-                <span key={skill} className="flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-blue-600 border border-blue-100">
+                <span key={skill} className="flex items-center gap-2 rounded-lg bg-blue-100 px-3 py-1.5 text-[12px] font-bold text-[#0273B1]">
                   {skill}
-                  <button onClick={() => handleRemoveSkill(skill)} className="hover:text-red-500 text-lg leading-none">×</button>
+                  <button type="button" onClick={() => handleRemoveSkill(skill)} className="hover:text-red-500 text-sm">×</button>
                 </span>
               ))}
             </div>
@@ -185,14 +258,16 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 border-t p-6">
+        <div className="flex justify-end gap-3 border-t p-6 bg-gray-50 rounded-b-2xl">
           <button
+            type="button"
             onClick={onClose}
-            className="rounded-xl px-6 py-2.5 font-bold text-gray-500 hover:bg-gray-50 transition-all"
+            className="rounded-xl px-6 py-2.5 font-bold text-gray-400 border border-gray-200 bg-white hover:bg-gray-50 transition-all"
           >
             Cancel
           </button>
           <button
+            type="button"
             onClick={handleSubmit}
             className="rounded-xl bg-[#0273B1] px-8 py-2.5 font-bold text-white shadow-lg shadow-blue-100 hover:bg-[#025a8f] transition-all"
           >
