@@ -458,7 +458,7 @@ profilesRouter.get("/companies/profile", requireAuth, requireRole("COMPANY"), as
       companyName: companyProfile.companyName || "",
       companyDescription: companyProfile.about || "",
       businessType: "", // Not stored in schema currently
-      companySize: "", // Not stored in schema currently
+      companySize: companyProfile.companySize || "",
       addressDetails,
       subDistrict,
       district,
@@ -485,6 +485,7 @@ profilesRouter.put("/companies/profile", requireAuth, requireRole("COMPANY"), as
   const {
     companyName,
     companyDescription,
+    companySize,
     addressDetails,
     subDistrict,
     district,
@@ -513,10 +514,11 @@ profilesRouter.put("/companies/profile", requireAuth, requireRole("COMPANY"), as
         where: { userId },
         data: {
           companyName: companyName || companyProfile.companyName,
-          about: companyDescription || undefined,
+          about: companyDescription !== undefined ? companyDescription : companyProfile.about,
+          companySize: companySize !== undefined ? companySize : companyProfile.companySize,
           location,
-          province: province || undefined,
-          recruiterName: contactName || undefined,
+          province: province !== undefined ? province : companyProfile.province,
+          recruiterName: contactName !== undefined ? contactName : companyProfile.recruiterName,
           ...(profileImage && { logoURL: profileImage }),
           updatedAt: new Date(),
         },
@@ -529,6 +531,7 @@ profilesRouter.put("/companies/profile", requireAuth, requireRole("COMPANY"), as
           userId,
           companyName: companyName || "Company",
           about: companyDescription || undefined,
+          companySize: companySize || undefined,
           location,
           province: province || undefined,
           recruiterName: contactName || undefined,
