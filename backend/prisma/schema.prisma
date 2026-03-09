@@ -206,11 +206,13 @@ model CompanyProfile {
   userId            String         @unique @db.Uuid
   companyName       String
   about             String?
-  location          String?
-  province          String?
+  addressDetails    String?        // Street address, building number, etc.
+  location          String?        // Legacy: concatenated address (kept for backward compatibility)
+  province          String?        // Legacy: province name (kept for backward compatibility)
   provinceId        String?        @db.Uuid
   districtId        String?        @db.Uuid
   subdistrictId     String?        @db.Uuid
+  postcode          String?        // Postal code
   companySize       String?
   logoURL           String?
   recruiterName     String?
@@ -449,6 +451,7 @@ model Province {
   createdAt DateTime                    @default(now())
   updatedAt DateTime                    @updatedAt
   Districts District[]
+  CompanyProfiles CompanyProfile[]
   CandidatePreferredProvince CandidatePreferredProvince[]
 
   @@map("Province")
