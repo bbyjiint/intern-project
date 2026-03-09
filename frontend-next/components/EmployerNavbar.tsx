@@ -106,23 +106,29 @@ export default function EmployerNavbar() {
   }
 
   return (
-    <nav className="bg-white border-b border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          <div className="flex items-center space-x-8">
-            <div>
-              <Link href="/employer/dashboard" className="text-2xl font-semibold tracking-tight" style={{ color: '#0273B1' }}>
-                CompanyHub
-              </Link>
-            </div>
-            <div className="hidden md:flex space-x-6">
+    <nav className="border-b border-[#E5E7EB] bg-white">
+      <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
+        <div className="flex h-[100px] items-center justify-between">
+          <div className="flex items-center gap-10">
+            <Link href="/employer/dashboard" className="flex items-center">
+              <div className="relative flex items-center">
+                <span
+                  className="absolute -left-[12px] top-[1px] block h-[20px] w-[20px] rounded-full"
+                  style={{ backgroundColor: '#3B82F6' }}
+                />
+                <span className="pl-2 text-[32px] font-semibold tracking-[-0.04em]" style={{ color: '#1C2D4F' }}>
+                  CompanyHub.
+                </span>
+              </div>
+            </Link>
+            <div className="hidden md:flex items-center gap-10">
               <Link
                 href="/employer/find-candidates"
-                className="font-medium pb-1 transition-colors"
-                style={{ color: isFindCandidatesPage ? '#0273B1' : '#A9B4CD' }}
+                className="text-[16px] font-medium transition-colors"
+                style={{ color: isFindCandidatesPage ? '#1C2D4F' : '#A9B4CD' }}
                 onMouseEnter={(e) => {
                   if (!isFindCandidatesPage) {
-                    e.currentTarget.style.color = '#0273B1'
+                    e.currentTarget.style.color = '#1C2D4F'
                   }
                 }}
                 onMouseLeave={(e) => {
@@ -135,11 +141,11 @@ export default function EmployerNavbar() {
               </Link>
               <Link
                 href="/employer/messages"
-                className="font-medium pb-1 transition-colors relative"
-                style={{ color: isMessagesPage ? '#0273B1' : '#A9B4CD' }}
+                className="relative text-[16px] font-medium transition-colors"
+                style={{ color: isMessagesPage ? '#1C2D4F' : '#A9B4CD' }}
                 onMouseEnter={(e) => {
                   if (!isMessagesPage) {
-                    e.currentTarget.style.color = '#0273B1'
+                    e.currentTarget.style.color = '#1C2D4F'
                   }
                 }}
                 onMouseLeave={(e) => {
@@ -155,12 +161,25 @@ export default function EmployerNavbar() {
                   </span>
                 )}
               </Link>
+              <a
+                href="mailto:support@companyhub.local?subject=Bug%20Report"
+                className="text-[16px] font-medium transition-colors"
+                style={{ color: '#A9B4CD' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#1C2D4F'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#A9B4CD'
+                }}
+              >
+                Report bug
+              </a>
             </div>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center gap-4">
             <Link
               href="/employer/create-job-post"
-              className="flex items-center space-x-2 px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
+              className="flex items-center space-x-2 rounded-[10px] px-4 py-2.5 text-sm font-semibold transition-colors"
               style={{ backgroundColor: '#E3F5FF', color: '#0273B1' }}
               onMouseEnter={(e) => {
                 e.currentTarget.style.backgroundColor = '#0273B1'
@@ -178,25 +197,25 @@ export default function EmployerNavbar() {
             </Link>
             <div className="relative" ref={dropdownRef}>
               <div className="flex items-center gap-3">
-                <div className="text-right hidden md:block">
+                <div className="hidden text-right md:block">
                   <div className="text-sm font-semibold text-gray-900">
                     {userData?.displayName || profileData?.companyName || 'Company Name'}
                   </div>
                 </div>
-                <div className="relative w-10 h-10">
+                <div className="relative h-12 w-12">
                   <Link
                     href="/employer/profile"
-                    className="block w-10 h-10 rounded-full overflow-hidden cursor-pointer"
+                    className="block h-12 w-12 overflow-hidden rounded-full bg-[#F4F4FA] cursor-pointer"
                   >
                     {profileData?.profileImage ? (
                       <img
                         src={profileData.profileImage}
                         alt="Profile"
-                        className="w-10 h-10 rounded-full object-cover"
+                        className="h-12 w-12 rounded-full object-cover"
                       />
                     ) : (
                       <div 
-                        className="w-10 h-10 rounded-full flex items-center justify-center"
+                        className="flex h-12 w-12 items-center justify-center rounded-full"
                         style={{ backgroundColor: '#0273B1' }}
                       >
                         <span className="text-white font-semibold text-sm">
@@ -207,7 +226,7 @@ export default function EmployerNavbar() {
                   </Link>
                   {/* Dropdown indicator - small gray circle with arrow */}
                   <button
-                    className="absolute bottom-0 right-0 w-4 h-4 bg-gray-300 rounded-full flex items-center justify-center cursor-pointer hover:bg-gray-400 transition-colors z-10"
+                    className="absolute bottom-0 right-0 z-10 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-[#E5E7EB] cursor-pointer transition-colors hover:bg-[#D1D5DB]"
                     onClick={(e) => {
                       e.preventDefault()
                       e.stopPropagation()

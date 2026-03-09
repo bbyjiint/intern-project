@@ -13,6 +13,7 @@ export default function Step1GeneralInfo({ data, onUpdate }: Step1GeneralInfoPro
     companyDescription: data.companyDescription || '',
     businessType: data.businessType || '',
     companySize: data.companySize || '',
+    companyLogo: data.companyLogo || data.logoURL || null,
   })
 
   // Sync formData when data prop changes (e.g., when profile data is loaded from API)
@@ -22,8 +23,9 @@ export default function Step1GeneralInfo({ data, onUpdate }: Step1GeneralInfoPro
       companyDescription: data.companyDescription || '',
       businessType: data.businessType || '',
       companySize: data.companySize || '',
+      companyLogo: data.companyLogo || data.logoURL || null,
     })
-  }, [data.companyName, data.companyDescription, data.businessType, data.companySize])
+  }, [data.companyName, data.companyDescription, data.businessType, data.companySize, data.companyLogo, data.logoURL])
 
   const handleChange = (field: string, value: string) => {
     const updated = { ...formData, [field]: value }
@@ -31,118 +33,169 @@ export default function Step1GeneralInfo({ data, onUpdate }: Step1GeneralInfoPro
     onUpdate(updated)
   }
 
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      const updated = { ...formData, companyLogo: reader.result as string }
+      setFormData(updated)
+      onUpdate(updated)
+    }
+    reader.readAsDataURL(file)
+  }
+
   return (
     <div>
-      <h2 className="text-xl sm:text-2xl font-bold mb-6 sm:mb-8" style={{ color: '#0273B1', fontWeight: 700 }}>
-        General Information
+      <h2 className="mb-8 text-[22px] font-bold leading-none" style={{ color: '#23325B', fontWeight: 700 }}>
+        Company Information
       </h2>
 
-      <div className="space-y-8">
-        {/* Company Name */}
-        <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
-            Company Name
-          </label>
-          <input
-            type="text"
-            value={formData.companyName}
-            onChange={(e) => handleChange('companyName', e.target.value)}
-            placeholder="Example: ABC Corporation"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+      <div className="space-y-[15px]">
+        <div className="grid items-start gap-8 lg:grid-cols-[494px_minmax(0,1fr)] lg:gap-[40px]">
+          <div className="max-w-[494px] space-y-[14px]">
+            <div>
+              <label className="mb-[6px] block text-[14px] font-semibold" style={{ color: '#253858' }}>
+                Company Name<span style={{ color: '#EF4444' }}>*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.companyName}
+                onChange={(e) => handleChange('companyName', e.target.value)}
+                placeholder="Company Name"
+                className="h-[32px] w-full rounded-[5px] border border-[#CBD5E1] bg-white px-[14px] text-[12px] text-[#1E293B] outline-none transition focus:border-[#0273B1] focus:ring-2 focus:ring-[#BFDBFE]"
+              />
+            </div>
 
-        {/* Business Type */}
-        <div>
-          <label className="block text-xs font-medium mb-4" style={{ color: '#0273B1' }}>
-            Business Type
-          </label>
-          <div className="space-y-3">
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="radio"
-                name="businessType"
-                value="private"
-                checked={formData.businessType === 'private'}
-                onChange={(e) => handleChange('businessType', e.target.value)}
-                className="w-5 h-5 mr-3 cursor-pointer appearance-none rounded-full border-2 transition-all"
-                style={{
-                  borderColor: formData.businessType === 'private' ? '#0273B1' : '#E5E7EB',
-                  backgroundColor: formData.businessType === 'private' ? '#0273B1' : '#E5E7EB',
-                  backgroundImage: formData.businessType === 'private' 
-                    ? 'radial-gradient(circle, white 30%, transparent 30%)' 
-                    : 'none',
-                  backgroundSize: 'contain',
-                  backgroundPosition: 'center',
-                  backgroundRepeat: 'no-repeat',
-                }}
-              />
-              <span className="text-sm" style={{ color: '#1C2D4F' }}>
-                Private Company
-              </span>
-            </label>
-            <label className="flex items-center cursor-pointer">
-              <input
-                type="radio"
-                name="businessType"
-                value="state-owned"
-                checked={formData.businessType === 'state-owned'}
-                onChange={(e) => handleChange('businessType', e.target.value)}
-                className="w-5 h-5 mr-3 cursor-pointer appearance-none rounded-full border-2 transition-all"
-                style={{
-                  borderColor: formData.businessType === 'state-owned' ? '#0273B1' : '#E5E7EB',
-                  backgroundColor: formData.businessType === 'state-owned' ? '#0273B1' : '#E5E7EB',
-                  backgroundImage: formData.businessType === 'state-owned' 
-                    ? 'radial-gradient(circle, white 30%, transparent 30%)' 
-                    : 'none',
-                  backgroundSize: 'contain',
-                  backgroundPosition: 'center',
-                  backgroundRepeat: 'no-repeat',
-                }}
-              />
-              <span className="text-sm" style={{ color: '#1C2D4F' }}>
-                State-owned enterprise
-              </span>
-            </label>
+            <div>
+              <label className="mb-[6px] block text-[14px] font-semibold" style={{ color: '#253858' }}>
+                Company Size<span style={{ color: '#EF4444' }}>*</span>
+              </label>
+              <select
+                value={formData.companySize}
+                onChange={(e) => handleChange('companySize', e.target.value)}
+                className="h-[32px] w-full rounded-[5px] border border-[#CBD5E1] bg-white px-[14px] text-[12px] text-[#64748B] outline-none transition focus:border-[#0273B1] focus:ring-2 focus:ring-[#BFDBFE]"
+              >
+                <option value="">Select company size</option>
+                <option value="less-than-10">Less than 10 people</option>
+                <option value="10-50">10-50 people</option>
+                <option value="51-200">51-200 people</option>
+                <option value="201-500">201-500 people</option>
+                <option value="501-1000">501-1000 people</option>
+                <option value="more-than-1000">More than 1000 people</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="mb-[6px] block text-[14px] font-semibold" style={{ color: '#253858' }}>
+                Business Type<span style={{ color: '#EF4444' }}>*</span>
+              </label>
+              <div className="flex flex-wrap gap-x-[30px] gap-y-2 pt-[1px]">
+                <label className="flex cursor-pointer items-center gap-[10px] text-[13px]" style={{ color: '#6B7280' }}>
+                  <input
+                    type="radio"
+                    name="businessType"
+                    value="private"
+                    checked={formData.businessType === 'private'}
+                    onChange={(e) => handleChange('businessType', e.target.value)}
+                    className="h-[13px] w-[13px]"
+                    style={{ accentColor: '#0273B1' }}
+                  />
+                  <span>Private Company</span>
+                </label>
+                <label className="flex cursor-pointer items-center gap-[10px] text-[13px]" style={{ color: '#6B7280' }}>
+                  <input
+                    type="radio"
+                    name="businessType"
+                    value="state-owned"
+                    checked={formData.businessType === 'state-owned'}
+                    onChange={(e) => handleChange('businessType', e.target.value)}
+                    className="h-[13px] w-[13px]"
+                    style={{ accentColor: '#0273B1' }}
+                  />
+                  <span>State-owned enterprise</span>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-center pt-[6px] lg:justify-end">
+            {formData.companyLogo ? (
+              <div className="w-[170px]">
+                <div className="overflow-hidden rounded-[4px] border border-[#E5E7EB] bg-[#F3F4F6]">
+                  <img
+                    src={formData.companyLogo}
+                    alt="Company logo preview"
+                    className="h-[170px] w-[170px] object-cover"
+                  />
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <label
+                    className="cursor-pointer rounded-[8px] border border-[#0273B1] px-3 py-2 text-xs font-semibold text-[#0273B1] transition hover:bg-[#F0F4F8]"
+                  >
+                    Change
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoChange}
+                      className="hidden"
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const updated = { ...formData, companyLogo: null }
+                      setFormData(updated)
+                      onUpdate(updated)
+                    }}
+                    className="rounded-[8px] border border-[#CBD5E1] px-3 py-2 text-xs font-semibold text-[#64748B] transition hover:bg-[#F8FAFC]"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <label className="block cursor-pointer">
+                <div
+                  className="flex h-[170px] w-[170px] items-center justify-center rounded-[4px] border border-[#E5E7EB] text-center transition hover:bg-[#EDF2F7]"
+                  style={{ backgroundColor: '#EFF2F4' }}
+                >
+                  <div className="flex items-center gap-[10px]">
+                    <div className="flex h-[18px] w-[18px] items-center justify-center rounded-full bg-[#0273B1] text-[14px] text-white">
+                      +
+                    </div>
+                    <span className="text-[13px] font-semibold" style={{ color: '#334155' }}>
+                      Add Picture
+                    </span>
+                  </div>
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoChange}
+                  className="hidden"
+                />
+              </label>
+            )}
           </div>
         </div>
 
-        {/* Company Size */}
-        <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
-            Company Size (Number of employees)
+        <div className="pt-[4px]">
+          <label className="mb-[6px] block text-[14px] font-semibold" style={{ color: '#253858' }}>
+            Company Description<span style={{ color: '#EF4444' }}>*</span>
           </label>
-          <select
-            value={formData.companySize}
-            onChange={(e) => handleChange('companySize', e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Select company size</option>
-            <option value="less-than-10">Less than 10 people</option>
-            <option value="10-50">10-50 people</option>
-            <option value="51-200">51-200 people</option>
-            <option value="201-500">201-500 people</option>
-            <option value="501-1000">501-1000 people</option>
-            <option value="more-than-1000">More than 1000 people</option>
-          </select>
-        </div>
-
-        {/* Company Description */}
-        <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
-            Company Description
-          </label>
+          <p className="mb-[8px] text-[13px] leading-[1.4]" style={{ color: '#6B7280' }}>
+            Provide a brief overview of your company, including industry, services, and key strengths.
+          </p>
           <textarea
             value={formData.companyDescription}
             onChange={(e) => handleChange('companyDescription', e.target.value)}
-            placeholder="Describe your company, its mission, and what makes it unique"
-            rows={5}
+            placeholder="Describe your company, industry focus, and core services"
+            rows={6}
             maxLength={2000}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            className="min-h-[116px] w-full resize-none rounded-[5px] border border-[#CBD5E1] bg-white px-[14px] py-[10px] text-[12px] text-[#1E293B] outline-none transition focus:border-[#0273B1] focus:ring-2 focus:ring-[#BFDBFE]"
           />
-          <div className="text-right text-xs mt-1" style={{ color: '#A9B4CD' }}>
-            {formData.companyDescription.length}/2,000
-          </div>
         </div>
       </div>
     </div>

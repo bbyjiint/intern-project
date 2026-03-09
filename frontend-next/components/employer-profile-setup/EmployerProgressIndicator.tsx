@@ -11,54 +11,36 @@ export default function EmployerProgressIndicator({ currentStep, totalSteps }: E
   ]
 
   return (
-    <div className="flex items-center justify-center overflow-x-auto pb-2">
-      <div className="flex items-center min-w-max px-2">
+    <div className="pb-1">
+      <div className="mx-auto flex items-start justify-center">
         {steps.map((step, index) => {
           const isActive = step.number === currentStep
           const isCompleted = step.number < currentStep
           const isLast = index === steps.length - 1
 
           return (
-            <div key={step.number} className="flex items-center">
-              {/* Step Circle */}
-              <div className="flex flex-col items-center">
+            <div key={step.number} className="flex items-start">
+              <div className="flex w-[136px] flex-col items-center text-center">
                 <div
-                  className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center font-semibold text-sm sm:text-base transition-colors border-2 ${
-                    isActive || isCompleted ? 'text-white border-white' : 'text-gray-400 border-gray-300'
-                  }`}
+                  className="flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 text-[0px] font-semibold transition-colors sm:h-[18px] sm:w-[18px]"
                   style={{
-                    backgroundColor: isActive || isCompleted ? '#0273B1' : '#E5E7EB',
-                    lineHeight: '1',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
+                    backgroundColor: isActive || isCompleted ? '#0273B1' : '#F8FAFC',
+                    borderColor: isActive || isCompleted ? '#0273B1' : '#CBD5E1',
                   }}
-                >
-                  {isCompleted ? (
-                    <svg className="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                  ) : (
-                    <span style={{ lineHeight: '1', display: 'inline-block' }}>{step.number}</span>
-                  )}
-                </div>
+                />
                 <span
-                  className={`text-[7px] sm:text-[8px] mt-1 font-medium leading-tight text-center max-w-[60px] sm:max-w-none ${
-                    isActive ? 'text-gray-900' : 'text-gray-400'
-                  }`}
+                  className="mt-[16px] text-[11px] font-semibold leading-tight"
+                  style={{ color: isActive || isCompleted ? '#0273B1' : '#D1D5DB' }}
                 >
                   {step.label}
                 </span>
               </div>
 
-              {/* Connector Line */}
               {!isLast && (
                 <div
-                  className={`h-1 w-8 sm:w-16 md:w-24 lg:w-32 mx-2 sm:mx-4 md:mx-6 lg:mx-8 transition-colors rounded-full ${
-                    isCompleted ? 'bg-blue-500' : 'bg-gray-200'
-                  }`}
+                  className="mt-[8px] h-0 w-[56px] border-t-[3px] border-dashed"
                   style={{
-                    backgroundColor: isCompleted ? '#0273B1' : '#E5E7EB'
+                    borderColor: isCompleted ? '#0273B1' : '#CBD5E1'
                   }}
                 />
               )}

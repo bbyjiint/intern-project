@@ -3,10 +3,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import EmployerNavbar from '@/components/EmployerNavbar'
+import EmployerSidebar from '@/components/EmployerSidebar'
 import CandidateCard from '@/components/CandidateCard'
 import CandidateProfileModal from '@/components/CandidateProfileModal'
 import { apiFetch } from '@/lib/api'
-import Link from 'next/link'
 
 interface Candidate {
   id: string
@@ -148,69 +148,7 @@ export default function EmployerDashboardPage() {
     <div className="min-h-screen bg-gray-50">
       <EmployerNavbar />
       <div className="flex">
-        {/* Sidebar Navigation */}
-        <div className="w-64 bg-white min-h-screen pt-8 border-r border-gray-200">
-          <div className="px-6 space-y-2">
-            <Link
-              href="/employer/profile"
-              className="px-4 py-3 rounded-lg flex items-center space-x-3 transition-colors"
-              style={{ color: '#1C2D4F' }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = '#0273B1'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = '#1C2D4F'
-              }}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-              <span className="font-medium">Profile</span>
-            </Link>
-            <Link
-              href="/employer/dashboard"
-              className="px-4 py-3 rounded-lg flex items-center space-x-3"
-              style={{ backgroundColor: '#0273B1' }}
-            >
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-              <span className="font-medium text-white">Applicants</span>
-            </Link>
-            <Link
-              href="/employer/job-post"
-              className="px-4 py-3 rounded-lg flex items-center space-x-3 transition-colors"
-              style={{ color: '#1C2D4F' }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = '#0273B1'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = '#1C2D4F'
-              }}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <span className="font-medium">Job Post</span>
-            </Link>
-            <Link
-              href="/employer/bookmark"
-              className="px-4 py-3 rounded-lg flex items-center space-x-3 transition-colors"
-              style={{ color: '#1C2D4F' }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = '#0273B1'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = '#1C2D4F'
-              }}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-              </svg>
-              <span className="font-medium">Bookmark</span>
-            </Link>
-          </div>
-        </div>
+        <EmployerSidebar activeItem="applicants" />
 
         {/* Main Content */}
         <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

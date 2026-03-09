@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import EmployerNavbar from '@/components/EmployerNavbar'
+import EmployerSidebar from '@/components/EmployerSidebar'
 import { apiFetch } from '@/lib/api'
 
 interface CompanyProfileData {
@@ -48,7 +48,22 @@ export default function EmployerProfilePage() {
   const [profileData, setProfileData] = useState<CompanyProfileData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [currentDate, setCurrentDate] = useState('')
+  const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [addressForm, setAddressForm] = useState({
+    postcode: '',
+    subDistrict: '',
+    district: '',
+    province: '',
+    addressDetails: '',
+  })
+  const [contactForm, setContactForm] = useState({
+    phoneNumber: '',
+    email: '',
+    websiteUrl: '',
+    contactName: '',
+  })
+  const [savingSection, setSavingSection] = useState<'address' | 'contact' | null>(null)
 
   useEffect(() => {
     // Check user role first, then fetch profile data
@@ -127,6 +142,25 @@ export default function EmployerProfilePage() {
     updateDate()
   }, [router])
 
+  useEffect(() => {
+    if (!profileData) return
+
+    setAddressForm({
+      postcode: profileData.postcode || '',
+      subDistrict: profileData.subDistrict || '',
+      district: profileData.district || '',
+      province: profileData.province || '',
+      addressDetails: profileData.addressDetails || '',
+    })
+
+    setContactForm({
+      phoneNumber: profileData.phoneNumber || '',
+      email: profileData.email || '',
+      websiteUrl: profileData.websiteUrl || '',
+      contactName: profileData.contactName || '',
+    })
+  }, [profileData])
+
   const updateDate = () => {
     const now = new Date()
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -166,21 +200,6 @@ export default function EmployerProfilePage() {
     }
   }
 
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.value) {
-      const selectedDate = new Date(e.target.value)
-      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-      const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-      
-      const dayName = days[selectedDate.getDay()]
-      const day = selectedDate.getDate()
-      const month = months[selectedDate.getMonth()]
-      const year = selectedDate.getFullYear()
-      
-      setCurrentDate(`${dayName}, ${day} ${month} ${year}`)
-    }
-  }
-
   const getBusinessTypeLabel = (type: string) => {
     switch (type) {
       case 'private':
@@ -215,10 +234,65 @@ export default function EmployerProfilePage() {
     router.push(`/employer/profile-setup?step=${step}`)
   }
 
-  const getInitials = (name: string) => {
-    if (!name) return 'C'
-    // Get first letter of company name
-    return name.charAt(0).toUpperCase()
+  const updateProfileCache = (updatedProfile: CompanyProfileData) => {
+    setProfileData(updatedProfile)
+    localStorage.setItem('employerProfileData', JSON.stringify(updatedProfile))
+    window.dispatchEvent(new Event('profileImageUpdated'))
+  }
+
+  const handleAddressSave = async () => {
+    if (!profileData) return
+
+    setSavingSection('address')
+    setError(null)
+
+    try {
+      const payload = {
+        postcode: addressForm.postcode,
+        subDistrict: addressForm.subDistrict,
+        district: addressForm.district,
+        province: addressForm.province,
+        addressDetails: addressForm.addressDetails,
+      }
+
+      await apiFetch('/api/companies/profile', {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      })
+
+      updateProfileCache({ ...profileData, ...payload })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save address information')
+    } finally {
+      setSavingSection(null)
+    }
+  }
+
+  const handleContactSave = async () => {
+    if (!profileData) return
+
+    setSavingSection('contact')
+    setError(null)
+
+    try {
+      const payload = {
+        phoneNumber: contactForm.phoneNumber,
+        email: contactForm.email,
+        websiteUrl: contactForm.websiteUrl,
+        contactName: contactForm.contactName,
+      }
+
+      await apiFetch('/api/companies/profile', {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      })
+
+      updateProfileCache({ ...profileData, ...payload })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save contact information')
+    } finally {
+      setSavingSection(null)
+    }
   }
 
   if (isLoading) {
@@ -254,104 +328,49 @@ export default function EmployerProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#F6F7FB]">
       <EmployerNavbar />
-      <div className="flex">
-        {/* Sidebar Navigation */}
-        <div className="w-64 bg-white min-h-screen pt-8 border-r border-gray-200">
-          <div className="px-6 space-y-2">
-            <Link
-              href="/employer/profile"
-              className="px-4 py-3 rounded-lg flex items-center space-x-3"
-              style={{ backgroundColor: '#0273B1' }}
-            >
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-              <span className="font-medium text-white">Profile</span>
-            </Link>
-            <Link
-              href="/employer/dashboard"
-              className="px-4 py-3 rounded-lg flex items-center space-x-3 transition-colors"
-              style={{ color: '#1C2D4F' }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#F0F4F8'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent'
-              }}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
-              <span className="font-medium">Applicants</span>
-            </Link>
-            <Link
-              href="/employer/job-post"
-              className="px-4 py-3 rounded-lg flex items-center space-x-3 transition-colors"
-              style={{ color: '#1C2D4F' }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = '#0273B1'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = '#1C2D4F'
-              }}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <span className="font-medium">Job Post</span>
-            </Link>
-            <Link
-              href="/employer/bookmark"
-              className="px-4 py-3 rounded-lg flex items-center space-x-3 transition-colors"
-              style={{ color: '#1C2D4F' }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#F0F4F8'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'transparent'
-              }}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-              </svg>
-              <span className="font-medium">Bookmark</span>
-            </Link>
-          </div>
-        </div>
+      <div className="flex min-h-[calc(100vh-100px)]">
+        <EmployerSidebar activeItem="profile" />
 
         {/* Main Content */}
-        <div className="flex-1" style={{ background: 'linear-gradient(to bottom, #E3F2FD 0%, #FFFFFF 300px)' }}>
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex-1 bg-[#E6EBF4]">
+          <div className="mx-auto max-w-[1120px] px-[46px] py-[34px]">
             {/* Welcome Section */}
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold mb-2" style={{ color: '#1C2D4F' }}>
+            <div className="mb-[14px]">
+              <h1 className="mb-2 text-[32px] font-bold leading-none tracking-[-0.02em]" style={{ color: '#05060A' }}>
                 Welcome, {profileData?.companyName || 'Company Name'}
               </h1>
-              <p className="text-sm text-gray-500">{currentDate}</p>
+              <p className="text-[14px]" style={{ color: '#6B7280' }}>{currentDate}</p>
             </div>
 
-            {/* Profile Image Card - Large card with profile image */}
-            <div className="bg-white rounded-lg shadow-md p-8 mb-6">
+            {error && (
+              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {error}
+              </div>
+            )}
+
+            <div className="mb-6 rounded-[14px] bg-white px-[28px] py-[22px] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
               <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-4 flex-1">
-                  <div className="relative cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                <div className="flex flex-1 items-start gap-[18px]">
+                  <div
+                    className="relative flex h-[94px] w-[94px] shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#F3F4F7]"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
                     {profileData?.profileImage ? (
                       <img
                         src={profileData.profileImage}
                         alt="Profile"
-                        className="w-24 h-24 rounded-full object-cover"
+                        className="h-[70px] w-[70px] object-contain"
                       />
                     ) : (
                       <div 
-                        className="w-24 h-24 rounded-full flex items-center justify-center"
+                        className="flex h-[70px] w-[70px] items-center justify-center rounded-md"
                         style={{ backgroundColor: '#0273B1' }}
                       >
-                        <svg className="w-12 h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                        </svg>
+                        <span className="text-lg font-semibold text-white">
+                          {profileData.companyName?.slice(0, 1).toUpperCase() || 'C'}
+                        </span>
                       </div>
                     )}
                     <input
@@ -362,151 +381,200 @@ export default function EmployerProfilePage() {
                       className="hidden"
                     />
                   </div>
-                  <div className="flex-1">
-                    <h2 className="text-xl font-bold text-gray-900 mb-1 cursor-pointer" onClick={() => goToStep(1)}>
-                      {profileData?.companyName || 'Company Name'}
-                    </h2>
-                    <p className="text-gray-600 mb-3 cursor-pointer" onClick={() => goToStep(3)}>
-                      {profileData?.email || 'email@company.com'}
+
+                  <div className="flex-1 pt-[16px]">
+                    <div className="mb-[26px] flex items-start justify-between gap-4">
+                      <div>
+                        <h2 className="mb-1 text-[21px] font-bold leading-tight text-[#111827]">
+                          {profileData?.companyName || 'Company Name'}
+                        </h2>
+                        <p className="text-[14px] text-[#9CA3AF]">
+                          {profileData?.email || 'info@company.com'}
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={() => goToStep(1)}
+                        className="rounded-[6px] border px-[14px] py-[6px] text-[13px] font-medium text-[#0273B1] transition-colors hover:bg-[#F0F4F8]"
+                        style={{ borderColor: '#0273B1' }}
+                      >
+                        Edit
+                      </button>
+                    </div>
+
+                    <p className="mb-[16px] max-w-[880px] text-[13px] leading-[1.55] text-[#4B5563]">
+                      {profileData.companyDescription || '-'}
                     </p>
+
+                    <div className="grid max-w-[680px] grid-cols-2 gap-10">
+                      <div>
+                        <h3 className="mb-[8px] text-[17px] font-bold text-[#111827]">Business Type</h3>
+                        <p className="text-[14px] text-[#4B5563]">
+                          {profileData.businessType ? getBusinessTypeLabel(profileData.businessType) : '-'}
+                        </p>
+                      </div>
+                      <div>
+                        <h3 className="mb-[8px] text-[17px] font-bold text-[#111827]">Company Size</h3>
+                        <p className="text-[14px] text-[#4B5563]">
+                          {profileData.companySize ? getCompanySizeLabel(profileData.companySize) : '-'}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <button
-                  onClick={() => goToStep(1)}
-                  className="px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
-                  style={{
-                    backgroundColor: 'white',
-                    border: '2px solid #0273B1',
-                    color: '#0273B1'
-                  }}
-                >
-                  Edit
-                </button>
               </div>
             </div>
 
-            {/* Company Description Card */}
-            <div className="bg-white rounded-lg shadow-md p-8 mb-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold" style={{ color: '#1C2D4F' }}>
-                  Company Description
-                </h2>
-                <button 
-                  onClick={() => goToStep(1)}
-                  className="px-4 py-2 border-2 rounded-lg font-medium text-sm transition-colors" 
-                  style={{ borderColor: '#0273B1', color: '#0273B1' }}
-                >
-                  Edit
-                </button>
+            <div className="mb-6 rounded-[14px] bg-white px-[24px] py-[20px] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+              <div className="mb-5 flex items-center gap-3">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full text-[#2563EB]">
+                  <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7zm0 9.5A2.5 2.5 0 1112 6a2.5 2.5 0 010 5.5z" />
+                  </svg>
+                </span>
+                <h2 className="text-[18px] font-bold text-[#1F2937]">Company Address</h2>
               </div>
-              <p className="text-gray-700 cursor-pointer" onClick={() => goToStep(1)}>
-                {profileData.companyDescription || 'No description provided.'}
-              </p>
-            </div>
 
-            {/* Company Information Card */}
-            <div className="bg-white rounded-lg shadow-md p-8 mb-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold" style={{ color: '#1C2D4F' }}>
-                  Company Information
-                </h2>
-                <button 
-                  onClick={() => goToStep(1)}
-                  className="px-4 py-2 border-2 rounded-lg font-medium text-sm transition-colors" 
-                  style={{ borderColor: '#0273B1', color: '#0273B1' }}
-                >
-                  Edit
-                </button>
-              </div>
-              <div className="space-y-2">
-                {profileData.businessType ? (
-                  <p className="text-gray-700 cursor-pointer" onClick={() => goToStep(1)}>
-                    <span className="font-medium">Business Type:</span> {getBusinessTypeLabel(profileData.businessType)}
-                  </p>
-                ) : (
-                  <p className="text-gray-500">No data provided.</p>
-                )}
-                {profileData.companySize && (
-                  <p className="text-gray-700 cursor-pointer" onClick={() => goToStep(1)}>
-                    <span className="font-medium">Company Size:</span> {getCompanySizeLabel(profileData.companySize)}
-                  </p>
-                )}
-              </div>
-            </div>
+              <div className="mx-auto max-w-[856px]">
+                <div className="space-y-[10px]">
+                  <div>
+                    <label className="mb-[6px] block text-[14px] text-[#4B5563]">Postal Code</label>
+                    <input
+                      type="text"
+                      value={addressForm.postcode}
+                      onChange={(e) => setAddressForm((prev) => ({ ...prev, postcode: e.target.value }))}
+                      className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8]"
+                    />
+                  </div>
 
-            {/* Company Address Card */}
-            <div className="bg-white rounded-lg shadow-md p-8 mb-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold" style={{ color: '#1C2D4F' }}>
-                  Company Address
-                </h2>
-                <button 
-                  onClick={() => goToStep(2)}
-                  className="px-4 py-2 border-2 rounded-lg font-medium text-sm transition-colors" 
-                  style={{ borderColor: '#0273B1', color: '#0273B1' }}
-                >
-                  Edit
-                </button>
-              </div>
-              {profileData.addressDetails || profileData.subDistrict || profileData.district || profileData.province || profileData.postcode ? (
-                <div className="space-y-2">
-                  {profileData.addressDetails && (
-                    <p className="text-gray-700 cursor-pointer" onClick={() => goToStep(2)}>{profileData.addressDetails}</p>
-                  )}
-                  {[profileData.subDistrict, profileData.district, profileData.province, profileData.postcode].filter(Boolean).length > 0 && (
-                    <p className="text-gray-700 cursor-pointer" onClick={() => goToStep(2)}>
-                      {[profileData.subDistrict, profileData.district, profileData.province, profileData.postcode].filter(Boolean).join(', ')}
-                    </p>
-                  )}
+                  <div>
+                    <label className="mb-[6px] block text-[14px] text-[#4B5563]">Subdistrict</label>
+                    <select
+                      value={addressForm.subDistrict}
+                      onChange={(e) => setAddressForm((prev) => ({ ...prev, subDistrict: e.target.value }))}
+                      className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] bg-white px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8]"
+                    >
+                      <option value={addressForm.subDistrict}>{addressForm.subDistrict || 'Select subdistrict'}</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-[6px] block text-[14px] text-[#4B5563]">District</label>
+                    <select
+                      value={addressForm.district}
+                      onChange={(e) => setAddressForm((prev) => ({ ...prev, district: e.target.value }))}
+                      className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] bg-white px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8]"
+                    >
+                      <option value={addressForm.district}>{addressForm.district || 'Select district'}</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-[6px] block text-[14px] text-[#4B5563]">Province</label>
+                    <select
+                      value={addressForm.province}
+                      onChange={(e) => setAddressForm((prev) => ({ ...prev, province: e.target.value }))}
+                      className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] bg-white px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8]"
+                    >
+                      <option value={addressForm.province}>{addressForm.province || 'Select province'}</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-[6px] block text-[14px] text-[#4B5563]">Address</label>
+                    <textarea
+                      value={addressForm.addressDetails}
+                      onChange={(e) => setAddressForm((prev) => ({ ...prev, addressDetails: e.target.value }))}
+                      rows={4}
+                      className="min-h-[110px] w-full resize-none rounded-[6px] border border-[#D1D5DB] px-3 py-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8]"
+                    />
+                  </div>
+
+                  <div className="flex justify-end pt-[6px]">
+                    <button
+                      onClick={handleAddressSave}
+                      disabled={savingSection === 'address'}
+                      className="rounded-[6px] bg-[#2563EB] px-[18px] py-[7px] text-[13px] font-semibold text-white transition hover:bg-[#1D4ED8]"
+                    >
+                      {savingSection === 'address' ? 'Saving...' : 'Save'}
+                    </button>
+                  </div>
                 </div>
-              ) : (
-                <p className="text-gray-500">No data provided.</p>
-              )}
+              </div>
             </div>
 
-            {/* Contact Information Card */}
-            <div className="bg-white rounded-lg shadow-md p-8 mb-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold" style={{ color: '#1C2D4F' }}>
-                  Contact Information
-                </h2>
-                <button 
-                  onClick={() => goToStep(3)}
-                  className="px-4 py-2 border-2 rounded-lg font-medium text-sm transition-colors" 
-                  style={{ borderColor: '#0273B1', color: '#0273B1' }}
-                >
-                  Edit
-                </button>
+            <div className="rounded-[14px] bg-white px-[24px] py-[20px] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+              <div className="mb-5 flex items-center gap-3">
+                <span className="flex h-7 w-7 items-center justify-center rounded-full text-[#2563EB]">
+                  <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.4} d="M3 5a2 2 0 012-2h2.28a2 2 0 011.897 1.368l.62 1.86a2 2 0 01-.45 2.046l-1.27 1.27a16 16 0 006.656 6.656l1.27-1.27a2 2 0 012.046-.45l1.86.62A2 2 0 0121 16.72V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                </span>
+                <h2 className="text-[18px] font-bold text-[#1F2937]">Contact Information</h2>
               </div>
-              {profileData.phoneNumber || profileData.email || profileData.websiteUrl || profileData.contactName ? (
-                <div className="space-y-2">
-                  {profileData.phoneNumber && (
-                    <p className="text-gray-700 cursor-pointer" onClick={() => goToStep(3)}>
-                      <span className="font-medium">Phone:</span> {profileData.phoneNumber}
-                    </p>
-                  )}
-                  {profileData.email && (
-                    <p className="text-gray-700 cursor-pointer" onClick={() => goToStep(3)}>
-                      <span className="font-medium">Email:</span> {profileData.email}
-                    </p>
-                  )}
-                  {profileData.websiteUrl && (
-                    <p className="text-gray-700 cursor-pointer" onClick={() => goToStep(3)}>
-                      <span className="font-medium">Website:</span>{' '}
-                      <a href={profileData.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                        {profileData.websiteUrl}
-                      </a>
-                    </p>
-                  )}
-                  {profileData.contactName && (
-                    <p className="text-gray-700 cursor-pointer" onClick={() => goToStep(3)}>
-                      <span className="font-medium">Contact Name:</span> {profileData.contactName}
-                    </p>
-                  )}
+
+              <div className="mx-auto max-w-[856px]">
+                <div className="space-y-[10px]">
+                  <div>
+                    <label className="mb-[6px] block text-[14px] text-[#4B5563]">Phone Number</label>
+                    <div className="flex gap-[10px]">
+                      <select
+                        value="+66"
+                        onChange={() => undefined}
+                        className="h-[38px] w-[64px] rounded-[6px] border border-[#D1D5DB] bg-white px-3 text-[14px] text-[#374151] outline-none"
+                      >
+                        <option value="+66">+66</option>
+                      </select>
+                      <input
+                        type="text"
+                        value={contactForm.phoneNumber}
+                        onChange={(e) => setContactForm((prev) => ({ ...prev, phoneNumber: e.target.value }))}
+                        className="h-[38px] flex-1 rounded-[6px] border border-[#D1D5DB] px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8]"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="mb-[6px] block text-[14px] text-[#4B5563]">Email</label>
+                    <input
+                      type="email"
+                      value={contactForm.email}
+                      onChange={(e) => setContactForm((prev) => ({ ...prev, email: e.target.value }))}
+                      className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-[6px] block text-[14px] text-[#4B5563]">Website URL</label>
+                    <input
+                      type="text"
+                      value={contactForm.websiteUrl}
+                      onChange={(e) => setContactForm((prev) => ({ ...prev, websiteUrl: e.target.value }))}
+                      className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-[6px] block text-[14px] text-[#4B5563]">Contact Name</label>
+                    <input
+                      type="text"
+                      value={contactForm.contactName}
+                      onChange={(e) => setContactForm((prev) => ({ ...prev, contactName: e.target.value }))}
+                      className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8]"
+                    />
+                  </div>
+
+                  <div className="flex justify-end pt-[6px]">
+                    <button
+                      onClick={handleContactSave}
+                      disabled={savingSection === 'contact'}
+                      className="rounded-[6px] bg-[#2563EB] px-[18px] py-[7px] text-[13px] font-semibold text-white transition hover:bg-[#1D4ED8]"
+                    >
+                      {savingSection === 'contact' ? 'Saving...' : 'Save'}
+                    </button>
+                  </div>
                 </div>
-              ) : (
-                <p className="text-gray-500">No data provided.</p>
-              )}
+              </div>
             </div>
           </div>
         </div>
