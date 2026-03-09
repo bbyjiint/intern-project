@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import CompanyHubLogo from './CompanyHubLogo'
 
 export default function Footer() {
   return (
@@ -6,7 +7,14 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <h3 className="text-lg font-semibold mb-4">CompanyHub</h3>
+            <div className="mb-4">
+              <CompanyHubLogo
+                href="/"
+                textColor="#FFFFFF"
+                textSizeClassName="text-lg font-semibold tracking-tight"
+                dotClassName="w-4 h-4 -left-1 top-1"
+              />
+            </div>
             <p className="text-gray-400">
               Recruiting platform for connecting employers and interns
             </p>

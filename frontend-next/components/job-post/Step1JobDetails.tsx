@@ -202,12 +202,9 @@ export default function Step1JobDetails({ data, onUpdate }: Step1JobDetailsProps
             )}
           </div>
           {/* District */}
-          <div className="flex-1">
-            {!localData.provinceId ? (
-              <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 flex items-center justify-center">
-                <span className="text-gray-500 text-sm">Select province first</span>
-              </div>
-            ) : districtsLoading ? (
+          {localData.provinceId && (
+            <div className="flex-1">
+              {districtsLoading ? (
               <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 flex items-center justify-center">
                 <span className="text-gray-500 text-sm">Loading districts...</span>
               </div>
@@ -225,7 +222,8 @@ export default function Step1JobDetails({ data, onUpdate }: Step1JobDetailsProps
                 allOptionLabel="Select District"
               />
             )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
 

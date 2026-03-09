@@ -1,10 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
 import EmployerNavbar from '@/components/EmployerNavbar'
 import EmployerSidebar from '@/components/EmployerSidebar'
 import EmployerJobPostCard, { type EmployerJobPostCardData } from '@/components/job-post/EmployerJobPostCard'
+import CreateJobPostModal, { type CreateJobPostModalValues } from '@/components/job-post/CreateJobPostModal'
 import { apiFetch } from '@/lib/api'
 
 interface JobPost extends EmployerJobPostCardData {
@@ -30,11 +32,15 @@ const mockJobPosts: JobPost[] = [
 ]
 
 export default function JobPostPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [searchQuery, setSearchQuery] = useState('')
   const [jobPosts, setJobPosts] = useState<JobPost[]>(mockJobPosts)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [jobToDelete, setJobToDelete] = useState<JobPost | null>(null)
   const [activeFilter, setActiveFilter] = useState<'all' | 'latest' | 'open' | 'closed'>('all')
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [isCreatingJobPost, setIsCreatingJobPost] = useState(false)
 
   const getRelativeTimeLabel = (value: string) => {
     const createdAt = new Date(value)
@@ -54,112 +60,118 @@ export default function JobPostPage() {
       .replace(/[-_]/g, ' ')
       .replace(/\b\w/g, (char) => char.toUpperCase())
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const [postsResp, companyResp] = await Promise.all([
-          apiFetch<{ jobPosts: any[] }>('/api/job-posts'),
-          apiFetch<{ profile: { companyName?: string; email?: string; companyLogo?: string; logoURL?: string; profileImage?: string } }>('/api/companies/profile'),
-        ])
+  const loadJobPosts = useCallback(async () => {
+    try {
+      const [postsResp, companyResp] = await Promise.all([
+        apiFetch<{ jobPosts: any[] }>('/api/job-posts'),
+        apiFetch<{ profile: { companyName?: string; email?: string; companyLogo?: string; logoURL?: string; profileImage?: string } }>('/api/companies/profile'),
+      ])
 
-        const companyName = companyResp?.profile?.companyName || 'Company Name'
-        const companyEmail = companyResp?.profile?.email || 'info@trinitythai.com'
-        const companyLogoImage =
-          companyResp?.profile?.companyLogo || companyResp?.profile?.logoURL || companyResp?.profile?.profileImage || ''
+      const companyName = companyResp?.profile?.companyName || 'Company Name'
+      const companyEmail = companyResp?.profile?.email || 'info@trinitythai.com'
+      const companyLogoImage =
+        companyResp?.profile?.companyLogo || companyResp?.profile?.logoURL || companyResp?.profile?.profileImage || ''
 
-        const formatted = await Promise.all(
-          (postsResp.jobPosts || []).map(async (post: any) => {
-            const workplaceType =
-              post.workplaceType === 'ON_SITE'
-                ? 'On-Site'
-                : post.workplaceType === 'HYBRID'
-                ? 'Hybrid'
-                : post.workplaceType === 'REMOTE'
-                ? 'Remote'
-                : 'On-Site'
+      const formatted = await Promise.all(
+        (postsResp.jobPosts || []).map(async (post: any) => {
+          const workplaceType =
+            post.workplaceType === 'ON_SITE'
+              ? 'On-Site'
+              : post.workplaceType === 'HYBRID'
+              ? 'Hybrid'
+              : post.workplaceType === 'REMOTE'
+              ? 'Remote'
+              : 'On-Site'
 
-            const createdAt = post.createdAt || post.updatedAt || new Date().toISOString()
-            const allowance =
-              post.noAllowance
-                ? 'No allowance'
-                : post.allowance
-                ? `${Number(post.allowance).toLocaleString()} THB`
-                : '-'
+          const createdAt = post.createdAt || post.updatedAt || new Date().toISOString()
+          const allowance =
+            post.noAllowance
+              ? 'No allowance'
+              : post.allowance
+              ? `${Number(post.allowance).toLocaleString()} THB`
+              : '-'
 
-            let applicantsCount = 0
-            try {
-              const applicantsResp = await apiFetch<{ applicants: any[] }>(`/api/job-posts/${post.id}/applicants`)
-              applicantsCount = applicantsResp.applicants?.length || 0
-            } catch {
-              applicantsCount = 0
-            }
+          let applicantsCount = 0
+          try {
+            const applicantsResp = await apiFetch<{ applicants: any[] }>(`/api/job-posts/${post.id}/applicants`)
+            applicantsCount = applicantsResp.applicants?.length || 0
+          } catch {
+            applicantsCount = 0
+          }
 
+          return {
+            id: post.id,
+            title: post.jobTitle || 'Untitled Job Post',
+            companyName,
+            companyLogo: companyName.substring(0, 2).toUpperCase(),
+            companyLogoImage,
+            companyEmail,
+            location: post.locationProvince || post.locationDistrict || 'Bangkok',
+            workType: workplaceType,
+            secondaryTag: post.jobType ? toTitleCase(post.jobType) : 'AI Developer',
+            applicantsCount,
+            allowance,
+            postedDate: getRelativeTimeLabel(createdAt),
+            isOpen: post.state !== 'CLOSED',
+            createdAt,
+          } as JobPost
+        })
+      )
+
+      setJobPosts(formatted.length > 0 ? formatted : [])
+    } catch (e) {
+      console.error('Failed to load job posts from API, falling back to mock/local:', e)
+
+      const savedJobPosts = localStorage.getItem('jobPosts')
+      if (savedJobPosts) {
+        try {
+          const posts = JSON.parse(savedJobPosts)
+          const formattedPosts = posts.map((post: any) => {
+            const createdAt = post.createdAt || new Date().toISOString()
             return {
-              id: post.id,
-              title: post.jobTitle || 'Untitled Job Post',
-              companyName,
-              companyLogo: companyName.substring(0, 2).toUpperCase(),
-              companyLogoImage,
-              companyEmail,
-              location: post.locationProvince || post.locationDistrict || 'Bangkok',
-              workType: workplaceType,
+              id: post.id || Date.now().toString(),
+              title: post.jobTitle || post.title || 'Untitled Job Post',
+              companyName: post.companyName || 'Company Name',
+              companyLogo: (post.companyName || 'Company').substring(0, 2).toUpperCase(),
+              companyLogoImage: post.companyLogoImage || post.companyLogo || '',
+              companyEmail: post.companyEmail || 'info@trinitythai.com',
+              location: post.locationProvince || post.location || 'Bangkok',
+              workType:
+                post.workplaceType === 'on-site'
+                  ? 'On-Site'
+                  : post.workplaceType === 'hybrid'
+                  ? 'Hybrid'
+                  : post.workplaceType === 'remote'
+                  ? 'Remote'
+                  : 'On-Site',
               secondaryTag: post.jobType ? toTitleCase(post.jobType) : 'AI Developer',
-              applicantsCount,
-              allowance,
+              applicantsCount: post.applicantsCount || 0,
+              allowance: post.allowance ? `${post.allowance} THB` : 'No allowance',
               postedDate: getRelativeTimeLabel(createdAt),
               isOpen: post.state !== 'CLOSED',
               createdAt,
             } as JobPost
           })
-        )
-
-        setJobPosts(formatted.length > 0 ? formatted : [])
-      } catch (e) {
-        console.error('Failed to load job posts from API, falling back to mock/local:', e)
-
-        const savedJobPosts = localStorage.getItem('jobPosts')
-        if (savedJobPosts) {
-          try {
-            const posts = JSON.parse(savedJobPosts)
-            const formattedPosts = posts.map((post: any) => {
-              const createdAt = post.createdAt || new Date().toISOString()
-              return {
-                id: post.id || Date.now().toString(),
-                title: post.jobTitle || post.title || 'Untitled Job Post',
-                companyName: post.companyName || 'Company Name',
-                companyLogo: (post.companyName || 'Company').substring(0, 2).toUpperCase(),
-                companyLogoImage: post.companyLogoImage || post.companyLogo || '',
-                companyEmail: post.companyEmail || 'info@trinitythai.com',
-                location: post.locationProvince || post.location || 'Bangkok',
-                workType:
-                  post.workplaceType === 'on-site'
-                    ? 'On-Site'
-                    : post.workplaceType === 'hybrid'
-                    ? 'Hybrid'
-                    : post.workplaceType === 'remote'
-                    ? 'Remote'
-                    : 'On-Site',
-                secondaryTag: post.jobType ? toTitleCase(post.jobType) : 'AI Developer',
-                applicantsCount: post.applicantsCount || 0,
-                allowance: post.allowance ? `${post.allowance} THB` : 'No allowance',
-                postedDate: getRelativeTimeLabel(createdAt),
-                isOpen: post.state !== 'CLOSED',
-                createdAt,
-              } as JobPost
-            })
-            setJobPosts(formattedPosts.length > 0 ? formattedPosts : mockJobPosts)
-            return
-          } catch (err) {
-            console.error('Failed to parse job posts localStorage fallback:', err)
-          }
+          setJobPosts(formattedPosts.length > 0 ? formattedPosts : mockJobPosts)
+          return
+        } catch (err) {
+          console.error('Failed to parse job posts localStorage fallback:', err)
         }
-
-        setJobPosts(mockJobPosts)
       }
-    }
 
-    load()
+      setJobPosts(mockJobPosts)
+    }
   }, [])
+
+  useEffect(() => {
+    loadJobPosts()
+  }, [loadJobPosts])
+
+  useEffect(() => {
+    if (searchParams.get('create') === '1') {
+      setShowCreateModal(true)
+    }
+  }, [searchParams])
 
   const filteredJobPosts = jobPosts
     .filter((post) => {
@@ -202,6 +214,50 @@ export default function JobPostPage() {
     setJobToDelete(null)
   }
 
+  const handleOpenCreateModal = () => {
+    setShowCreateModal(true)
+  }
+
+  const handleCloseCreateModal = () => {
+    setShowCreateModal(false)
+    if (searchParams.get('create') === '1') {
+      router.replace('/employer/job-post')
+    }
+  }
+
+  const handleCreateJobPost = async (values: CreateJobPostModalValues) => {
+    if (isCreatingJobPost) return
+    setIsCreatingJobPost(true)
+
+    try {
+      await apiFetch('/api/job-posts', {
+        method: 'POST',
+        body: JSON.stringify({
+          jobTitle: values.jobTitle,
+          workplaceType: values.workplaceType,
+          jobType: 'Internship',
+          allowance: values.allowance.replace(/,/g, '').trim(),
+          allowancePeriod: values.allowancePeriod,
+          gpa: values.gpa.trim(),
+          noAllowance: !values.allowance.trim(),
+          jobPostStatus: 'urgent',
+          jobDescription: values.jobDescription,
+          jobSpecification: values.jobSpecification,
+          locationProvince: '',
+          locationDistrict: '',
+          state: 'PUBLISHED',
+        }),
+      })
+
+      await loadJobPosts()
+      handleCloseCreateModal()
+    } catch (error) {
+      console.error('Failed to create job post:', error)
+    } finally {
+      setIsCreatingJobPost(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#F6F7FB]">
       <EmployerNavbar />
@@ -236,12 +292,13 @@ export default function JobPostPage() {
                   />
                 </div>
 
-                <Link
-                  href="/employer/create-job-post"
+                <button
+                  type="button"
+                  onClick={handleOpenCreateModal}
                   className="flex h-[38px] items-center justify-center rounded-full border border-[#2563EB] bg-white px-6 text-[14px] font-semibold text-[#2563EB] transition hover:bg-[#EEF4FF]"
                 >
                   + Create Job Post
-                </Link>
+                </button>
               </div>
             </div>
 
@@ -331,6 +388,13 @@ export default function JobPostPage() {
           </div>
         </div>
       )}
+
+      <CreateJobPostModal
+        isOpen={showCreateModal}
+        isSubmitting={isCreatingJobPost}
+        onClose={handleCloseCreateModal}
+        onSubmit={handleCreateJobPost}
+      />
     </div>
   )
 }

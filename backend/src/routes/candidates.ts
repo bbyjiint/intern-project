@@ -58,6 +58,16 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
             createdAt: true,
           }
         },
+        CandidatePreferredProvince: {
+          include: {
+            Province: {
+              select: {
+                name: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "asc" },
+        },
         CandidateUniversity: {
           include: {
             University: {
@@ -315,8 +325,12 @@ candidatesRouter.get("/:id", requireAuth, requireRole("COMPANY"), async (req, re
       fullName: candidateProfile.fullName || null,
       email: candidateProfile.contactEmail || candidateProfile.User.email,
       phoneNumber: candidateProfile.phoneNumber || null,
+      profileImage: candidateProfile.profileImage || null,
       desiredPosition: candidateProfile.desiredPosition || null,
+      internshipPeriod: candidateProfile.internshipPeriod || null,
       bio: candidateProfile.bio || null,
+      preferredPositions: candidateProfile.preferredPositions || [],
+      preferredLocations: candidateProfile.CandidatePreferredProvince.map((entry) => entry.Province.name),
       education: candidateProfile.CandidateUniversity.map((cu) => ({
         id: cu.id,
         university: cu.University.name,

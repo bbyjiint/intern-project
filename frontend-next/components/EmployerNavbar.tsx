@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
+import CompanyHubLogo from '@/components/CompanyHubLogo'
 
 export default function EmployerNavbar() {
   const pathname = usePathname()
@@ -110,17 +111,7 @@ export default function EmployerNavbar() {
       <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
         <div className="flex h-[100px] items-center justify-between">
           <div className="flex items-center gap-10">
-            <Link href="/employer/dashboard" className="flex items-center">
-              <div className="relative flex items-center">
-                <span
-                  className="absolute -left-[12px] top-[1px] block h-[20px] w-[20px] rounded-full"
-                  style={{ backgroundColor: '#3B82F6' }}
-                />
-                <span className="pl-2 text-[32px] font-semibold tracking-[-0.04em]" style={{ color: '#1C2D4F' }}>
-                  CompanyHub.
-                </span>
-              </div>
-            </Link>
+            <CompanyHubLogo href="/employer/dashboard" />
             <div className="hidden md:flex items-center gap-10">
               <Link
                 href="/employer/find-candidates"
@@ -178,7 +169,7 @@ export default function EmployerNavbar() {
           </div>
           <div className="flex items-center gap-4">
             <Link
-              href="/employer/create-job-post"
+              href="/employer/job-post?create=1"
               className="flex items-center space-x-2 rounded-[10px] px-4 py-2.5 text-sm font-semibold transition-colors"
               style={{ backgroundColor: '#E3F5FF', color: '#0273B1' }}
               onMouseEnter={(e) => {

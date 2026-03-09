@@ -681,6 +681,26 @@ jobPostsRouter.get("/job-posts/:id/applicants", requireAuth, requireRole("COMPAN
           include: {
             User: { select: { email: true } },
             UserSkill: { include: { Skills: { select: { name: true } } } },
+            CandidateUniversity: {
+              include: {
+                University: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+              orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
+            },
+            CandidatePreferredProvince: {
+              include: {
+                Province: {
+                  select: {
+                    name: true,
+                  },
+                },
+              },
+              orderBy: { createdAt: "asc" },
+            },
           },
         },
       },
@@ -703,6 +723,8 @@ jobPostsRouter.get("/job-posts/:id/applicants", requireAuth, requireRole("COMPAN
     const applicants = apps.map((a) => {
       const name = a.Candidate.fullName ?? a.Candidate.User.email;
       const skills = a.Candidate.UserSkill.map((us) => us.Skills.name).slice(0, 6);
+      const primaryEducation = a.Candidate.CandidateUniversity[0];
+      const preferredLocations = a.Candidate.CandidatePreferredProvince.map((entry) => entry.Province.name).filter(Boolean);
       return {
         id: a.id,
         candidateId: a.Candidate.id,
@@ -713,6 +735,12 @@ jobPostsRouter.get("/job-posts/:id/applicants", requireAuth, requireRole("COMPAN
         status: statusMap[a.status] ?? "new",
         skills,
         appliedAt: a.createdAt,
+        internshipPeriod: a.Candidate.internshipPeriod || null,
+        preferredPositions: a.Candidate.preferredPositions || [],
+        preferredLocations,
+        institution: primaryEducation?.University.name || null,
+        academicYear: primaryEducation?.yearOfStudy || null,
+        fieldOfStudy: primaryEducation?.fieldOfStudy || primaryEducation?.degreeName || null,
       };
     });
 

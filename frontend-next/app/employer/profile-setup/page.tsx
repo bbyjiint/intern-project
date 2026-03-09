@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { apiFetch } from '@/lib/api'
+import CompanyHubLogo from '@/components/CompanyHubLogo'
 import Step1GeneralInfo from '@/components/employer-profile-setup/Step1GeneralInfo'
 import Step2CompanyAddress from '@/components/employer-profile-setup/Step2CompanyAddress'
 import Step3ContactInfo from '@/components/employer-profile-setup/Step3ContactInfo'
@@ -194,17 +195,11 @@ export default function EmployerProfileSetupPage() {
       {/* Header */}
       <div className="border-b border-[#E5E7EB] bg-[#F3F4F6]">
         <div className="mx-auto flex h-[82px] max-w-[1120px] items-center px-[34px]">
-          <Link href="/" className="flex items-center">
-            <div className="relative flex items-center">
-              <span
-                className="absolute -left-[10px] top-0 block h-[18px] w-[18px] rounded-full"
-                style={{ backgroundColor: '#3B82F6' }}
-              />
-              <span className="pl-2 text-[26px] font-semibold tracking-[-0.03em]" style={{ color: '#1C2D4F' }}>
-                CompanyHub.
-              </span>
-            </div>
-          </Link>
+          <CompanyHubLogo
+            href="/"
+            textSizeClassName="text-[26px] font-semibold tracking-[-0.03em]"
+            dotClassName="h-[18px] w-[18px] -left-[10px] top-0"
+          />
         </div>
       </div>
 

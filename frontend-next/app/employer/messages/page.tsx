@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import EmployerNavbar from '@/components/EmployerNavbar'
 import CandidateProfileModal from '@/components/CandidateProfileModal'
 import { apiFetch } from '@/lib/api'
@@ -312,6 +312,8 @@ function formatMessageTime(date: Date): string {
 
 export default function MessagesPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const targetConversationId = searchParams.get('conversationId')
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
@@ -363,8 +365,16 @@ export default function MessagesPage() {
         setConversations(converted)
         // Set first conversation as selected if we have conversations and none is selected
         // Do this synchronously to prevent flicker
-        if (converted.length > 0 && !selectedConversation) {
-          setSelectedConversation(converted[0])
+        if (converted.length > 0) {
+          const targetConversation = targetConversationId
+            ? converted.find((conversation) => conversation.id === targetConversationId)
+            : null
+
+          if (targetConversation) {
+            setSelectedConversation(targetConversation)
+          } else if (!selectedConversation) {
+            setSelectedConversation(converted[0])
+          }
         }
         setLoading(false)
       } catch (error) {
@@ -410,7 +420,16 @@ export default function MessagesPage() {
     }, 3000)
 
     return () => clearInterval(interval)
-  }, [router, selectedConversation])
+  }, [router, selectedConversation, targetConversationId])
+
+  useEffect(() => {
+    if (!targetConversationId || conversations.length === 0) return
+
+    const targetConversation = conversations.find((conversation) => conversation.id === targetConversationId)
+    if (targetConversation && selectedConversation?.id !== targetConversation.id) {
+      setSelectedConversation(targetConversation)
+    }
+  }, [conversations, selectedConversation?.id, targetConversationId])
 
   // Load messages when conversation is selected
   useEffect(() => {
