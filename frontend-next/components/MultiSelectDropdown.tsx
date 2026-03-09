@@ -2,8 +2,10 @@
 
 import { useState, useRef, useEffect } from 'react'
 
+type Option = string | { value: string; label: string }
+
 interface MultiSelectDropdownProps {
-  options: string[]
+  options: Option[]
   value: string[]
   onChange: (value: string[]) => void
   placeholder?: string
@@ -38,25 +40,42 @@ export default function MultiSelectDropdown({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const filteredOptions = options.filter((option) =>
-    option.toLowerCase().includes(searchQuery.toLowerCase().trim())
-  )
+  // Helper functions to extract value and label from options
+  const getOptionValue = (option: Option): string => {
+    return typeof option === 'string' ? option : option.value
+  }
 
-  const handleToggle = (option: string) => {
-    if (value.includes(option)) {
+  const getOptionLabel = (option: Option): string => {
+    return typeof option === 'string' ? option : option.label
+  }
+
+  const filteredOptions = options.filter((option) => {
+    const label = getOptionLabel(option).toLowerCase()
+    return label.includes(searchQuery.toLowerCase().trim())
+  })
+
+  const handleToggle = (option: Option) => {
+    const optionValue = getOptionValue(option)
+    if (value.includes(optionValue)) {
       // Remove if already selected
-      onChange(value.filter((v) => v !== option))
+      onChange(value.filter((v) => v !== optionValue))
     } else {
       // Add if not selected and within max limit
       if (!maxSelections || value.length < maxSelections) {
-        onChange([...value, option])
+        onChange([...value, optionValue])
       }
     }
   }
 
-  const handleRemove = (option: string, e: React.MouseEvent) => {
+  const handleRemove = (optionValue: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    onChange(value.filter((v) => v !== option))
+    onChange(value.filter((v) => v !== optionValue))
+  }
+
+  // Get label for selected value
+  const getSelectedLabel = (val: string): string => {
+    const option = options.find((opt) => getOptionValue(opt) === val)
+    return option ? getOptionLabel(option) : val
   }
 
   return (
@@ -73,7 +92,7 @@ export default function MultiSelectDropdown({
                 key={selected}
                 className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded text-sm"
               >
-                {selected}
+                {getSelectedLabel(selected)}
                 <button
                   type="button"
                   onClick={(e) => handleRemove(selected, e)}
@@ -114,10 +133,12 @@ export default function MultiSelectDropdown({
           <div className="max-h-48 overflow-y-auto">
             {filteredOptions.length > 0 ? (
               filteredOptions.map((option) => {
-                const isSelected = value.includes(option)
+                const optionValue = getOptionValue(option)
+                const optionLabel = getOptionLabel(option)
+                const isSelected = value.includes(optionValue)
                 return (
                   <button
-                    key={option}
+                    key={optionValue}
                     type="button"
                     onClick={() => handleToggle(option)}
                     className={`w-full px-4 py-2 text-left hover:bg-gray-100 transition-colors flex items-center gap-2 ${
@@ -133,7 +154,7 @@ export default function MultiSelectDropdown({
                         </svg>
                       )}
                     </div>
-                    <span>{option}</span>
+                    <span>{optionLabel}</span>
                   </button>
                 )
               })

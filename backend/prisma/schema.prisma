@@ -138,7 +138,6 @@ model UniversityFaculty {
   facultyId           String                @db.Uuid
   createdAt           DateTime              @default(now())
   updatedAt           DateTime              @updatedAt
-  CandidateUniversity CandidateUniversity[]
   Faculty             Faculty               @relation(fields: [facultyId], references: [id], onDelete: Cascade)
   University          University            @relation(fields: [universityId], references: [id], onDelete: Cascade)
 
@@ -148,50 +147,58 @@ model UniversityFaculty {
 }
 
 model CandidateUniversity {
-  id                  String             @id @default(uuid()) @db.Uuid
-  candidateId         String             @db.Uuid
-  universityId        String             @db.Uuid
-  educationLevel      EducationLevel
-  degreeName          String?
-  startDate           DateTime?
-  endDate             DateTime?
-  gpa                 Float?
-  isCurrent           Boolean            @default(false)
-  createdAt           DateTime           @default(now())
-  updatedAt           DateTime           @updatedAt
-  universityFacultyId String?            @db.Uuid
-  Profile             CandidateProfile   @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-  UniversityFaculty   UniversityFaculty? @relation(fields: [universityFacultyId], references: [id])
-  University          University         @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  id           String   @id @default(uuid())
+  candidateId  String   @db.Uuid
+  universityId String   @db.Uuid
+  educationLevel String
+  degreeName     String
+  fieldOfStudy   String
+  yearOfStudy    String
+  gpa            Float?
+  endDate        DateTime?   // ← เพิ่ม
+  isCurrent      Boolean     @default(false)  // ← เพิ่ม
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  CandidateProfile CandidateProfile @relation(fields: [candidateId], references: [id])
+  University       University       @relation(fields: [universityId], references: [id])
 
   @@index([candidateId])
   @@index([universityId])
-  @@index([universityFacultyId])
 }
 
 model CandidateProfile {
-  id                   String                 @id @db.Uuid
-  userId               String                 @unique @db.Uuid
-  fullName             String?
-  contactEmail         String?                @db.VarChar(255)
-  phoneNumber          String?                @db.VarChar(32)
-  desiredPosition      String?
-  bio                  String?
-  profileImage         String?
-  createdAt            DateTime               @default(now())
-  updatedAt            DateTime
-  CandidateContactFile CandidateContactFile[]
-  User                 User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  CandidateUniversity  CandidateUniversity[]
-  CertificateFile      CertificateFile[]
-  UserSkill            UserSkill[]
-  WorkHistory          WorkHistory[]
-  UserProjects         UserProjects[]
-  Bookmarks            Bookmark[]
-  Conversations        Conversation[]
-  JobApplications      JobApplication[]
-  JobBookmarks         JobBookmark[]
-  JobIgnores           JobIgnore[]
+  id                      String                      @id @db.Uuid
+  userId                  String                      @unique @db.Uuid
+  fullName                String?
+  desiredPosition         String?
+  contactEmail            String?                     @db.VarChar(255)
+  phoneNumber             String?                     @db.VarChar(32)
+  dateOfBirth             DateTime?
+  gender                  String?                    
+  nationality             String?                     
+  internshipPeriod        String?                     
+  bio                     String?
+  description             String?                     @db.Text
+  profileImage            String?
+  preferredPositions      String[]                    @default([])
+  createdAt               DateTime                    @default(now())
+  updatedAt               DateTime
+  CandidateContactFile    CandidateContactFile[]
+  CandidateResume         CandidateResume[]
+  CandidatePreferredProvince CandidatePreferredProvince[]
+  User                    User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  CandidateUniversity     CandidateUniversity[]
+  CertificateFile         CertificateFile[]
+  UserSkill               UserSkill[]
+  WorkHistory             WorkHistory[]
+  UserProjects            UserProjects[]
+  Bookmarks               Bookmark[]
+  Conversations           Conversation[]
+  JobApplications         JobApplication[]
+  JobBookmarks            JobBookmark[]
+  JobIgnores              JobIgnore[]
 }
 
 model CompanyProfile {
@@ -428,13 +435,14 @@ model Message {
 }
 
 model Province {
-  id        String      @id @default(uuid()) @db.Uuid
-  name      String      @unique
-  thname    String?     @unique
-  code      String?     @unique
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id        String                      @id @default(uuid()) @db.Uuid
+  name      String                      @unique
+  thname    String?                     @unique
+  code      String?                     @unique
+  createdAt DateTime                    @default(now())
+  updatedAt DateTime                    @updatedAt
   Districts District[]
+  CandidatePreferredProvince CandidatePreferredProvince[]
 
   @@map("Province")
   @@index([code])
@@ -460,13 +468,13 @@ model District {
 
 model Subdistrict {
   id         String    @id @default(uuid()) @db.Uuid
-  districtId String    @db.Uuid
+  districtId String?   @db.Uuid
   name       String
   thname     String?
   code       String?
   createdAt  DateTime @default(now())
-  updatedAt DateTime  @updatedAt
-  District   District  @relation(fields: [districtId], references: [id], onDelete: Cascade)
+  updatedAt  DateTime @updatedAt
+  District   District? @relation(fields: [districtId], references: [id], onDelete: Cascade)
 
   @@map("Subdistrict")
   @@unique([districtId, name])
@@ -476,14 +484,47 @@ model Subdistrict {
 
 
 model UserProjects {
+  id            String           @id @default(uuid()) @db.Uuid
+  candidateId   String           @db.Uuid
+  name          String
+  role          String
+  description   String
+  startDate     String?          // "Mar 2024" format
+  endDate       String?          // "Apr 2024" format
+  relatedSkills String[]         @default([])
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  Profile       CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+}
+
+model CandidateResume {
   id          String           @id @default(uuid()) @db.Uuid
   candidateId String           @db.Uuid
   name        String
-  role        String
-  description String
+  url         String
+  fileSize    Int?              // File size in bytes
+  fileType    String?           // MIME type (e.g., "application/pdf")
+  isPrimary   Boolean           @default(false)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  Profile     CandidateProfile  @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+  @@index([isPrimary])
+}
+
+model CandidatePreferredProvince {
+  id          String           @id @default(uuid()) @db.Uuid
+  candidateId String           @db.Uuid
+  provinceId  String           @db.Uuid
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   Profile     CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  Province    Province         @relation(fields: [provinceId], references: [id], onDelete: Cascade)
 
+  @@unique([candidateId, provinceId])
   @@index([candidateId])
+  @@index([provinceId])
 }

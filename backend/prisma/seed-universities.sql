@@ -142,7 +142,7 @@ VALUES
 (gen_random_uuid(), 'Walailak University', 'WU', 'Nakhon Si Thammarat', 'Thailand', NOW(), NOW()),
 (gen_random_uuid(), 'Webster University Thailand', 'WUTC', 'Phetchaburi', 'Thailand', NOW(), NOW()),
 (gen_random_uuid(), 'Western University', 'WTU', 'Kanchanaburi', 'Thailand', NOW(), NOW()),
-(gen_random_uuid(), 'Yala Rajabhat University', 'YRU', 'Yala', 'Thailand', NOW(), NOW())
+(gen_random_uuid(), 'Yala Rajabhat University', 'YRU', 'Yala', 'Thailand', NOW(), NOW()),
 (gen_random_uuid(), 'Chulabhorn Royal Academy', 'CRA', 'Bangkok', 'Thailand', NOW(), NOW()),
 (gen_random_uuid(), 'Institute of Community Colleges', 'ICCS', 'Bangkok', 'Thailand', NOW(), NOW()),
 (gen_random_uuid(), 'Bangkok Suvarnabhumi University', 'BSU', 'Samut Prakan', 'Thailand', NOW(), NOW()),

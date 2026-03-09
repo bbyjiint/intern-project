@@ -73,6 +73,42 @@
    - สำหรับข้อมูล production ให้ import จาก Neon cloud database (ดู [DATABASE_SETUP.md](./DATABASE_SETUP.md))
    - **เมื่อ pull code ใหม่ที่มี schema เปลี่ยนแปลง ต้องรัน `prisma db push` และ `prisma:generate` อีกครั้ง**
 
+---
+
+## 🔄 Syncing Database After Pulling New Code
+
+**เมื่อ pull code ใหม่ที่มีการเปลี่ยนแปลง database schema (เช่น เพิ่ม column, table ใหม่):**
+
+### วิธีที่ 1: ใช้ Script (แนะนำ - ง่ายที่สุด) ⭐
+
+```bash
+# รัน script นี้ทุกครั้งที่ pull code ใหม่
+./sync-database.sh
+```
+
+Script นี้จะทำการ:
+1. ✅ Sync schema กับ database (`prisma db push`)
+2. ✅ Regenerate Prisma Client (`prisma generate`)
+3. ✅ Restart backend service
+
+### วิธีที่ 2: รันคำสั่งเอง
+
+```bash
+# 1. Sync schema กับ database
+docker compose exec backend npx prisma db push --config=./prisma.config.ts --accept-data-loss
+
+# 2. Regenerate Prisma Client (สำคัญมาก!)
+docker compose exec backend npm run prisma:generate
+
+# 3. Restart backend
+docker compose restart backend
+```
+
+**⚠️ สำคัญ:** 
+- ต้องรันทุกครั้งที่ pull code ที่มีการเปลี่ยนแปลง `backend/prisma/schema.prisma`
+- ข้อมูลเดิมของคุณจะไม่หาย (เฉพาะโครงสร้างที่เปลี่ยน)
+- ถ้าไม่รันอาจทำให้ backend error หรือ API ไม่ทำงาน
+
 5. **Generate Prisma Client** (ครั้งแรกเท่านั้น)
    ```bash
    docker compose exec backend npm run prisma:generate
@@ -83,6 +119,7 @@
    - **Backend API**: http://localhost:5001
    - **API Health Check**: http://localhost:5001/api/health
    - **PostgreSQL**: localhost:5433
+   - **Prisma Studio**: http://localhost:5555 (รัน `./open-prisma-studio.sh` เพื่อเปิด)
 
 ✅ **เสร็จแล้ว!** ทุกอย่างควรทำงานแล้ว
 
@@ -408,6 +445,8 @@ curl http://localhost:5001/api/health
 
 ## 📚 Documentation
 
+- [DATABASE_SETUP.md](./DATABASE_SETUP.md) - Database setup และ data persistence
+- [TEAM_DATABASE_SYNC.md](./TEAM_DATABASE_SYNC.md) - ⭐ **วิธี sync database หลังจาก pull code ใหม่** (สำคัญ!)
 - [DOCKER_EXPLAINED.md](./DOCKER_EXPLAINED.md) - คำอธิบาย Docker ในโปรเจกต์
 - [DOCKER_FRONTEND_SETUP.md](./DOCKER_FRONTEND_SETUP.md) - Frontend containerization
 - [TEAM_COLLABORATION.md](./TEAM_COLLABORATION.md) - Team workflow และ best practices

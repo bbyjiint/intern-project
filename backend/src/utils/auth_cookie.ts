@@ -1,21 +1,17 @@
-import type { Response } from "express";
+import type { Response, Request } from "express";
+import jwt from "jsonwebtoken";
 
 export const AUTH_COOKIE_NAME = "auth";
 
 export function getAuthCookieOptions(args?: {
   rememberMe?: boolean;
-}): {
-  httpOnly: true;
-  secure: boolean;
-  sameSite: "lax";
-  path: "/";
-  maxAge?: number;
-} {
+}) {
   const rememberMe = args?.rememberMe ?? false;
+
   return {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "lax" as const,
     path: "/",
     ...(rememberMe ? { maxAge: 30 * 24 * 60 * 60 * 1000 } : {}),
   };
@@ -34,3 +30,15 @@ export function clearAuthCookie(res: Response) {
   });
 }
 
+export function getUserIdFromRequest(req: Request): string {
+
+  const token = req.cookies?.[AUTH_COOKIE_NAME]
+
+  if (!token) {
+    throw new Error("Unauthorized")
+  }
+
+  const payload = jwt.verify(token, process.env.JWT_SECRET!) as any
+
+  return payload.sub
+}

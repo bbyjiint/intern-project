@@ -34,23 +34,34 @@ profilesRouter.get("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
       return res.status(404).json({ error: "Profile not found" });
     }
 
+    // Get preferred provinces
+    const preferredProvinces = await prisma.candidatePreferredProvince.findMany({
+      where: { candidateId: candidateProfile.id },
+      include: { Province: { select: { id: true, name: true, thname: true } } },
+    });
+
     // Transform database data to match frontend format
     // Response schema matches what PUT endpoint accepts
     const profileData = {
       fullName: candidateProfile.fullName || null,
       email: candidateProfile.contactEmail || candidateProfile.User.email,
       phoneNumber: candidateProfile.phoneNumber || null,
+      gender: candidateProfile.gender || null,
+      nationality: candidateProfile.nationality || null,
+      internshipPeriod: candidateProfile.internshipPeriod || null,
+      dateOfBirth: candidateProfile.dateOfBirth ? candidateProfile.dateOfBirth.toISOString().split("T")[0] : null,
       aboutYou: candidateProfile.bio || null,
       professionalSummary: candidateProfile.bio || null,
+      description: candidateProfile.description || null,
       profileImage: candidateProfile.profileImage || null,
+      positionsOfInterest: candidateProfile.preferredPositions || [],
+      preferredLocations: preferredProvinces.map((pp) => pp.Province.id),
       location: null, // Not stored in CandidateProfile currently
       education: candidateProfile.CandidateUniversity.map((cu) => ({
         id: cu.id,
         university: cu.University.name,
         degree: cu.degreeName || "",
-        startDate: cu.startDate ? cu.startDate.toISOString().split("T")[0] : "",
         endDate: cu.endDate ? cu.endDate.toISOString().split("T")[0] : "",
-        startYear: cu.startDate ? cu.startDate.getFullYear().toString() : "",
         endYear: cu.isCurrent ? null : (cu.endDate ? cu.endDate.getFullYear().toString() : null),
         gpa: cu.gpa ? cu.gpa.toString() : null,
         // Note: coursework and achievements are not stored in schema currently
@@ -95,22 +106,27 @@ profilesRouter.get("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
 });
 
 // Candidate Profile Update
-// Accepts: { fullName, email, phoneNumber, aboutYou, professionalSummary, profileImage, education[], experience[], skills[], projects[] }
-// Ignores: location (not in schema)
+// Accepts: { fullName, email, phoneNumber, dateOfBirth, aboutYou, professionalSummary, description, profileImage, positionsOfInterest[], preferredLocations[], education[], experience[], skills[], projects[] }
 profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
   const userId = req.user!.id;
   const {
     fullName,
     email,
     phoneNumber,
+    dateOfBirth,
     aboutYou,
     professionalSummary,
+    description,
     profileImage,
+    positionsOfInterest,
+    preferredLocations,
     education,
     experience,
     skills,
     projects,
-    // Note: location is ignored (not in CandidateProfile schema)
+    gender,
+    nationality,
+    internshipPeriod,
   } = req.body ?? {};
 
   try {
@@ -122,6 +138,9 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
     const bio = aboutYou || professionalSummary || null;
     const contactEmail = email || null;
     const phone = phoneNumber || null;
+    const desc = description || null;
+    const preferredPositions = Array.isArray(positionsOfInterest) ? positionsOfInterest : [];
+    const dob = dateOfBirth ? new Date(dateOfBirth) : null;
 
     if (candidateProfile) {
       // Update existing profile
@@ -131,8 +150,14 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
           ...(fullName && { fullName }),
           ...(contactEmail && { contactEmail }),
           ...(phone && { phoneNumber: phone }),
-          ...(bio && { bio }),
+          ...(dob !== null && { dateOfBirth: dob }),
+          ...(bio !== null && { bio }),
+          ...(desc !== null && { description: desc }),
           ...(profileImage && { profileImage }),
+          ...(preferredPositions.length > 0 && { preferredPositions }),
+          ...(gender !== undefined && { gender }),
+          ...(nationality !== undefined && { nationality }),
+          ...(internshipPeriod !== undefined && { internshipPeriod }),
           updatedAt: new Date(),
         },
       });
@@ -145,10 +170,51 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
           ...(fullName && { fullName }),
           ...(contactEmail && { contactEmail }),
           ...(phone && { phoneNumber: phone }),
-          ...(bio && { bio }),
+          ...(dob !== null && { dateOfBirth: dob }),
+          ...(bio !== null && { bio }),
+          ...(desc !== null && { description: desc }),
           ...(profileImage && { profileImage }),
+          ...(preferredPositions.length > 0 && { preferredPositions }),
+          ...(gender !== undefined && { gender }),
+          ...(nationality && { nationality }),
+          ...(internshipPeriod && { internshipPeriod }),
           updatedAt: new Date(),
         },
+      });
+    }
+
+    // Handle preferred provinces (CandidatePreferredProvince)
+    if (Array.isArray(preferredLocations) && preferredLocations.length > 0) {
+      // Delete existing preferred provinces
+      await prisma.candidatePreferredProvince.deleteMany({
+        where: { candidateId: candidateProfile.id },
+      });
+
+      // Create new preferred province entries
+      for (const provinceId of preferredLocations) {
+        if (provinceId && typeof provinceId === 'string') {
+          // Verify province exists
+          const province = await prisma.province.findUnique({
+            where: { id: provinceId },
+          });
+
+          if (province) {
+            await prisma.candidatePreferredProvince.create({
+              data: {
+                id: randomUUID(),
+                candidateId: candidateProfile.id,
+                provinceId: provinceId,
+              },
+            });
+          } else {
+            console.warn(`Province not found: ${provinceId}`);
+          }
+        }
+      }
+    } else if (preferredLocations === null || (Array.isArray(preferredLocations) && preferredLocations.length === 0)) {
+      // Clear preferred provinces if empty array or null
+      await prisma.candidatePreferredProvince.deleteMany({
+        where: { candidateId: candidateProfile.id },
       });
     }
 
@@ -157,7 +223,7 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
     // If endYear is empty/null → treat as current (isCurrent = true, endDate = null)
     if (Array.isArray(education) && education.length > 0) {
       console.log("Processing education data:", JSON.stringify(education, null, 2));
-      
+
       // Delete existing education entries
       await prisma.candidateUniversity.deleteMany({
         where: { candidateId: candidateProfile.id },
@@ -167,7 +233,7 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
       for (const edu of education) {
         // Support both 'university' and 'institution' field names from frontend
         const universityName = edu.university || edu.institution;
-        
+
         if (universityName && (edu.degree || edu.fieldOfStudy)) {
           // Find university by exact name match (since we're using dropdown now)
           let university = await prisma.university.findFirst({
@@ -206,15 +272,16 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
               id: randomUUID(),
               candidateId: candidateProfile.id,
               universityId: university.id,
-              educationLevel: "BACHELOR", // Default, you might want to map this
-              degreeName: degreeName,
-              startDate: edu.startYear ? new Date(`${edu.startYear}-01-01`) : null,
-              endDate: hasEndYear ? new Date(`${edu.endYear}-12-31`) : null,
+              educationLevel: edu.educationLevel || "Bachelor",
+              degreeName: edu.degree || edu.degreeName || "",
+              fieldOfStudy: edu.fieldOfStudy || edu.degree || "",
+              yearOfStudy: edu.yearOfStudy || "",
+              gpa: edu.gpa ? parseFloat(edu.gpa) : null,
               isCurrent: isCurrent,
-              gpa: edu.gpa ? parseFloat(String(edu.gpa)) : null,
-            },
+              endDate: hasEndYear ? new Date(`${endYearStr}-01-01`) : null,
+            }
           });
-          
+
           console.log(`Created education record: ${educationRecord.id} for university: ${university.name}`);
         } else {
           console.warn("Skipping education entry - missing required fields:", {
@@ -316,7 +383,7 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
 
     // Handle projects (UserProjects)
     // Accepts: { name, role, description }
-    if (Array.isArray(projects) && projects.length >= 0) {
+    if (Array.isArray(projects)) {
       // Delete existing projects
       await prisma.userProjects.deleteMany({
         where: { candidateId: candidateProfile.id },
@@ -380,7 +447,7 @@ profilesRouter.get("/companies/profile", requireAuth, requireRole("COMPANY"), as
     let district = "";
     let province = companyProfile.province || "";
     let postcode = "";
-    
+
     if (companyProfile.location) {
       const locationParts = companyProfile.location.split(", ");
       if (locationParts.length > 0) {
@@ -413,6 +480,7 @@ profilesRouter.get("/companies/profile", requireAuth, requireRole("COMPANY"), as
       websiteUrl: "", // Not stored in schema currently
       contactName: companyProfile.recruiterName || "",
       profileImage: companyProfile.logoURL || "",
+
     };
 
     // Always return profile data if profile exists, even if some fields are empty
