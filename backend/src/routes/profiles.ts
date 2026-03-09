@@ -46,6 +46,9 @@ profilesRouter.get("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
       fullName: candidateProfile.fullName || null,
       email: candidateProfile.contactEmail || candidateProfile.User.email,
       phoneNumber: candidateProfile.phoneNumber || null,
+      gender: candidateProfile.gender || null,
+      nationality: candidateProfile.nationality || null,
+      internshipPeriod: candidateProfile.internshipPeriod || null,
       dateOfBirth: candidateProfile.dateOfBirth ? candidateProfile.dateOfBirth.toISOString().split("T")[0] : null,
       aboutYou: candidateProfile.bio || null,
       professionalSummary: candidateProfile.bio || null,
@@ -58,9 +61,7 @@ profilesRouter.get("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
         id: cu.id,
         university: cu.University.name,
         degree: cu.degreeName || "",
-        startDate: cu.startDate ? cu.startDate.toISOString().split("T")[0] : "",
         endDate: cu.endDate ? cu.endDate.toISOString().split("T")[0] : "",
-        startYear: cu.startDate ? cu.startDate.getFullYear().toString() : "",
         endYear: cu.isCurrent ? null : (cu.endDate ? cu.endDate.getFullYear().toString() : null),
         gpa: cu.gpa ? cu.gpa.toString() : null,
         // Note: coursework and achievements are not stored in schema currently
@@ -123,6 +124,9 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
     experience,
     skills,
     projects,
+    gender,
+    nationality,
+    internshipPeriod,
   } = req.body ?? {};
 
   try {
@@ -151,6 +155,9 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
           ...(desc !== null && { description: desc }),
           ...(profileImage && { profileImage }),
           ...(preferredPositions.length > 0 && { preferredPositions }),
+          ...(gender !== undefined && { gender }),
+          ...(nationality !== undefined && { nationality }),
+          ...(internshipPeriod !== undefined && { internshipPeriod }),
           updatedAt: new Date(),
         },
       });
@@ -168,6 +175,9 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
           ...(desc !== null && { description: desc }),
           ...(profileImage && { profileImage }),
           ...(preferredPositions.length > 0 && { preferredPositions }),
+          ...(gender !== undefined && { gender }),
+          ...(nationality && { nationality }),
+          ...(internshipPeriod && { internshipPeriod }),
           updatedAt: new Date(),
         },
       });
@@ -213,7 +223,7 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
     // If endYear is empty/null → treat as current (isCurrent = true, endDate = null)
     if (Array.isArray(education) && education.length > 0) {
       console.log("Processing education data:", JSON.stringify(education, null, 2));
-      
+
       // Delete existing education entries
       await prisma.candidateUniversity.deleteMany({
         where: { candidateId: candidateProfile.id },
@@ -223,7 +233,7 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
       for (const edu of education) {
         // Support both 'university' and 'institution' field names from frontend
         const universityName = edu.university || edu.institution;
-        
+
         if (universityName && (edu.degree || edu.fieldOfStudy)) {
           // Find university by exact name match (since we're using dropdown now)
           let university = await prisma.university.findFirst({
@@ -262,15 +272,16 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
               id: randomUUID(),
               candidateId: candidateProfile.id,
               universityId: university.id,
-              educationLevel: "BACHELOR", // Default, you might want to map this
-              degreeName: degreeName,
-              startDate: edu.startYear ? new Date(`${edu.startYear}-01-01`) : null,
-              endDate: hasEndYear ? new Date(`${edu.endYear}-12-31`) : null,
+              educationLevel: edu.educationLevel || "Bachelor",
+              degreeName: edu.degree || edu.degreeName || "",
+              fieldOfStudy: edu.fieldOfStudy || edu.degree || "",
+              yearOfStudy: edu.yearOfStudy || "",
+              gpa: edu.gpa ? parseFloat(edu.gpa) : null,
               isCurrent: isCurrent,
-              gpa: edu.gpa ? parseFloat(String(edu.gpa)) : null,
-            },
+              endDate: hasEndYear ? new Date(`${endYearStr}-01-01`) : null,
+            }
           });
-          
+
           console.log(`Created education record: ${educationRecord.id} for university: ${university.name}`);
         } else {
           console.warn("Skipping education entry - missing required fields:", {
@@ -372,7 +383,7 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
 
     // Handle projects (UserProjects)
     // Accepts: { name, role, description }
-    if (Array.isArray(projects) && projects.length >= 0) {
+    if (Array.isArray(projects)) {
       // Delete existing projects
       await prisma.userProjects.deleteMany({
         where: { candidateId: candidateProfile.id },
@@ -436,7 +447,7 @@ profilesRouter.get("/companies/profile", requireAuth, requireRole("COMPANY"), as
     let district = "";
     let province = companyProfile.province || "";
     let postcode = "";
-    
+
     if (companyProfile.location) {
       const locationParts = companyProfile.location.split(", ");
       if (locationParts.length > 0) {
@@ -469,6 +480,7 @@ profilesRouter.get("/companies/profile", requireAuth, requireRole("COMPANY"), as
       websiteUrl: "", // Not stored in schema currently
       contactName: companyProfile.recruiterName || "",
       profileImage: companyProfile.logoURL || "",
+
     };
 
     // Always return profile data if profile exists, even if some fields are empty

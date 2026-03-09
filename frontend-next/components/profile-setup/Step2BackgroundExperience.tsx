@@ -1,80 +1,125 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import SearchableDropdown from '@/components/SearchableDropdown'
-import { apiFetch } from '@/lib/api'
+import {
+  useState,
+  useEffect,
+  useImperativeHandle,
+  forwardRef,
+  useRef,
+} from "react";
+import SearchableDropdown from "@/components/SearchableDropdown";
+import { apiFetch } from "@/lib/api";
 
-interface Step2BackgroundExperienceProps {
-  data: any
-  onUpdate: (data: any) => void
-  onSkip?: () => void
+// ─────────────────────────────────────────────
+// Types
+// ─────────────────────────────────────────────
+
+interface EducationData {
+  educationLevel?: string;
+  university?: string;
+  degree?: string;
+  fieldOfStudy?: string;
+  yearOfStudy?: string;
+  startYear?: string;
+  endYear?: string | null;
+  gpa?: string | number | null;
+  isCurrent?: boolean;
 }
 
-export default function Step2BackgroundExperience({ data, onUpdate, onSkip }: Step2BackgroundExperienceProps) {
-  const [formData, setFormData] = useState({
-    education: data.education || [],
-  })
+interface Step2Props {
+  data: { education?: EducationData[] };
+  onUpdate: (data: any) => void;
+  onSkip?: () => void;
+  onValidate?: (fn: () => boolean | Promise<boolean>) => void;
+}
 
-  // Sync formData when data prop changes (e.g., when profile data is loaded from API)
+interface EducationFormHandle {
+  validate: () => boolean;
+  submit: () => Promise<boolean>;
+}
+
+// ─────────────────────────────────────────────
+// Step2BackgroundExperience
+// ─────────────────────────────────────────────
+
+export default function Step2BackgroundExperience({
+  data,
+  onUpdate,
+  onSkip,
+  onValidate,
+}: Step2Props) {
+  const [education, setEducation] = useState<EducationData[]>(
+    data.education || [],
+  );
+
+  // Sync when parent data changes (e.g. after loadProfile)
   useEffect(() => {
-    setFormData({
-      education: data.education || [],
-    })
-  }, [data.education])
+    setEducation(data.education || []);
+  }, [data.education]);
 
-  const [showEducationForm, setShowEducationForm] = useState(false)
-  const [editingEducationIndex, setEditingEducationIndex] = useState<number | null>(null)
+  const educationFormRef = useRef<EducationFormHandle>(null);
 
-  const handleChange = (field: string, value: any) => {
-    const updated = { ...formData, [field]: value }
-    setFormData(updated)
-    onUpdate(updated)
-  }
+  // Register validator with parent — re-register whenever ref changes
+  useEffect(() => {
+    if (!onValidate) return;
 
-  const handleAddEducation = (education: any) => {
-    const updated = [...formData.education, education]
-    handleChange('education', updated)
-    setShowEducationForm(false)
-  }
+    onValidate(async () => {
+      if (!educationFormRef.current) return true;
 
-  const handleEditEducation = (index: number, education: any) => {
-    const updated = [...formData.education]
-    updated[index] = education
-    handleChange('education', updated)
-    setEditingEducationIndex(null)
-  }
+      const isFormEmpty = checkFormIsEmpty();
+      // If form is completely empty, skip validation (step is optional)
+      if (isFormEmpty) return true;
 
-  const handleDeleteEducation = (index: number) => {
-    const updated = formData.education.filter((_: any, i: number) => i !== index)
-    handleChange('education', updated)
-  }
+      const valid = educationFormRef.current.validate();
+      if (!valid) return false;
+
+      return await educationFormRef.current.submit();
+    });
+  }, [onValidate]);
+
+  // Check if the education form has any data filled in
+  const checkFormIsEmpty = () => {
+    const edu = education[0];
+    if (!edu) return true;
+    return (
+      !edu.university &&
+      !edu.degree &&
+      !edu.fieldOfStudy &&
+      !edu.educationLevel
+    );
+  };
+
+  const handleSave = (edu: EducationData) => {
+    const updated = [edu];
+    setEducation(updated);
+    onUpdate({ education: updated });
+  };
 
   return (
     <div>
-      {/* Header with Skip Button */}
-      <div className="flex justify-between items-start mb-4">
+      {/* Header */}
+      <div className="flex justify-between items-start mb-6">
         <div>
-          <h2 className="text-2xl font-bold mb-2" style={{ color: '#1C2D4F', fontWeight: 700 }}>
+          <h2
+            className="text-2xl font-bold mb-1"
+            style={{ color: "#1C2D4F", fontWeight: 700 }}
+          >
             Education
           </h2>
-          <p className="text-sm" style={{ color: '#A9B4CD' }}>
-            This step is optional - you can fill your profile Information at any time.
+          <p className="text-sm" style={{ color: "#A9B4CD" }}>
+            This step is optional — you can add education information at any
+            time.
           </p>
         </div>
+
         {onSkip && (
           <button
             onClick={onSkip}
-            className="flex items-center px-4 py-2 rounded-lg font-medium text-sm transition-colors"
+            className="flex items-center px-4 py-2 rounded-lg font-medium text-sm"
             style={{
-              border: '2px solid #0273B1',
-              color: '#0273B1',
-              backgroundColor: 'white'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#F0F4F8'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'white'
+              border: "2px solid #0273B1",
+              color: "#0273B1",
+              backgroundColor: "white",
             }}
           >
             Skip &gt;
@@ -82,363 +127,253 @@ export default function Step2BackgroundExperience({ data, onUpdate, onSkip }: St
         )}
       </div>
 
-      <div className="space-y-8">
-        {/* Education */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6">
-          {formData.education.map((edu: any, index: number) => (
-            <div key={index} className="mb-4 p-4 border border-gray-200 rounded-lg bg-white">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <h4 className="font-bold mb-1" style={{ color: '#1C2D4F' }}>
-                    {edu.university || 'University'} - {edu.degree || edu.fieldOfStudy || 'Degree'}
-                  </h4>
-                  <p className="text-sm" style={{ color: '#A9B4CD' }}>
-                    {edu.startYear || 'Start'} {edu.endYear ? `- ${edu.endYear}` : '- Present'}
-                    {edu.gpa && ` | GPA: ${edu.gpa}`}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setEditingEducationIndex(index)}
-                    className="px-3 py-1 rounded text-sm font-semibold transition-colors"
-                    style={{
-                      backgroundColor: 'white',
-                      border: '2px solid #0273B1',
-                      color: '#0273B1'
-                    }}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleDeleteEducation(index)}
-                    className="px-3 py-1 rounded text-sm font-semibold transition-colors"
-                    style={{
-                      backgroundColor: '#EF4444',
-                      color: 'white'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#DC2626'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = '#EF4444'
-                    }}
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-          {(showEducationForm || editingEducationIndex !== null) && (
-          <EducationForm
-              education={editingEducationIndex !== null ? formData.education[editingEducationIndex] : null}
-            onSave={(edu: any) => {
-              const educationData = {
-                  university: edu.university || edu.institution,
-                  degree: edu.degree || edu.fieldOfStudy || '',
-                  fieldOfStudy: edu.fieldOfStudy || edu.degree || '',
-                  startYear: edu.startYear || edu.startDate?.split('-')[0] || '',
-                  endYear: edu.endYear || (edu.endDate ? edu.endDate.split('-')[0] : null),
-                  gpa: edu.gpa || null,
-              }
-                if (editingEducationIndex !== null) {
-                  handleEditEducation(editingEducationIndex, educationData)
-              } else {
-                handleAddEducation(educationData)
-              }
-            }}
-              onCancel={() => {
-                setShowEducationForm(false)
-                setEditingEducationIndex(null)
-              }}
-            onSkip={() => {
-                setShowEducationForm(false)
-              }}
-            />
-          )}
-          {formData.education.length === 0 && !showEducationForm && (
-            <button
-              onClick={() => setShowEducationForm(true)}
-              className="px-4 py-2 rounded-lg font-semibold text-sm transition-colors"
-              style={{ backgroundColor: '#E3F5FF', color: '#0273B1' }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#0273B1'
-                e.currentTarget.style.color = '#FFFFFF'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#E3F5FF'
-                e.currentTarget.style.color = '#0273B1'
-              }}
-            >
-              <svg className="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Add Education
-            </button>
-          )}
-        </div>
+      {/* Form */}
+      <div className="border border-gray-200 rounded-lg p-6">
+        <EducationForm
+          ref={educationFormRef}
+          education={education[0] || null}
+          onFieldChange={(edu: EducationData) => {
+            const updated = [edu];
+            setEducation(updated);
+            onUpdate({ education: updated });
+          }}
+          onSave={handleSave}
+        />
       </div>
     </div>
-  )
+  );
 }
 
-function EducationForm({ education, onSave, onCancel, onSkip }: any) {
-  const [formData, setFormData] = useState({
-    educationLevel: education?.educationLevel || '',
-    institution: education?.university || '',
-    degree: education?.degree || '',
-    fieldOfStudy: education?.fieldOfStudy || '',
-    yearOfStudy: education?.yearOfStudy || education?.startYear || '',
-    gpa: education?.gpa || '',
-    isCurrent: !education?.endYear && !education?.endDate,
-    isGraduated: !!education?.endYear || !!education?.endDate,
-  })
-  const [universities, setUniversities] = useState<Array<{ id: string; name: string; thname: string | null; code: string | null }>>([])
-  const [universitiesLoading, setUniversitiesLoading] = useState(false)
+// ─────────────────────────────────────────────
+// EducationForm
+// ─────────────────────────────────────────────
 
-  const educationLevels = ['Bachelor', 'Master', 'PhD']
-  const yearOfStudyOptions = ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year', 'Graduate']
+const EDUCATION_LEVELS = ["Bachelor", "Master", "PhD"];
+const YEAR_OF_STUDY_OPTIONS = [
+  "1st Year",
+  "2nd Year",
+  "3rd Year",
+  "4th Year",
+  "5th Year",
+  "Graduate",
+];
 
-  // Load universities from API
-  useEffect(() => {
-    ;(async () => {
-      setUniversitiesLoading(true)
-      try {
-        const data = await apiFetch<{ universities: Array<{ id: string; name: string; thname: string | null; code: string | null }> }>(
-          `/api/universities`
-        )
-        setUniversities(data.universities || [])
-      } catch (err) {
-        console.error('Failed to load universities:', err)
-        setUniversities([])
-      } finally {
-        setUniversitiesLoading(false)
-      }
-    })()
-  }, [])
-
-  const handleFieldChange = (field: string, value: any) => {
-    const updated = { ...formData, [field]: value }
-    if (field === 'isCurrent' && value) {
-      updated.isGraduated = false
-    }
-    if (field === 'isGraduated' && value) {
-      updated.isCurrent = false
-    }
-    setFormData(updated)
+const EducationForm = forwardRef<
+  EducationFormHandle,
+  {
+    education: EducationData | null;
+    onSave: (edu: EducationData) => void;
+    onFieldChange: (edu: EducationData) => void;
   }
+>(function EducationForm({ education, onSave, onFieldChange }, ref) {
+  const [fields, setFields] = useState({
+    educationLevel: education?.educationLevel || "",
+    institution: education?.university || "",
+    degree: education?.degree || "",
+    fieldOfStudy: education?.fieldOfStudy || "",
+    yearOfStudy: education?.yearOfStudy || education?.startYear || "",
+    gpa: education?.gpa != null ? String(education.gpa) : "",
+    isCurrent: education?.isCurrent || false,
+  });
+
+  const [errors, setErrors] = useState<Record<string, boolean>>({});
+  const [universities, setUniversities] = useState<
+    { name: string; thname?: string }[]
+  >([]);
+  const [universitiesLoading, setUniversitiesLoading] = useState(false);
+
+  // Sync fields when education prop changes (e.g. after loadProfile)
+  useEffect(() => {
+    if (!education) return;
+    setFields({
+      educationLevel: education.educationLevel || "",
+      institution: education.university || "",
+      degree: education.degree || "",
+      fieldOfStudy: education.fieldOfStudy || "",
+      yearOfStudy: education.yearOfStudy || education.startYear || "",
+      gpa: education.gpa != null ? String(education.gpa) : "",
+      isCurrent: education.isCurrent || false,
+    });
+  }, [education]);
+
+  // Load universities list once
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setUniversitiesLoading(true);
+      try {
+        const data = await apiFetch<{ universities: any[] }>("/api/universities");
+        if (!cancelled) setUniversities(data.universities || []);
+      } catch {
+        if (!cancelled) setUniversities([]);
+      } finally {
+        if (!cancelled) setUniversitiesLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const updateField = (key: string, value: any) => {
+    const updated = { ...fields, [key]: value };
+    setFields(updated);
+
+    // Clear error on change
+    if (errors[key]) setErrors((prev) => ({ ...prev, [key]: false }));
+
+    // Notify parent of live changes
+    onFieldChange(toPayload(updated));
+  };
+
+  const toPayload = (f: typeof fields): EducationData => ({
+    educationLevel: f.educationLevel,
+    university: f.institution,
+    degree: f.degree,
+    fieldOfStudy: f.fieldOfStudy,
+    yearOfStudy: f.yearOfStudy,
+    startYear: f.yearOfStudy,
+    endYear: f.isCurrent ? null : new Date().getFullYear().toString(),
+    gpa: f.gpa,
+    isCurrent: f.isCurrent,
+  });
+
+  const validate = (): boolean => {
+    const newErrors: Record<string, boolean> = {};
+    if (!fields.educationLevel) newErrors.educationLevel = true;
+    if (!fields.institution) newErrors.institution = true;
+    if (!fields.degree) newErrors.degree = true;
+    if (!fields.fieldOfStudy) newErrors.fieldOfStudy = true;
+    if (!fields.yearOfStudy) newErrors.yearOfStudy = true;
+    if (!fields.gpa) newErrors.gpa = true;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  useImperativeHandle(ref, () => ({
+    validate,
+    submit: async () => {
+      if (!validate()) return false;
+      onSave(toPayload(fields));
+      return true;
+    },
+  }));
+
+  const borderClass = (key: string) =>
+    errors[key]
+      ? "border-red-500 ring-1 ring-red-400"
+      : "border-gray-300";
 
   return (
-    <div className="space-y-6">
-      {/* Two Column Layout */}
-      <div className="grid grid-cols-2 gap-4">
+    <div className="space-y-5">
+      {/* Error banner */}
+      {Object.values(errors).some(Boolean) && (
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          Please fill in all required fields highlighted in red.
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Education Level */}
         <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
+          <label className="block text-xs font-medium mb-2 text-gray-700">
             Education Level
           </label>
-          <div className="relative">
-            <select
-              value={formData.educationLevel}
-              onChange={(e) => handleFieldChange('educationLevel', e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
-            >
-              <option value="">Select education level</option>
-              {educationLevels.map((level) => (
-                <option key={level} value={level}>{level}</option>
-              ))}
-            </select>
-            <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
+          <select
+            value={fields.educationLevel}
+            onChange={(e) => updateField("educationLevel", e.target.value)}
+            className={`w-full px-4 py-3 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 ${borderClass("educationLevel")}`}
+          >
+            <option value="">Select education level</option>
+            {EDUCATION_LEVELS.map((level) => (
+              <option key={level} value={level}>
+                {level}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Institution Name */}
         <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
+          <label className="block text-xs font-medium mb-2 text-gray-700">
             Institution Name
           </label>
           {universitiesLoading ? (
-            <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white flex items-center justify-center">
-              <span className="text-gray-500 text-sm">Loading...</span>
+            <div className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm text-gray-400">
+              Loading...
             </div>
           ) : (
-            <SearchableDropdown
-              options={universities.map((uni) => ({
-                value: uni.name,
-                label: uni.thname ? `${uni.name} (${uni.thname})` : uni.name,
-                code: uni.code,
-              }))}
-              value={formData.institution}
-              onChange={(value) => handleFieldChange('institution', value)}
-              placeholder="Select Institution"
-              className="w-full"
-              allOptionLabel="Select Institution"
-            />
+            <div className={errors.institution ? "rounded-lg ring-1 ring-red-500" : ""}>
+              <SearchableDropdown
+                options={universities.map((uni) => ({
+                  value: uni.name,
+                  label: uni.thname ? `${uni.name} (${uni.thname})` : uni.name,
+                }))}
+                value={fields.institution}
+                onChange={(value) => updateField("institution", value)}
+                placeholder="Select Institution"
+                className="w-full"
+              />
+            </div>
           )}
         </div>
 
         {/* Degree */}
         <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
+          <label className="block text-xs font-medium mb-2 text-gray-700">
             Degree
           </label>
           <input
-            type="text"
-            value={formData.degree}
-            onChange={(e) => handleFieldChange('degree', e.target.value)}
-            placeholder="e.g., Bachelor of Engineering"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={fields.degree}
+            onChange={(e) => updateField("degree", e.target.value)}
+            placeholder="e.g. Bachelor of Science"
+            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${borderClass("degree")}`}
           />
         </div>
 
         {/* Field of Study */}
         <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
+          <label className="block text-xs font-medium mb-2 text-gray-700">
             Field of Study
           </label>
           <input
-            type="text"
-            value={formData.fieldOfStudy}
-            onChange={(e) => handleFieldChange('fieldOfStudy', e.target.value)}
-            placeholder="e.g., Computer Engineering"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={fields.fieldOfStudy}
+            onChange={(e) => updateField("fieldOfStudy", e.target.value)}
+            placeholder="e.g. Computer Science"
+            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${borderClass("fieldOfStudy")}`}
           />
         </div>
 
         {/* Year of Study */}
         <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
+          <label className="block text-xs font-medium mb-2 text-gray-700">
             Year of Study
           </label>
-          <div className="relative">
-            <select
-              value={formData.yearOfStudy}
-              onChange={(e) => handleFieldChange('yearOfStudy', e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none"
-            >
-              <option value="">Select year of study</option>
-              {yearOfStudyOptions.map((year) => (
-                <option key={year} value={year}>{year}</option>
-              ))}
-            </select>
-            <svg className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
+          <select
+            value={fields.yearOfStudy}
+            onChange={(e) => updateField("yearOfStudy", e.target.value)}
+            className={`w-full px-4 py-3 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 ${borderClass("yearOfStudy")}`}
+          >
+            <option value="">Select year of study</option>
+            {YEAR_OF_STUDY_OPTIONS.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </select>
         </div>
 
-        {/* GPA (Current) */}
+        {/* GPA */}
         <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
+          <label className="block text-xs font-medium mb-2 text-gray-700">
             GPA (Current)
           </label>
           <input
-            type="text"
-            value={formData.gpa}
-            onChange={(e) => handleFieldChange('gpa', e.target.value)}
-            placeholder="e.g., 3.50"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={fields.gpa}
+            onChange={(e) => updateField("gpa", e.target.value)}
+            placeholder="e.g. 3.50"
+            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${borderClass("gpa")}`}
           />
         </div>
       </div>
-
-      {/* Checkboxes */}
-      <div className="flex gap-6">
-        <label className="flex items-center">
-          <input
-            type="checkbox"
-            checked={formData.isCurrent}
-            onChange={(e) => handleFieldChange('isCurrent', e.target.checked)}
-            className="w-4 h-4 rounded border-gray-300"
-            style={{ accentColor: '#0273B1' }}
-          />
-          <span className="ml-2 text-sm" style={{ color: '#1C2D4F' }}>Currently studying here</span>
-        </label>
-        <label className="flex items-center">
-          <input
-            type="checkbox"
-            checked={formData.isGraduated}
-            onChange={(e) => handleFieldChange('isGraduated', e.target.checked)}
-            className="w-4 h-4 rounded border-gray-300"
-            style={{ accentColor: '#0273B1' }}
-          />
-          <span className="ml-2 text-sm" style={{ color: '#1C2D4F' }}>Graduated</span>
-        </label>
-      </div>
-
-      {/* Action Buttons */}
-      <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
-        <button
-          onClick={onCancel}
-          className="px-6 py-3 rounded-lg font-semibold text-sm transition-colors"
-          style={{
-            backgroundColor: 'white',
-            border: '2px solid #0273B1',
-            color: '#0273B1'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#F0F4F8'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'white'
-          }}
-        >
-          Cancel
-        </button>
-        <button
-          onClick={() => {
-            if (onSave) {
-              onSave({
-                educationLevel: formData.educationLevel,
-                university: formData.institution,
-                degree: formData.degree,
-                fieldOfStudy: formData.fieldOfStudy,
-                yearOfStudy: formData.yearOfStudy,
-                startYear: formData.yearOfStudy,
-                endYear: formData.isGraduated ? new Date().getFullYear().toString() : null,
-                gpa: formData.gpa || null,
-                isCurrent: formData.isCurrent,
-              })
-            }
-          }}
-          className="px-6 py-3 rounded-lg font-semibold text-sm text-white transition-colors"
-          style={{ backgroundColor: '#0273B1' }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#025a8f'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = '#0273B1'
-          }}
-        >
-          Save
-        </button>
-        <button
-          onClick={() => {
-            if (onSkip) onSkip()
-          }}
-          className="px-6 py-3 rounded-lg font-semibold text-sm transition-colors"
-          style={{
-            backgroundColor: 'white',
-            border: '2px solid #0273B1',
-            color: '#0273B1'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = '#F0F4F8'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'white'
-          }}
-        >
-          Skip
-        </button>
-        <p className="text-xs text-center" style={{ color: '#A9B4CD' }}>
-          *You can build your profile later
-        </p>
-      </div>
     </div>
-  )
-}
-
-// ProjectForm has been moved to ProjectsSection component
+  );
+});

@@ -21,6 +21,19 @@ function formatGradDate(d?: Date | null) {
   return d.toLocaleString("en-US", { month: "short", year: "numeric" });
 }
 
+// Utility to remove a locally stored file if it exists.
+// multer.diskStorage adds a `path` property but memoryStorage does not,
+// so we guard with optional chaining.
+function cleanupLocalFile(file?: Express.Multer.File | null) {
+  if (file?.path && fs.existsSync(file.path)) {
+    try {
+      fs.unlinkSync(file.path);
+    } catch (cleanupError) {
+      console.error("Error cleaning up temp file:", cleanupError);
+    }
+  }
+}
+
 // Helper function to get candidateId from userId
 async function getCandidateIdForUser(userId: string): Promise<string> {
   const candidate = await prisma.candidateProfile.findUnique({
@@ -39,43 +52,33 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
     const candidateProfile = await prisma.candidateProfile.findUnique({
       where: { userId },
       include: {
-        User: { 
-          select: { 
+        User: {
+          select: {
             email: true,
             createdAt: true,
-          } 
+          }
         },
         CandidateUniversity: {
-          include: { 
-            University: { 
-              select: { 
+          include: {
+            University: {
+              select: {
                 name: true,
                 thname: true,
-              } 
-            },
-            UniversityFaculty: {
-              include: {
-                Faculty: {
-                  select: {
-                    name: true,
-                    thname: true,
-                  },
-                },
-              },
+              }
             },
           },
-          orderBy: [{ isCurrent: "desc" }, { endDate: "desc" }],
+          orderBy: { createdAt: "desc" },
         },
         WorkHistory: {
           orderBy: { startDate: "desc" },
         },
         UserSkill: {
-          include: { 
-            Skills: { 
-              select: { 
+          include: {
+            Skills: {
+              select: {
                 name: true,
-              } 
-            } 
+              }
+            }
           },
           orderBy: { rating: "desc" },
         },
@@ -86,6 +89,11 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
           orderBy: { createdAt: "desc" },
         },
         UserProjects: {
+          orderBy: { createdAt: "desc" },
+        },
+        CandidateResume: {
+          where: { isPrimary: true },
+          take: 1,
           orderBy: { createdAt: "desc" },
         },
       },
@@ -105,22 +113,16 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
       profileImage: candidateProfile.profileImage || null,
       desiredPosition: candidateProfile.desiredPosition || null,
       bio: candidateProfile.bio || null,
+      resumeUrl: candidateProfile.CandidateResume[0]?.url || null,
+      resumeFile: candidateProfile.CandidateResume[0]?.name || null,
       education: candidateProfile.CandidateUniversity.map((cu) => ({
         id: cu.id,
         university: cu.University.name,
-        universityThai: cu.University.thname,
-        degree: cu.degreeName || null,
         educationLevel: cu.educationLevel,
-        startDate: cu.startDate ? cu.startDate.toISOString().split("T")[0] : null,
-        endDate: cu.endDate ? cu.endDate.toISOString().split("T")[0] : null,
-        startYear: cu.startDate ? cu.startDate.getFullYear() : null,
-        endYear: cu.endDate ? cu.endDate.getFullYear() : null,
-        gpa: cu.gpa || null,
-        isCurrent: cu.isCurrent,
-        faculty: cu.UniversityFaculty?.Faculty ? {
-          name: cu.UniversityFaculty.Faculty.name,
-          thname: cu.UniversityFaculty.Faculty.thname,
-        } : null,
+        degree: cu.degreeName,
+        fieldOfStudy: cu.fieldOfStudy,
+        yearOfStudy: cu.yearOfStudy,
+        gpa: cu.gpa ? cu.gpa.toString() : null
       })),
       experience: candidateProfile.WorkHistory.map((wh) => ({
         id: wh.id,
@@ -166,6 +168,9 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
         name: project.name,
         role: project.role,
         description: project.description,
+        startDate: project.startDate || "",
+        endDate: project.endDate || "",
+        relatedSkills: project.relatedSkills || [],
       })),
       createdAt: candidateProfile.createdAt.toISOString(),
       updatedAt: candidateProfile.updatedAt.toISOString(),
@@ -174,8 +179,8 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
     return res.json({ profile: profileData });
   } catch (error: any) {
     console.error("Error fetching candidate profile:", error);
-    return res.status(500).json({ 
-      error: error.message || "Failed to fetch candidate profile" 
+    return res.status(500).json({
+      error: error.message || "Failed to fetch candidate profile"
     });
   }
 });
@@ -187,26 +192,24 @@ candidatesRouter.get("/", requireAuth, requireRole("COMPANY"), async (req, res) 
   const candidates = await prisma.candidateProfile.findMany({
     where: q
       ? {
-          OR: [
-            { fullName: { contains: q, mode: "insensitive" } },
-            { desiredPosition: { contains: q, mode: "insensitive" } },
-            { User: { email: { contains: q, mode: "insensitive" } } },
-          ],
-        }
+        OR: [
+          { fullName: { contains: q, mode: "insensitive" } },
+          { desiredPosition: { contains: q, mode: "insensitive" } },
+          { User: { email: { contains: q, mode: "insensitive" } } },
+        ],
+      }
       : undefined,
     include: {
       User: { select: { email: true } },
       CandidateUniversity: {
-        orderBy: [{ isCurrent: "desc" }, { endDate: "desc" }],
-        take: 1,
-        include: { University: { select: { name: true, province: true } } },
+        include: { University: { select: { name: true, province: true } } }
       },
       UserSkill: { include: { Skills: { select: { name: true } } } },
     },
     take: 50,
   });
 
-  const items = candidates.map((c: typeof candidates[0]) => {
+  const items = candidates.map((c) => {
     const name = c.fullName ?? c.User.email;
 
     // Pick the primary education record (current one or latest by endDate)
@@ -218,14 +221,16 @@ candidatesRouter.get("/", requireAuth, requireRole("COMPANY"), async (req, res) 
 
     const skills = c.UserSkill.map((us: typeof c.UserSkill[0]) => us.Skills.name);
 
+    // derive graduation date from endDate or yearOfStudy/current flag
     const endDate = primaryEdu?.endDate ?? null;
-
-    // If endDate is null but the record is marked as current, show "Present"
-    const graduationDate = endDate
-      ? formatGradDate(endDate)
-      : primaryEdu?.isCurrent
-      ? "Present"
-      : null;
+    let graduationDate: string | null = null;
+    if (endDate) {
+      graduationDate = formatGradDate(endDate);
+    } else if (primaryEdu?.isCurrent) {
+      graduationDate = "Present";
+    } else if (primaryEdu?.yearOfStudy) {
+      graduationDate = primaryEdu.yearOfStudy;
+    }
 
     // Major: derive ONLY from CandidateUniversity.degreeName.
     // CandidateProfile should not be used as a source of education details.
@@ -257,43 +262,33 @@ candidatesRouter.get("/:id", requireAuth, requireRole("COMPANY"), async (req, re
     const candidateProfile = await prisma.candidateProfile.findUnique({
       where: { id: candidateId },
       include: {
-        User: { 
-          select: { 
+        User: {
+          select: {
             email: true,
             createdAt: true,
-          } 
+          }
         },
         CandidateUniversity: {
-          include: { 
-            University: { 
-              select: { 
+          include: {
+            University: {
+              select: {
                 name: true,
                 thname: true,
-              } 
-            },
-            UniversityFaculty: {
-              include: {
-                Faculty: {
-                  select: {
-                    name: true,
-                    thname: true,
-                  },
-                },
-              },
+              }
             },
           },
-          orderBy: [{ isCurrent: "desc" }, { endDate: "desc" }],
+          orderBy: { createdAt: "desc" },
         },
         WorkHistory: {
           orderBy: { startDate: "desc" },
         },
         UserSkill: {
-          include: { 
-            Skills: { 
-              select: { 
+          include: {
+            Skills: {
+              select: {
                 name: true,
-              } 
-            } 
+              }
+            }
           },
           orderBy: { rating: "desc" },
         },
@@ -325,19 +320,11 @@ candidatesRouter.get("/:id", requireAuth, requireRole("COMPANY"), async (req, re
       education: candidateProfile.CandidateUniversity.map((cu) => ({
         id: cu.id,
         university: cu.University.name,
-        universityThai: cu.University.thname,
-        degree: cu.degreeName || null,
         educationLevel: cu.educationLevel,
-        startDate: cu.startDate ? cu.startDate.toISOString().split("T")[0] : null,
-        endDate: cu.endDate ? cu.endDate.toISOString().split("T")[0] : null,
-        startYear: cu.startDate ? cu.startDate.getFullYear() : null,
-        endYear: cu.endDate ? cu.endDate.getFullYear() : null,
-        gpa: cu.gpa || null,
-        isCurrent: cu.isCurrent,
-        faculty: cu.UniversityFaculty?.Faculty ? {
-          name: cu.UniversityFaculty.Faculty.name,
-          thname: cu.UniversityFaculty.Faculty.thname,
-        } : null,
+        degree: cu.degreeName,
+        fieldOfStudy: cu.fieldOfStudy,
+        yearOfStudy: cu.yearOfStudy,
+        gpa: cu.gpa ? cu.gpa.toString() : null
       })),
       experience: candidateProfile.WorkHistory.map((wh) => ({
         id: wh.id,
@@ -383,6 +370,9 @@ candidatesRouter.get("/:id", requireAuth, requireRole("COMPANY"), async (req, re
         name: project.name,
         role: project.role,
         description: project.description,
+        startDate: project.startDate || "",
+        endDate: project.endDate || "",
+        relatedSkills: project.relatedSkills || [],
       })),
       createdAt: candidateProfile.createdAt.toISOString(),
       updatedAt: candidateProfile.updatedAt.toISOString(),
@@ -391,8 +381,8 @@ candidatesRouter.get("/:id", requireAuth, requireRole("COMPANY"), async (req, re
     return res.json({ profile: profileData });
   } catch (error: any) {
     console.error("Error fetching candidate profile:", error);
-    return res.status(500).json({ 
-      error: error.message || "Failed to fetch candidate profile" 
+    return res.status(500).json({
+      error: error.message || "Failed to fetch candidate profile"
     });
   }
 });
@@ -400,7 +390,9 @@ candidatesRouter.get("/:id", requireAuth, requireRole("COMPANY"), async (req, re
 // Create a new project
 candidatesRouter.post("/projects", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
   const userId = req.user!.id;
-  const { name, role, description } = req.body ?? {};
+  const { name, role, description, startDate, endDate, relatedSkills } = req.body ?? {};
+
+  console.log("POST /projects body:", JSON.stringify(req.body))
 
   if (!name || !role) {
     return res.status(400).json({ error: "Name and role are required" });
@@ -408,7 +400,7 @@ candidatesRouter.post("/projects", requireAuth, requireRole("CANDIDATE"), async 
 
   try {
     const candidateId = await getCandidateIdForUser(userId);
-    
+
     const project = await prisma.userProjects.create({
       data: {
         id: randomUUID(),
@@ -416,10 +408,20 @@ candidatesRouter.post("/projects", requireAuth, requireRole("CANDIDATE"), async 
         name,
         role,
         description: description || "",
+        startDate: startDate || null,
+        endDate: endDate || null,
+        relatedSkills: relatedSkills || [],
       },
     });
 
-    return res.status(201).json({ project });
+    return res.status(201).json({
+      project: {
+        ...project,
+        startDate: project.startDate || "",
+        endDate: project.endDate || "",
+        relatedSkills: project.relatedSkills || [],
+      }
+    });
   } catch (e: any) {
     if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
       return res.status(404).json({ error: "Candidate profile not found" });
@@ -433,7 +435,7 @@ candidatesRouter.post("/projects", requireAuth, requireRole("CANDIDATE"), async 
 candidatesRouter.put("/projects/:id", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
   const userId = req.user!.id;
   const projectId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
-  const { name, role, description } = req.body ?? {};
+  const { name, role, description, startDate, endDate, relatedSkills } = req.body ?? {};
 
   if (!name || !role) {
     return res.status(400).json({ error: "Name and role are required" });
@@ -441,7 +443,7 @@ candidatesRouter.put("/projects/:id", requireAuth, requireRole("CANDIDATE"), asy
 
   try {
     const candidateId = await getCandidateIdForUser(userId);
-    
+
     // Verify that the project belongs to this candidate
     const existingProject = await prisma.userProjects.findUnique({
       where: { id: projectId },
@@ -462,10 +464,20 @@ candidatesRouter.put("/projects/:id", requireAuth, requireRole("CANDIDATE"), asy
         name,
         role,
         description: description || "",
+        startDate: startDate || null,
+        endDate: endDate || null,
+        relatedSkills: relatedSkills || [],
       },
     });
 
-    return res.json({ project });
+    return res.json({
+      project: {
+        ...project,
+        startDate: project.startDate || "",
+        endDate: project.endDate || "",
+        relatedSkills: project.relatedSkills || [],
+      }
+    });
   } catch (e: any) {
     if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
       return res.status(404).json({ error: "Candidate profile not found" });
@@ -482,7 +494,7 @@ candidatesRouter.delete("/projects/:id", requireAuth, requireRole("CANDIDATE"), 
 
   try {
     const candidateId = await getCandidateIdForUser(userId);
-    
+
     // Verify that the project belongs to this candidate
     const existingProject = await prisma.userProjects.findUnique({
       where: { id: projectId },
@@ -522,7 +534,7 @@ candidatesRouter.post("/education", requireAuth, requireRole("CANDIDATE"), async
 
   try {
     const candidateId = await getCandidateIdForUser(userId);
-    
+
     // Find university by name
     const university = await prisma.university.findFirst({
       where: { name: universityName },
@@ -550,14 +562,16 @@ candidatesRouter.post("/education", requireAuth, requireRole("CANDIDATE"), async
         universityId: university.id,
         educationLevel: educationLevel as any,
         degreeName: degreeName,
+        fieldOfStudy: degreeName,
+        yearOfStudy: "",
         gpa: gpa ? parseFloat(gpa.toString()) : null,
         endDate: endDate ? new Date(endDate) : null,
         isCurrent: isCurrent || false,
-        // Store additional data in degreeName as JSON if needed, or we can add a description field later
       },
     });
 
     return res.status(201).json({ education });
+
   } catch (e: any) {
     if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
       return res.status(404).json({ error: "Candidate profile not found" });
@@ -579,7 +593,7 @@ candidatesRouter.put("/education/:id", requireAuth, requireRole("CANDIDATE"), as
 
   try {
     const candidateId = await getCandidateIdForUser(userId);
-    
+
     // Verify that the education entry belongs to this candidate
     const existingEducation = await prisma.candidateUniversity.findUnique({
       where: { id: educationId },
@@ -645,7 +659,7 @@ candidatesRouter.post("/experience", requireAuth, requireRole("CANDIDATE"), asyn
 
   try {
     const candidateId = await getCandidateIdForUser(userId);
-    
+
     const experience = await prisma.workHistory.create({
       data: {
         id: randomUUID(),
@@ -680,7 +694,7 @@ candidatesRouter.put("/experience/:id", requireAuth, requireRole("CANDIDATE"), a
 
   try {
     const candidateId = await getCandidateIdForUser(userId);
-    
+
     // Verify that the experience entry belongs to this candidate
     const existingExperience = await prisma.workHistory.findUnique({
       where: { id: experienceId },
@@ -722,7 +736,7 @@ candidatesRouter.get("/certificates", requireAuth, requireRole("CANDIDATE"), asy
 
   try {
     const candidateId = await getCandidateIdForUser(userId);
-    
+
     const certificates = await prisma.certificateFile.findMany({
       where: { candidateId },
       orderBy: { createdAt: "desc" },
@@ -744,19 +758,19 @@ const createStorage = (folder: string) => {
   return process.env.FILE_STORAGE_PROVIDER === "s3"
     ? multer.memoryStorage()
     : multer.diskStorage({
-        destination: (req, file, cb) => {
-          const uploadsDir = path.join(process.cwd(), "uploads", folder);
-          if (!fs.existsSync(uploadsDir)) {
-            fs.mkdirSync(uploadsDir, { recursive: true });
-          }
-          cb(null, uploadsDir);
-        },
-        filename: (req, file, cb) => {
-          const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-          const ext = path.extname(file.originalname);
-          cb(null, `${folder}-${uniqueSuffix}${ext}`);
-        },
-      });
+      destination: (req, file, cb) => {
+        const uploadsDir = path.join(process.cwd(), "uploads", folder);
+        if (!fs.existsSync(uploadsDir)) {
+          fs.mkdirSync(uploadsDir, { recursive: true });
+        }
+        cb(null, uploadsDir);
+      },
+      filename: (req, file, cb) => {
+        const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+        const ext = path.extname(file.originalname);
+        cb(null, `${folder}-${uniqueSuffix}${ext}`);
+      },
+    });
 };
 
 const createUploadMiddleware = (folder: string, maxSizeMB: number = 10) => {
@@ -813,7 +827,7 @@ candidatesRouter.post("/certificates", requireAuth, requireRole("CANDIDATE"), (r
 
   try {
     const candidateId = await getCandidateIdForUser(userId);
-    
+
     const file = (req as any).file;
     if (!file) {
       return res.status(400).json({ error: "File is required" });
@@ -821,10 +835,10 @@ candidatesRouter.post("/certificates", requireAuth, requireRole("CANDIDATE"), (r
 
     const { name, issuedBy, issueDate, certificateId, certificateUrl } = (req as any).body ?? {};
     const fileName = name || file.originalname;
-    
+
     // Upload file to storage (S3 or local)
     // For memory storage (S3), use buffer directly; for disk storage (local), read from path
-    const fileBuffer = req.file.buffer || (req.file.path ? fs.readFileSync(req.file.path) : Buffer.from([]));
+    const fileBuffer = req.file?.buffer || (req.file?.path ? fs.readFileSync(req.file.path) : Buffer.from([]))
     const uploadResult = await fileStorage.uploadFile(
       { ...req.file, buffer: fileBuffer } as Express.Multer.File,
       "certificates",
@@ -832,13 +846,7 @@ candidatesRouter.post("/certificates", requireAuth, requireRole("CANDIDATE"), (r
     );
 
     // Clean up local temp file if using disk storage
-    if (req.file.path && fs.existsSync(req.file.path)) {
-      try {
-        fs.unlinkSync(req.file.path);
-      } catch (cleanupError) {
-        console.error("Error cleaning up temp file:", cleanupError);
-      }
-    }
+    cleanupLocalFile(req.file as Express.Multer.File);
 
     // Store additional fields in description as JSON string
     // In production, you might want to add these as separate columns in the schema
@@ -855,7 +863,7 @@ candidatesRouter.post("/certificates", requireAuth, requireRole("CANDIDATE"), (r
         candidateId,
         name: fileName,
         url: uploadResult.url,
-        type: req.file.mimetype,
+        type: req.file!.mimetype,
         description: description || null,
       },
     });
@@ -863,14 +871,8 @@ candidatesRouter.post("/certificates", requireAuth, requireRole("CANDIDATE"), (r
     return res.status(201).json({ certificate });
   } catch (e: any) {
     // Clean up uploaded file if database operation fails
-    if (req.file?.path && fs.existsSync(req.file.path)) {
-      try {
-        fs.unlinkSync(req.file.path);
-      } catch (cleanupError) {
-        console.error("Error cleaning up file:", cleanupError);
-      }
-    }
-    
+    cleanupLocalFile(req.file as Express.Multer.File);
+
     if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
       return res.status(404).json({ error: "Candidate profile not found" });
     }
@@ -886,11 +888,10 @@ candidatesRouter.delete("/certificates/:id", requireAuth, requireRole("CANDIDATE
 
   try {
     const candidateId = await getCandidateIdForUser(userId);
-    
+
     // Get certificate with file URL
     const existingCertificate = await prisma.certificateFile.findUnique({
       where: { id: certificateId },
-      select: { candidateId: true, url: true },
       select: { candidateId: true, url: true },
     });
 
@@ -937,7 +938,7 @@ candidatesRouter.get("/resumes", requireAuth, requireRole("CANDIDATE"), async (r
 
   try {
     const candidateId = await getCandidateIdForUser(userId);
-    
+
     const contactFiles = await prisma.candidateContactFile.findMany({
       where: { candidateId },
       orderBy: { createdAt: "desc" },
@@ -972,7 +973,7 @@ candidatesRouter.post("/resumes", requireAuth, requireRole("CANDIDATE"), (req: A
 
   try {
     const candidateId = await getCandidateIdForUser(userId);
-    
+
     const file = (req as any).file;
     if (!file) {
       return res.status(400).json({ error: "File is required" });
@@ -980,7 +981,7 @@ candidatesRouter.post("/resumes", requireAuth, requireRole("CANDIDATE"), (req: A
 
     const { name, type } = (req as any).body ?? {};
     const fileName = name || file.originalname;
-    
+
     // Determine file type (RESUME, PORTFOLIO, or OTHER)
     let fileType: "RESUME" | "PORTFOLIO" | "OTHER" = "RESUME";
     if (type) {
@@ -989,9 +990,9 @@ candidatesRouter.post("/resumes", requireAuth, requireRole("CANDIDATE"), (req: A
         fileType = upperType as "RESUME" | "PORTFOLIO" | "OTHER";
       }
     }
-    
+
     // Upload file to storage (S3 or local)
-    const fileBuffer = req.file.buffer || (req.file.path ? fs.readFileSync(req.file.path) : Buffer.from([]));
+    const fileBuffer = req.file?.buffer || (req.file?.path ? fs.readFileSync(req.file.path) : Buffer.from([]))
     const uploadResult = await fileStorage.uploadFile(
       { ...req.file, buffer: fileBuffer } as Express.Multer.File,
       "resumes",
@@ -999,13 +1000,7 @@ candidatesRouter.post("/resumes", requireAuth, requireRole("CANDIDATE"), (req: A
     );
 
     // Clean up local temp file if using disk storage
-    if (req.file.path && fs.existsSync(req.file.path)) {
-      try {
-        fs.unlinkSync(req.file.path);
-      } catch (cleanupError) {
-        console.error("Error cleaning up temp file:", cleanupError);
-      }
-    }
+    cleanupLocalFile(req.file as Express.Multer.File);
 
     // Check if this should be the primary resume (if no other resumes exist)
     const existingResumes = await prisma.candidateResume.findMany({
@@ -1036,14 +1031,8 @@ candidatesRouter.post("/resumes", requireAuth, requireRole("CANDIDATE"), (req: A
     return res.status(201).json({ resume });
   } catch (e: any) {
     // Clean up uploaded file if database operation fails
-    if (req.file?.path && fs.existsSync(req.file.path)) {
-      try {
-        fs.unlinkSync(req.file.path);
-      } catch (cleanupError) {
-        console.error("Error cleaning up file:", cleanupError);
-      }
-    }
-    
+    cleanupLocalFile(req.file as Express.Multer.File);
+
     if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
       return res.status(404).json({ error: "Candidate profile not found" });
     }
@@ -1059,7 +1048,7 @@ candidatesRouter.delete("/resumes/:id", requireAuth, requireRole("CANDIDATE"), a
 
   try {
     const candidateId = await getCandidateIdForUser(userId);
-    
+
     // Get resume with file URL
     const existingResume = await prisma.candidateResume.findUnique({
       where: { id: resumeId },
