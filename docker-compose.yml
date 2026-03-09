@@ -37,9 +37,10 @@ services:
     ports:
       - "${BACKEND_PORT:-5001}:5001"
     volumes:
-      # Mount uploads directory to persist files
-      - ./backend/uploads:/app/uploads
-      # Note: node_modules is NOT mounted to avoid platform conflicts (Windows vs Linux)
+      # Mount backend source for live reload in development
+      - ./backend:/app
+      # Keep container node_modules isolated from host platform differences
+      - /app/node_modules
     depends_on:
       postgres:
         condition: service_healthy

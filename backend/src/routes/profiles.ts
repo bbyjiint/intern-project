@@ -476,49 +476,33 @@ profilesRouter.get("/companies/profile", requireAuth, requireRole("COMPANY"), as
       where: { userId },
       include: {
         User: { select: { email: true } },
-        CompanyEmails: { select: { email: true } },
-        CompanyPhones: { select: { phone: true } },
-        Province: { select: { id: true, name: true } },
-        District: { select: { id: true, name: true, postalCode: true } },
-        Subdistrict: { select: { id: true, name: true } },
+        CompanyEmail: true,
+        CompanyPhone: true,
+        // Include address relations to get names from IDs
+        Province: { select: { id: true, name: true, thname: true } },
+        District: { select: { id: true, name: true, thname: true, postalCode: true } },
+        Subdistrict: { select: { id: true, name: true, thname: true } },
       },
     });
 
     console.log("Company profile found:", companyProfile ? "Yes" : "No");
     if (companyProfile) {
       console.log("Company name:", companyProfile.companyName);
-      console.log("Company emails:", companyProfile.CompanyEmails);
-      console.log("Company phones:", companyProfile.CompanyPhones);
+      console.log("Company emails:", companyProfile.CompanyEmail);
+      console.log("Company phones:", companyProfile.CompanyPhone);
     }
 
     if (!companyProfile) {
       return res.status(404).json({ error: "Profile not found" });
     }
 
-    // Parse location string back into components (if stored as comma-separated)
-    // Note: The location is stored as a single string, so we'll try to parse it
-    // Handle both comma-separated and other formats
-    let addressDetails = "";
-    let subDistrict = "";
-    let district = "";
-    let province = companyProfile.province || "";
-    let postcode = "";
-
-    if (companyProfile.location) {
-      const locationParts = companyProfile.location.split(", ");
-      if (locationParts.length > 0) {
-        addressDetails = locationParts[0] || "";
-        subDistrict = locationParts[1] || "";
-        district = locationParts[2] || "";
-        if (!province && locationParts[3]) {
-          province = locationParts[3];
-        }
-        postcode = locationParts[4] || "";
-      } else {
-        // If not comma-separated, use the whole location as addressDetails
-        addressDetails = companyProfile.location;
-      }
-    }
+    // Get address data from normalized structure using IDs
+    // The IDs are the source of truth - use them to fetch names from relations
+    const addressDetails = companyProfile.addressDetails || "";
+    const subDistrict = companyProfile.Subdistrict?.name || "";
+    const district = companyProfile.District?.name || "";
+    const province = companyProfile.Province?.name || companyProfile.province || "";
+    const postcode = companyProfile.postcode || companyProfile.District?.postalCode || "";
 
     // Transform database data to match frontend format
     const profileData = {
@@ -527,15 +511,16 @@ profilesRouter.get("/companies/profile", requireAuth, requireRole("COMPANY"), as
       businessType: "", // Not stored in schema currently
       companySize: companyProfile.companySize || "",
       addressDetails,
-      subDistrict: companyProfile.Subdistrict?.name || subDistrict,
-      district: companyProfile.District?.name || district,
-      province: companyProfile.Province?.name || province,
-      postcode: companyProfile.District?.postalCode || postcode,
+      subDistrict,
+      district,
+      province,
+      postcode,
+      // Return the IDs - these are used by frontend to populate dropdowns
       provinceId: companyProfile.provinceId || "",
       districtId: companyProfile.districtId || "",
       subdistrictId: companyProfile.subdistrictId || "",
-      phoneNumber: companyProfile.CompanyPhones[0]?.phone || "",
-      email: companyProfile.CompanyEmails[0]?.email || companyProfile.User.email,
+      phoneNumber: companyProfile.CompanyPhone[0]?.phone || "",
+      email: companyProfile.CompanyEmail[0]?.email || companyProfile.User.email,
       websiteUrl: "", // Not stored in schema currently
       contactName: companyProfile.recruiterName || "",
       profileImage: companyProfile.logoURL || "",
@@ -571,34 +556,80 @@ profilesRouter.put("/companies/profile", requireAuth, requireRole("COMPANY"), as
     profileImage,
   } = req.body ?? {};
 
+  console.log('📥 Received request body:', JSON.stringify(req.body, null, 2));
+  console.log('📥 Extracted districtId:', districtId, 'subdistrictId:', subdistrictId);
+
   try {
     // Get or create company profile
     let companyProfile = await prisma.companyProfile.findUnique({
       where: { userId },
     });
 
-    const location = addressDetails
-      ? [addressDetails, subDistrict, district, province, postcode].filter(Boolean).join(", ")
-      : null;
+    // Store address IDs - these are the primary source of truth
+    // Convert empty strings to null for proper database storage
+    const normalizedProvinceId = provinceId !== undefined ? (provinceId && provinceId.trim() !== "" ? provinceId.trim() : null) : undefined;
+    const normalizedDistrictId = districtId !== undefined ? (districtId && districtId.trim() !== "" ? districtId.trim() : null) : undefined;
+    const normalizedSubdistrictId = subdistrictId !== undefined ? (subdistrictId && subdistrictId.trim() !== "" ? subdistrictId.trim() : null) : undefined;
+
+    // Build location string from address components for backward compatibility
+    const locationParts = [];
+    if (addressDetails) locationParts.push(addressDetails);
+    if (subDistrict) locationParts.push(subDistrict);
+    if (district) locationParts.push(district);
+    if (province) locationParts.push(province);
+    if (postcode) locationParts.push(postcode);
+    const location = locationParts.length > 0 ? locationParts.join(", ") : null;
 
     if (companyProfile) {
       // Update existing profile
+      const updateData: any = {
+        companyName: companyName !== undefined ? companyName : companyProfile.companyName,
+        about: companyDescription !== undefined ? companyDescription : companyProfile.about,
+        companySize: companySize !== undefined ? companySize : companyProfile.companySize,
+        addressDetails: addressDetails !== undefined ? addressDetails : companyProfile.addressDetails,
+        location, // Keep for backward compatibility
+        province: province !== undefined ? province : companyProfile.province, // Keep for backward compatibility
+        postcode: postcode !== undefined ? postcode : companyProfile.postcode,
+        recruiterName: contactName !== undefined ? contactName : companyProfile.recruiterName,
+        updatedAt: new Date(),
+      };
+
+      // Always update IDs if they were provided in the request
+      // Check if the field was sent (not undefined), then use normalized value (which could be null for empty strings)
+      if (provinceId !== undefined) {
+        updateData.provinceId = normalizedProvinceId ?? null;
+        // If province is cleared, also clear district and subdistrict
+        if (normalizedProvinceId === null) {
+          updateData.districtId = null;
+          updateData.subdistrictId = null;
+        }
+      }
+      if (districtId !== undefined) {
+        updateData.districtId = normalizedDistrictId ?? null;
+        // If district is cleared, also clear subdistrict
+        if (normalizedDistrictId === null) {
+          updateData.subdistrictId = null;
+        }
+      }
+      if (subdistrictId !== undefined) {
+        updateData.subdistrictId = normalizedSubdistrictId ?? null;
+      }
+      if (profileImage) updateData.logoURL = profileImage;
+
+      console.log('📝 Updating CompanyProfile with data:', JSON.stringify(updateData, null, 2));
+      console.log('📥 Received provinceId:', provinceId, '→ normalized:', normalizedProvinceId);
+      console.log('📥 Received districtId:', districtId, '→ normalized:', normalizedDistrictId);
+      console.log('📥 Received subdistrictId:', subdistrictId, '→ normalized:', normalizedSubdistrictId);
+
       companyProfile = await prisma.companyProfile.update({
         where: { userId },
-        data: {
-          companyName: companyName || companyProfile.companyName,
-          about: companyDescription !== undefined ? companyDescription : companyProfile.about,
-          companySize: companySize !== undefined ? companySize : companyProfile.companySize,
-          location,
-          province: province !== undefined ? province : companyProfile.province,
-          provinceId: provinceId !== undefined ? provinceId : companyProfile.provinceId,
-          districtId: districtId !== undefined ? districtId : companyProfile.districtId,
-          subdistrictId: subdistrictId !== undefined ? subdistrictId : companyProfile.subdistrictId,
-          recruiterName: contactName !== undefined ? contactName : companyProfile.recruiterName,
-          ...(profileImage && { logoURL: profileImage }),
-          updatedAt: new Date(),
-        },
+        data: updateData,
       });
+
+      console.log('✅ CompanyProfile updated successfully:', companyProfile.id);
+      console.log('✅ Saved provinceId:', companyProfile.provinceId);
+      console.log('✅ Saved districtId:', companyProfile.districtId);
+      console.log('✅ Saved subdistrictId:', companyProfile.subdistrictId);
     } else {
       // Create new profile
       companyProfile = await prisma.companyProfile.create({
@@ -608,11 +639,14 @@ profilesRouter.put("/companies/profile", requireAuth, requireRole("COMPANY"), as
           companyName: companyName || "Company",
           about: companyDescription || undefined,
           companySize: companySize || undefined,
-          location,
-          province: province || undefined,
-          provinceId: provinceId || undefined,
-          districtId: districtId || undefined,
-          subdistrictId: subdistrictId || undefined,
+          addressDetails: addressDetails || undefined,
+          location, // Keep for backward compatibility
+          province: province || undefined, // Keep for backward compatibility
+          // Store the normalized IDs - these are the source of truth
+          provinceId: normalizedProvinceId ?? null,
+          districtId: normalizedDistrictId ?? null,
+          subdistrictId: normalizedSubdistrictId ?? null,
+          postcode: postcode || undefined,
           recruiterName: contactName || undefined,
           ...(profileImage && { logoURL: profileImage }),
           updatedAt: new Date(),

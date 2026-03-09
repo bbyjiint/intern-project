@@ -17,6 +17,9 @@ interface CompanyProfileData {
   district: string
   province: string
   postcode: string
+  provinceId?: string
+  districtId?: string
+  subdistrictId?: string
   phoneNumber: string
   email: string
   websiteUrl: string
@@ -233,9 +236,9 @@ export default function EmployerProfilePage() {
       district: profileData.district || '',
       province: profileData.province || '',
       addressDetails: profileData.addressDetails || '',
-      provinceId: (profileData as any).provinceId || '',
-      districtId: (profileData as any).districtId || '',
-      subdistrictId: (profileData as any).subdistrictId || '',
+      provinceId: profileData.provinceId || '',
+      districtId: profileData.districtId || '',
+      subdistrictId: profileData.subdistrictId || '',
     })
 
     setContactForm({
@@ -332,29 +335,124 @@ export default function EmployerProfilePage() {
     setError(null)
 
     try {
+      // Always send all address fields, including IDs (even if empty strings)
       const payload = {
-        postcode: addressForm.postcode,
-        subDistrict: addressForm.subDistrict,
-        district: addressForm.district,
-        province: addressForm.province,
-        addressDetails: addressForm.addressDetails,
-        provinceId: addressForm.provinceId,
-        districtId: addressForm.districtId,
-        subdistrictId: addressForm.subdistrictId,
+        addressDetails: addressForm.addressDetails || '',
+        province: addressForm.province || '',
+        district: addressForm.district || '',
+        subDistrict: addressForm.subDistrict || '',
+        postcode: addressForm.postcode || '',
+        provinceId: addressForm.provinceId || '',
+        districtId: addressForm.districtId || '',
+        subdistrictId: addressForm.subdistrictId || '',
       }
 
-      await apiFetch('/api/companies/profile', {
+      console.log('💾 Manual save - sending payload:', payload)
+
+      const response = await apiFetch('/api/companies/profile', {
         method: 'PUT',
         body: JSON.stringify(payload),
       })
 
+      console.log('✅ Manual save - success, response:', response)
       updateProfileCache({ ...profileData, ...payload })
     } catch (err) {
+      console.error('❌ Manual save failed:', err)
       setError(err instanceof Error ? err.message : 'Failed to save address information')
     } finally {
       setSavingSection(null)
     }
   }
+
+  // Auto-save when address IDs change
+  useEffect(() => {
+    // Skip if profileData not loaded yet
+    if (!profileData) return
+    
+    // Skip if this is the initial load (when all IDs match what's already saved)
+    const isInitialLoad = 
+      profileData.provinceId === addressForm.provinceId && 
+      profileData.districtId === addressForm.districtId && 
+      profileData.subdistrictId === addressForm.subdistrictId
+    
+    if (isInitialLoad) return
+    
+    // Only auto-save if at least provinceId is selected (user made a selection)
+    // Don't auto-save if user is clearing everything
+    if (!addressForm.provinceId || addressForm.provinceId.trim() === '') return
+    
+    const timeoutId = setTimeout(async () => {
+      try {
+        // Always send all address fields, including IDs (even if empty strings)
+        const payload: any = {
+          addressDetails: addressForm.addressDetails || '',
+          province: addressForm.province || '',
+          district: addressForm.district || '',
+          subDistrict: addressForm.subDistrict || '',
+          postcode: addressForm.postcode || '',
+          provinceId: addressForm.provinceId || '',
+          districtId: addressForm.districtId || '',
+          subdistrictId: addressForm.subdistrictId || '',
+        }
+
+        console.log('🔄 Auto-save address - sending payload:', payload)
+
+        const response = await apiFetch('/api/companies/profile', {
+          method: 'PUT',
+          body: JSON.stringify(payload),
+        })
+
+        console.log('✅ Auto-save address - success, response:', response)
+        updateProfileCache({ ...profileData, ...payload })
+      } catch (err) {
+        console.error('❌ Auto-save address failed:', err)
+        setError(err instanceof Error ? err.message : 'Failed to save address')
+      }
+    }, 1000) // Debounce by 1 second
+    
+    return () => clearTimeout(timeoutId)
+  }, [addressForm.provinceId, addressForm.districtId, addressForm.subdistrictId])
+
+  // Auto-save when districtId changes (handled by provinceId effect now)
+  // Removed separate effect to avoid duplicate saves
+
+  // Auto-save when subdistrictId changes (handled by provinceId effect now)
+  // Removed separate effect to avoid duplicate saves
+
+  // Auto-save when postcode changes (and is not empty)
+  useEffect(() => {
+    if (!profileData) return
+    if (!addressForm.postcode || addressForm.postcode.trim() === '') return
+    
+    const timeoutId = setTimeout(async () => {
+      try {
+        const payload = {
+          addressDetails: addressForm.addressDetails || '',
+          province: addressForm.province || '',
+          district: addressForm.district || '',
+          subDistrict: addressForm.subDistrict || '',
+          postcode: addressForm.postcode,
+          provinceId: addressForm.provinceId || '',
+          districtId: addressForm.districtId || '',
+          subdistrictId: addressForm.subdistrictId || '',
+        }
+
+        console.log('🔄 Auto-save postcode - sending payload:', payload)
+
+        await apiFetch('/api/companies/profile', {
+          method: 'PUT',
+          body: JSON.stringify(payload),
+        })
+
+        console.log('✅ Auto-save postcode - success')
+        updateProfileCache({ ...profileData, ...payload })
+      } catch (err) {
+        console.error('❌ Auto-save postcode failed:', err)
+      }
+    }, 1200) // Longer debounce for manual input
+    
+    return () => clearTimeout(timeoutId)
+  }, [addressForm.postcode])
 
   const handleContactSave = async () => {
     if (!profileData) return
@@ -656,16 +754,6 @@ export default function EmployerProfilePage() {
                         Postal code is automatically filled based on the selected district
                       </p>
                     )}
-                  </div>
-
-                  <div>
-                    <label className="mb-[6px] block text-[14px] text-[#4B5563]">Address</label>
-                    <textarea
-                      value={addressForm.addressDetails}
-                      onChange={(e) => setAddressForm((prev) => ({ ...prev, addressDetails: e.target.value }))}
-                      rows={4}
-                      className="min-h-[110px] w-full resize-none rounded-[6px] border border-[#D1D5DB] px-3 py-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8]"
-                    />
                   </div>
 
                   <div className="flex justify-end pt-[6px]">
