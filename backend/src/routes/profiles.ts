@@ -55,11 +55,11 @@ profilesRouter.get("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
       description: candidateProfile.description || null,
       profileImage: candidateProfile.profileImage || null,
       positionsOfInterest: candidateProfile.preferredPositions || [],
-      preferredLocations: preferredProvinces.map((pp) => pp.Province.id),
+      preferredLocations: preferredProvinces.map((pp) => pp.Province?.id).filter(Boolean) as string[],
       location: null, // Not stored in CandidateProfile currently
       education: candidateProfile.CandidateUniversity.map((cu) => ({
         id: cu.id,
-        university: cu.University.name,
+        university: cu.University?.name || "Unknown University",
         degree: cu.degreeName || "",
         endDate: cu.endDate ? cu.endDate.toISOString().split("T")[0] : "",
         endYear: cu.isCurrent ? null : (cu.endDate ? cu.endDate.getFullYear().toString() : null),
@@ -84,7 +84,7 @@ profilesRouter.get("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
           3: "advanced",
         };
         return {
-          name: us.Skills.name,
+          name: us.Skills?.name || "Unknown Skill",
           level: ratingMap[us.rating || 1] || "beginner",
           // Note: category and usedIn are not stored in UserSkill schema
           // TODO: Add category field to UserSkill model and junction tables for usedIn if needed
@@ -425,6 +425,9 @@ profilesRouter.get("/companies/profile", requireAuth, requireRole("COMPANY"), as
         User: { select: { email: true } },
         CompanyEmails: { select: { email: true } },
         CompanyPhones: { select: { phone: true } },
+        Province: { select: { id: true, name: true } },
+        District: { select: { id: true, name: true, postalCode: true } },
+        Subdistrict: { select: { id: true, name: true } },
       },
     });
 
@@ -469,18 +472,20 @@ profilesRouter.get("/companies/profile", requireAuth, requireRole("COMPANY"), as
       companyName: companyProfile.companyName || "",
       companyDescription: companyProfile.about || "",
       businessType: "", // Not stored in schema currently
-      companySize: "", // Not stored in schema currently
+      companySize: companyProfile.companySize || "",
       addressDetails,
-      subDistrict,
-      district,
-      province,
-      postcode,
+      subDistrict: companyProfile.Subdistrict?.name || subDistrict,
+      district: companyProfile.District?.name || district,
+      province: companyProfile.Province?.name || province,
+      postcode: companyProfile.District?.postalCode || postcode,
+      provinceId: companyProfile.provinceId || "",
+      districtId: companyProfile.districtId || "",
+      subdistrictId: companyProfile.subdistrictId || "",
       phoneNumber: companyProfile.CompanyPhones[0]?.phone || "",
       email: companyProfile.CompanyEmails[0]?.email || companyProfile.User.email,
       websiteUrl: "", // Not stored in schema currently
       contactName: companyProfile.recruiterName || "",
       profileImage: companyProfile.logoURL || "",
-
     };
 
     // Always return profile data if profile exists, even if some fields are empty
@@ -497,11 +502,15 @@ profilesRouter.put("/companies/profile", requireAuth, requireRole("COMPANY"), as
   const {
     companyName,
     companyDescription,
+    companySize,
     addressDetails,
     subDistrict,
     district,
     province,
     postcode,
+    provinceId,
+    districtId,
+    subdistrictId,
     phoneNumber,
     email,
     websiteUrl,
@@ -525,10 +534,14 @@ profilesRouter.put("/companies/profile", requireAuth, requireRole("COMPANY"), as
         where: { userId },
         data: {
           companyName: companyName || companyProfile.companyName,
-          about: companyDescription || undefined,
+          about: companyDescription !== undefined ? companyDescription : companyProfile.about,
+          companySize: companySize !== undefined ? companySize : companyProfile.companySize,
           location,
-          province: province || undefined,
-          recruiterName: contactName || undefined,
+          province: province !== undefined ? province : companyProfile.province,
+          provinceId: provinceId !== undefined ? provinceId : companyProfile.provinceId,
+          districtId: districtId !== undefined ? districtId : companyProfile.districtId,
+          subdistrictId: subdistrictId !== undefined ? subdistrictId : companyProfile.subdistrictId,
+          recruiterName: contactName !== undefined ? contactName : companyProfile.recruiterName,
           ...(profileImage && { logoURL: profileImage }),
           updatedAt: new Date(),
         },
@@ -541,8 +554,12 @@ profilesRouter.put("/companies/profile", requireAuth, requireRole("COMPANY"), as
           userId,
           companyName: companyName || "Company",
           about: companyDescription || undefined,
+          companySize: companySize || undefined,
           location,
           province: province || undefined,
+          provinceId: provinceId || undefined,
+          districtId: districtId || undefined,
+          subdistrictId: subdistrictId || undefined,
           recruiterName: contactName || undefined,
           ...(profileImage && { logoURL: profileImage }),
           updatedAt: new Date(),

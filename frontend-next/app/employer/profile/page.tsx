@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import EmployerNavbar from '@/components/EmployerNavbar'
 import EmployerSidebar from '@/components/EmployerSidebar'
+import SearchableDropdown from '@/components/SearchableDropdown'
 import { apiFetch } from '@/lib/api'
 
 interface CompanyProfileData {
@@ -56,7 +57,16 @@ export default function EmployerProfilePage() {
     district: '',
     province: '',
     addressDetails: '',
+    provinceId: '',
+    districtId: '',
+    subdistrictId: '',
   })
+  const [provinces, setProvinces] = useState<Array<{ id: string; name: string; thname: string | null; code: string | null }>>([])
+  const [districts, setDistricts] = useState<Array<{ id: string; name: string; thname: string | null; postalCode: string | null }>>([])
+  const [subdistricts, setSubdistricts] = useState<Array<{ id: string; name: string; thname: string | null }>>([])
+  const [provincesLoading, setProvincesLoading] = useState(false)
+  const [districtsLoading, setDistrictsLoading] = useState(false)
+  const [subdistrictsLoading, setSubdistrictsLoading] = useState(false)
   const [contactForm, setContactForm] = useState({
     phoneNumber: '',
     email: '',
@@ -140,7 +150,79 @@ export default function EmployerProfilePage() {
     checkRoleAndLoadProfile()
     // Set current date from calendar
     updateDate()
+    
+    // Load provinces on mount
+    const loadProvinces = async () => {
+      setProvincesLoading(true)
+      try {
+        const response = await apiFetch<{ provinces: Array<{ id: string; name: string; thname: string | null; code: string | null }> }>('/api/addresses/provinces')
+        setProvinces(response.provinces || [])
+      } catch (err) {
+        console.error('Failed to load provinces:', err)
+        setProvinces([])
+      } finally {
+        setProvincesLoading(false)
+      }
+    }
+    loadProvinces()
   }, [router])
+  
+  // Load districts when province is selected
+  useEffect(() => {
+    if (addressForm.provinceId) {
+      const loadDistricts = async () => {
+        setDistrictsLoading(true)
+        try {
+          const response = await apiFetch<{ districts: Array<{ id: string; name: string; thname: string | null; postalCode: string | null }> }>(
+            `/api/addresses/districts?provinceId=${addressForm.provinceId}`
+          )
+          setDistricts(response.districts || [])
+        } catch (err) {
+          console.error('Failed to load districts:', err)
+          setDistricts([])
+        } finally {
+          setDistrictsLoading(false)
+        }
+      }
+      loadDistricts()
+    } else {
+      setDistricts([])
+      setSubdistricts([])
+    }
+  }, [addressForm.provinceId])
+  
+  // Load subdistricts when district is selected
+  useEffect(() => {
+    if (addressForm.districtId) {
+      const loadSubdistricts = async () => {
+        setSubdistrictsLoading(true)
+        try {
+          const response = await apiFetch<{ subdistricts: Array<{ id: string; name: string; thname: string | null }> }>(
+            `/api/addresses/subdistricts?districtId=${addressForm.districtId}`
+          )
+          setSubdistricts(response.subdistricts || [])
+        } catch (err) {
+          console.error('Failed to load subdistricts:', err)
+          setSubdistricts([])
+        } finally {
+          setSubdistrictsLoading(false)
+        }
+      }
+      loadSubdistricts()
+    } else {
+      setSubdistricts([])
+    }
+  }, [addressForm.districtId])
+  
+  // Auto-fill postal code when district is selected
+  useEffect(() => {
+    if (addressForm.districtId && districts.length > 0) {
+      const selectedDistrict = districts.find((d) => d.id === addressForm.districtId)
+      if (selectedDistrict?.postalCode) {
+        setAddressForm((prev) => ({ ...prev, postcode: selectedDistrict.postalCode || prev.postcode }))
+      }
+    }
+  }, [addressForm.districtId, districts])
 
   useEffect(() => {
     if (!profileData) return
@@ -151,6 +233,9 @@ export default function EmployerProfilePage() {
       district: profileData.district || '',
       province: profileData.province || '',
       addressDetails: profileData.addressDetails || '',
+      provinceId: (profileData as any).provinceId || '',
+      districtId: (profileData as any).districtId || '',
+      subdistrictId: (profileData as any).subdistrictId || '',
     })
 
     setContactForm({
@@ -253,6 +338,9 @@ export default function EmployerProfilePage() {
         district: addressForm.district,
         province: addressForm.province,
         addressDetails: addressForm.addressDetails,
+        provinceId: addressForm.provinceId,
+        districtId: addressForm.districtId,
+        subdistrictId: addressForm.subdistrictId,
       }
 
       await apiFetch('/api/companies/profile', {
@@ -437,47 +525,137 @@ export default function EmployerProfilePage() {
 
               <div className="mx-auto max-w-[856px]">
                 <div className="space-y-[10px]">
+                  {/* Address Details */}
+                  <div>
+                    <label className="mb-[6px] block text-[14px] text-[#4B5563]">Address Details</label>
+                    <textarea
+                      value={addressForm.addressDetails}
+                      onChange={(e) => setAddressForm((prev) => ({ ...prev, addressDetails: e.target.value }))}
+                      rows={4}
+                      className="min-h-[110px] w-full resize-none rounded-[6px] border border-[#D1D5DB] px-3 py-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8]"
+                      placeholder="Enter address details (e.g., building number, street)"
+                    />
+                  </div>
+
+                  {/* Province */}
+                  <div>
+                    <label className="mb-[6px] block text-[14px] text-[#4B5563]">Province</label>
+                    {provincesLoading ? (
+                      <div className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] bg-gray-50 flex items-center justify-center">
+                        <span className="text-[14px] text-[#6B7280]">Loading provinces...</span>
+                      </div>
+                    ) : (
+                      <SearchableDropdown
+                        options={provinces.map((prov) => ({
+                          value: prov.id,
+                          label: prov.thname ? `${prov.name} (${prov.thname})` : prov.name,
+                        }))}
+                        value={addressForm.provinceId}
+                        onChange={(value) => {
+                          const selectedProvince = provinces.find((p) => p.id === value)
+                          setAddressForm((prev) => ({
+                            ...prev,
+                            provinceId: value,
+                            province: selectedProvince?.name || '',
+                            districtId: '',
+                            district: '',
+                            subdistrictId: '',
+                            subDistrict: '',
+                            postcode: '',
+                          }))
+                        }}
+                        placeholder="Search by name..."
+                        className="w-full"
+                        allOptionLabel="Select Province"
+                      />
+                    )}
+                  </div>
+
+                  {/* District */}
+                  <div>
+                    <label className="mb-[6px] block text-[14px] text-[#4B5563]">District</label>
+                    {!addressForm.provinceId ? (
+                      <div className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] bg-gray-100 flex items-center justify-center">
+                        <span className="text-[14px] text-[#6B7280]">Please select a province first</span>
+                      </div>
+                    ) : districtsLoading ? (
+                      <div className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] bg-gray-50 flex items-center justify-center">
+                        <span className="text-[14px] text-[#6B7280]">Loading districts...</span>
+                      </div>
+                    ) : (
+                      <SearchableDropdown
+                        options={districts.map((dist) => ({
+                          value: dist.id,
+                          label: dist.thname ? `${dist.name} (${dist.thname})` : dist.name,
+                        }))}
+                        value={addressForm.districtId}
+                        onChange={(value) => {
+                          const selectedDistrict = districts.find((d) => d.id === value)
+                          setAddressForm((prev) => ({
+                            ...prev,
+                            districtId: value,
+                            district: selectedDistrict?.name || '',
+                            postcode: selectedDistrict?.postalCode || prev.postcode,
+                            subdistrictId: '',
+                            subDistrict: '',
+                          }))
+                        }}
+                        placeholder="Search by name..."
+                        className="w-full"
+                        allOptionLabel="Select District"
+                      />
+                    )}
+                  </div>
+
+                  {/* Subdistrict */}
+                  <div>
+                    <label className="mb-[6px] block text-[14px] text-[#4B5563]">Subdistrict</label>
+                    {!addressForm.districtId ? (
+                      <div className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] bg-gray-100 flex items-center justify-center">
+                        <span className="text-[14px] text-[#6B7280]">Please select a district first</span>
+                      </div>
+                    ) : subdistrictsLoading ? (
+                      <div className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] bg-gray-50 flex items-center justify-center">
+                        <span className="text-[14px] text-[#6B7280]">Loading subdistricts...</span>
+                      </div>
+                    ) : (
+                      <SearchableDropdown
+                        options={subdistricts.map((sub) => ({
+                          value: sub.id,
+                          label: sub.thname ? `${sub.name} (${sub.thname})` : sub.name,
+                        }))}
+                        value={addressForm.subdistrictId}
+                        onChange={(value) => {
+                          const selectedSubdistrict = subdistricts.find((s) => s.id === value)
+                          setAddressForm((prev) => ({
+                            ...prev,
+                            subdistrictId: value,
+                            subDistrict: selectedSubdistrict?.name || '',
+                          }))
+                        }}
+                        placeholder="Search by name..."
+                        className="w-full"
+                        allOptionLabel="Select Subdistrict"
+                      />
+                    )}
+                  </div>
+
+                  {/* Postal Code */}
                   <div>
                     <label className="mb-[6px] block text-[14px] text-[#4B5563]">Postal Code</label>
                     <input
                       type="text"
                       value={addressForm.postcode}
                       onChange={(e) => setAddressForm((prev) => ({ ...prev, postcode: e.target.value }))}
-                      className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8]"
+                      className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8] bg-gray-50"
+                      placeholder="Auto-filled when district is selected"
+                      readOnly={!!(addressForm.provinceId && addressForm.districtId && addressForm.subdistrictId)}
                     />
-                  </div>
-
-                  <div>
-                    <label className="mb-[6px] block text-[14px] text-[#4B5563]">Subdistrict</label>
-                    <select
-                      value={addressForm.subDistrict}
-                      onChange={(e) => setAddressForm((prev) => ({ ...prev, subDistrict: e.target.value }))}
-                      className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] bg-white px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8]"
-                    >
-                      <option value={addressForm.subDistrict}>{addressForm.subDistrict || 'Select subdistrict'}</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="mb-[6px] block text-[14px] text-[#4B5563]">District</label>
-                    <select
-                      value={addressForm.district}
-                      onChange={(e) => setAddressForm((prev) => ({ ...prev, district: e.target.value }))}
-                      className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] bg-white px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8]"
-                    >
-                      <option value={addressForm.district}>{addressForm.district || 'Select district'}</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="mb-[6px] block text-[14px] text-[#4B5563]">Province</label>
-                    <select
-                      value={addressForm.province}
-                      onChange={(e) => setAddressForm((prev) => ({ ...prev, province: e.target.value }))}
-                      className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] bg-white px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8]"
-                    >
-                      <option value={addressForm.province}>{addressForm.province || 'Select province'}</option>
-                    </select>
+                    {addressForm.provinceId && addressForm.districtId && addressForm.subdistrictId && (
+                      <p className="mt-1 text-xs text-[#6B7280]">
+                        Postal code is automatically filled based on the selected district
+                      </p>
+                    )}
                   </div>
 
                   <div>

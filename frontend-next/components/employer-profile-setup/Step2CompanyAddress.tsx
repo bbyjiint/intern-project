@@ -20,7 +20,6 @@ interface District {
   id: string
   name: string
   thname: string | null
-  code: string | null
   postalCode: string | null
 }
 
@@ -28,7 +27,6 @@ interface Subdistrict {
   id: string
   name: string
   thname: string | null
-  code: string | null
 }
 
 export default function Step2CompanyAddress({ data, onUpdate }: Step2CompanyAddressProps) {
@@ -199,12 +197,14 @@ export default function Step2CompanyAddress({ data, onUpdate }: Step2CompanyAddr
     }
   }, [subdistricts, formData.subDistrict, formData.subdistrictId])
 
-  // Auto-fill postal code when district is selected
+  // Auto-fill postal code when district is selected (postal code comes from district)
   useEffect(() => {
     if (formData.districtId && districts.length > 0) {
       const selectedDistrict = districts.find((d) => d.id === formData.districtId)
       if (selectedDistrict?.postalCode) {
-        handleChange('postcode', selectedDistrict.postalCode)
+        const updated = { ...formData, postcode: selectedDistrict.postalCode }
+        setFormData(updated)
+        onUpdate(updated)
       }
     }
   }, [formData.districtId, districts])
@@ -212,23 +212,37 @@ export default function Step2CompanyAddress({ data, onUpdate }: Step2CompanyAddr
   const handleChange = (field: string, value: string) => {
     const updated = { ...formData, [field]: value }
     
-    // When province is selected, find the province name
+    // When province is selected, find the province name and clear district/subdistrict
     if (field === 'provinceId') {
       const selectedProvince = provinces.find((p) => p.id === value)
       updated.province = selectedProvince?.name || ''
+      // Clear district and subdistrict when province changes
+      if (formData.districtId || formData.subdistrictId) {
+        updated.districtId = ''
+        updated.district = ''
+        updated.subdistrictId = ''
+        updated.subDistrict = ''
+        updated.postcode = ''
+      }
     }
     
-    // When district is selected, find the district name
+    // When district is selected, find the district name and clear subdistrict
     if (field === 'districtId') {
       const selectedDistrict = districts.find((d) => d.id === value)
       updated.district = selectedDistrict?.name || ''
-      // Auto-fill postal code
+      // Auto-fill postal code from district
       if (selectedDistrict?.postalCode) {
         updated.postcode = selectedDistrict.postalCode
+      }
+      // Clear subdistrict when district changes
+      if (formData.subdistrictId) {
+        updated.subdistrictId = ''
+        updated.subDistrict = ''
       }
     }
     
     // When subdistrict is selected, find the subdistrict name
+    // Postal code remains from district (district.postalCode is the source)
     if (field === 'subdistrictId') {
       const selectedSubdistrict = subdistricts.find((s) => s.id === value)
       updated.subDistrict = selectedSubdistrict?.name || ''
@@ -276,11 +290,10 @@ export default function Step2CompanyAddress({ data, onUpdate }: Step2CompanyAddr
               options={provinces.map((prov) => ({
                 value: prov.id,
                 label: prov.thname ? `${prov.name} (${prov.thname})` : prov.name,
-                code: prov.code,
               }))}
               value={formData.provinceId}
               onChange={(value) => handleChange('provinceId', value)}
-              placeholder="Search by name or code..."
+              placeholder="Search by name..."
               className="w-full"
               allOptionLabel="Select Province"
             />
@@ -305,11 +318,10 @@ export default function Step2CompanyAddress({ data, onUpdate }: Step2CompanyAddr
               options={districts.map((dist) => ({
                 value: dist.id,
                 label: dist.thname ? `${dist.name} (${dist.thname})` : dist.name,
-                code: dist.code,
               }))}
               value={formData.districtId}
               onChange={(value) => handleChange('districtId', value)}
-              placeholder="Search by name or code..."
+              placeholder="Search by name..."
               className="w-full"
               allOptionLabel="Select District"
             />
@@ -334,11 +346,10 @@ export default function Step2CompanyAddress({ data, onUpdate }: Step2CompanyAddr
               options={subdistricts.map((sub) => ({
                 value: sub.id,
                 label: sub.thname ? `${sub.name} (${sub.thname})` : sub.name,
-                code: sub.code,
               }))}
               value={formData.subdistrictId}
               onChange={(value) => handleChange('subdistrictId', value)}
-              placeholder="Search by name or code..."
+              placeholder="Search by name..."
               className="w-full"
               allOptionLabel="Select Sub-District"
             />
@@ -356,11 +367,16 @@ export default function Step2CompanyAddress({ data, onUpdate }: Step2CompanyAddr
             onChange={(e) => handleChange('postcode', e.target.value)}
             placeholder="Postcode (auto-filled when district is selected)"
             className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            readOnly={!!formData.districtId}
+            readOnly={!!(formData.provinceId && formData.districtId && formData.subdistrictId)}
           />
-          {formData.districtId && (
+          {formData.provinceId && formData.districtId && formData.subdistrictId && (
             <p className="text-xs mt-1" style={{ color: '#A9B4CD' }}>
               Postcode is automatically filled based on the selected district
+            </p>
+          )}
+          {formData.districtId && !formData.subdistrictId && (
+            <p className="text-xs mt-1" style={{ color: '#A9B4CD' }}>
+              Please select a subdistrict to finalize the address
             </p>
           )}
         </div>

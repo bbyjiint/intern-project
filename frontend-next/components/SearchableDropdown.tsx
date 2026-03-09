@@ -41,21 +41,9 @@ export default function SearchableDropdown({
     
     const searchLower = searchQuery.toLowerCase().trim()
     
-    // Check if any option has an exact code match (case-insensitive)
-    const exactCodeMatches = options.filter((option) => 
-      option.code?.toLowerCase() === searchLower
-    )
-    
-    // If we have exact code matches, only return those
-    if (exactCodeMatches.length > 0) {
-      return exactCodeMatches
-    }
-    
-    // Otherwise, use contains logic for both name and code
+    // Use contains logic for name matching
     return options.filter((option) => {
-      const matchesLabel = option.label.toLowerCase().includes(searchLower)
-      const matchesCode = option.code?.toLowerCase().includes(searchLower) ?? false
-      return matchesLabel || matchesCode
+      return option.label.toLowerCase().includes(searchLower)
     })
   })()
 
