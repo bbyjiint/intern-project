@@ -16,6 +16,18 @@ function initialsFromName(name: string) {
   return (first + (second ?? "")).toUpperCase();
 }
 
+function normalizeEducationLevel(value: unknown): "BACHELOR" | "MASTERS" | "PHD" {
+  const normalized = String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z]/g, "");
+
+  if (normalized === "BACHELOR" || normalized === "BACHELORS") return "BACHELOR";
+  if (normalized === "MASTER" || normalized === "MASTERS") return "MASTERS";
+  if (normalized === "PHD" || normalized === "DOCTORATE") return "PHD";
+  return "BACHELOR";
+}
+
 function formatGradDate(d?: Date | null) {
   if (!d) return null;
   return d.toLocaleString("en-US", { month: "short", year: "numeric" });
@@ -125,6 +137,14 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
       bio: candidateProfile.bio || null,
       resumeUrl: candidateProfile.CandidateResume[0]?.url || null,
       resumeFile: candidateProfile.CandidateResume[0]?.name || null,
+      resume: candidateProfile.CandidateResume[0]
+        ? {
+            id: candidateProfile.CandidateResume[0].id,
+            name: candidateProfile.CandidateResume[0].name,
+            url: candidateProfile.CandidateResume[0].url,
+            createdAt: candidateProfile.CandidateResume[0].createdAt.toISOString(),
+          }
+        : null,
       education: candidateProfile.CandidateUniversity.map((cu) => ({
         id: cu.id,
         university: cu.University.name,
@@ -132,7 +152,10 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
         degree: cu.degreeName,
         fieldOfStudy: cu.fieldOfStudy,
         yearOfStudy: cu.yearOfStudy,
-        gpa: cu.gpa ? cu.gpa.toString() : null
+        gpa: cu.gpa ? cu.gpa.toString() : null,
+        endDate: cu.endDate ? cu.endDate.toISOString().split("T")[0] : null,
+        endYear: cu.isCurrent ? null : (cu.endDate ? cu.endDate.getFullYear().toString() : null),
+        isCurrent: cu.isCurrent,
       })),
       experience: candidateProfile.WorkHistory.map((wh) => ({
         id: wh.id,
@@ -540,7 +563,7 @@ candidatesRouter.delete("/projects/:id", requireAuth, requireRole("CANDIDATE"), 
 // Create a new education entry
 candidatesRouter.post("/education", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
   const userId = req.user!.id;
-  const { universityName, degreeName, educationLevel, gpa, endDate, isCurrent, relevantCoursework, achievements } = req.body ?? {};
+  const { universityName, degreeName, fieldOfStudy, yearOfStudy, educationLevel, gpa, endDate, isCurrent, relevantCoursework, achievements } = req.body ?? {};
 
   if (!universityName || !degreeName || !educationLevel) {
     return res.status(400).json({ error: "University name, degree name, and education level are required" });
@@ -574,10 +597,10 @@ candidatesRouter.post("/education", requireAuth, requireRole("CANDIDATE"), async
         id: randomUUID(),
         candidateId,
         universityId: university.id,
-        educationLevel: educationLevel as any,
+        educationLevel: normalizeEducationLevel(educationLevel),
         degreeName: degreeName,
-        fieldOfStudy: degreeName,
-        yearOfStudy: "",
+        fieldOfStudy: fieldOfStudy || degreeName,
+        yearOfStudy: yearOfStudy || "",
         gpa: gpa ? parseFloat(gpa.toString()) : null,
         endDate: endDate ? new Date(endDate) : null,
         isCurrent: isCurrent || false,
@@ -599,7 +622,7 @@ candidatesRouter.post("/education", requireAuth, requireRole("CANDIDATE"), async
 candidatesRouter.put("/education/:id", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
   const userId = req.user!.id;
   const educationId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
-  const { universityName, degreeName, educationLevel, gpa, endDate, isCurrent, relevantCoursework, achievements } = req.body ?? {};
+  const { universityName, degreeName, fieldOfStudy, yearOfStudy, educationLevel, gpa, endDate, isCurrent, relevantCoursework, achievements } = req.body ?? {};
 
   if (!universityName || !degreeName || !educationLevel) {
     return res.status(400).json({ error: "University name, degree name, and education level are required" });
@@ -644,8 +667,10 @@ candidatesRouter.put("/education/:id", requireAuth, requireRole("CANDIDATE"), as
       where: { id: educationId },
       data: {
         universityId: university.id,
-        educationLevel: educationLevel as any,
+        educationLevel: normalizeEducationLevel(educationLevel),
         degreeName: degreeName,
+        fieldOfStudy: fieldOfStudy || degreeName,
+        yearOfStudy: yearOfStudy || "",
         gpa: gpa ? parseFloat(gpa.toString()) : null,
         endDate: endDate ? new Date(endDate) : null,
         isCurrent: isCurrent || false,

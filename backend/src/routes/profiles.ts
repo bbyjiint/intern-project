@@ -5,6 +5,26 @@ import { randomUUID } from "crypto";
 
 export const profilesRouter = Router();
 
+function normalizeEducationLevel(value: unknown): "BACHELOR" | "MASTERS" | "PHD" {
+  const normalized = String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z]/g, "");
+
+  if (normalized === "BACHELOR" || normalized === "BACHELORS") return "BACHELOR";
+  if (normalized === "MASTER" || normalized === "MASTERS") return "MASTERS";
+  if (normalized === "PHD" || normalized === "DOCTORATE") return "PHD";
+  return "BACHELOR";
+}
+
+function yearStringFromDateLike(value: unknown): string {
+  if (!value) return "";
+  const raw = String(value).trim();
+  if (!raw) return "";
+  const yearMatch = raw.match(/\b(19|20)\d{2}\b/);
+  return yearMatch ? yearMatch[0] : raw;
+}
+
 // Candidate Profile Get
 profilesRouter.get("/candidates/profile", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
   const userId = req.user!.id;
@@ -60,7 +80,11 @@ profilesRouter.get("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
       education: candidateProfile.CandidateUniversity.map((cu) => ({
         id: cu.id,
         university: cu.University?.name || "Unknown University",
+        educationLevel: cu.educationLevel,
         degree: cu.degreeName || "",
+        fieldOfStudy: cu.fieldOfStudy || "",
+        yearOfStudy: cu.yearOfStudy || "",
+        isCurrent: cu.isCurrent,
         endDate: cu.endDate ? cu.endDate.toISOString().split("T")[0] : "",
         endYear: cu.isCurrent ? null : (cu.endDate ? cu.endDate.getFullYear().toString() : null),
         gpa: cu.gpa ? cu.gpa.toString() : null,
@@ -223,47 +247,82 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
     // If endYear is empty/null → treat as current (isCurrent = true, endDate = null)
     if (Array.isArray(education) && education.length > 0) {
       console.log("Processing education data:", JSON.stringify(education, null, 2));
+      const normalizedEducation = education
+        .map((edu) => {
+          const universityName = edu.university || edu.universityName || edu.institution;
+          const degreeName = edu.degree || edu.degreeName || edu.fieldOfStudy || "";
+          const fieldOfStudy = edu.fieldOfStudy || edu.degreeName || edu.degree || "";
+          const yearOfStudy =
+            edu.yearOfStudy ||
+            yearStringFromDateLike(edu.startYear) ||
+            yearStringFromDateLike(edu.startDate);
+          const endYearStr =
+            yearStringFromDateLike(edu.endYear) ||
+            yearStringFromDateLike(edu.endDate);
+          const hasEndYear = endYearStr !== "" && endYearStr !== "null" && endYearStr !== "undefined";
 
-      // Delete existing education entries
-      await prisma.candidateUniversity.deleteMany({
-        where: { candidateId: candidateProfile.id },
-      });
+          if (!universityName || !degreeName) {
+            console.warn("Skipping education entry - missing required fields:", {
+              university: universityName,
+              degree: degreeName,
+              fieldOfStudy,
+            });
+            return null;
+          }
 
-      // Create new education entries
-      for (const edu of education) {
-        // Support both 'university' and 'institution' field names from frontend
-        const universityName = edu.university || edu.institution;
+          return {
+            universityName,
+            degreeName,
+            fieldOfStudy,
+            yearOfStudy,
+            endYearStr,
+            hasEndYear,
+            isCurrent: edu.isCurrent === true || !hasEndYear,
+            educationLevel: normalizeEducationLevel(edu.educationLevel),
+            gpa: edu.gpa ? parseFloat(edu.gpa) : null,
+          };
+        })
+        .filter(Boolean) as Array<{
+          universityName: string;
+          degreeName: string;
+          fieldOfStudy: string;
+          yearOfStudy: string;
+          endYearStr: string;
+          hasEndYear: boolean;
+          isCurrent: boolean;
+          educationLevel: "BACHELOR" | "MASTERS" | "PHD";
+          gpa: number | null;
+        }>;
 
-        if (universityName && (edu.degree || edu.fieldOfStudy)) {
+      if (normalizedEducation.length > 0) {
+        // Delete existing education entries only after we know replacement data is valid.
+        await prisma.candidateUniversity.deleteMany({
+          where: { candidateId: candidateProfile.id },
+        });
+
+        for (const edu of normalizedEducation) {
           // Find university by exact name match (since we're using dropdown now)
           let university = await prisma.university.findFirst({
-            where: { name: { equals: universityName, mode: "insensitive" } },
+            where: { name: { equals: edu.universityName, mode: "insensitive" } },
           });
 
           if (!university) {
             // Fallback: try contains match for backward compatibility
             university = await prisma.university.findFirst({
-              where: { name: { contains: universityName, mode: "insensitive" } },
+              where: { name: { contains: edu.universityName, mode: "insensitive" } },
             });
           }
 
           if (!university) {
-            console.warn(`University not found: ${universityName}, creating new entry`);
+            console.warn(`University not found: ${edu.universityName}, creating new entry`);
             // Only create if not found - this shouldn't happen with dropdown, but keep for safety
             university = await prisma.university.create({
               data: {
                 id: randomUUID(),
-                name: universityName,
+                name: edu.universityName,
               },
             });
           }
-
-          // Handle endYear: if empty/null/undefined/empty string → current education
-          const endYearStr = edu.endYear ? String(edu.endYear).trim() : "";
-          const hasEndYear = endYearStr !== "" && endYearStr !== "null" && endYearStr !== "undefined";
-          const isCurrent = !hasEndYear;
-
-          const degreeName = (edu.degree && edu.degree.trim()) ? edu.degree : (edu.fieldOfStudy || null);
 
           // NOTE: Do NOT write education details back into CandidateProfile.
           // CandidateProfile should not store education details; they live in CandidateUniversity.
@@ -272,23 +331,17 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
               id: randomUUID(),
               candidateId: candidateProfile.id,
               universityId: university.id,
-              educationLevel: edu.educationLevel || "Bachelor",
-              degreeName: edu.degree || edu.degreeName || "",
-              fieldOfStudy: edu.fieldOfStudy || edu.degree || "",
-              yearOfStudy: edu.yearOfStudy || "",
-              gpa: edu.gpa ? parseFloat(edu.gpa) : null,
-              isCurrent: isCurrent,
-              endDate: hasEndYear ? new Date(`${endYearStr}-01-01`) : null,
+              educationLevel: edu.educationLevel,
+              degreeName: edu.degreeName,
+              fieldOfStudy: edu.fieldOfStudy,
+              yearOfStudy: edu.yearOfStudy,
+              gpa: Number.isFinite(edu.gpa) ? edu.gpa : null,
+              isCurrent: edu.isCurrent,
+              endDate: edu.hasEndYear ? new Date(`${edu.endYearStr}-01-01`) : null,
             }
           });
 
           console.log(`Created education record: ${educationRecord.id} for university: ${university.name}`);
-        } else {
-          console.warn("Skipping education entry - missing required fields:", {
-            university: universityName,
-            degree: edu.degree,
-            fieldOfStudy: edu.fieldOfStudy,
-          });
         }
       }
     }

@@ -1,22 +1,51 @@
 'use client'
 
 import { useState } from 'react'
-import ResumeModal from './ResumeModal' // import ไฟล์ที่สร้างด้านบน
+import { apiFetch } from '@/lib/api'
+import ResumeModal from './ResumeModal'
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5001'
 
 interface ResumeSectionProps {
   resumeData?: {
-    fileName: string;
-    lastUpdated: string;
-  };
-  onFileChange?: (file: File) => void;
+    id?: string
+    name?: string
+    url?: string
+    createdAt?: string
+  }
+  onRefresh?: () => void | Promise<void>
 }
 
-export default function ResumeSection({ resumeData, onFileChange }: ResumeSectionProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false)
+function formatResumeDate(value?: string) {
+  if (!value) return '-'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return '-'
+  return date.toLocaleDateString('en-GB')
+}
 
-  const handleUpload = (file: File) => {
-    if (onFileChange) onFileChange(file)
-    // ตรงนี้สามารถเพิ่ม logic อัปโหลดไฟล์ไปที่ Server ได้
+export default function ResumeSection({ resumeData, onRefresh }: ResumeSectionProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isUploading, setIsUploading] = useState(false)
+
+  const resumeHref = resumeData?.url
+    ? (resumeData.url.startsWith('http') ? resumeData.url : `${API_BASE_URL}${resumeData.url}`)
+    : null
+
+  const handleUpload = async (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('type', 'RESUME')
+
+    setIsUploading(true)
+    try {
+      await apiFetch('/api/candidates/resumes', {
+        method: 'POST',
+        body: formData,
+      })
+      await onRefresh?.()
+    } finally {
+      setIsUploading(false)
+    }
   }
 
   return (
@@ -45,28 +74,40 @@ export default function ResumeSection({ resumeData, onFileChange }: ResumeSectio
 
           <div>
             <h3 className="text-md font-bold text-gray-800">
-              {resumeData?.fileName || 'Simple Resume.pdf'}
+              {resumeData?.name || 'No resume uploaded yet'}
             </h3>
             <p className="mt-1 text-xs text-gray-400">
-              Upload lastest: {resumeData?.lastUpdated || '26/2/2026'}
+              Upload latest: {formatResumeDate(resumeData?.createdAt)}
             </p>
           </div>
         </div>
 
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="rounded-lg border-2 border-blue-500 bg-white px-5 py-2 text-sm font-bold text-blue-500 transition-all hover:bg-blue-50"
-        >
-          Change File
-        </button>
+        <div className="flex items-center gap-3">
+          {resumeHref ? (
+            <a
+              href={resumeHref}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-lg border border-gray-300 bg-white px-5 py-2 text-sm font-bold text-gray-700 transition-all hover:bg-gray-50"
+            >
+              View File
+            </a>
+          ) : null}
+          <button
+            onClick={() => setIsModalOpen(true)}
+            disabled={isUploading}
+            className="rounded-lg border-2 border-blue-500 bg-white px-5 py-2 text-sm font-bold text-blue-500 transition-all hover:bg-blue-50"
+          >
+            {isUploading ? 'Uploading...' : (resumeData?.name ? 'Change File' : 'Upload Resume')}
+          </button>
+        </div>
       </div>
 
-      {/* เรียกใช้งาน Pop-up */}
       <ResumeModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onUpload={handleUpload}
-        currentFileName={resumeData?.fileName}
+        currentFileName={resumeData?.name}
       />
     </div>
   )

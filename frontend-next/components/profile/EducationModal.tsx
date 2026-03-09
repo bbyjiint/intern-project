@@ -20,8 +20,7 @@ export default function EducationModal({ isOpen, education, onClose, onSave }: E
     educationLevel: 'BACHELOR',
     yearOfStudy: '',
     gpa: '',
-    isGraduated: false,
-    isCurrentlyStudying: true,
+    studyStatus: 'current' as 'current' | 'graduated',
   })
 
   const [universities, setUniversities] = useState<Array<{ id: string; name: string; thname: string | null; code: string | null }>>([])
@@ -31,15 +30,15 @@ export default function EducationModal({ isOpen, education, onClose, onSave }: E
   // Initialize data when editing
   useEffect(() => {
     if (isOpen && education) {
+      const isCurrent = education.isCurrent ?? !(education.endDate || (education as any).endYear)
       setFormData({
-        school: education.universityName || '',
-        degree: education.degreeName || '',
-        major: education.educationLevel || '',
+        school: education.universityName || education.university || '',
+        degree: education.degreeName || education.degree || '',
+        major: (education as any).fieldOfStudy || '',
         educationLevel: (education as any).educationLevel || 'BACHELOR',
         yearOfStudy: (education as any).yearOfStudy || '',
         gpa: education.gpa?.toString() || '',
-        isGraduated: (education as any).isGraduated || false,
-        isCurrentlyStudying: (education as any).isCurrentlyStudying ?? true,
+        studyStatus: isCurrent ? 'current' : 'graduated',
       })
     } else if (isOpen) {
       // Reset form for new entry
@@ -50,11 +49,10 @@ export default function EducationModal({ isOpen, education, onClose, onSave }: E
         educationLevel: 'BACHELOR',
         yearOfStudy: '',
         gpa: '',
-        isGraduated: false,
-        isCurrentlyStudying: true,
+        studyStatus: 'current',
       })
     }
-  }, [isOpen, education])
+  }, [isOpen, education?.id])
 
   // Load universities
   useEffect(() => {
@@ -86,9 +84,12 @@ export default function EducationModal({ isOpen, education, onClose, onSave }: E
       const payload = {
         universityName: formData.school,
         degreeName: formData.degree,
+        fieldOfStudy: formData.major,
         educationLevel: formData.educationLevel,
+        yearOfStudy: formData.yearOfStudy,
         gpa: parseFloat(formData.gpa) || 0,
-        // เพิ่ม field อื่นๆ ตามที่ API ต้องการ
+        isCurrent: formData.studyStatus === 'current',
+        endDate: formData.studyStatus === 'current' ? null : ((education as any)?.endDate || null),
       }
 
       // จำลองการเรียก API
@@ -219,13 +220,10 @@ export default function EducationModal({ isOpen, education, onClose, onSave }: E
           <div className="flex gap-6 pt-2">
             <label className="flex items-center gap-2 cursor-pointer group">
               <input 
-                type="checkbox" 
-                checked={formData.isCurrentlyStudying} 
-                onChange={(e) => setFormData({ 
-                  ...formData, 
-                  isCurrentlyStudying: e.target.checked,
-                  isGraduated: e.target.checked ? false : formData.isGraduated 
-                })}
+                type="radio"
+                name="education-status"
+                checked={formData.studyStatus === 'current'}
+                onChange={() => setFormData((prev) => ({ ...prev, studyStatus: 'current' }))}
                 className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer" 
               />
               <span className="text-sm text-gray-600 group-hover:text-blue-600 transition-colors">Currently studying here</span>
@@ -233,13 +231,10 @@ export default function EducationModal({ isOpen, education, onClose, onSave }: E
 
             <label className="flex items-center gap-2 cursor-pointer group">
               <input 
-                type="checkbox" 
-                checked={formData.isGraduated} 
-                onChange={(e) => setFormData({ 
-                  ...formData, 
-                  isGraduated: e.target.checked,
-                  isCurrentlyStudying: e.target.checked ? false : formData.isCurrentlyStudying 
-                })}
+                type="radio"
+                name="education-status"
+                checked={formData.studyStatus === 'graduated'}
+                onChange={() => setFormData((prev) => ({ ...prev, studyStatus: 'graduated' }))}
                 className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer" 
               />
               <span className="text-sm text-gray-600 group-hover:text-blue-600 transition-colors">Graduated</span>

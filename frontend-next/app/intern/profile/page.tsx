@@ -128,9 +128,7 @@ export default function InternProfilePage() {
 
               {/* Resume */}
               <ResumeSection
-                experience={profileData.experience || []}
-                onAdd={() => {}}
-                onEdit={(id) => {}}
+                resumeData={profileData.resume}
                 onRefresh={refetch}
               />
 

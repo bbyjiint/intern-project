@@ -5,7 +5,7 @@ import { useState, useRef } from 'react'
 interface ResumeModalProps {
   isOpen: boolean
   onClose: () => void
-  onUpload: (file: File) => void
+  onUpload: (file: File) => void | Promise<void>
   currentFileName?: string
 }
 
@@ -20,9 +20,9 @@ export default function ResumeModal({ isOpen, onClose, onUpload, currentFileName
     if (file) setSelectedFile(file)
   }
 
-  const handleUpload = () => {
+  const handleUpload = async () => {
     if (selectedFile) {
-      onUpload(selectedFile)
+      await onUpload(selectedFile)
       onClose()
     }
   }

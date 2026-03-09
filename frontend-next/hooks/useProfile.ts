@@ -24,10 +24,16 @@ export interface ProfileData {
 
 export interface Education {
   id: string
+  university?: string
   universityName?: string
+  degree?: string
   degreeName?: string
+  fieldOfStudy?: string
   educationLevel?: string
   gpa?: number
+  startYear?: string
+  endYear?: string
+  yearOfStudy?: string
   startDate?: string
   endDate?: string
   isCurrent?: boolean
@@ -73,6 +79,7 @@ export interface ResumeFile {
   id?: string
   name?: string
   url?: string
+  createdAt?: string
 }
 
 export interface Skill {
@@ -116,13 +123,19 @@ export function useProfile() {
       // Map education from API format (university, degree) to our format
       const education: Education[] = (profile.education || []).map((edu: any, index: number) => ({
         id: edu.id || `edu-${index}`,
+        university: edu.university,
         universityName: edu.university,
+        degree: edu.degree,
         degreeName: edu.degree,
+        fieldOfStudy: edu.fieldOfStudy,
         educationLevel: edu.educationLevel || 'BACHELOR',
         gpa: edu.gpa ? parseFloat(edu.gpa) : undefined,
+        startYear: edu.startYear,
+        endYear: edu.endYear,
+        yearOfStudy: edu.yearOfStudy,
         startDate: edu.startDate || (edu.startYear ? `${edu.startYear}-01-01` : undefined),
         endDate: edu.endDate || (edu.endYear ? `${edu.endYear}-12-31` : undefined),
-        isCurrent: edu.isCurrent || false,
+        isCurrent: edu.isCurrent ?? !edu.endDate,
         relevantCoursework: edu.coursework || [],
         achievements: edu.achievements || [],
         extracurriculars: edu.extracurriculars || [],
@@ -173,7 +186,10 @@ export function useProfile() {
         experience: experience,
         projects: profile.projects || [],
         certificates: profile.certificates || [],
-        resume: profile.resume,
+        resume: profile.resume || (profile.resumeFile || profile.resumeUrl ? {
+          name: profile.resumeFile,
+          url: profile.resumeUrl,
+        } : undefined),
         skills: skills,
         internshipDetails: {
           desiredPosition: profile.desiredPosition,

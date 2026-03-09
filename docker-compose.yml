@@ -26,12 +26,12 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: intern-backend
+    env_file:
+      - ./backend/.env
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       PORT: ${PORT:-5001}
       DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-intern_website}?schema=public
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000,http://frontend:3000}
-      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-in-production}
       FILE_STORAGE_PROVIDER: ${FILE_STORAGE_PROVIDER:-local}
       LOCAL_UPLOAD_DIR: /app/uploads
     ports:

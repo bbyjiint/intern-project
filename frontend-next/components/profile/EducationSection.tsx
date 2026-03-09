@@ -68,11 +68,13 @@ export default function EducationSection({ education, onAdd, onEdit, onRefresh }
                 </h3>
                 <div className="text-gray-600 text-sm space-y-1">
                   <p className="font-medium">
-                    {edu.degreeName || 'Bachelor of Engineering in Computer Engineering'}
+                    {`${edu.degreeName || 'Bachelor of Engineering'}${edu.fieldOfStudy ? ` in ${edu.fieldOfStudy}` : ''}`}
                     {edu.gpa && <span className="text-gray-400 font-normal"> | GPA: {edu.gpa}</span>}
                   </p>
                   <p className="text-gray-500">
-                    {edu.isCurrent ? 'Year 4 (Currently studying)' : 'Graduated'}
+                    {edu.isCurrent
+                      ? `${edu.yearOfStudy || 'Currently studying'}${edu.yearOfStudy ? ' (Currently studying)' : ''}`
+                      : 'Graduated'}
                   </p>
                 </div>
               </div>
