@@ -453,6 +453,7 @@ model Province {
   Districts District[]
   CompanyProfiles CompanyProfile[]
   CandidatePreferredProvince CandidatePreferredProvince[]
+  CompanyProfiles CompanyProfile[]
 
   @@map("Province")
   @@index([code])

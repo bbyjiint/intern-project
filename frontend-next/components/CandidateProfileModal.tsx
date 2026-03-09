@@ -23,7 +23,6 @@ interface CandidateProfileModalProps {
 export default function CandidateProfileModal({ candidate, onClose }: CandidateProfileModalProps) {
   const router = useRouter()
   const [isStartingConversation, setIsStartingConversation] = useState(false)
-  const [conversationStarted, setConversationStarted] = useState(false)
 
   const handleViewFullProfile = () => {
     router.push(`/employer/candidate/${encodeURIComponent(candidate.name)}`)
@@ -37,30 +36,23 @@ export default function CandidateProfileModal({ candidate, onClose }: CandidateP
 
     setIsStartingConversation(true)
     try {
-      // Create conversation without initial message - user will send first message from messages page
       const data = await apiFetch<{ conversation: any }>('/api/messages/conversations', {
         method: 'POST',
         body: JSON.stringify({
           candidateId: candidate.id,
         }),
       })
-
-      setConversationStarted(true)
-      // Navigate to messages page
-      router.push('/employer/messages')
+      router.push(`/employer/messages?conversationId=${encodeURIComponent(data.conversation.id)}`)
       onClose()
     } catch (error: any) {
       console.error('Error starting conversation:', error)
-      
-      // Check for specific error cases
+
       if (error.message?.includes('already exists') || error.details?.includes('already exists')) {
-        // Conversation already exists, just navigate to messages
         router.push('/employer/messages')
         onClose()
         return
       }
-      
-      // Show more detailed error message
+
       const errorMessage = error.details || error.message || 'Unknown error'
       alert(`Failed to start conversation: ${errorMessage}`)
     } finally {
@@ -69,117 +61,99 @@ export default function CandidateProfileModal({ candidate, onClose }: CandidateP
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
+      <div
+        className="relative w-full max-w-[940px] rounded-[14px] bg-white px-10 pb-8 pt-7 shadow-[0_20px_60px_rgba(15,23,42,0.22)]"
+        onClick={(e) => e.stopPropagation()}
+      >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+          className="absolute right-4 top-3 text-[#6B7280] transition-colors hover:text-[#111827]"
+          aria-label="Close candidate profile"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
 
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex items-center space-x-4">
-            <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-xl">
+        <div className="flex items-start justify-between gap-6">
+          <div className="flex items-start gap-5">
+            <div className="flex h-[84px] w-[84px] items-center justify-center overflow-hidden rounded-full bg-[#E5E7EB] text-[28px] font-semibold text-white">
               {candidate.initials}
             </div>
-            <div className="flex-1">
-              <h2 className="text-2xl font-bold text-gray-900">{candidate.name}</h2>
-              <p className="text-gray-600">{candidate.role}</p>
-              <div className="flex items-center space-x-4 mt-2 text-sm text-gray-500">
-                <div className="flex items-center">
-                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  <span>{candidate.major}</span>
-                </div>
-                <div className="flex items-center">
-                  <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <span>{candidate.graduationDate}</span>
-                </div>
-              </div>
+            <div className="pt-2">
+              <h2 className="text-[18px] font-bold leading-none text-[#111827]">{candidate.name}</h2>
+              <p className="mt-[10px] text-[12px] text-[#9CA3AF]">Phone: 089-123-4567</p>
+              <p className="mt-[6px] text-[12px] text-[#9CA3AF]">
+                Email {candidate.email || `${candidate.name.toLowerCase().replace(/\s+/g, '.')}@example.com`}
+              </p>
             </div>
           </div>
+
+          <button
+            onClick={handleViewFullProfile}
+            className="mt-[18px] flex h-[28px] items-center justify-center rounded-[6px] border border-[#2563EB] bg-white px-[16px] text-[12px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8]"
+          >
+            See Profile
+          </button>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="mt-6 border-t border-[#E5E7EB] pt-6">
           <div>
-            <div className="flex items-center mb-3">
-              <svg className="w-5 h-5 text-gray-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-              </svg>
-              <h3 className="text-lg font-semibold text-gray-900">Education</h3>
-            </div>
-            <p className="text-blue-600 underline">{candidate.university}</p>
-          </div>
-
-          <div>
-            <div className="flex items-center mb-3">
-              <svg className="w-5 h-5 text-gray-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              <h3 className="text-lg font-semibold text-gray-900">About</h3>
-            </div>
-            <p className="text-gray-600">
-              {candidate.about || 'Passionate software engineering intern focused on full-stack development. Eager to learn modern web technologies and contribute to impactful projects.'}
+            <h3 className="text-[14px] font-bold text-[#344164]">About Me</h3>
+            <p className="mt-[8px] max-w-[820px] text-[12px] leading-[1.55] text-[#51617C]">
+              {candidate.about || 'Passionate software engineering intern with a focus on full-stack development and data analysis. Eager to learn modern web technologies and contribute to impactful projects. Strong foundation in Python, JavaScript, and SQL with experience building RESTful APIs and interactive dashboards.'}
             </p>
           </div>
 
-          <div>
-            <div className="flex items-center mb-3">
-              <svg className="w-5 h-5 text-gray-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              <h3 className="text-lg font-semibold text-gray-900">Skills</h3>
+          <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-5">
+            <div>
+              <h3 className="text-[14px] font-bold text-[#344164]">Education</h3>
+              <p className="mt-[8px] text-[12px] leading-[1.45] text-[#51617C]">
+                {candidate.university} | {candidate.graduationDate === 'Present' ? 'Currently studying' : candidate.graduationDate || 'Year 4'}
+              </p>
+              <p className="mt-[2px] text-[12px] leading-[1.45] text-[#51617C]">
+                {candidate.major || 'Bachelor of Engineering'} | GPA: 3.50
+              </p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {candidate.skills.map((skill, index) => (
-                <span key={index} className="px-4 py-2 bg-gray-100 text-gray-700 rounded-full text-sm">
-                  {skill}
-                </span>
-              ))}
+
+            <div>
+              <h3 className="text-[14px] font-bold text-[#344164]">Positions of Interest</h3>
+              <div className="mt-[10px] flex flex-wrap gap-[8px]">
+                {candidate.skills.slice(0, 3).map((skill, index) => (
+                  <span key={`${skill}-${index}`} className="rounded-[6px] bg-[#E5E7EB] px-[14px] py-[5px] text-[12px] font-semibold text-[#374151]">
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-[14px] font-bold text-[#344164]">Internship Period</h3>
+              <p className="mt-[8px] text-[12px] leading-[1.45] text-[#51617C]">5 January 2026 - 24 April 2026 (4 Month)</p>
+            </div>
+
+            <div>
+              <h3 className="text-[14px] font-bold text-[#344164]">Preferred Locations</h3>
+              <p className="mt-[8px] text-[12px] leading-[1.45] text-[#51617C]">{candidate.location || 'Bangkok, Chiangmai'}</p>
             </div>
           </div>
 
-          <div>
-            <div className="flex items-center mb-3">
-              <svg className="w-5 h-5 text-gray-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              <h3 className="text-lg font-semibold text-gray-900">Contact</h3>
-            </div>
-            <div className="flex items-center">
-              <svg className="w-4 h-4 text-gray-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-              <span className="text-gray-600">
-                {candidate.email || `${candidate.name.toLowerCase().replace(' ', '.')}@company.com`}
-              </span>
-            </div>
+          <div className="mt-6 flex justify-end gap-[8px]">
+            <button
+              onClick={onClose}
+              className="flex h-[32px] items-center justify-center rounded-[6px] bg-[#E5E7EB] px-[22px] text-[12px] font-semibold text-[#6B7280] transition hover:bg-[#D1D5DB]"
+            >
+              Back
+            </button>
+            <button
+              onClick={handleStartConversation}
+              disabled={isStartingConversation || !candidate.id}
+              className="flex h-[32px] items-center justify-center rounded-[6px] bg-[#2563EB] px-[20px] text-[12px] font-semibold text-white transition hover:bg-[#1D4ED8] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isStartingConversation ? 'Loading...' : 'Send Message'}
+            </button>
           </div>
-        </div>
-
-        <div className="p-6 border-t border-gray-200 flex space-x-4">
-          <button
-            onClick={handleViewFullProfile}
-            className="flex-1 px-6 py-3 border-2 border-blue-600 text-blue-600 rounded-lg font-semibold hover:bg-blue-50 transition-colors"
-          >
-            View Full Profile
-          </button>
-          <button
-            onClick={handleStartConversation}
-            disabled={isStartingConversation || !candidate.id}
-            className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isStartingConversation ? 'Starting...' : conversationStarted ? 'Go to Messages' : 'Start Conversation'}
-          </button>
         </div>
       </div>
     </div>

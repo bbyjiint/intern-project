@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
+import CompanyHubLogo from '@/components/CompanyHubLogo'
 import ReportBugModal from './ReportBugModal'
 
 interface InternNavbarProps {
@@ -131,13 +132,7 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
           {/* ================= LEFT SECTION: Logo & Menus ================= */}
           <div className="flex items-center gap-12 xl:gap-20">
             {/* Logo */}
-            <Link href="/intern/profile" className="relative flex items-center group">
-              {/* วงกลมสีฟ้าพื้นหลังตัว C */}
-              <div className="absolute -left-1.5 top-1.5 w-6 h-6 bg-[#3B82F6] rounded-full z-0 group-hover:scale-110 transition-transform"></div>
-              <span className="text-[28px] font-extrabold tracking-tight text-[#1C2D4F] relative z-10 pl-2">
-                CompanyHub.
-              </span>
-            </Link>
+            <CompanyHubLogo href="/intern/profile" />
 
             {/* Navigation Links */}
             <div className="hidden md:flex items-center gap-8">

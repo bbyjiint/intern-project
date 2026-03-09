@@ -1,9 +1,15 @@
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { apiFetch } from '@/lib/api'
+
 interface CandidateCardProps {
+  id?: string
   name: string
   role: string
   university: string
   major: string | null
   graduationDate: string | null
+  email?: string
   location?: string | null
   skills: string[]
   initials: string
@@ -14,11 +20,13 @@ interface CandidateCardProps {
 }
 
 export default function CandidateCard({
+  id,
   name,
   role,
   university,
   major,
   graduationDate,
+  email,
   location,
   skills,
   initials,
@@ -26,22 +34,47 @@ export default function CandidateCard({
   onBookmark,
   onClick,
 }: CandidateCardProps) {
+  const router = useRouter()
+  const [isMessaging, setIsMessaging] = useState(false)
+
+  const handleMessage = async (event: React.MouseEvent) => {
+    event.stopPropagation()
+    if (!id || isMessaging) return
+
+    setIsMessaging(true)
+    try {
+      const data = await apiFetch<{ conversation: { id: string } }>('/api/messages/conversations', {
+        method: 'POST',
+        body: JSON.stringify({ candidateId: id }),
+      })
+      router.push(`/employer/messages?conversationId=${encodeURIComponent(data.conversation.id)}`)
+    } catch (error: any) {
+      if (error.message?.includes('already exists') || error.details?.includes('already exists')) {
+        router.push('/employer/messages')
+      } else {
+        console.error('Failed to start conversation:', error)
+      }
+    } finally {
+      setIsMessaging(false)
+    }
+  }
+
   return (
     <div
-      className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow relative cursor-pointer"
+      className="relative flex h-full min-h-[348px] flex-col rounded-[16px] bg-white px-[22px] py-[20px] shadow-[0_10px_28px_rgba(15,23,42,0.08)] transition-shadow hover:shadow-[0_14px_36px_rgba(15,23,42,0.12)]"
       onClick={onClick}
     >
-      {/* Bookmark Icon */}
       <button
-        onClick={(e) => {
-          e.stopPropagation()
-          onBookmark?.(e)
+        onClick={(event) => {
+          event.stopPropagation()
+          onBookmark?.(event)
         }}
-        className="absolute top-4 right-4 text-gray-400 hover:text-blue-600 transition-colors z-10"
+        className="absolute right-5 top-5 z-10 text-gray-300 transition-colors hover:text-blue-600"
         type="button"
+        aria-label={isBookmarked ? 'Remove bookmark' : 'Bookmark candidate'}
       >
         <svg
-          className={`w-5 h-5 ${isBookmarked ? 'fill-blue-600 text-blue-600' : ''}`}
+          className={`h-5 w-5 ${isBookmarked ? 'fill-blue-600 text-blue-600' : ''}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -55,110 +88,73 @@ export default function CandidateCard({
         </svg>
       </button>
 
-      {/* Avatar */}
-      <div className="flex items-center mb-4">
-        <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-lg mr-4">
+      <div className="flex items-start gap-4">
+        <div className="flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full bg-[#3B82F6] text-[24px] font-semibold text-white">
           {initials}
         </div>
-        <div>
-          <h3 className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors">
-            {name}
-          </h3>
-          <p className="text-gray-600">{role}</p>
+        <div className="min-w-0 pt-[2px]">
+          <h3 className="truncate text-[18px] font-bold leading-tight text-[#111827]">{name}</h3>
+          <p className="mt-[4px] truncate text-[12px] text-[#8B94A7]">
+            {email || `${name.toLowerCase().replace(/\s+/g, '.')}@example.com`}
+          </p>
         </div>
       </div>
 
-      {/* Education */}
-      <div className="mb-4 space-y-1">
-        <div className="flex items-center text-gray-600">
-          <svg
-            className="w-4 h-4 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 14l9-5-9-5-9 5 9 5z"
-            />
-          </svg>
-          <span className="text-sm">{university}</span>
-        </div>
-        <div className="flex items-center text-gray-600">
-          <svg
-            className="w-4 h-4 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-            />
-          </svg>
-          <span className="text-sm">{major || 'N/A'}</span>
-        </div>
-        <div className="flex items-center text-gray-600">
-          <svg
-            className="w-4 h-4 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-            />
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-            />
-          </svg>
-          <span className="text-sm">{location || 'N/A'}</span>
-        </div>
-        <div className="flex items-center text-gray-600">
-          <svg
-            className="w-4 h-4 mr-2"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
-          <span className="text-sm">{graduationDate || 'N/A'}</span>
-        </div>
+      <div className="mt-[18px] grid grid-cols-[132px_1fr] gap-y-[10px] text-[12px]">
+        <p className="text-[#7C869A]">Position</p>
+        <p className="font-semibold text-[#111827]">{role || '-'}</p>
+
+        <p className="text-[#7C869A]">Institution</p>
+        <p className="font-semibold text-[#111827]">{university || '-'}</p>
+
+        <p className="text-[#7C869A]">Graduation</p>
+        <p className="font-semibold text-[#111827]">{graduationDate || '-'}</p>
+
+        <p className="text-[#7C869A]">Field of Study</p>
+        <p className="font-semibold text-[#111827]">{major || '-'}</p>
+
+        <p className="text-[#7C869A]">Preferred</p>
+        <p className="font-semibold text-[#111827]">{location || '-'}</p>
       </div>
 
-      {/* Skills */}
-      <div>
-        <p className="text-sm font-medium text-gray-700 mb-2">Skills:</p>
-        <div className="flex flex-wrap gap-2">
-          {skills.slice(0, 3).map((skill, index) => (
-            <span
-              key={index}
-              className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm"
-            >
-              {skill}
-            </span>
-          ))}
-          {skills.length > 3 && (
-            <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm">
-              +{skills.length - 3} more
-            </span>
-          )}
+      <div className="mt-[18px] flex flex-wrap gap-[8px]">
+        {skills.slice(0, 3).map((skill, index) => (
+          <span
+            key={index}
+            className="rounded-[8px] bg-[#E5E7EB] px-[14px] py-[6px] text-[12px] font-semibold text-[#374151]"
+          >
+            {skill}
+          </span>
+        ))}
+        {skills.length > 3 && (
+          <span className="rounded-[8px] bg-[#E5E7EB] px-[14px] py-[6px] text-[12px] font-semibold text-[#374151]">
+            +{skills.length - 3} more
+          </span>
+        )}
+      </div>
+
+      <div className="mt-auto flex items-end justify-between pt-[18px]">
+        <p className="text-[11px] text-[#C2C8D3]">{graduationDate || 'Recently updated'}</p>
+
+        <div className="flex items-center gap-[12px]">
+          <button
+            type="button"
+            onClick={handleMessage}
+            disabled={!id || isMessaging}
+            className="flex h-[46px] items-center justify-center rounded-[10px] border border-[#2563EB] bg-white px-[22px] text-[14px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8] disabled:opacity-60"
+          >
+            {isMessaging ? 'Loading...' : 'Message'}
+          </button>
+          <button
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation()
+              onClick?.()
+            }}
+            className="flex h-[46px] items-center justify-center rounded-[10px] border border-[#2563EB] bg-white px-[22px] text-[14px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8]"
+          >
+            View Profile
+          </button>
         </div>
       </div>
     </div>

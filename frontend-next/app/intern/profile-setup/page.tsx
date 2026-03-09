@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
+import CompanyHubLogo from "@/components/CompanyHubLogo";
 
 import Step0UploadResume from "@/components/profile-setup/Step0UploadResume";
 import Step1GeneralInfo from "@/components/profile-setup/Step1GeneralInfo";
@@ -129,22 +130,15 @@ export default function ProfileSetupPage() {
       }));
     } catch (err) {
       console.error("Load profile failed:", err);
+    } finally {
+      // Always unlock the page after the initial fetch, even for new/empty profiles.
+      setLoadKey((prev) => (prev === 0 ? 1 : prev));
     }
   };
 
   useEffect(() => {
     loadProfile();
   }, []);
-
-  // Increment loadKey once after formData is populated from DB
-  // This forces step components to re-mount with the correct initial data
-  const loadKeyBumped = useRef(false);
-  useEffect(() => {
-    if (!loadKeyBumped.current && formData.email) {
-      loadKeyBumped.current = true;
-      setLoadKey(1);
-    }
-  }, [formData]);
 
   // ─── Upload Resume ────────────────────────────────────────────────────────
 
@@ -281,8 +275,6 @@ export default function ProfileSetupPage() {
 
   const handleLeaveWithoutSaving = async () => {
     setShowUnsavedModal(false);
-    // Reset loadKeyBumped so steps re-mount with fresh data after reload
-    loadKeyBumped.current = false;
     setLoadKey(0);
     await loadProfile();
     setHasUnsavedChanges(false);
@@ -312,9 +304,11 @@ export default function ProfileSetupPage() {
     <div className="min-h-screen bg-[#F0F4F8]">
       <div className="bg-white border-b">
         <div className="max-w-6xl mx-auto px-6 py-4">
-          <Link href="/">
-            <span className="text-2xl font-semibold text-[#0273B1]">CompanyHub</span>
-          </Link>
+          <CompanyHubLogo
+            href="/"
+            textSizeClassName="text-2xl font-semibold tracking-tight"
+            dotClassName="w-5 h-5 -left-1 top-1"
+          />
         </div>
       </div>
 
