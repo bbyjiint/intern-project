@@ -208,6 +208,9 @@ model CompanyProfile {
   about             String?
   location          String?
   province          String?
+  provinceId        String?        @db.Uuid
+  districtId        String?        @db.Uuid
+  subdistrictId     String?        @db.Uuid
   companySize       String?
   logoURL           String?
   recruiterName     String?
@@ -221,6 +224,9 @@ model CompanyProfile {
   Bookmarks         Bookmark[]
   Conversations     Conversation[]
   User              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Province          Province?      @relation(fields: [provinceId], references: [id], onDelete: SetNull)
+  District          District?      @relation(fields: [districtId], references: [id], onDelete: SetNull)
+  Subdistrict       Subdistrict?   @relation(fields: [subdistrictId], references: [id], onDelete: SetNull)
 }
 
 enum AuthProvider {
@@ -454,17 +460,16 @@ model District {
   provinceId String       @db.Uuid
   name       String
   thname     String?
-  code       String?
   postalCode String?
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
   Province   Province     @relation(fields: [provinceId], references: [id], onDelete: Cascade)
   Subdistricts Subdistrict[]
+  CompanyProfiles CompanyProfile[]
 
   @@map("District")
   @@unique([provinceId, name])
   @@index([provinceId])
-  @@index([code])
 }
 
 model Subdistrict {
@@ -472,15 +477,14 @@ model Subdistrict {
   districtId String?   @db.Uuid
   name       String
   thname     String?
-  code       String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   District   District? @relation(fields: [districtId], references: [id], onDelete: Cascade)
+  CompanyProfiles CompanyProfile[]
 
   @@map("Subdistrict")
   @@unique([districtId, name])
   @@index([districtId])
-  @@index([code])
 }
 
 

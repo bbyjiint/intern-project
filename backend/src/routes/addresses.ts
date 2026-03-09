@@ -68,10 +68,8 @@ addressesRouter.get("/districts", async (req, res) => {
         ...(search
           ? {
               OR: [
-                { code: { equals: search, mode: "insensitive" } },
                 { name: { contains: search, mode: "insensitive" } },
                 { thname: { contains: search, mode: "insensitive" } },
-                { code: { contains: search, mode: "insensitive" } },
               ],
             }
           : {}),
@@ -80,26 +78,12 @@ addressesRouter.get("/districts", async (req, res) => {
         id: true,
         name: true,
         thname: true,
-        code: true,
         postalCode: true,
       },
       orderBy: { name: "asc" },
       ...(search ? { take: 200 } : {}),
     });
 
-    // Post-process: If exact code matches exist, prioritize them
-    if (search) {
-      const searchLower = search.toLowerCase().trim();
-      const exactCodeMatches = districts.filter(
-        (dist) => dist.code?.toLowerCase() === searchLower
-      );
-      if (exactCodeMatches.length > 0) {
-        const others = districts.filter(
-          (dist) => dist.code?.toLowerCase() !== searchLower
-        );
-        return res.json({ districts: [...exactCodeMatches, ...others] });
-      }
-    }
 
     return res.json({ districts });
   } catch (error: any) {
@@ -126,10 +110,8 @@ addressesRouter.get("/subdistricts", async (req, res) => {
         ...(search
           ? {
               OR: [
-                { code: { equals: search, mode: "insensitive" } },
                 { name: { contains: search, mode: "insensitive" } },
                 { thname: { contains: search, mode: "insensitive" } },
-                { code: { contains: search, mode: "insensitive" } },
               ],
             }
           : {}),
@@ -138,25 +120,11 @@ addressesRouter.get("/subdistricts", async (req, res) => {
         id: true,
         name: true,
         thname: true,
-        code: true,
       },
       orderBy: { name: "asc" },
       ...(search ? { take: 200 } : {}),
     });
 
-    // Post-process: If exact code matches exist, prioritize them
-    if (search) {
-      const searchLower = search.toLowerCase().trim();
-      const exactCodeMatches = subdistricts.filter(
-        (sub) => sub.code?.toLowerCase() === searchLower
-      );
-      if (exactCodeMatches.length > 0) {
-        const others = subdistricts.filter(
-          (sub) => sub.code?.toLowerCase() !== searchLower
-        );
-        return res.json({ subdistricts: [...exactCodeMatches, ...others] });
-      }
-    }
 
     return res.json({ subdistricts });
   } catch (error: any) {
