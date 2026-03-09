@@ -71,11 +71,7 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
         <div className="p-8">
           {/* Logo */}
           <div className="mb-6">
-            <CompanyHubLogo
-              href="/"
-              textSizeClassName="text-2xl font-semibold tracking-tight"
-              dotClassName="w-5 h-5 -left-1 top-1"
-            />
+            <CompanyHubLogo href="/" />
           </div>
 
           {/* Heading */}

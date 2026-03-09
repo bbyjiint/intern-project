@@ -73,6 +73,10 @@ export interface Certificate {
   url: string
   type?: string
   description?: string
+  issuedBy?: string
+  date?: string
+  tags?: string[]
+  createdAt?: string
 }
 
 export interface ResumeFile {
@@ -173,6 +177,29 @@ export function useProfile() {
         }
       })
       
+      const certificates: Certificate[] = ((profile.files?.certificates || profile.certificates) || []).map((cert: any) => {
+        let parsedDescription: any = {}
+        if (typeof cert.description === 'string' && cert.description.trim().startsWith('{')) {
+          try {
+            parsedDescription = JSON.parse(cert.description)
+          } catch {
+            parsedDescription = {}
+          }
+        }
+
+        return {
+          id: cert.id,
+          name: cert.name,
+          url: cert.url,
+          type: cert.type,
+          description: parsedDescription.descriptionText || cert.description || '',
+          issuedBy: parsedDescription.issuedBy || '',
+          date: parsedDescription.issueDate || '',
+          tags: parsedDescription.tags || [],
+          createdAt: cert.createdAt,
+        }
+      })
+
       const transformed: ProfileData = {
         id: profile.id,
         fullName: profile.fullName,
@@ -185,7 +212,7 @@ export function useProfile() {
         education: education,
         experience: experience,
         projects: profile.projects || [],
-        certificates: profile.certificates || [],
+        certificates,
         resume: profile.resume || (profile.resumeFile || profile.resumeUrl ? {
           name: profile.resumeFile,
           url: profile.resumeUrl,

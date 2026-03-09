@@ -177,7 +177,7 @@ export default function InternAppliedPage() {
         <Sidebar />
 
         {/* Main Content */}
-        <div className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 overflow-y-auto">
+        <div className="layout-container layout-page flex-1 overflow-y-auto">
           {/* Header & Search */}
           <div className="flex flex-col md:flex-row md:items-start justify-between mb-6 gap-4">
             <div>

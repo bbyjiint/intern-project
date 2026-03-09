@@ -436,7 +436,7 @@ export default function FindCompaniesPage() {
 
         {/* ================= MAIN CONTENT ================= */}
         <div className="flex-1 p-6 lg:p-10 overflow-y-auto">
-          <div className="max-w-6xl mx-auto">
+          <div className="layout-container">
             {/* Header Row: Search */}
             <div className="flex justify-end mb-8">
               <div className="relative w-full max-w-md">

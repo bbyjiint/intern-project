@@ -303,23 +303,20 @@ export default function ProfileSetupPage() {
   return (
     <div className="min-h-screen bg-[#F0F4F8]">
       <div className="bg-white border-b">
-        <div className="max-w-6xl mx-auto px-6 py-4">
-          <CompanyHubLogo
-            href="/"
-            textSizeClassName="text-2xl font-semibold tracking-tight"
-            dotClassName="w-5 h-5 -left-1 top-1"
-          />
+        <div className="layout-container layout-page-tight">
+          <CompanyHubLogo href="/" />
         </div>
       </div>
 
-      <div className="max-w-[800px] mx-auto px-6 py-8">
-        <div className="bg-white p-6 rounded-lg shadow mb-4">
-          <h1 className="text-3xl font-bold text-center mb-6">Start building your profile</h1>
-          <ProgressIndicator currentStep={currentStep} totalSteps={5} />
-        </div>
+      <div className="layout-container layout-page">
+        <div className="mx-auto max-w-[800px]">
+          <div className="bg-white p-6 rounded-lg shadow mb-4">
+            <h1 className="text-3xl font-bold text-center mb-6">Start building your profile</h1>
+            <ProgressIndicator currentStep={currentStep} totalSteps={5} />
+          </div>
 
-        <div className="bg-white p-10 rounded-lg shadow">
-          {error && <div className="text-red-500 mb-4">{error}</div>}
+          <div className="bg-white p-10 rounded-lg shadow">
+            {error && <div className="text-red-500 mb-4">{error}</div>}
 
           {/* FIX: key={profileLoaded ? "loaded" : "loading"} forces re-mount
               so each step initialises its local state with the correct data */}
@@ -371,7 +368,7 @@ export default function ProfileSetupPage() {
             />
           )}
 
-          <div className="flex justify-between mt-10 pt-6 border-t">
+            <div className="flex justify-between mt-10 pt-6 border-t">
             <button
               onClick={handlePrevious}
               className="flex items-center px-6 py-3 rounded-lg font-semibold"
@@ -410,6 +407,7 @@ export default function ProfileSetupPage() {
                   Create Profile
                 </button>
               )}
+            </div>
             </div>
           </div>
         </div>

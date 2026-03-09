@@ -40,15 +40,11 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center px-4 sm:px-6 lg:px-8">
+    <div className="layout-container flex min-h-screen items-center justify-center py-8">
       <div className="max-w-md w-full space-y-8">
         {/* Logo */}
         <div className="mb-8">
-          <CompanyHubLogo
-            href="/"
-            textSizeClassName="text-2xl font-semibold tracking-tight"
-            dotClassName="w-5 h-5 -left-1 top-1"
-          />
+          <CompanyHubLogo href="/" />
         </div>
 
         {/* Heading */}

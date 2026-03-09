@@ -99,8 +99,7 @@ export default function InternBookmarkPage() {
         <Sidebar />
 
         {/* Main Content */}
-        <div className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10 overflow-y-auto">
-          
+        <div className="layout-container layout-page flex-1 overflow-y-auto">
           {/* Page Title */}
           <h1 className="text-4xl font-extrabold text-gray-900 mb-8">
             Bookmark

@@ -48,16 +48,12 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4 sm:px-6 lg:px-8">
+    <div className="layout-container flex min-h-screen items-center justify-center py-8">
       <div className="max-w-md w-full">
         <div className="bg-white rounded-lg shadow-xl p-8">
           {/* Logo */}
           <div className="mb-6">
-          <CompanyHubLogo
-            href="/"
-            textSizeClassName="text-2xl font-semibold tracking-tight"
-            dotClassName="w-5 h-5 -left-1 top-1"
-          />
+          <CompanyHubLogo href="/" />
           </div>
 
           {/* Heading */}

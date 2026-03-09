@@ -10,8 +10,8 @@ export default function ContactPage() {
       
       <div className="flex-1">
         {/* Contact Information Section */}
-        <section className="py-24 bg-black text-white">
-          <div className="container mx-auto px-4">
+        <section className="py-16 bg-black text-white">
+          <div className="layout-container">
             <div className="max-w-3xl mx-auto">
               {/* Heading */}
               <h1 className="text-4xl md:text-5xl font-bold mb-16 text-center" style={{ color: '#0273B1' }}>

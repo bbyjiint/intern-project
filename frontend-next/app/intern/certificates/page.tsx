@@ -138,7 +138,7 @@ export default function CertificatesPage() {
       <div className="flex flex-1">
         <Sidebar />
         
-        <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 overflow-y-auto">
+        <div className="layout-container layout-page flex-1 overflow-y-auto">
           {isLoading ? (
             <div className="flex items-center justify-center min-h-[60vh]">
               <div className="w-12 h-12 border-4 border-gray-200 border-t-[#0273B1] rounded-full animate-spin"></div>

@@ -498,7 +498,7 @@ export default function EmployerProfilePage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <EmployerNavbar />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="layout-container layout-page">
           <div className="text-center py-10">
             <p className="text-gray-600">No profile data found. Please complete your profile setup.</p>
             <button
@@ -521,7 +521,17 @@ export default function EmployerProfilePage() {
 
         {/* Main Content */}
         <div className="flex-1 bg-[#E6EBF4]">
-          <div className="mx-auto max-w-[1120px] px-[46px] py-[34px]">
+          <div className="layout-container layout-page">
+            <div className="mb-4 flex justify-end">
+              <button
+                type="button"
+                onClick={() => router.push('/employer/profile-setup')}
+                className="rounded-[8px] border border-[#2563EB] bg-white px-4 py-2 text-sm font-semibold text-[#2563EB] transition hover:bg-[#EFF6FF]"
+              >
+                Go to Company Registration
+              </button>
+            </div>
+
             {/* Welcome Section */}
             <div className="mb-[14px]">
               <h1 className="mb-2 text-[32px] font-bold leading-none tracking-[-0.02em]" style={{ color: '#05060A' }}>

@@ -148,7 +148,7 @@ export default function EmployerDashboardPage() {
 
         {/* Main Content */}
         <div className="flex-1 bg-[#E6EBF4]">
-          <div className="mx-auto max-w-[1240px] px-[32px] py-[34px]">
+          <div className="layout-container layout-page">
           {apiError && (
             <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
               {apiError}

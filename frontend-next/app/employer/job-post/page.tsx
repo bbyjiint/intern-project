@@ -41,6 +41,7 @@ export default function JobPostPage() {
   const [activeFilter, setActiveFilter] = useState<'all' | 'latest' | 'open' | 'closed'>('all')
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [isCreatingJobPost, setIsCreatingJobPost] = useState(false)
+  const [createJobPostError, setCreateJobPostError] = useState<string | null>(null)
 
   const getRelativeTimeLabel = (value: string) => {
     const createdAt = new Date(value)
@@ -59,6 +60,21 @@ export default function JobPostPage() {
     value
       .replace(/[-_]/g, ' ')
       .replace(/\b\w/g, (char) => char.toUpperCase())
+
+  const formatWorkTypeLabel = (value: string | null | undefined) =>
+    value === 'ON_SITE'
+      ? 'On-Site'
+      : value === 'HYBRID'
+      ? 'Hybrid'
+      : value === 'REMOTE'
+      ? 'Remote'
+      : value === 'on-site'
+      ? 'On-Site'
+      : value === 'hybrid'
+      ? 'Hybrid'
+      : value === 'remote'
+      ? 'Remote'
+      : 'On-Site'
 
   const loadJobPosts = useCallback(async () => {
     try {
@@ -173,6 +189,18 @@ export default function JobPostPage() {
     }
   }, [searchParams])
 
+  useEffect(() => {
+    const handleOpenModal = () => {
+      setCreateJobPostError(null)
+      setShowCreateModal(true)
+    }
+
+    window.addEventListener('openCreateJobPostModal', handleOpenModal)
+    return () => {
+      window.removeEventListener('openCreateJobPostModal', handleOpenModal)
+    }
+  }, [])
+
   const filteredJobPosts = jobPosts
     .filter((post) => {
       const query = searchQuery.toLowerCase()
@@ -215,22 +243,45 @@ export default function JobPostPage() {
   }
 
   const handleOpenCreateModal = () => {
+    setCreateJobPostError(null)
     setShowCreateModal(true)
   }
 
   const handleCloseCreateModal = () => {
     setShowCreateModal(false)
     if (searchParams.get('create') === '1') {
-      router.replace('/employer/job-post')
+      if (typeof window !== 'undefined') {
+        window.history.replaceState({}, '', '/employer/job-post')
+      }
     }
   }
 
   const handleCreateJobPost = async (values: CreateJobPostModalValues) => {
     if (isCreatingJobPost) return
     setIsCreatingJobPost(true)
+    setCreateJobPostError(null)
 
     try {
-      await apiFetch('/api/job-posts', {
+      const response = await apiFetch<{
+        success: boolean
+        jobPost: {
+          id: string
+          jobTitle?: string | null
+          workplaceType?: string | null
+          jobType?: string | null
+          allowance?: number | null
+          noAllowance?: boolean | null
+          state?: string | null
+          createdAt?: string | null
+          updatedAt?: string | null
+          locationProvince?: string | null
+          locationDistrict?: string | null
+          Company?: {
+            companyName?: string | null
+            logoURL?: string | null
+          } | null
+        }
+      }>('/api/job-posts', {
         method: 'POST',
         body: JSON.stringify({
           jobTitle: values.jobTitle,
@@ -249,10 +300,43 @@ export default function JobPostPage() {
         }),
       })
 
-      await loadJobPosts()
+      const createdPost = response.jobPost
+      const companyName = createdPost.Company?.companyName || jobPosts[0]?.companyName || 'Company Name'
+      const companyLogoImage = createdPost.Company?.logoURL || jobPosts[0]?.companyLogoImage || ''
+      const companyEmail = jobPosts[0]?.companyEmail || 'info@trinitythai.com'
+      const createdAt = createdPost.createdAt || createdPost.updatedAt || new Date().toISOString()
+      const createdAllowance =
+        createdPost.noAllowance || !createdPost.allowance
+          ? 'No allowance'
+          : `${Number(createdPost.allowance).toLocaleString()} THB`
+
+      const optimisticPost: JobPost = {
+        id: createdPost.id,
+        title: createdPost.jobTitle || values.jobTitle || 'Untitled Job Post',
+        companyName,
+        companyLogo: companyName.substring(0, 2).toUpperCase(),
+        companyLogoImage,
+        companyEmail,
+        location: createdPost.locationProvince || createdPost.locationDistrict || 'Bangkok',
+        workType: formatWorkTypeLabel(createdPost.workplaceType),
+        secondaryTag: createdPost.jobType ? toTitleCase(createdPost.jobType) : 'Internship',
+        applicantsCount: 0,
+        allowance: createdAllowance,
+        postedDate: 'just now',
+        isOpen: createdPost.state !== 'CLOSED',
+        createdAt,
+      }
+
+      setJobPosts((prev) => {
+        const next = [optimisticPost, ...prev.filter((post) => post.id !== optimisticPost.id)]
+        return next
+      })
+
+      void loadJobPosts()
       handleCloseCreateModal()
     } catch (error) {
       console.error('Failed to create job post:', error)
+      setCreateJobPostError(error instanceof Error ? error.message : 'Failed to create job post')
     } finally {
       setIsCreatingJobPost(false)
     }
@@ -265,7 +349,13 @@ export default function JobPostPage() {
         <EmployerSidebar activeItem="job-post" />
 
         <div className="flex-1 bg-[#E6EBF4]">
-          <div className="mx-auto max-w-[1240px] px-[32px] py-[34px]">
+          <div className="layout-container layout-page">
+            {createJobPostError && (
+              <div className="mb-4 rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-[14px] text-[#B91C1C]">
+                {createJobPostError}
+              </div>
+            )}
+
             <div className="mb-[18px] flex items-start justify-between gap-6">
               <div>
                 <h1 className="text-[32px] font-bold leading-none tracking-[-0.02em] text-[#05060A]">

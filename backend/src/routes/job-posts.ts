@@ -229,7 +229,6 @@ jobPostsRouter.get("/job-posts/public", async (req, res) => {
             year: "numeric",
           })
         : "Date not available";
-
       // Extract company logo initials from company name if logoURL is an image
       const companyName = post.Company?.companyName || "Company Name";
       let companyLogo = "TRINITY"; // Default fallback

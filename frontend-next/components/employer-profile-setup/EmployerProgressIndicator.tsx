@@ -11,26 +11,28 @@ export default function EmployerProgressIndicator({ currentStep, totalSteps }: E
   ]
 
   return (
-    <div className="pb-1">
-      <div className="mx-auto flex items-start justify-center">
+    <div className="flex items-center justify-center">
         {steps.map((step, index) => {
           const isActive = step.number === currentStep
           const isCompleted = step.number < currentStep
           const isLast = index === steps.length - 1
 
           return (
-            <div key={step.number} className="flex items-start">
-              <div className="flex w-[136px] flex-col items-center text-center">
+            <div key={step.number} className="flex items-center">
+              <div className="flex w-[144px] flex-col items-center text-center">
                 <div
-                  className="flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 text-[0px] font-semibold transition-colors sm:h-[18px] sm:w-[18px]"
+                  className="flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-semibold leading-none transition-colors"
                   style={{
                     backgroundColor: isActive || isCompleted ? '#0273B1' : '#F8FAFC',
-                    borderColor: isActive || isCompleted ? '#0273B1' : '#CBD5E1',
+                    borderColor: isActive || isCompleted ? '#0273B1' : '#D1D5DB',
+                    color: isActive || isCompleted ? '#FFFFFF' : '#94A3B8',
                   }}
-                />
+                >
+                  {step.number}
+                </div>
                 <span
-                  className="mt-[16px] text-[11px] font-semibold leading-tight"
-                  style={{ color: isActive || isCompleted ? '#0273B1' : '#D1D5DB' }}
+                  className="mt-1.5 max-w-[100px] text-[10px] font-medium leading-tight"
+                  style={{ color: isActive || isCompleted ? '#111827' : '#9CA3AF' }}
                 >
                   {step.label}
                 </span>
@@ -38,16 +40,17 @@ export default function EmployerProgressIndicator({ currentStep, totalSteps }: E
 
               {!isLast && (
                 <div
-                  className="mt-[8px] h-0 w-[56px] border-t-[3px] border-dashed"
+                  className="mx-4 h-[2px] w-[60px]"
                   style={{
-                    borderColor: isCompleted ? '#0273B1' : '#CBD5E1'
+                    background: isCompleted
+                      ? 'repeating-linear-gradient(to right, #0273B1 0, #0273B1 8px, transparent 8px, transparent 16px)'
+                      : 'repeating-linear-gradient(to right, #E5E7EB 0, #E5E7EB 8px, transparent 8px, transparent 16px)'
                   }}
                 />
               )}
             </div>
           )
         })}
-      </div>
     </div>
   )
 }

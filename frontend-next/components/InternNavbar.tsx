@@ -126,7 +126,7 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
       {/* ใช้ Container เดียวกับ Sidebar/Content เพื่อให้เส้นขอบและตำแหน่งตรงกัน */}
-      <div className="w-full px-6 lg:px-8">
+      <div className="layout-container">
         <div className="flex justify-between items-center h-[76px]">
           
           {/* ================= LEFT SECTION: Logo & Menus ================= */}

@@ -152,7 +152,7 @@ export default function SkillsPage() {
         <InternSidebar />
 
         {/* Main Content */}
-        <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 overflow-y-auto">
+        <div className="layout-container layout-page flex-1 overflow-y-auto">
           {/* --- Header Row --- */}
           <div className="flex flex-col lg:flex-row lg:items-start justify-between mb-8 gap-4">
             <div>

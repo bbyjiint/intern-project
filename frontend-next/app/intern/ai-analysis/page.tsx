@@ -197,7 +197,7 @@ export default function AIAnalysisPage() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="layout-container layout-page flex-1">
           {/* Header */}
           <div className="mb-6">
             <h1 className="text-3xl font-bold mb-2" style={{ color: '#1C2D4F' }}>

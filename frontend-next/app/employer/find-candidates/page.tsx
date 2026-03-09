@@ -269,7 +269,7 @@ export default function FindCandidatesPage() {
 
         {/* Main Content */}
         <div className="flex-1">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="layout-container layout-page">
             {apiError && (
               <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
                 {apiError}

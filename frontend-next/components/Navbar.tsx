@@ -21,14 +21,9 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
 
   return (
     <nav className="bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 transition-colors">
-      <div className="max-w-[1600px] mx-auto px-6 lg:px-12 xl:px-16">
+      <div className="layout-container">
         <div className="flex justify-between items-center h-20">
-          <CompanyHubLogo
-            href="/"
-            textColor="#1C2D4F"
-            textSizeClassName="text-2xl font-semibold tracking-tight"
-            dotClassName="w-5 h-5 -left-1 top-1"
-          />
+          <CompanyHubLogo href="/" />
           <div className="hidden md:flex items-center space-x-6">
             <Link
               href="/"

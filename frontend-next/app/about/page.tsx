@@ -12,12 +12,12 @@ export default function AboutPage() {
       <div className="flex-1">
         {/* Hero Section */}
         <section 
-          className="bg-cover bg-center bg-no-repeat h-[400px] text-white py-20 relative"
+          className="bg-cover bg-center bg-no-repeat h-[400px] text-white py-16 relative"
           style={{
             backgroundImage: "url('/image/abousimg.png')"
           }}
         >
-          <div className="container mx-auto px-4 relative z-10">
+          <div className="layout-container relative z-10">
             <div className="flex flex-col justify-center items-center text-center">
               <h1 className="text-5xl font-bold mb-8 mt-5">เกี่ยวกับเรา</h1>
               <div className="max-w-4xl font-bold mt-2">
@@ -33,8 +33,8 @@ export default function AboutPage() {
         </section>
 
         {/* ข้อมูลบริษัท Section */}
-        <section className="py-20 bg-white">
-          <div className="container mx-auto px-4">
+        <section className="py-16 bg-white">
+          <div className="layout-container">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center pr-5">
               {/* Left Side - Team Photo Card */}
               <div className="relative mr-5">
@@ -70,8 +70,8 @@ export default function AboutPage() {
         </section>
 
         {/* วิสัยทัศน์ Section */}
-        <section className="py-20 bg-black text-white relative overflow-visible">
-          <div className="relative max-w-7xl mx-auto flex items-center justify-between px-6 lg:px-12">
+        <section className="py-16 bg-black text-white relative overflow-visible">
+          <div className="layout-container relative flex items-center justify-between">
             {/* ฝั่งข้อความ */}
             <div className="w-full lg:w-1/2 mb-10">
               <h2 className="text-4xl font-bold mb-4">วิสัยทัศน์</h2>
@@ -108,8 +108,8 @@ export default function AboutPage() {
         </section>
 
         {/* พันธกิจ Section */}
-        <section className="py-20 bg-gray-50 min-h-[600px]">
-          <div className="container mx-auto px-4">
+        <section className="py-16 bg-gray-50 min-h-[600px]">
+          <div className="layout-container">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               {/* Left Side - Meeting Photo */}
               <div className="relative">

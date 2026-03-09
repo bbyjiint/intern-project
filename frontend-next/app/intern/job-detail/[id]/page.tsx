@@ -107,7 +107,7 @@ export default function JobDetailPage() {
       <InternNavbar />
 
       {/* Main Container - ตรงกลางหน้าจอ */}
-      <div className="max-w-6xl mx-auto w-full px-4 py-8">
+      <div className="layout-container layout-page">
         
         {/* Back Button */}
         <button

@@ -637,7 +637,7 @@ export default function ViewApplicantsPage() {
         <EmployerSidebar activeItem="applicants" />
 
         <div className="flex-1 bg-[#E6EBF4]">
-          <div className="mx-auto max-w-[1240px] px-[32px] py-[34px]">
+          <div className="layout-container layout-page">
             <div className="mb-[18px] flex items-start justify-between gap-6">
               <div>
                 <h1 className="text-[30px] font-bold leading-none text-black">Applicants &#8250; View Candidates</h1>

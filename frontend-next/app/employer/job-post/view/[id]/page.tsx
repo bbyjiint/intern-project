@@ -167,7 +167,7 @@ export default function EmployerViewPostPage() {
         <EmployerSidebar activeItem="applicants" />
 
         <div className="flex-1 bg-[#E6EBF4]">
-          <div className="mx-auto max-w-[1120px] px-[40px] py-[32px]">
+          <div className="layout-container layout-page">
             <h1 className="mb-[26px] text-[24px] font-bold tracking-[-0.02em] text-[#05060A]">
               Applicants &gt; View Post
             </h1>

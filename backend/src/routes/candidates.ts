@@ -894,6 +894,14 @@ candidatesRouter.post("/certificates", requireAuth, requireRole("CANDIDATE"), (r
     if (issueDate) descriptionData.issueDate = issueDate;
     if (certificateId) descriptionData.certificateId = certificateId;
     if (certificateUrl) descriptionData.certificateUrl = certificateUrl;
+    if ((req as any).body?.description) descriptionData.descriptionText = (req as any).body.description;
+    if ((req as any).body?.tags) {
+      try {
+        descriptionData.tags = JSON.parse((req as any).body.tags);
+      } catch {
+        descriptionData.tags = [];
+      }
+    }
     const description = Object.keys(descriptionData).length > 0 ? JSON.stringify(descriptionData) : null;
 
     const certificate = await prisma.certificateFile.create({

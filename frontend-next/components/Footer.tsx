@@ -4,16 +4,11 @@ import CompanyHubLogo from './CompanyHubLogo'
 export default function Footer() {
   return (
     <footer className="bg-gray-800 text-white mt-auto">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="layout-container py-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
             <div className="mb-4">
-              <CompanyHubLogo
-                href="/"
-                textColor="#FFFFFF"
-                textSizeClassName="text-lg font-semibold tracking-tight"
-                dotClassName="w-4 h-4 -left-1 top-1"
-              />
+              <CompanyHubLogo href="/" />
             </div>
             <p className="text-gray-400">
               Recruiting platform for connecting employers and interns

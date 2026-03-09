@@ -83,7 +83,8 @@ export default function InternProfilePage() {
         <Sidebar />
 
         {/* Main Content */}
-        <div className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-y-auto">
+        <div className="layout-container layout-page flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-4xl">
           {isLoading ? (
             <div className="flex items-center justify-center min-h-[60vh]">
               <div className="text-center">
@@ -105,6 +106,16 @@ export default function InternProfilePage() {
             </div>
           ) : (
             <>
+              <div className="mb-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => router.push('/intern/profile-setup')}
+                  className="rounded-lg border border-[#2563EB] bg-white px-4 py-2 text-sm font-semibold text-[#2563EB] transition hover:bg-[#EFF6FF]"
+                >
+                  Go to Profile Setup
+                </button>
+              </div>
+
               {/* Header */}
               <ProfileHeader 
                 fullName={profileData.fullName || 'User'}
@@ -157,6 +168,7 @@ export default function InternProfilePage() {
               />
             </>
           )}
+          </div>
         </div>
       </div>
     </div>

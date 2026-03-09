@@ -2,64 +2,78 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import CertificatesModal from './CertificatesModal' // ตรวจสอบ path ให้ถูกต้อง
+import { apiFetch } from '@/lib/api'
+import CertificatesModal, { ModalCertificate } from './CertificatesModal'
 
 export interface Certificate {
   id: string
-  name: string // เปลี่ยนจาก title เป็น name ตาม interface ใหม่ที่คุณให้มา
+  name: string
   issuedBy: string
   date: string
   description: string
   tags: string[]
   url?: string
+  createdAt?: string
 }
 
-export default function CertificateSection() {
+interface CertificatesSectionProps {
+  certificates: Certificate[]
+  onRefresh?: () => void | Promise<void>
+}
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5001'
+
+function formatDate(value?: string) {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+export default function CertificateSection({ certificates, onRefresh }: CertificatesSectionProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [currentCert, setCurrentCert] = useState<Certificate | null>(null)
-  
-  // ข้อมูลเริ่มต้น (ตัวอย่าง)
-  const [certificates, setCertificates] = useState<Certificate[]>([
-    {
-      id: '1',
-      name: 'UI/UX Design Fundamentals',
-      issuedBy: 'Interaction Design Foundation',
-      date: '18 January 2024',
-      description: 'Completed foundational training in user interface and user experience design, covering design thinking, user research, wireframing, prototyping, usability testing, and Figma fundamentals.',
-      tags: ['UI Design', 'UX Design', 'Wireframing', 'Prototyping']
-    }
-  ]);
 
-  // เปิด Modal สำหรับเพิ่มใหม่
   const handleAddNew = () => {
     setCurrentCert(null)
     setIsModalOpen(true)
   }
 
-  // เปิด Modal สำหรับแก้ไข
   const handleEdit = (cert: Certificate) => {
     setCurrentCert(cert)
     setIsModalOpen(true)
   }
 
-  // ลบ Certificate
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this certificate?')) {
-      setCertificates(certificates.filter(c => c.id !== id))
+      await apiFetch(`/api/candidates/certificates/${id}`, { method: 'DELETE' })
+      await onRefresh?.()
     }
   }
 
-  // บันทึกข้อมูลจาก Modal
-  const handleSave = (data: any) => {
-    if (currentCert) {
-      // กรณีแก้ไข
-      setCertificates(certificates.map(c => c.id === currentCert.id ? { ...data, id: c.id } : c))
-    } else {
-      // กรณีเพิ่มใหม่
-      const newCert = { ...data, id: Date.now().toString() }
-      setCertificates([newCert, ...certificates])
+  const handleSave = async (data: ModalCertificate) => {
+    const formData = new FormData()
+    if (data.file) {
+      formData.append('file', data.file)
     }
+    formData.append('name', data.name)
+    formData.append('issuedBy', data.issuedBy || '')
+    formData.append('issueDate', data.date || '')
+    formData.append('description', data.description || '')
+    formData.append('tags', JSON.stringify(data.tags || []))
+
+    if (currentCert?.id) {
+      await apiFetch(`/api/candidates/certificates/${currentCert.id}`, { method: 'DELETE' })
+    }
+
+    await apiFetch('/api/candidates/certificates', {
+      method: 'POST',
+      body: formData,
+    })
+
+    await onRefresh?.()
     setIsModalOpen(false)
+    setCurrentCert(null)
   }
 
   return (
@@ -97,17 +111,17 @@ export default function CertificateSection() {
                     {cert.name}
                   </h3>
                   <p className="text-sm text-gray-500 mb-4 flex items-center gap-2">
-                    <span className="font-medium text-gray-700">{cert.issuedBy}</span>
-                    <span className="text-gray-300">|</span>
-                    <span>{cert.date}</span>
+                    <span className="font-medium text-gray-700">{cert.issuedBy || 'Unknown issuer'}</span>
+                    {cert.date ? <span className="text-gray-300">|</span> : null}
+                    <span>{formatDate(cert.date || cert.createdAt)}</span>
                   </p>
                   <p className="text-sm text-gray-600 leading-relaxed mb-5 max-w-3xl">
-                    {cert.description}
+                    {cert.description || 'No description provided.'}
                   </p>
                   
                   {/* Tags */}
                   <div className="flex flex-wrap gap-2 mb-2">
-                    {cert.tags.map((tag) => (
+                    {(cert.tags || []).map((tag) => (
                       <span 
                         key={tag} 
                         className="px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-[11px] font-bold border border-blue-100"
@@ -122,7 +136,7 @@ export default function CertificateSection() {
               {/* Actions */}
               <div className="flex justify-end items-center space-x-3 mt-4 pt-4 border-t border-gray-50">
                 <button 
-                  onClick={() => handleDelete(cert.id)}
+                  onClick={() => void handleDelete(cert.id)}
                   className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                   title="Delete"
                 >
@@ -130,9 +144,16 @@ export default function CertificateSection() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                   </svg>
                 </button>
-                <button className="px-5 py-1.5 border-2 border-blue-600 text-blue-600 rounded-lg text-sm font-bold hover:bg-blue-50 transition-colors">
-                  View File
-                </button>
+                {cert.url ? (
+                  <a
+                    href={cert.url.startsWith('http') ? cert.url : `${API_BASE_URL}${cert.url}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="px-5 py-1.5 border-2 border-blue-600 text-blue-600 rounded-lg text-sm font-bold hover:bg-blue-50 transition-colors"
+                  >
+                    View File
+                  </a>
+                ) : null}
                 <button 
                   onClick={() => handleEdit(cert)}
                   className="px-5 py-1.5 bg-white border-2 border-blue-600 text-blue-600 rounded-lg text-sm font-bold hover:bg-blue-600 hover:text-white transition-all"

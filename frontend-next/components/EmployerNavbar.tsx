@@ -11,6 +11,7 @@ export default function EmployerNavbar() {
   const router = useRouter()
   const isFindCandidatesPage = pathname?.includes('/find-candidates')
   const isMessagesPage = pathname?.includes('/messages')
+  const isJobPostPage = pathname?.startsWith('/employer/job-post')
   const [userData, setUserData] = useState<{ displayName?: string; email?: string } | null>(null)
   const [profileData, setProfileData] = useState<any>(null)
   const [showDropdown, setShowDropdown] = useState(false)
@@ -106,9 +107,18 @@ export default function EmployerNavbar() {
     return name.charAt(0).toUpperCase()
   }
 
+  const handleOpenCreateJobPost = () => {
+    if (typeof window !== 'undefined' && isJobPostPage) {
+      window.dispatchEvent(new CustomEvent('openCreateJobPostModal'))
+      return
+    }
+
+    router.push('/employer/job-post?create=1')
+  }
+
   return (
     <nav className="border-b border-[#E5E7EB] bg-white">
-      <div className="mx-auto max-w-[1440px] px-6 lg:px-10">
+      <div className="layout-container">
         <div className="flex h-[100px] items-center justify-between">
           <div className="flex items-center gap-10">
             <CompanyHubLogo href="/employer/dashboard" />
@@ -168,8 +178,9 @@ export default function EmployerNavbar() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <Link
-              href="/employer/job-post?create=1"
+            <button
+              type="button"
+              onClick={handleOpenCreateJobPost}
               className="flex items-center space-x-2 rounded-[10px] px-4 py-2.5 text-sm font-semibold transition-colors"
               style={{ backgroundColor: '#E3F5FF', color: '#0273B1' }}
               onMouseEnter={(e) => {
@@ -185,7 +196,7 @@ export default function EmployerNavbar() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
               <span>Create Job Post</span>
-            </Link>
+            </button>
             <div className="relative" ref={dropdownRef}>
               <div className="flex items-center gap-3">
                 <div className="hidden text-right md:block">

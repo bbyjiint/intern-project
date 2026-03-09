@@ -134,7 +134,7 @@ export default function RoleSelectionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center px-4 sm:px-6 lg:px-8 transition-colors">
+    <div className="layout-container flex min-h-screen items-center justify-center py-8 bg-gray-50 dark:bg-gray-900 transition-colors">
       <div className="max-w-4xl w-full">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 md:p-12 transition-colors">
           <div className="text-center mb-12">

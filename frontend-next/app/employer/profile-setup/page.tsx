@@ -199,16 +199,12 @@ export default function EmployerProfileSetupPage() {
       {/* Header */}
       <div className="border-b border-[#E5E7EB] bg-[#F3F4F6]">
         <div className="mx-auto flex h-[82px] max-w-[1120px] items-center px-[34px]">
-          <CompanyHubLogo
-            href="/"
-            textSizeClassName="text-[26px] font-semibold tracking-[-0.03em]"
-            dotClassName="h-[18px] w-[18px] -left-[10px] top-0"
-          />
+          <CompanyHubLogo href="/" />
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="mx-auto max-w-[1120px] px-[14px] py-[18px]">
+      <div className="layout-container layout-page-compact">
         <div className="mx-auto mb-[18px] min-h-[193px] max-w-[1008px] rounded-[12px] border border-[#E5E7EB] bg-white px-6 py-[40px] shadow-[0_6px_16px_rgba(148,163,184,0.2)] sm:px-10">
           <h1 className="text-center text-[31px] font-bold leading-none" style={{ color: '#0273B1' }}>
             Company Registration

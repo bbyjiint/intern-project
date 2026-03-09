@@ -11,8 +11,8 @@ export default function JobPostSuccessPage() {
     <div className="min-h-screen" style={{ background: 'linear-gradient(to bottom, #E3F2FD 0%, #FFFFFF 300px)' }}>
       <EmployerNavbar />
       
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="bg-white rounded-lg shadow-md p-12 text-center">
+      <div className="layout-container py-16">
+        <div className="mx-auto max-w-2xl bg-white rounded-lg shadow-md p-12 text-center">
           {/* Success Icon */}
           <div className="flex justify-center mb-6">
             <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center">
@@ -41,7 +41,6 @@ export default function JobPostSuccessPage() {
           >
             Go to Job Post
           </Link>
-        </div>
       </div>
     </div>
   )

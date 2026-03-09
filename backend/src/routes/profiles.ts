@@ -476,8 +476,8 @@ profilesRouter.get("/companies/profile", requireAuth, requireRole("COMPANY"), as
       where: { userId },
       include: {
         User: { select: { email: true } },
-        CompanyEmail: true,
-        CompanyPhone: true,
+        CompanyEmails: true,
+        CompanyPhones: true,
         // Include address relations to get names from IDs
         Province: { select: { id: true, name: true, thname: true } },
         District: { select: { id: true, name: true, thname: true, postalCode: true } },
@@ -488,8 +488,8 @@ profilesRouter.get("/companies/profile", requireAuth, requireRole("COMPANY"), as
     console.log("Company profile found:", companyProfile ? "Yes" : "No");
     if (companyProfile) {
       console.log("Company name:", companyProfile.companyName);
-      console.log("Company emails:", companyProfile.CompanyEmail);
-      console.log("Company phones:", companyProfile.CompanyPhone);
+      console.log("Company emails:", companyProfile.CompanyEmails);
+      console.log("Company phones:", companyProfile.CompanyPhones);
     }
 
     if (!companyProfile) {
@@ -519,8 +519,8 @@ profilesRouter.get("/companies/profile", requireAuth, requireRole("COMPANY"), as
       provinceId: companyProfile.provinceId || "",
       districtId: companyProfile.districtId || "",
       subdistrictId: companyProfile.subdistrictId || "",
-      phoneNumber: companyProfile.CompanyPhone[0]?.phone || "",
-      email: companyProfile.CompanyEmail[0]?.email || companyProfile.User.email,
+      phoneNumber: companyProfile.CompanyPhones[0]?.phone || "",
+      email: companyProfile.CompanyEmails[0]?.email || companyProfile.User.email,
       websiteUrl: "", // Not stored in schema currently
       contactName: companyProfile.recruiterName || "",
       profileImage: companyProfile.logoURL || "",

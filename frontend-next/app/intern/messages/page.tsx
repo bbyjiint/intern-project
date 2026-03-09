@@ -386,7 +386,7 @@ export default function InternMessagesPage() {
     <div className="min-h-screen bg-white flex flex-col">
       <InternNavbar />
       
-      <div className="flex flex-1 h-[calc(100vh-80px)] overflow-hidden">
+      <div className="layout-container flex flex-1 h-[calc(100vh-80px)] overflow-hidden w-full">
         
         {/* ================= LEFT SIDEBAR ================= */}
         <div className="w-[340px] bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
