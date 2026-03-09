@@ -10,6 +10,7 @@ if (!connectionString) {
 }
 
 const adapter = new PrismaPg({ connectionString });
+// Keep a single Prisma client instance backed by the pg adapter.
 const prisma = new PrismaClient({ adapter });
 
 export default prisma;

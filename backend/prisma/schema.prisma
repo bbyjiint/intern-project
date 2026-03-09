@@ -450,6 +450,7 @@ model Province {
   updatedAt DateTime                    @updatedAt
   Districts District[]
   CandidatePreferredProvince CandidatePreferredProvince[]
+  CompanyProfiles CompanyProfile[]
 
   @@map("Province")
   @@index([code])

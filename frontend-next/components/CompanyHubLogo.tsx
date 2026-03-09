@@ -15,8 +15,8 @@ export default function CompanyHubLogo({
   href = '/',
   textColor = '#1C2D4F',
   dotColor = '#3B82F6',
-  textSizeClassName = 'text-[32px] font-semibold tracking-[-0.04em]',
-  dotClassName = 'h-[20px] w-[20px] -left-[12px] top-[1px]',
+  textSizeClassName = 'text-2xl font-semibold tracking-tight',
+  dotClassName = 'w-5 h-5 -left-1 top-1',
   className = '',
 }: CompanyHubLogoProps) {
   return (
