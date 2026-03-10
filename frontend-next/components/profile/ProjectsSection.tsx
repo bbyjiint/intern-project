@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { apiFetch } from '@/lib/api'
 import Link from 'next/link'
 import { Project } from '@/hooks/useProfile'
 import ProjectUploadModal from './ProjectUploadModal'
@@ -19,12 +20,31 @@ export default function ProjectsSection({ projects, onAdd, onEdit, onUpdateProje
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingProject, setEditingProject] = useState<Project | null>(null)
-  
+  const [isDeleting, setIsDeleting] = useState<string | null>(null)
+
   const displayedProjects = projects.slice(0, 3)
 
   const handleOpenUpload = (project: Project) => {
     setSelectedProject(project)
     setIsUploadOpen(true)
+  }
+
+  // ฟังก์ชันสำหรับการลบโปรเจกต์
+  const handleDelete = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete project "${name}"?`)) return
+
+    try {
+      setIsDeleting(id)
+      await apiFetch(`/api/candidates/projects/${id}`, {
+        method: 'DELETE',
+      })
+      onRefresh?.()
+    } catch (err) {
+      console.error('Failed to delete project', err)
+      alert('Failed to delete project. Please try again.')
+    } finally {
+      setIsDeleting(null)
+    }
   }
 
   return (
@@ -53,7 +73,6 @@ export default function ProjectsSection({ projects, onAdd, onEdit, onUpdateProje
       ) : (
         <div className="space-y-8">
           {displayedProjects.map((project) => {
-            // เช็คว่ามีไฟล์/ลิงก์อย่างน้อยหนึ่งอย่างหรือไม่
             const hasAnyFile = !!(project.githubUrl || project.projectUrl || project.fileUrl)
 
             return (
@@ -100,6 +119,22 @@ export default function ProjectsSection({ projects, onAdd, onEdit, onUpdateProje
                   </div>
                   
                   <div className="flex items-center gap-2">
+                    {/* ปุ่มลบ (ถังขยะ) */}
+                    <button
+                      onClick={() => handleDelete(project.id, project.name)}
+                      disabled={isDeleting === project.id}
+                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all border border-transparent hover:border-red-100"
+                      title="Delete Project"
+                    >
+                      {isDeleting === project.id ? (
+                        <div className="w-5 h-5 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      )}
+                    </button>
+
                     <button 
                       onClick={() => handleOpenUpload(project)}
                       className={`px-4 py-1.5 border-2 rounded-lg text-sm font-bold transition-all ${
@@ -155,14 +190,43 @@ export default function ProjectsSection({ projects, onAdd, onEdit, onUpdateProje
           setEditingProject(null)
         }}
         onSave={async (projectData) => {
-          if (editingProject?.id) {
-            // Update existing project
-            await onEdit(editingProject.id)
-          } else {
-            // Add new project
-            await onAdd()
+          try {
+            if (editingProject?.id) {
+              await apiFetch(`/api/candidates/projects/${editingProject.id}`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                  name: projectData.name,
+                  role: projectData.role,
+                  description: projectData.description || '',
+                  startDate: projectData.startDate || '',
+                  endDate: projectData.endDate || '',
+                  relatedSkills: projectData.relatedSkills || [],
+                  githubUrl: projectData.githubUrl || '',
+                  projectUrl: projectData.projectUrl || '',
+                }),
+              })
+            } else {
+              await apiFetch('/api/candidates/projects', {
+                method: 'POST',
+                body: JSON.stringify({
+                  name: projectData.name,
+                  role: projectData.role,
+                  description: projectData.description || '',
+                  startDate: projectData.startDate || '',
+                  endDate: projectData.endDate || '',
+                  relatedSkills: projectData.relatedSkills || [],
+                  githubUrl: projectData.githubUrl || '',
+                  projectUrl: projectData.projectUrl || '',
+                }),
+              })
+            }
+
+            onRefresh?.()
+            setIsModalOpen(false)
+            setEditingProject(null)
+          } catch (err) {
+            console.error('Failed saving project', err)
           }
-          onRefresh?.()
         }}
         editingProject={editingProject}
       />
