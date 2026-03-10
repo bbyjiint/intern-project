@@ -42,7 +42,13 @@ profilesRouter.get("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
           orderBy: { startDate: "desc" },
         },
         UserSkill: {
-          include: { Skills: { select: { name: true } } },
+          select: {
+            rating: true,
+            category: true,
+            Skills: {
+              select: { name: true }
+            }
+          }
         },
         UserProjects: {
           orderBy: { createdAt: "desc" },
@@ -110,8 +116,7 @@ profilesRouter.get("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
         return {
           name: us.Skills?.name || "Unknown Skill",
           level: ratingMap[us.rating || 1] || "beginner",
-          // Note: category and usedIn are not stored in UserSkill schema
-          // TODO: Add category field to UserSkill model and junction tables for usedIn if needed
+          category: us.category
         };
       }),
       projects: candidateProfile.UserProjects.map((project) => ({
@@ -426,8 +431,7 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
               candidateId: candidateProfile.id,
               skillId: skillRecord.id,
               rating: ratingMap[skill.level] || null,
-              // Note: category and usedIn fields are ignored (not in UserSkill schema)
-              // TODO: Add category field to UserSkill model and junction tables for usedIn if needed
+              category: (skill.category || "TECHNICAL").toUpperCase(),
             },
           });
         }

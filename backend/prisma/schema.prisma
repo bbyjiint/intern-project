@@ -56,12 +56,16 @@ model CompanyPhone {
 }
 
 model Skills {
-  id        String      @id @default(uuid()) @db.Uuid
-  name      String      @unique
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
+  id        String         @id @default(uuid()) @db.Uuid
+  name      String         @unique
+
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
   UserSkill UserSkill[]
+
 }
+
 
 model University {
   id                  String                @id @default(uuid()) @db.Uuid
@@ -97,7 +101,7 @@ model User {
   password         String?
   passwordReset    String?
   role             UserRole?
-  socialID         String            @unique
+  socialID         String?            @unique
   id               String            @id @default(uuid()) @db.Uuid
   CandidateProfile CandidateProfile?
   CompanyProfile   CompanyProfile?
@@ -108,13 +112,22 @@ model UserSkill {
   candidateId String           @db.Uuid
   skillId     String           @db.Uuid
   rating      Int?
+  category    SkillCategory    @default(TECHNICAL)
+
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
+
   Profile     CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   Skills      Skills           @relation(fields: [skillId], references: [id], onDelete: Cascade)
 
   @@unique([candidateId, skillId])
   @@index([skillId])
+  @@index([category])
+}
+
+enum SkillCategory {
+  TECHNICAL
+  BUSINESS
 }
 
 model WorkHistory {
@@ -161,7 +174,7 @@ model CandidateUniversity {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  CandidateProfile CandidateProfile @relation(fields: [candidateId], references: [id])
+  CandidateProfile CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   University       University       @relation(fields: [universityId], references: [id])
 
   @@index([candidateId])
@@ -169,7 +182,7 @@ model CandidateUniversity {
 }
 
 model CandidateProfile {
-  id                      String                      @id @db.Uuid
+  id                      String                      @id @default(uuid()) @db.Uuid
   userId                  String                      @unique @db.Uuid
   fullName                String?
   desiredPosition         String?
@@ -202,7 +215,7 @@ model CandidateProfile {
 }
 
 model CompanyProfile {
-  id                String         @id @db.Uuid
+  id                String         @id @default(uuid()) @db.Uuid
   userId            String         @unique @db.Uuid
   companyName       String
   about             String?
@@ -480,6 +493,7 @@ model Subdistrict {
   districtId String?   @db.Uuid
   name       String
   thname     String?
+  code       String? 
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
   District   District? @relation(fields: [districtId], references: [id], onDelete: Cascade)
