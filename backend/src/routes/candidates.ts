@@ -223,69 +223,78 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
 candidatesRouter.get("/", requireAuth, requireRole("COMPANY"), async (req, res) => {
   const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
 
-  const candidates = await prisma.candidateProfile.findMany({
-    where: q
-      ? {
-        OR: [
-          { fullName: { contains: q, mode: "insensitive" } },
-          { desiredPosition: { contains: q, mode: "insensitive" } },
-          { User: { email: { contains: q, mode: "insensitive" } } },
-        ],
-      }
-      : undefined,
-    include: {
-      User: { select: { email: true } },
-      CandidateUniversity: {
-        include: { University: { select: { name: true, province: true } } }
+  try {
+    const candidates = await prisma.candidateProfile.findMany({
+      where: q
+        ? {
+            OR: [
+              { fullName: { contains: q, mode: "insensitive" } },
+              { desiredPosition: { contains: q, mode: "insensitive" } },
+              { User: { email: { contains: q, mode: "insensitive" } } },
+            ],
+          }
+        : undefined,
+      select: {
+        id: true,
+        fullName: true,
+        desiredPosition: true,
+        bio: true,
+        User: { select: { email: true } },
+        CandidateUniversity: {
+          orderBy: [{ isCurrent: "desc" }, { updatedAt: "desc" }],
+          take: 1,
+          select: {
+            degreeName: true,
+            yearOfStudy: true,
+            isCurrent: true,
+            University: { select: { name: true, province: true } },
+          },
+        },
+        UserSkill: {
+          select: {
+            Skills: { select: { name: true } },
+          },
+        },
       },
-      UserSkill: { include: { Skills: { select: { name: true } } } },
-    },
-    take: 50,
-  });
+      take: 50,
+    });
 
-  const items = candidates.map((c) => {
-    const name = c.fullName ?? c.User.email;
+    const items = candidates.map((c) => {
+      const name = c.fullName ?? c.User.email;
+      const primaryEdu = c.CandidateUniversity[0] ?? null;
+      const uni = primaryEdu?.University?.name ?? null;
+      const location = primaryEdu?.University?.province ?? null;
+      const skills = c.UserSkill.map((us) => us.Skills.name);
 
-    // Pick the primary education record (current one or latest by endDate)
-    const primaryEdu = c.CandidateUniversity[0] ?? null;
+      let graduationDate: string | null = null;
+      if (primaryEdu?.isCurrent) {
+        graduationDate = "Present";
+      } else if (primaryEdu?.yearOfStudy) {
+        graduationDate = primaryEdu.yearOfStudy;
+      }
 
-    const uni = primaryEdu?.University?.name ?? null;
+      return {
+        id: c.id,
+        name,
+        role: c.desiredPosition ?? "Intern",
+        university: uni ?? "Unknown University",
+        major: primaryEdu?.degreeName ?? null,
+        location: location ?? null,
+        graduationDate,
+        skills,
+        initials: initialsFromName(name),
+        email: c.User.email,
+        about: c.bio ?? "",
+      };
+    });
 
-    const location = primaryEdu?.University?.province ?? null;
-
-    const skills = c.UserSkill.map((us: typeof c.UserSkill[0]) => us.Skills.name);
-
-    // derive graduation date from endDate or yearOfStudy/current flag
-    const endDate = primaryEdu?.endDate ?? null;
-    let graduationDate: string | null = null;
-    if (endDate) {
-      graduationDate = formatGradDate(endDate);
-    } else if (primaryEdu?.isCurrent) {
-      graduationDate = "Present";
-    } else if (primaryEdu?.yearOfStudy) {
-      graduationDate = primaryEdu.yearOfStudy;
-    }
-
-    // Major: derive ONLY from CandidateUniversity.degreeName.
-    // CandidateProfile should not be used as a source of education details.
-    const major = primaryEdu?.degreeName ?? null;
-
-    return {
-      id: c.id,
-      name,
-      role: c.desiredPosition ?? "Intern",
-      university: uni ?? "Unknown University",
-      major,
-      location: location ?? null,
-      graduationDate,
-      skills,
-      initials: initialsFromName(name),
-      email: c.User.email,
-      about: c.bio ?? "",
-    };
-  });
-
-  return res.json({ candidates: items });
+    return res.json({ candidates: items });
+  } catch (error: any) {
+    console.error("Error fetching candidates list:", error);
+    return res.status(500).json({
+      error: error.message || "Failed to fetch candidates",
+    });
+  }
 });
 
 // Get full candidate profile by ID (for companies to view)
