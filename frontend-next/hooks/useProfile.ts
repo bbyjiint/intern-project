@@ -91,6 +91,7 @@ export interface Skill {
   name: string
   category: 'technical' | 'business'
   rating?: number
+  level?: string;
   linkedToExperience?: string
 }
 
@@ -176,6 +177,18 @@ export function useProfile() {
           linkedToExperience: skill.linkedToExperience,
         }
       })
+
+      const rawCerts = profile.CertificateFile || profile.certificates || [];
+      const mappedCertificates: Certificate[] = rawCerts.map((cert: any) => ({
+        id: cert.id,
+        name: cert.name,
+        url: cert.url || '',
+        type: cert.type,
+        description: cert.description,
+        issuedBy: cert.issuedBy,
+        issueDate: cert.issueDate,
+        relatedSkills: cert.relatedSkills || []
+      }))
       
       const certificates: Certificate[] = ((profile.files?.certificates || profile.certificates) || []).map((cert: any) => {
         let parsedDescription: any = {}

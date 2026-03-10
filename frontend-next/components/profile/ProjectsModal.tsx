@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { apiFetch } from '@/lib/api'
 
 export interface ProjectData {
   id?: string
@@ -25,12 +26,6 @@ interface ProjectsModalProps {
 const MONTH_NAMES = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
-
-const AVAILABLE_SKILLS = [
-  "JavaScript", "TypeScript", "React", "Next.js", "Node.js",
-  "Python", "Java", "C++", "SQL", "Tableau",
-  "Figma", "Excel", "Power BI", "HTML/CSS",
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -184,6 +179,10 @@ function MonthYearPicker({
 // ─────────────────────────────────────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────────────────────────────────────
+interface MasterSkill {
+  id: string;
+  name: string;
+}
 
 export default function ProjectsModal({ isOpen, onClose, onSave, editingProject }: ProjectsModalProps) {
   const [formData, setFormData] = useState<ProjectData>({
@@ -197,7 +196,14 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
     projectUrl: '',
   })
   const [selectedSkill, setSelectedSkill] = useState('')
-  const [errorMsg, setErrorMsg] = useState('')
+  const [errorMsg, setErrorMsg] = useState('') // State สำหรับเก็บข้อความแจ้งเตือน
+
+  const [availableSkills, setAvailableSkills] = useState<MasterSkill[]>([])
+  const [isLoadingSkills, setIsLoadingSkills] = useState(false)
+
+  // สร้าง Ref สำหรับเรียกเปิดปฏิทิน
+  const startPickerRef = useRef<HTMLInputElement>(null)
+  const endPickerRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (isOpen) {
@@ -225,6 +231,53 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
     }
   }, [editingProject, isOpen])
 
+  useEffect(() => {
+    if (isOpen && availableSkills.length === 0) {
+      const fetchMasterSkills = async () => {
+        try {
+          setIsLoadingSkills(true)
+          const data = await apiFetch<{ skills: MasterSkill[] }>('/api/skills')
+          setAvailableSkills(data.skills || [])
+        } catch (error) {
+          console.error("Failed to fetch master skills:", error)
+        } finally {
+          setIsLoadingSkills(false)
+        }
+      }
+      fetchMasterSkills()
+    }
+  }, [isOpen, availableSkills.length])
+
+  const handleDateInput = (e: React.ChangeEvent<HTMLInputElement>, field: 'startDate' | 'endDate') => {
+    setErrorMsg(''); // ล้าง Error เมื่อมีการพิมพ์/เลือกวันที่
+
+    const rawValue = e.target.value;
+
+    if (rawValue.includes('-')) {
+      const [year, month] = rawValue.split('-');
+      setFormData({ ...formData, [field]: `${month}/${year}` });
+      return;
+    }
+
+    let value = rawValue.replace(/\D/g, '')
+    if (value.length > 6) value = value.slice(0, 6)
+
+    if (value.length >= 3) {
+      value = `${value.slice(0, 2)}/${value.slice(2)}`
+    }
+    setFormData({ ...formData, [field]: value })
+  }
+
+  const formatToMonthValue = (dateStr: string) => {
+    if (dateStr.includes('/')) {
+      const [m, y] = dateStr.split('/');
+      if (y && m && y.length === 4) return `${y}-${m.padStart(2, '0')}`;
+    }
+    return '';
+  }
+
+  if (!isOpen) return null
+
   const handleAddSkill = () => {
     if (selectedSkill && !formData.relatedSkills.includes(selectedSkill)) {
       setFormData(prev => ({ 
@@ -248,8 +301,8 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
     if (
       !formData.name.trim() || 
       !formData.role?.trim() || 
-      !formData.startDate.trim() || 
-      !formData.endDate.trim() || 
+      !formData.startDate?.trim() ||
+      !formData.endDate?.trim() ||
       !formData.description?.trim()
     ) {
       setErrorMsg('Please fill in all required fields.')
@@ -272,8 +325,8 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
     // 3. เตรียม Data ส่งกลับ (แปลงเป็น DisplayDate "Jan 2024" ตาม ProjectsSection)
     const dataToSave: ProjectData = {
       ...formData,
-      startDate: toDisplayDate(formData.startDate),
-      endDate: toDisplayDate(formData.endDate),
+      startDate: toDisplayDate(formData.startDate || ''),
+      endDate: toDisplayDate(formData.endDate || ''),
     }
 
     onSave(dataToSave)
@@ -332,12 +385,18 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
           <div className="grid grid-cols-2 gap-4">
             <div className="relative">
               <label className="mb-1.5 block text-sm font-semibold text-[#0273B1]">Start Date *</label>
-              <MonthYearPicker value={formData.startDate} onChange={(v) => setFormData(prev => ({ ...prev, startDate: v }))} />
+              <MonthYearPicker 
+                value={formData.startDate || ''} 
+                onChange={(v) => setFormData(prev => ({ ...prev, startDate: v }))} 
+              />
             </div>
 
             <div className="relative">
               <label className="mb-1.5 block text-sm font-semibold text-[#0273B1]">End Date *</label>
-              <MonthYearPicker value={formData.endDate} onChange={(v) => setFormData(prev => ({ ...prev, endDate: v }))} />
+              <MonthYearPicker 
+                value={formData.endDate || ''} 
+                onChange={(v) => setFormData(prev => ({ ...prev, endDate: v }))} 
+              />
             </div>
           </div>
 
@@ -360,11 +419,12 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
               <select
                 value={selectedSkill}
                 onChange={(e) => setSelectedSkill(e.target.value)}
-                className="flex-1 rounded-xl border border-gray-200 px-4 py-2 text-sm bg-white outline-none text-gray-700"
+                className="flex-1 rounded-xl border border-gray-200 px-4 py-2 focus:border-blue-500 focus:outline-none text-sm text-gray-500 bg-white"
+                disabled={isLoadingSkills}
               >
-                <option value="">Select skill</option>
-                {AVAILABLE_SKILLS.map(skill => (
-                  <option key={skill} value={skill}>{skill}</option>
+                <option value="">{isLoadingSkills ? "Loading skills..." : "Select skill"}</option>
+                {availableSkills.map(skill => (
+                  <option key={skill.id} value={skill.name}>{skill.name}</option>
                 ))}
               </select>
               <button

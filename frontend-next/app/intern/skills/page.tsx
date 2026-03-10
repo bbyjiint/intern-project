@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import InternNavbar from "@/components/InternNavbar";
 import InternSidebar from "@/components/InternSidebar";
 import SkillsModal, { SkillData } from "@/components/profile/SkillsModal";
+import { apiFetch } from "@/lib/api"; // เพิ่ม Import apiFetch
+import { useProfile } from "@/hooks/useProfile";
 
-// --- Types & Interfaces ---
 type ProficiencyLevel = "Beginner" | "Intermediate" | "Advanced";
 type VerificationStatus = "Not Verified" | "Verified";
 
@@ -17,59 +18,53 @@ interface Skill {
   category: string;
 }
 
-// --- Mock Data ---
-const mockSkills: Skill[] = [
-  {
-    id: "1",
-    name: "Python",
-    status: "Not Verified",
-    level: "Beginner",
-    category: "Technical Skill",
-  },
-  {
-    id: "2",
-    name: "JavaScript",
-    status: "Verified",
-    level: "Intermediate",
-    category: "Technical Skill",
-  },
-  {
-    id: "3",
-    name: "HTML",
-    status: "Verified",
-    level: "Advanced",
-    category: "Technical Skill",
-  },
-  {
-    id: "4",
-    name: "Excel",
-    status: "Verified",
-    level: "Advanced",
-    category: "Business Skills",
-  },
-];
-
 export default function SkillsPage() {
-  const [skills, setSkills] = useState<Skill[]>(mockSkills);
-  
-  // Filter States
+  const [skills, setSkills] = useState<Skill[]>([]); // เอา mockSkills ออก เริ่มต้นเป็น Array ว่าง
+  const [isLoading, setIsLoading] = useState(true); // เพิ่ม State โหลด
+  const { profileData, refetch, isLoading: profileLoading } = useProfile();
+
   const [filterTab, setFilterTab] = useState<string>("All");
-  const [categoryFilter, setCategoryFilter] = useState<string>("Select Category");
+  const [categoryFilter, setCategoryFilter] =
+    useState<string>("Select Category");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSkill, setEditingSkill] = useState<SkillData | null>(null);
 
-  // ฟังก์ชันเปิด Modal แบบ Add
+  useEffect(() => {
+    if (profileLoading) {
+      setIsLoading(true);
+      return;
+    }
+
+    if (profileData && profileData.skills) {
+      const mappedSkills = profileData.skills.map((s: any): Skill => {
+        // แปลง level จาก DB ให้ตัวพิมพ์ใหญ่ตรงกับ Frontend
+        let levelStr: ProficiencyLevel = "Beginner";
+        // รองรับกรณีที่ Backend ส่งมาเป็น Rating (1, 2, 3) หรือ String
+        if (s.level === 'intermediate' || s.level === 'Intermediate' || s.rating === 2) levelStr = "Intermediate";
+        if (s.level === 'advanced' || s.level === 'Advanced' || s.rating === 3) levelStr = "Advanced";
+
+        return {
+          id: s.id,
+          name: s.name || s.skill?.name || "Unknown Skill", // รองรับโครงสร้าง DB
+          category: s.category || "Technical Skill",
+          level: levelStr,
+          status: "Not Verified", // ค่าจำลอง
+        };
+      });
+      
+      setSkills(mappedSkills);
+      setIsLoading(false);
+    }
+  }, [profileData, profileLoading]);
+
   const handleAddClick = () => {
     setEditingSkill(null);
     setIsModalOpen(true);
   };
 
-  // ฟังก์ชันเปิด Modal แบบ Edit
   const handleEditClick = (skill: Skill) => {
-    // Map ข้อมูลให้ตรงกับที่ Modal คาดหวัง
     setEditingSkill({
       id: skill.id,
       name: skill.name,
@@ -79,65 +74,69 @@ export default function SkillsPage() {
     setIsModalOpen(true);
   };
 
-  // ฟังก์ชันกด Save จาก Modal
-  const handleSaveSkill = (savedSkill: SkillData) => {
-    if (editingSkill?.id) {
-      // โหมดแก้ไข (Edit)
-      setSkills((prev) =>
-        prev.map((skill) =>
-          skill.id === editingSkill.id
-            ? {
-                ...skill,
-                name: savedSkill.name,
-                category: savedSkill.category,
-                level: savedSkill.level as ProficiencyLevel,
-              }
-            : skill
-        )
-      );
-    } else {
-      // โหมดเพิ่มใหม่ (Add)
-      const newSkill: Skill = {
-        id: Date.now().toString(), // จำลอง ID ใหม่
-        name: savedSkill.name,
-        category: savedSkill.category,
-        level: savedSkill.level as ProficiencyLevel,
-        status: "Not Verified", // ค่าเริ่มต้นเมื่อเพิ่มใหม่
-      };
-      setSkills([...skills, newSkill]);
+  /// 2. ฟังก์ชันกด Save แบบยิงเข้า DB
+  const handleSaveSkill = async (savedSkill: SkillData) => {
+    try {
+      if (editingSkill?.id) {
+        // --- อัปเดตข้อมูล (PUT) ---
+        await apiFetch(`/api/candidates/skills/${editingSkill.id}`, {
+          method: "PUT",
+          body: JSON.stringify(savedSkill),
+        });
+      } else {
+        // --- เพิ่มข้อมูลใหม่ (POST) ---
+        await apiFetch(`/api/candidates/skills`, {
+          method: "POST",
+          body: JSON.stringify(savedSkill),
+        });
+      }
+      
+      // 💡 จุดสำคัญ: ดึงข้อมูลใหม่จาก DB สดๆ ทันที เพื่อให้ได้ UUID ของจริง
+      await refetch(); 
+      setIsModalOpen(false);
+
+    } catch (error) {
+      console.error("Failed to save skill:", error);
+      alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
     }
-    setIsModalOpen(false);
   };
 
-  // --- Logic สำหรับ Filter ข้อมูล ---
+  const handleDelete = async (id: string) => {
+    if (confirm("Are you sure you want to delete this skill?")) {
+      try {
+        await apiFetch(`/api/candidates/skills/${id}`, { method: "DELETE" });
+
+        setSkills(skills.filter((s) => s.id !== id));
+
+        await refetch();
+      } catch (error) {
+        console.error("Failed to delete skill:", error);
+        alert("Failed to delete skill.");
+      }
+    }
+  };
+
+  // --- Logic สำหรับ Filter ข้อมูล (เหมือนเดิม) ---
   const filteredSkills = skills.filter((skill) => {
-    // 1. ตรวจสอบ Search Query
-    const matchSearch = skill.name.toLowerCase().includes(searchQuery.toLowerCase());
-
-    // 2. ตรวจสอบ Tab Filter (All, Not Verified, Verified, Certificate, Project)
+    const matchSearch = skill.name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
     let matchTab = true;
-    if (filterTab !== "All") {
-      matchTab = skill.status === filterTab; // ตอนนี้ Mock Data มีแค่ Verified / Not Verified
-    }
-
-    // 3. ตรวจสอบ Category Dropdown Filter
+    if (filterTab !== "All") matchTab = skill.status === filterTab;
     let matchCategory = true;
-    if (categoryFilter !== "Select Category") {
+    if (categoryFilter !== "Select Category")
       matchCategory = skill.category === categoryFilter;
-    }
-
     return matchSearch && matchTab && matchCategory;
   });
 
-  // ฟังก์ชันดึงสีและเปอร์เซ็นต์ความกว้างของ Progress Bar
   const getLevelStyles = (level: ProficiencyLevel) => {
     switch (level) {
       case "Beginner":
-        return { color: "#68B383", width: "33.33%" }; // สีเขียว
+        return { color: "#68B383", width: "33.33%" };
       case "Intermediate":
-        return { color: "#3B82F6", width: "66.66%" }; // สีฟ้า
+        return { color: "#3B82F6", width: "66.66%" };
       case "Advanced":
-        return { color: "#8B5CF6", width: "100%" }; // สีม่วง
+        return { color: "#8B5CF6", width: "100%" };
       default:
         return { color: "#E5E7EB", width: "0%" };
     }
@@ -227,7 +226,7 @@ export default function SkillsPage() {
             {/* Right Filters */}
             <div className="flex items-center gap-3">
               <div className="relative">
-                <select 
+                <select
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
                   className="appearance-none pl-4 pr-10 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-500 focus:outline-none w-48 shadow-sm cursor-pointer"
@@ -251,7 +250,7 @@ export default function SkillsPage() {
                   />
                 </svg>
               </div>
-              <button 
+              <button
                 onClick={() => {
                   setFilterTab("All");
                   setCategoryFilter("Select Category");
@@ -385,6 +384,25 @@ export default function SkillsPage() {
                         {skill.category}
                       </span>
                       <div className="flex gap-3">
+                        <button
+                          className="text-gray-400 hover:text-red-500 transition-colors mr-1"
+                          onClick={() => handleDelete(skill.id)}
+                          title="Delete Project"
+                        >
+                          <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            />
+                          </svg>
+                        </button>
                         <button className="px-5 py-1.5 border border-[#3B82F6] text-[#3B82F6] text-sm font-bold rounded-lg hover:bg-blue-50 transition-colors shadow-sm">
                           Skill Test
                         </button>

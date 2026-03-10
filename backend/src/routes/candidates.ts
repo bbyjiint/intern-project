@@ -174,6 +174,7 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
           3: "advanced",
         };
         return {
+          id: us.id,
           name: us.Skills.name,
           level: ratingMap[us.rating || 1] || "beginner",
           rating: us.rating || 1,
@@ -1089,49 +1090,159 @@ candidatesRouter.post("/resumes", requireAuth, requireRole("CANDIDATE"), (req: A
 });
 
 // Delete a resume
-candidatesRouter.delete("/resumes/:id", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
+candidatesRouter.delete("/skills/:id", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
   const userId = req.user!.id;
-  const resumeId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
+  const userSkillId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
 
   try {
     const candidateId = await getCandidateIdForUser(userId);
 
-    // Get resume with file URL
-    const existingResume = await prisma.candidateResume.findUnique({
-      where: { id: resumeId },
+    // 1. ตรวจสอบว่ามี Skill นี้อยู่จริงและเป็นของ Candidate คนนี้
+    const existingSkill = await prisma.userSkill.findUnique({
+      where: { id: userSkillId },
+      select: { candidateId: true },
     });
 
-    if (!existingResume) {
-      return res.status(404).json({ error: "Resume not found" });
+    if (!existingSkill) {
+      return res.status(404).json({ error: "Skill not found" });
     }
 
-    // Verify ownership
-    if (existingResume.candidateId !== candidateId) {
-      return res.status(403).json({ error: "You don't have permission to delete this resume" });
+    if (existingSkill.candidateId !== candidateId) {
+      return res.status(403).json({ error: "You don't have permission to delete this skill" });
     }
 
-    // Delete file from storage (S3 or local)
-    try {
-      const fileKey = fileStorage.extractKeyFromUrl(existingResume.url);
-      if (fileKey) {
-        await fileStorage.deleteFile(fileKey);
-      }
-    } catch (storageError: any) {
-      console.error("Error deleting file from storage:", storageError);
-      // Continue with database deletion even if storage deletion fails
-    }
-
-    // Delete from database
-    await prisma.candidateResume.delete({
-      where: { id: resumeId },
+    // 2. สั่งลบ
+    await prisma.userSkill.delete({
+      where: { id: userSkillId },
     });
 
-    return res.json({ success: true, message: "Resume deleted successfully" });
+    return res.json({ success: true, message: "Skill deleted successfully" });
   } catch (e: any) {
     if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
       return res.status(404).json({ error: "Candidate profile not found" });
     }
-    console.error("Error deleting resume:", e);
-    return res.status(500).json({ error: e?.message || "Failed to delete resume" });
+    console.error("Error deleting skill:", e);
+    return res.status(500).json({ error: e?.message || "Failed to delete skill" });
+  }
+});
+
+candidatesRouter.post("/skills", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
+  const userId = req.user!.id;
+  const { name, category, level } = req.body ?? {};
+
+  if (!name || !level) {
+    return res.status(400).json({ error: "Skill name and proficiency level are required" });
+  }
+
+  try {
+    const candidateId = await getCandidateIdForUser(userId);
+
+    let skill = await prisma.skills.findFirst({
+      where: { 
+        name: { equals: name, mode: 'insensitive' } 
+      },
+    });
+
+    if (!skill) {
+      skill = await prisma.skills.create({
+        data: { name: name },
+      });
+    }
+
+    let rating = 1;
+    if (level === "Intermediate") rating = 2;
+    else if (level === "Advanced") rating = 3;
+
+    const existingUserSkill = await prisma.userSkill.findFirst({
+      where: {
+        candidateId: candidateId,
+        skillId: skill.id
+      }
+    });
+
+    if (existingUserSkill) {
+      const updatedSkill = await prisma.userSkill.update({
+        where: { id: existingUserSkill.id },
+        data: { rating: rating }
+      });
+      return res.status(200).json({ message: "Skill updated", skill: updatedSkill });
+    }
+
+    const userSkill = await prisma.userSkill.create({
+      data: {
+        id: randomUUID(), 
+        candidateId: candidateId,
+        skillId: skill.id,
+        rating: rating,
+      },
+    });
+
+    return res.status(201).json({ message: "Skill added successfully", skill: userSkill });
+  } catch (e: any) {
+    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
+      return res.status(404).json({ error: "Candidate profile not found" });
+    }
+    console.error("Error adding skill:", e);
+    return res.status(500).json({ error: e?.message || "Failed to add skill" });
+  }
+});
+
+candidatesRouter.put("/skills/:id", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
+  const userId = req.user!.id;
+  const userSkillId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
+  const { name, category, level } = req.body ?? {}; // 👈 เพิ่มการรับ name เข้ามา
+
+  if (!level) {
+    return res.status(400).json({ error: "Proficiency level is required" });
+  }
+
+  try {
+    const candidateId = await getCandidateIdForUser(userId);
+
+    const existingUserSkill = await prisma.userSkill.findUnique({
+      where: { id: userSkillId },
+      select: { candidateId: true, skillId: true },
+    });
+
+    if (!existingUserSkill) {
+      return res.status(404).json({ error: "Skill not found" });
+    }
+
+    if (existingUserSkill.candidateId !== candidateId) {
+      return res.status(403).json({ error: "You don't have permission to update this skill" });
+    }
+
+    // 💡 ถ้ามีการแก้ชื่อ Skill ต้องไปหาใน Master Skill หรือสร้างใหม่
+    let finalSkillId = existingUserSkill.skillId;
+    if (name) {
+      let masterSkill = await prisma.skills.findFirst({
+        where: { name: { equals: name, mode: 'insensitive' } },
+      });
+      if (!masterSkill) {
+        masterSkill = await prisma.skills.create({ data: { name: name } });
+      }
+      finalSkillId = masterSkill.id;
+    }
+
+    let rating = 1;
+    if (level === "Intermediate") rating = 2;
+    else if (level === "Advanced") rating = 3;
+
+    const updatedSkill = await prisma.userSkill.update({
+      where: { id: userSkillId },
+      data: {
+        skillId: finalSkillId, // 👈 อัปเดต skillId ด้วย เผื่อเปลี่ยนชื่อสกิล
+        rating: rating,
+        category: category, // เอาคอมเมนต์ออก ถ้าตาราง UserSkill มีช่อง category
+      },
+    });
+
+    return res.json({ message: "Skill updated successfully", skill: updatedSkill });
+  } catch (e: any) {
+    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
+      return res.status(404).json({ error: "Candidate profile not found" });
+    }
+    console.error("Error updating skill:", e);
+    return res.status(500).json({ error: e?.message || "Failed to update skill" });
   }
 });

@@ -1,23 +1,37 @@
 'use client'
 
 import { Skill } from '@/hooks/useProfile'
-import Link from 'next/link' // เพิ่มตัวนี้
-import { useRouter } from 'next/navigation' // เพิ่มตัวนี้
+import Link from 'next/link' 
+import { useRouter } from 'next/navigation' 
 
 interface SkillsSectionProps {
   skills: Skill[]
-  onAdd?: () => void // ปรับเป็น optional เผื่อกรณีใช้ router แทน
+  onAdd?: () => void 
   onEdit?: (id: string) => void
 }
 
 export default function SkillsSection({ skills, onAdd, onEdit }: SkillsSectionProps) {
-  const router = useRouter() // เรียกใช้งาน router
-  const technicalSkills = skills.filter(s => s.category === 'technical')
-  const businessSkills = skills.filter(s => s.category === 'business')
+  const router = useRouter() 
+  
+  // 💡 จัดกลุ่มตาม Category ใหม่ที่ตั้งไว้ใน DB
+  const technicalSkills = skills.filter(s => s.category === 'Technical Skill')
+  const businessSkills = skills.filter(s => s.category === 'Business Skills')
 
   const SkillItem = ({ skill }: { skill: Skill }) => {
-    const percentage = skill.rating ? (skill.rating / 10) * 100 : 33
-    const isVerified = skill.rating && skill.rating > 5
+    // 💡 ปรับการคำนวณ % ตาม Rating (1, 2, 3) หรือ Level ("Beginner", "Intermediate", "Advanced")
+    let percentage = 33.33;
+    let color = "#68B383"; // เขียว Beginner
+    
+    if (skill.rating === 2 || skill.level === "Intermediate") {
+      percentage = 66.66;
+      color = "#3B82F6"; // ฟ้า Intermediate
+    } else if (skill.rating === 3 || skill.level === "Advanced") {
+      percentage = 100;
+      color = "#8B5CF6"; // ม่วง Advanced
+    }
+
+    // ค่าสมมติว่าถ้าผ่านการ Test ค่อยเป็น true (ปรับได้ตาม Business Logic ของคุณ)
+    const isVerified = false; 
 
     return (
       <div className="mb-6 last:mb-0">
@@ -47,20 +61,21 @@ export default function SkillsSection({ skills, onAdd, onEdit }: SkillsSectionPr
           </div>
         </div>
 
+        {/* 💡 Progress Bar ปรับสีตามความเก่ง */}
         <div className="relative w-full h-2.5 bg-gray-100 rounded-full overflow-hidden mb-1 flex">
             <div className="absolute inset-0 flex">
-                <div className="h-full w-1/3 border-r border-white/30"></div>
-                <div className="h-full w-1/3 border-r border-white/30"></div>
-                <div className="h-full w-1/3"></div>
+                <div className="h-full w-1/3 border-r border-white/50 z-20"></div>
+                <div className="h-full w-1/3 border-r border-white/50 z-20"></div>
+                <div className="h-full w-1/3 z-20"></div>
             </div>
             <div 
-                className="h-full bg-blue-600 rounded-full transition-all duration-500 relative z-10"
-                style={{ width: `${percentage}%` }}
+                className="h-full rounded-full transition-all duration-500 relative z-10"
+                style={{ width: `${percentage}%`, backgroundColor: color }}
             ></div>
         </div>
         
-        <p className="text-[11px] text-gray-400">
-            Level: {percentage <= 33 ? 'Beginner' : percentage <= 66 ? 'Intermediate' : 'Advanced'}
+        <p className="text-[11px] font-bold mt-1" style={{ color: color }}>
+            Level: {skill.level || (percentage <= 33.33 ? 'Beginner' : percentage <= 66.66 ? 'Intermediate' : 'Advanced')}
         </p>
       </div>
     )
@@ -76,7 +91,6 @@ export default function SkillsSection({ skills, onAdd, onEdit }: SkillsSectionPr
           <h2 className="text-xl font-bold text-gray-900">Skills</h2>
         </div>
         
-        {/* แก้ไขปุ่ม Add/Edit Skill */}
         <button
           onClick={() => router.push('/intern/skills')}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm transition-colors shadow-md shadow-blue-100 active:scale-95"
@@ -86,6 +100,7 @@ export default function SkillsSection({ skills, onAdd, onEdit }: SkillsSectionPr
       </div>
 
       <div className="space-y-4">
+        {/* Technical Skills */}
         <div className="bg-gray-50/50 border border-gray-100 rounded-xl p-6">
           <h3 className="text-lg font-bold text-gray-800 mb-6">Technical Skills</h3>
           {technicalSkills.length > 0 ? (
@@ -95,6 +110,7 @@ export default function SkillsSection({ skills, onAdd, onEdit }: SkillsSectionPr
           )}
         </div>
 
+        {/* Business Skills */}
         <div className="bg-gray-50/50 border border-gray-100 rounded-xl p-6">
           <h3 className="text-lg font-bold text-gray-800 mb-6">Business Skills</h3>
           {businessSkills.length > 0 ? (
@@ -105,7 +121,6 @@ export default function SkillsSection({ skills, onAdd, onEdit }: SkillsSectionPr
         </div>
       </div>
 
-      {/* แก้ไข Footer Link ด้วย Link component */}
       <div className="mt-6 border-t border-gray-50 pt-4">
         <Link 
           href="/intern/skills" 

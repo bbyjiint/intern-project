@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { apiFetch } from "@/lib/api"; // นำเข้า apiFetch
 
-// Types
 export type ProficiencyLevel = "Beginner" | "Intermediate" | "Advanced" | "";
 
 export interface SkillData {
@@ -19,41 +19,53 @@ interface SkillsModalProps {
   editingSkill?: SkillData | null;
 }
 
-export default function SkillsModal({
-  isOpen,
-  onClose,
-  onSave,
-  editingSkill,
-}: SkillsModalProps) {
-  const [formData, setFormData] = useState<SkillData>({
-    name: "",
-    category: "",
-    level: "",
-  });
-  
-  // State สำหรับเก็บข้อความแจ้งเตือน Error
-  const [errorMsg, setErrorMsg] = useState("");
+// Interface สำหรับรับข้อมูล Master Skill จาก DB
+interface MasterSkill {
+  id: string;
+  name: string;
+}
 
-  // อัปเดตข้อมูลเมื่อมีการแก้ไข (Edit Mode) หรือรีเซ็ตเมื่อเปิดใหม่ (Add Mode)
+export default function SkillsModal({ isOpen, onClose, onSave, editingSkill }: SkillsModalProps) {
+  const [formData, setFormData] = useState<SkillData>({ name: "", category: "", level: "" });
+  const [errorMsg, setErrorMsg] = useState("");
+  
+  // State เก็บรายชื่อ Skill ทั้งหมดจาก DB
+  const [availableSkills, setAvailableSkills] = useState<MasterSkill[]>([]);
+  const [isLoadingSkills, setIsLoadingSkills] = useState(false);
+
+  // ดึงรายชื่อ Skill ตอน Modal เปิดครั้งแรก
   useEffect(() => {
-    if (editingSkill) {
-      setFormData(editingSkill);
-    } else {
-      setFormData({ name: "", category: "", level: "" });
+    if (isOpen && availableSkills.length === 0) {
+      const fetchMasterSkills = async () => {
+        try {
+          setIsLoadingSkills(true);
+          // TODO: เปลี่ยน URL ไปที่ Endpoint ดึง Master Skills ของคุณ
+          const data = await apiFetch<{ skills: MasterSkill[] }>('/api/skills'); 
+          setAvailableSkills(data.skills || []);
+        } catch (error) {
+          console.error("Failed to fetch master skills:", error);
+        } finally {
+          setIsLoadingSkills(false);
+        }
+      };
+      fetchMasterSkills();
     }
-    setErrorMsg(""); // ล้าง Error ทุกครั้งที่เปิด Modal ใหม่
+  }, [isOpen, availableSkills.length]);
+
+  useEffect(() => {
+    if (editingSkill) setFormData(editingSkill);
+    else setFormData({ name: "", category: "", level: "" });
+    setErrorMsg(""); 
   }, [editingSkill, isOpen]);
 
   if (!isOpen) return null;
 
   const handleSubmit = () => {
-    // Validation: ตรวจสอบว่ากรอกข้อมูลครบทุกช่องหรือไม่
     if (!formData.name || !formData.category || !formData.level) {
       setErrorMsg("Please fill in all required fields and select a proficiency level.");
       return;
     }
-    
-    setErrorMsg(""); // ล้าง Error
+    setErrorMsg(""); 
     onSave(formData);
   };
 
@@ -106,14 +118,17 @@ export default function SkillsModal({
                   setErrorMsg(""); // ล้าง Error เมื่อเริ่มกรอก
                 }}
                 className="w-full appearance-none px-4 py-3 bg-white border border-gray-200 rounded-lg text-[15px] text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm cursor-pointer"
+                disabled={isLoadingSkills}
               >
-                <option value="" disabled>Select skill</option>
-                <option value="Python">Python</option>
-                <option value="JavaScript">JavaScript</option>
-                <option value="HTML">HTML</option>
-                <option value="React">React</option>
-                <option value="Figma">Figma</option>
-                <option value="Excel">Excel</option>
+                <option value="" disabled>
+                  {isLoadingSkills ? "Loading skills..." : "Select skill"}
+                </option>
+                {/* Loop ดึงข้อมูลจาก DB มาแสดง แทนการ Hardcode */}
+                {availableSkills.map((skill) => (
+                  <option key={skill.id} value={skill.name}>
+                    {skill.name}
+                  </option>
+                ))}
               </select>
               <svg className="w-5 h-5 text-gray-300 absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />

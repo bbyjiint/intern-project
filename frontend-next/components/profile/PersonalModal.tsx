@@ -29,9 +29,9 @@ export default function PersonalModal({ isOpen, profile, onClose, onSave }: Pers
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
-    gender: 'Female',
+    gender: '',
     dateOfBirth: '',
-    nationality: 'Thai',
+    nationality: '',
     phoneNumber: '',
     email: '',
     bio: '',
@@ -50,11 +50,11 @@ export default function PersonalModal({ isOpen, profile, onClose, onSave }: Pers
         firstName: names[0] || '',
         lastName: names.slice(1).join(' ') || '',
         // @ts-ignore
-        gender: profile.gender || 'Female',
+        gender: profile.gender || '',
         // @ts-ignore
         dateOfBirth: profile.dateOfBirth || '',
         // @ts-ignore
-        nationality: profile.nationality || 'Thai',
+        nationality: profile.nationality || '',
         phoneNumber: profile.phoneNumber || '',
         email: profile.contactEmail || '',
         bio: profile.professionalSummary || profile.bio || '',

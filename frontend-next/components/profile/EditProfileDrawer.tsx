@@ -327,7 +327,7 @@ export default function EditProfileDrawer({
         
         const skillsForAPI = updatedSkills.map(skill => ({
           name: skill.name,
-          level: skill.rating >= 7 ? 'advanced' : skill.rating >= 4 ? 'intermediate' : 'beginner',
+          level: (skill.rating || 0) >= 7 ? 'advanced' : (skill.rating || 0) >= 4 ? 'intermediate' : 'beginner',
           category: skill.category,
         }))
         

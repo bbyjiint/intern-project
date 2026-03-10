@@ -308,6 +308,8 @@ async function main() {
           universityIndex: 0,
           degreeName: "Bachelor of Science in Computer Science",
           educationLevel: "BACHELOR" as const,
+          fieldOfStudy: "Computer Science", // เพิ่มใหม่
+          yearOfStudy: "3", // เพิ่มใหม่
           startDate: new Date("2022-09-01"),
           endDate: new Date("2026-05-31"),
           isCurrent: true,
@@ -353,6 +355,8 @@ async function main() {
           universityIndex: 1,
           degreeName: "Bachelor of Science in Data Science",
           educationLevel: "BACHELOR" as const,
+          fieldOfStudy: "Data Science", // เพิ่มใหม่
+          yearOfStudy: "4", // เพิ่มใหม่
           startDate: new Date("2021-09-01"),
           endDate: new Date("2025-05-31"),
           isCurrent: true,
@@ -393,6 +397,8 @@ async function main() {
           universityIndex: 2,
           degreeName: "Bachelor of Arts in Design",
           educationLevel: "BACHELOR" as const,
+          fieldOfStudy: "Design", // เพิ่มใหม่
+          yearOfStudy: "2", // เพิ่มใหม่
           startDate: new Date("2023-09-01"),
           endDate: new Date("2027-05-31"),
           isCurrent: true,
@@ -430,6 +436,8 @@ async function main() {
           universityIndex: 3,
           degreeName: "Bachelor of Business Administration in Marketing",
           educationLevel: "BACHELOR" as const,
+          fieldOfStudy: "Marketing", // เพิ่มใหม่
+          yearOfStudy: "3", // เพิ่มใหม่
           startDate: new Date("2022-09-01"),
           endDate: new Date("2026-05-31"),
           isCurrent: true,
@@ -470,6 +478,8 @@ async function main() {
           universityIndex: 4,
           degreeName: "Bachelor of Business Administration in Finance",
           educationLevel: "BACHELOR" as const,
+          fieldOfStudy: "Finance", // เพิ่มใหม่
+          yearOfStudy: "4", // เพิ่มใหม่
           startDate: new Date("2021-09-01"),
           endDate: new Date("2025-05-31"),
           isCurrent: true,
@@ -529,15 +539,11 @@ async function main() {
       data: {
         id: candidateId,
         userId: user.id,
-        studentCode: candidateData.studentCode,
         fullName: candidateData.fullName,
         contactEmail: candidateData.contactEmail,
         phoneNumber: candidateData.phoneNumber,
         desiredPosition: candidateData.desiredPosition,
         bio: candidateData.bio,
-        major: candidateData.major,
-        studyYear: candidateData.studyYear,
-        universityId: university.id,
         updatedAt: now,
       },
     });
@@ -552,6 +558,8 @@ async function main() {
           universityId: eduUniversity.id,
           degreeName: eduData.degreeName,
           educationLevel: eduData.educationLevel,
+          fieldOfStudy: eduData.fieldOfStudy,
+          yearOfStudy: eduData.yearOfStudy,
           startDate: eduData.startDate,
           endDate: eduData.endDate,
           isCurrent: eduData.isCurrent,

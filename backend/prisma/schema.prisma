@@ -25,6 +25,9 @@ model CertificateFile {
   name        String
   url         String
   type        String?
+  issuedBy        String?      
+  issueDate       DateTime?    
+  relatedSkills   String[]     @default([]) 
   description String?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
@@ -167,9 +170,8 @@ model CandidateUniversity {
   degreeName     String
   fieldOfStudy   String
   yearOfStudy    String
-  gpa            Float?
-  endDate        DateTime?   // ← เพิ่ม
-  isCurrent      Boolean     @default(false)  // ← เพิ่ม
+  gpa            Float? 
+  isCurrent      Boolean     @default(false)  
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

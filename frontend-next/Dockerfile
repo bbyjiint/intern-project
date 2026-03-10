@@ -1,6 +1,7 @@
 # Use Node.js LTS version
 FROM node:20-alpine
 
+RUN apk add --no-cache libc6-compat
 # Set working directory
 WORKDIR /app
 
