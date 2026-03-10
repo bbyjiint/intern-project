@@ -37,7 +37,7 @@ messagesRouter.get('/conversations', requireAuth, async (req: AuthedRequest, res
             include: {
               User: true,
               CandidateUniversity: {
-                orderBy: [{ isCurrent: 'desc' }, { endDate: 'desc' }],
+                orderBy: [{ isCurrent: 'desc' }, { updatedAt: 'desc' }],
                 take: 1,
                 include: { University: { select: { name: true } } },
               },
@@ -215,7 +215,7 @@ messagesRouter.post('/conversations', requireAuth, requireRole('COMPANY'), async
         Candidate: {
           include: {
             CandidateUniversity: {
-              orderBy: [{ isCurrent: 'desc' }, { endDate: 'desc' }],
+              orderBy: [{ isCurrent: 'desc' }, { updatedAt: 'desc' }],
               take: 1,
               include: { University: { select: { name: true } } },
             },
@@ -284,7 +284,7 @@ messagesRouter.post('/conversations', requireAuth, requireRole('COMPANY'), async
         Candidate: {
           include: {
             CandidateUniversity: {
-              orderBy: [{ isCurrent: 'desc' }, { endDate: 'desc' }],
+              orderBy: [{ isCurrent: 'desc' }, { updatedAt: 'desc' }],
               take: 1,
               include: { University: { select: { name: true } } },
             },
