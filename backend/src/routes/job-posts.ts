@@ -184,6 +184,16 @@ jobPostsRouter.get("/job-posts/public", async (req, res) => {
           select: {
             companyName: true,
             logoURL: true,
+            User: {
+              select: {
+                email: true,
+              },
+            },
+          },
+        },
+        _count: {
+          select: {
+            Applications: true,
           },
         },
       },
@@ -253,15 +263,19 @@ jobPostsRouter.get("/job-posts/public", async (req, res) => {
         id: post.id,
         jobTitle: post.jobTitle || "Untitled Job",
         companyName,
+        companyEmail: post.Company?.User?.email || "",
         companyLogo,
         location,
         workType: workplaceTypeMap[post.workplaceType] || "On-site",
+        roleType: post.jobType || "Internship",
         jobType: post.jobType || "internship",
         seniorityLevel: "student", // Default, can be enhanced later
         field: "IT&Software", // Default, can be enhanced later
         positions: 1, // Default, can be enhanced later
+        applicants: post._count?.Applications || 0,
         allowance: allowanceStr,
         skills: [], // Can be enhanced later if skills are stored
+        timeAgo: relativeDateLabel(post.createdAt),
         postedDate,
         jobDescription: post.jobDescription || "",
         jobSpecification: post.jobSpecification || "",
@@ -362,6 +376,149 @@ jobPostsRouter.get("/job-posts/:id", requireAuth, requireRole("COMPANY"), async 
     console.error("Error fetching job post:", error);
     return res.status(500).json({
       error: error.message || "Failed to fetch job post",
+    });
+  }
+});
+
+// Get a single public job post by ID
+jobPostsRouter.get("/job-posts/public/:id", async (req, res) => {
+  const id = typeof (req.params as any).id === "string" ? (req.params as any).id : (req.params as any).id?.[0];
+  if (!id) return res.status(400).json({ error: "id is required" });
+
+  try {
+    const jobPost = await prisma.jobPost.findFirst({
+      where: {
+        id,
+        state: "PUBLISHED",
+      },
+      include: {
+        Company: {
+          include: {
+            User: {
+              select: {
+                email: true,
+              },
+            },
+            CompanyEmails: {
+              orderBy: { createdAt: "asc" },
+              take: 1,
+            },
+            CompanyPhones: {
+              orderBy: { createdAt: "asc" },
+              take: 1,
+            },
+          },
+        },
+        _count: {
+          select: {
+            Applications: true,
+          },
+        },
+      },
+    });
+
+    if (!jobPost) {
+      return res.status(404).json({ error: "Job post not found" });
+    }
+
+    const periodMap: Record<string, string> = {
+      MONTH: "Month",
+      WEEK: "Week",
+      DAY: "Day",
+    };
+
+    const workplaceTypeMap: Record<string, string> = {
+      ON_SITE: "On-site",
+      HYBRID: "Hybrid",
+      REMOTE: "Remote",
+    };
+
+    const locationParts = [jobPost.locationDistrict, jobPost.locationProvince].filter(Boolean);
+    const location = locationParts.length > 0 ? locationParts.join(", ") : "Location not specified";
+
+    let allowanceStr = "Not specified";
+    if (jobPost.noAllowance) {
+      allowanceStr = "No allowance";
+    } else if (jobPost.allowance && jobPost.allowancePeriod) {
+      allowanceStr = `${jobPost.allowance} THB/${periodMap[jobPost.allowancePeriod] || jobPost.allowancePeriod}`;
+    } else if (jobPost.allowance) {
+      allowanceStr = `${jobPost.allowance} THB`;
+    }
+
+    const companyName = jobPost.Company?.companyName || "Company Name";
+    const companyEmail =
+      jobPost.Company?.CompanyEmails?.[0]?.email ||
+      jobPost.Company?.User?.email ||
+      "";
+    const contactPhone = jobPost.Company?.CompanyPhones?.[0]?.phone || "Not provided";
+    const contactDepartment = jobPost.Company?.recruiterPosition || jobPost.Company?.recruiterName || "Hiring Team";
+    const addressParts = [
+      jobPost.Company?.addressDetails,
+      jobPost.Company?.province,
+      jobPost.Company?.postcode,
+    ].filter(Boolean);
+    const address = addressParts.length > 0 ? addressParts.join(", ") : "Address not specified";
+
+    let companyLogo = "TRINITY";
+    if (jobPost.Company?.logoURL) {
+      if (
+        jobPost.Company.logoURL.startsWith("data:image") ||
+        jobPost.Company.logoURL.startsWith("http") ||
+        jobPost.Company.logoURL.includes("base64")
+      ) {
+        companyLogo = jobPost.Company.logoURL;
+      } else {
+        companyLogo = jobPost.Company.logoURL;
+      }
+    } else if (companyName) {
+      companyLogo = companyName.substring(0, 7).toUpperCase().replace(/\s+/g, "");
+    }
+
+    const descriptionLines = (jobPost.jobDescription || "")
+      .split(/\r?\n+/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    const qualificationLines = (jobPost.jobSpecification || "")
+      .split(/\r?\n+/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    const publicJobPost = {
+      id: jobPost.id,
+      postedDate: jobPost.createdAt
+        ? new Date(jobPost.createdAt).toLocaleDateString("en-GB", {
+            day: "numeric",
+            month: "long",
+            year: "numeric",
+          })
+        : "Date not available",
+      jobTitle: jobPost.jobTitle || "Untitled Job",
+      companyName,
+      companyEmail,
+      companyLogo,
+      workType: workplaceTypeMap[jobPost.workplaceType] || "On-site",
+      roleType: jobPost.jobType || "Internship",
+      positionsAvailable: 1,
+      applicants: jobPost._count?.Applications || 0,
+      jobDescription: descriptionLines,
+      qualifications: qualificationLines,
+      gpa: "Not specified",
+      allowance: allowanceStr,
+      location,
+      workingDaysHours: "Not specified",
+      companyDescription: jobPost.Company?.about || "No company description available.",
+      contactPhone,
+      contactDepartment,
+      address,
+      mapEmbedUrl: "",
+    };
+
+    return res.json({ jobPost: publicJobPost });
+  } catch (error: any) {
+    console.error("Error fetching public job post:", error);
+    return res.status(500).json({
+      error: error.message || "Failed to fetch public job post",
     });
   }
 });

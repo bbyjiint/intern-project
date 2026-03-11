@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import InternNavbar from "@/components/InternNavbar";
+import { apiFetch } from "@/lib/api";
 
 // 1. Interface สำหรับหน้า Detail (เตรียมพร้อมต่อ Backend)
 interface JobDetailData {
@@ -28,62 +29,33 @@ interface JobDetailData {
   mapEmbedUrl: string;
 }
 
-// 2. Mock Data (จำลองข้อมูลให้ตรงกับในรูป)
-const mockJobDetail: JobDetailData = {
-  id: "1",
-  postedDate: "3 January 2026",
-  jobTitle: "รับนักศึกษาฝึกงาน AI Engineer",
-  companyName: "Trinity Securities Co., Ltd.",
-  companyEmail: "info@trinitythai.com",
-  workType: "Hybrid",
-  roleType: "AI Developer",
-  positionsAvailable: 3,
-  jobDescription: [
-    "ร่วมออกแบบและพัฒนาโมดูลด้านปัญญาประดิษฐ์ เพื่อประยุกต์ใช้ในโครงการของบริษัท",
-    "วิเคราะห์และช่วยทีมในการเตรียมและจัดการชุดข้อมูล (Data Cleaning, Preprocessing)",
-    "ทำ Web Scraping / Data Crawling เพื่อรวบรวมข้อมูลจากเว็บไซต์และ API",
-    "สร้างและทดสอบโมเดล Machine Learning / Deep Learning สำหรับการประมวลผลภาพ เสียง หรือข้อความ",
-  ],
-  qualifications: [
-    "นักศึกษาระดับปริญญาตรีสาขา Computer Science, Engineering, Data Science, AI หรือสาขาที่เกี่ยวข้อง",
-    "มีพื้นฐานในการเขียนโปรแกรมภาษา Python และเข้าใจพื้นฐาน AI / ML",
-    "เข้าใจพื้นฐานของ Machine Learning / Deep Learning",
-    "เข้าใจหลักการทำงานของ NLP (Tokenization, Embedding, Sentiment Analysis เบื้องต้น)",
-    "ค้นคว้าเทคโนโลยีใหม่ ๆ และสามารถ เรียนรู้ด้วยตนเอง (Self-learning)",
-  ],
-  gpa: "> 3.50",
-  allowance: "5,000 - 7,000 THB",
-  location: "Bangkok",
-  workingDaysHours: "Monday–Friday, 9:30 AM – 4:00 PM",
-  companyDescription:
-    "Trinity Securities Co., Ltd. is a leading Thai securities company providing comprehensive financial and investment services. The company offers brokerage services, investment advisory, wealth management, and capital market solutions for individual and institutional clients.",
-  contactPhone: "+66 2 343 9500",
-  contactDepartment: "Human Resources Department",
-  address:
-    "90 Ratchadaphisek Road, 25th Floor, Lumphini, Pathum Wan, Bangkok 10330, Thailand",
-  mapEmbedUrl:
-    "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3875.5946115984633!2d100.56066291527715!3d13.742962390352528!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x30e29eef26f33273%3A0xc345f2bd6de02cf6!2sTrinity%20Securities%20Co.%2C%20Ltd.!5e0!3m2!1sen!2sth!4v1675234567890!5m2!1sen!2sth",
-};
-
 export default function JobDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const jobId = params?.id; // ดึง ID จาก URL (เช่น /intern/job/1)
+  const jobId = typeof params?.id === "string" ? params.id : Array.isArray(params?.id) ? params.id[0] : undefined;
 
   const [job, setJob] = useState<JobDetailData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // 3. จำลองการดึงข้อมูลจาก Backend
   useEffect(() => {
     const fetchJobDetail = async () => {
-      // TODO: อนาคตให้ใช้ apiFetch ดึงข้อมูลจาก Backend โดยใช้ jobId
-      // const response = await apiFetch(`/api/jobs/${jobId}`);
-      
-      // ตอนนี้ใช้ Mock Data ไปก่อน
-      setTimeout(() => {
-        setJob(mockJobDetail);
+      if (!jobId) {
+        setError("Job ID is required");
         setIsLoading(false);
-      }, 500); // ดีเลย์จำลองการโหลด
+        return;
+      }
+
+      try {
+        setError(null);
+        const response = await apiFetch<{ jobPost: JobDetailData }>(`/api/job-posts/public/${jobId}`);
+        setJob(response.jobPost);
+      } catch (err: any) {
+        console.error("Failed to load job detail:", err);
+        setError(err?.message || "Failed to load job detail");
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     fetchJobDetail();
@@ -95,6 +67,17 @@ export default function JobDetailPage() {
         <InternNavbar />
         <div className="flex flex-1 items-center justify-center">
           <div className="w-12 h-12 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#F4F7FA] flex flex-col">
+        <InternNavbar />
+        <div className="flex flex-1 items-center justify-center text-red-500">
+          {error}
         </div>
       </div>
     );
@@ -216,13 +199,19 @@ export default function JobDetailPage() {
             
             {/* Logo */}
             <div className="flex justify-center mb-6">
-              <div className="w-24 h-24 bg-[#F8F9FA] border border-gray-100 rounded-2xl flex items-center justify-center shadow-sm">
-                <div className="w-12 h-12 relative flex items-end justify-center">
-                  <div className="absolute inset-0 bg-[#1C2D4F]" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }}></div>
-                  <div className="absolute inset-[3px] bg-[#E31837]" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }}></div>
-                  <span className="text-[6px] font-bold text-white z-10 mb-1">TRINITY</span>
+              {job.companyLogo && job.companyLogo.startsWith("http") ? (
+                <img
+                  src={job.companyLogo}
+                  alt={`${job.companyName} logo`}
+                  className="w-24 h-24 object-cover rounded-2xl border border-gray-100 shadow-sm"
+                />
+              ) : (
+                <div className="w-24 h-24 bg-[#F8F9FA] border border-gray-100 rounded-2xl flex items-center justify-center shadow-sm">
+                  <span className="text-sm font-bold text-gray-700 px-2 text-center break-all">
+                    {job.companyLogo || job.companyName.slice(0, 7).toUpperCase()}
+                  </span>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Company Name */}
@@ -261,17 +250,23 @@ export default function JobDetailPage() {
                 {job.address}
               </p>
               {/* Google Maps Embed Placeholder */}
-              <div className="w-full h-48 bg-gray-200 rounded-xl overflow-hidden border border-gray-200">
-                <iframe
-                  src={job.mapEmbedUrl}
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  allowFullScreen={false}
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                ></iframe>
-              </div>
+              {job.mapEmbedUrl ? (
+                <div className="w-full h-48 bg-gray-200 rounded-xl overflow-hidden border border-gray-200">
+                  <iframe
+                    src={job.mapEmbedUrl}
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    allowFullScreen={false}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  ></iframe>
+                </div>
+              ) : (
+                <div className="w-full h-48 bg-gray-100 rounded-xl overflow-hidden border border-gray-200 flex items-center justify-center text-sm text-gray-500">
+                  Map not available
+                </div>
+              )}
             </div>
 
           </div>
