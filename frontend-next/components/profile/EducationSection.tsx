@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Education } from '@/hooks/useProfile'
 import EducationModal from './EducationModal'
 
@@ -14,6 +14,21 @@ interface EducationSectionProps {
 export default function EducationSection({ education, onAdd, onEdit, onRefresh }: EducationSectionProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingEducation, setEditingEducation] = useState<Education | null>(null)
+
+    // 💡 เพิ่มส่วนนี้เข้าไปครับ
+    useEffect(() => {
+      if (isModalOpen) {
+        document.body.style.overflow = "hidden";
+      } else {
+        document.body.style.overflow = "auto";
+      }
+  
+      // คืนค่าเดิมเมื่อปิดหรือเปลี่ยนหน้า
+      return () => {
+        document.body.style.overflow = "auto";
+      };
+    }, [isModalOpen]);
+  
 
   return (
     <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-100">

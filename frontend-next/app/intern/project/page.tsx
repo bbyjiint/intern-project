@@ -94,6 +94,20 @@ export default function ProjectPage() {
       setProjects(mappedProjects.reverse());
     }
   }, [profileData]);
+  
+  // 💡 แก้ไข: ป้องกันการ Scroll พื้นหลังเมื่อ Modal เปิด
+  useEffect(() => {
+    if (isModalOpen || isUploadModalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+
+    // Cleanup function: เพื่อคืนค่าเดิมเมื่อ Component นี้ถูกถอดออก (unmount)
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [isModalOpen, isUploadModalOpen]);
 
   // เช็คสถานะการเข้าสู่ระบบ
   useEffect(() => {

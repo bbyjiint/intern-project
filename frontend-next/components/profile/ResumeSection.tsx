@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { apiFetch } from '@/lib/api'
 import ResumeModal from './ResumeModal'
 
@@ -26,6 +26,21 @@ function formatResumeDate(value?: string) {
 export default function ResumeSection({ resumeData, onRefresh }: ResumeSectionProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
+
+    // 💡 เพิ่มส่วนนี้เข้าไปครับ
+    useEffect(() => {
+      if (isModalOpen) {
+        document.body.style.overflow = "hidden";
+      } else {
+        document.body.style.overflow = "auto";
+      }
+  
+      // คืนค่าเดิมเมื่อปิดหรือเปลี่ยนหน้า
+      return () => {
+        document.body.style.overflow = "auto";
+      };
+    }, [isModalOpen]);
+  
 
   const resumeHref = resumeData?.url
     ? (resumeData.url.startsWith('http') ? resumeData.url : `${API_BASE_URL}${resumeData.url}`)

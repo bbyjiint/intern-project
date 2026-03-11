@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { ProfileData } from '@/hooks/useProfile'
 import PersonalModal from './PersonalModal'
 
@@ -11,6 +11,20 @@ interface PersonalInfoCardProps {
 
 export default function PersonalInfoCard({ profile, onRefresh }: PersonalInfoCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false)
+
+  // 💡 เพิ่มส่วนนี้เข้าไปครับ
+  useEffect(() => {
+    if (isModalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+
+    // คืนค่าเดิมเมื่อปิดหรือเปลี่ยนหน้า
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [isModalOpen]);
   
   const stats = useMemo(() => {
     const skills = profile.skills || []
