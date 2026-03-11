@@ -160,11 +160,29 @@ export default function PersonalModal({ isOpen, profile, onClose, onSave }: Pers
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-[11px] font-bold uppercase text-slate-500">First Name</label>
-                  <input type="text" value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:border-blue-500" />
+                  <input 
+                    type="text" 
+                    value={formData.firstName} 
+                    onChange={(e) => {
+                      // รับเฉพาะตัวอักษรไทย-อังกฤษ และช่องว่าง
+                      const val = e.target.value.replace(/[^a-zA-Zก-๙\s]/g, '')
+                      setFormData({...formData, firstName: val})
+                    }} 
+                    className="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:border-blue-500" 
+                  />
                 </div>
                 <div className="space-y-1">
                   <label className="text-[11px] font-bold uppercase text-slate-500">Last Name</label>
-                  <input type="text" value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:border-blue-500" />
+                  <input 
+                    type="text" 
+                    value={formData.lastName} 
+                    onChange={(e) => {
+                      // รับเฉพาะตัวอักษรไทย-อังกฤษ และช่องว่าง
+                      const val = e.target.value.replace(/[^a-zA-Zก-๙\s]/g, '')
+                      setFormData({...formData, lastName: val})
+                    }} 
+                    className="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:border-blue-500" 
+                  />
                 </div>
               </div>
 
@@ -235,7 +253,16 @@ export default function PersonalModal({ isOpen, profile, onClose, onSave }: Pers
             </div>
             <div className="space-y-1">
               <label className="text-[11px] font-bold uppercase text-slate-500">Phone Number</label>
-              <input type="tel" value={formData.phoneNumber} onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})} className="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:border-blue-500" />
+              <input 
+                type="tel" 
+                value={formData.phoneNumber} 
+                onChange={(e) => {
+                  // รับเฉพาะตัวเลข 0-9
+                  const val = e.target.value.replace(/\D/g, '')
+                  setFormData({...formData, phoneNumber: val})
+                }} 
+                className="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:border-blue-500" 
+              />
             </div>
           </div>
 

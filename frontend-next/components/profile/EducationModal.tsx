@@ -18,7 +18,6 @@ export default function EducationModal({
   onClose,
   onSave,
 }: EducationModalProps) {
-  // 💡 1. เปลี่ยน studyStatus เป็น isCurrent เพื่อให้สอดคล้องกับ API
   const [formData, setFormData] = useState({
     school: "",
     degree: "",
@@ -40,14 +39,12 @@ export default function EducationModal({
   const [universitiesLoading, setUniversitiesLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Initialize data when editing
   useEffect(() => {
     if (isOpen && education) {
       const isCurrent =
         education.isCurrent ??
         !(education.endDate || (education as any).endYear);
 
-      // ดึงค่า yearOfStudy เดิมมา ถ้าเรียนจบแล้วให้บังคับแสดงเป็น Graduated
       let initialYear = (education as any).yearOfStudy || "";
       if (!isCurrent && initialYear !== "Graduated") {
         initialYear = "Graduated";
@@ -60,10 +57,9 @@ export default function EducationModal({
         educationLevel: (education as any).educationLevel || "BACHELOR",
         yearOfStudy: initialYear,
         gpa: education.gpa?.toString() || "",
-        isCurrent: isCurrent, // 💡 ใช้ isCurrent แทน
+        isCurrent: isCurrent,
       });
     } else if (isOpen) {
-      // Reset form for new entry
       setFormData({
         school: "",
         degree: "",
@@ -74,9 +70,8 @@ export default function EducationModal({
         isCurrent: true,
       });
     }
-  }, [isOpen, education]); // 💡 เอา education?.id ออก ใช้แค่ education ก็พอ
+  }, [isOpen, education]);
 
-  // Load universities
   useEffect(() => {
     if (isOpen) {
       (async () => {
@@ -108,7 +103,6 @@ export default function EducationModal({
 
     setIsSaving(true);
     try {
-      // 💡 2. อัปเดต payload ให้ใช้ formData.isCurrent ที่คำนวณมาแล้ว
       const payload = {
         universityName: formData.school,
         degreeName: formData.degree,
@@ -152,7 +146,6 @@ export default function EducationModal({
         className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-100 sticky top-0 bg-white z-10">
           <h2 className="text-xl font-bold text-gray-800">
             {education ? "Edit Education" : "Add Education"}
@@ -178,7 +171,6 @@ export default function EducationModal({
         </div>
 
         <div className="p-8 space-y-5">
-          {/* Education Level & Institution */}
           <div className="grid grid-cols-1 gap-5">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
@@ -213,7 +205,6 @@ export default function EducationModal({
             </div>
           </div>
 
-          {/* Degree & Field of Study */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
@@ -224,9 +215,11 @@ export default function EducationModal({
                 placeholder="e.g., Bachelor of Engineering"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 value={formData.degree}
-                onChange={(e) =>
-                  setFormData({ ...formData, degree: e.target.value })
-                }
+                onChange={(e) => {
+                  // ✅ รับเฉพาะตัวอักษรไทย-อังกฤษ และช่องว่าง
+                  const val = e.target.value.replace(/[^a-zA-Zก-๙\s.]/g, '');
+                  setFormData({ ...formData, degree: val });
+                }}
               />
             </div>
             <div>
@@ -238,16 +231,16 @@ export default function EducationModal({
                 placeholder="e.g., Computer Engineering"
                 className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                 value={formData.major}
-                onChange={(e) =>
-                  setFormData({ ...formData, major: e.target.value })
-                }
+                onChange={(e) => {
+                  // ✅ รับเฉพาะตัวอักษรไทย-อังกฤษ และช่องว่าง
+                  const val = e.target.value.replace(/[^a-zA-Zก-๙\s]/g, '');
+                  setFormData({ ...formData, major: val });
+                }}
               />
             </div>
           </div>
 
-          {/* Year & GPA */}
           <div className="grid grid-cols-2 gap-4">
-            {/* Year of Study Dropdown */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                 Year of Study <span className="text-red-500">*</span>
@@ -288,9 +281,7 @@ export default function EducationModal({
                 value={formData.gpa}
                 onChange={(e) => {
                   const val = e.target.value;
-                  // ตรวจสอบ: ว่างเปล่า หรือ ตัวเลขที่มีทศนิยมสูงสุด 2 ตำแหน่ง
                   if (val === "" || /^\d*\.?\d{0,2}$/.test(val)) {
-                    // หากต้องการจำกัดเกรดสูงสุดไม่เกิน 4.00 เปิดใช้โค้ดบรรทัดด้านล่าง
                     if (Number(val) > 4.0) return;
                     setFormData({ ...formData, gpa: val });
                   }
@@ -300,7 +291,6 @@ export default function EducationModal({
           </div>
         </div>
 
-        {/* Footer Buttons - อยู่ข้างนอก p-8 และถูกต้องตามลำดับ */}
         <div className="flex justify-center gap-3 p-8 border-t border-gray-100">
           <button
             onClick={onClose}
