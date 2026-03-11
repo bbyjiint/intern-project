@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import InternNavbar from "@/components/InternNavbar";
 import { apiFetch } from "@/lib/api";
 import Sidebar from "@/components/InternSidebar";
-import CertificatesModal, { ModalCertificate } from "@/components/profile/CertificatesModal"; // **ปรับ Path ตรงนี้ให้ตรงกับในโปรเจกต์คุณ**
+import CertificatesModal, { ModalCertificate } from "@/components/profile/CertificatesModal";
 
 export interface Certificate {
   id: string;
@@ -21,31 +21,48 @@ export interface Certificate {
   tags?: string[];
 }
 
-const mockCertificates: Certificate[] = Array(4).fill({
-  id: "mock-1",
-  name: "UI/UX Design Fundamentals",
-  issuedBy: "Interaction Design Foundation",
-  issueDate: "18 January 2024",
-  description:
-    "Completed foundational training in user interface and user experience design, covering design thinking, user research, wireframing, prototyping, usability testing, and Figma fundamentals. Developed practical skills in creating user-centered digital products.",
-  tags: ["UI Design", "UX Design", "Wireframing", "Prototyping"],
-  url: "#",
-  createdAt: new Date().toISOString(),
-}).map((cert, index) => ({ ...cert, id: `mock-${index + 1}` }));
-
 export default function CertificatesPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   
-  const [certificates, setCertificates] = useState<Certificate[]>(mockCertificates);
+  const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // States สำหรับ Modal ใหม่
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCert, setEditingCert] = useState<ModalCertificate | null>(null);
 
+  // ฟังก์ชันสำหรับดึงข้อมูล Certificate จาก Database
+  const fetchCertificates = useCallback(async () => {
+    try {
+      const data = await apiFetch<{ certificates: any[] }>("/api/candidates/certificates");
+      
+      if (data.certificates) {
+        const formattedCerts = data.certificates.map((cert) => {
+          // แปลง DateTime ของ Prisma กลับมาเป็นแค่ string วันที่แบบ YYYY-MM-DD สำหรับให้ <input type="date"> ใช้งานได้
+          const dateStr = cert.issueDate ? new Date(cert.issueDate).toISOString().split('T')[0] : "";
+
+          return {
+            id: cert.id,
+            name: cert.name,
+            url: cert.url,
+            type: cert.type,
+            description: cert.description || "",
+            issuedBy: cert.issuedBy || "", // ดึงตรงๆ จาก Database เลย
+            issueDate: dateStr,            // ดึงตรงๆ จาก Database เลย
+            tags: cert.relatedSkills || [], // Database ใช้ชื่อ relatedSkills แต่ frontend เราใช้ชื่อ tags
+            createdAt: cert.createdAt,
+          };
+        });
+
+        setCertificates(formattedCerts);
+      }
+    } catch (error) {
+      console.error("Failed to fetch certificates:", error);
+    }
+  }, []);
+
   useEffect(() => {
-    const checkAuth = async () => {
+    const checkAuthAndFetchData = async () => {
       try {
         const userData = await apiFetch<{ user: { role: string | null } }>("/api/auth/me");
         if (userData.user.role === "COMPANY") {
@@ -56,76 +73,96 @@ export default function CertificatesPage() {
           router.push("/role-selection");
           return;
         }
+        
+        // ถ้า Auth ผ่าน ให้ดึงข้อมูล Certificate เลย
+        await fetchCertificates();
         setIsLoading(false);
       } catch (error) {
+        console.error("Auth error:", error);
         setIsLoading(false);
       }
     };
-    checkAuth();
-  }, [router]);
+    checkAuthAndFetchData();
+  }, [router, fetchCertificates]);
 
-  // ฟังก์ชันลบ
-  const handleDelete = (id: string) => {
+  // 💡 ฟังก์ชันลบข้อมูลผ่าน API
+  const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this certificate?")) return;
-    setCertificates(prev => prev.filter(c => c.id !== id));
+    try {
+      await apiFetch(`/api/candidates/certificates/${id}`, { method: "DELETE" });
+      setCertificates((prev) => prev.filter((c) => c.id !== id));
+    } catch (error) {
+      console.error("Failed to delete certificate:", error);
+      alert("Failed to delete certificate.");
+    }
   };
 
-  // เปิด Modal เพื่อเพิ่มใหม่
   const handleAddClick = () => {
     setEditingCert(null);
     setIsModalOpen(true);
   };
 
-  // เปิด Modal เพื่อแก้ไข
   const handleEditClick = (cert: Certificate) => {
     setEditingCert({
       id: cert.id,
       name: cert.name,
       description: cert.description || "",
       issuedBy: cert.issuedBy || "",
-      date: cert.issueDate || "", // แปลง issueDate เป็น date ให้ Modal
+      date: cert.issueDate || "",
       tags: cert.tags || [],
     });
     setIsModalOpen(true);
   };
 
-  // เมื่อกด Save ใน Modal
-  const handleSaveModal = (savedData: ModalCertificate) => {
-    if (editingCert?.id) {
-      // โหมดแก้ไข
-      setCertificates(prev => 
-        prev.map(c => {
-          if (c.id === editingCert.id) {
-            return {
-              ...c,
-              name: savedData.name,
-              description: savedData.description,
-              issuedBy: savedData.issuedBy,
-              issueDate: savedData.date, // แปลง date กลับมาเป็น issueDate
-              tags: savedData.tags,
-            };
-          }
-          return c;
-        })
-      );
-    } else {
-      // โหมดเพิ่มใหม่
-      const newCert: Certificate = {
-        id: `mock-new-${Date.now()}`,
-        name: savedData.name,
-        description: savedData.description,
-        issuedBy: savedData.issuedBy,
-        issueDate: savedData.date,
-        tags: savedData.tags || [],
-        url: "#",
-        createdAt: new Date().toISOString(),
-      };
-      setCertificates([newCert, ...certificates]);
+  const handleSaveModal = async (savedData: ModalCertificate) => {
+    try {
+      const formData = new FormData();
+      
+      formData.append("name", savedData.name);
+      if (savedData.description) formData.append("description", savedData.description);
+      if (savedData.issuedBy) formData.append("issuedBy", savedData.issuedBy);
+      if (savedData.date) formData.append("issueDate", savedData.date);
+      
+      // แปลง Tags เป็น JSON String
+      if (savedData.tags && savedData.tags.length > 0) {
+        formData.append("tags", JSON.stringify(savedData.tags));
+      }
+      
+      if (savedData.file) {
+        formData.append("file", savedData.file);
+      }
+
+      // ใช้ fetch ธรรมดา เพื่อป้องกันการใส่ Header Content-Type แบบผิดๆ
+      const token = localStorage.getItem("token"); // ดึง Token ตามระบบของคุณ
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+      
+      const url = editingCert?.id
+        ? `${API_BASE_URL}/api/candidates/certificates/${editingCert.id}`
+        : `${API_BASE_URL}/api/candidates/certificates`;
+
+      const response = await fetch(url, {
+        method: editingCert?.id ? "PUT" : "POST",
+        headers: {
+          // ห้ามใส่ "Content-Type" เบราว์เซอร์จะจัดการไฟล์ให้อัตโนมัติ
+          ...(token ? { "Authorization": `Bearer ${token}` } : {})
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to save certificate");
+      }
+
+      await fetchCertificates(); // ดึงข้อมูลใหม่
+      setIsModalOpen(false);
+      
+    } catch (error: any) {
+      console.error("Failed to save certificate:", error);
+      alert(error.message || "Failed to save certificate. Please try again.");
     }
-    setIsModalOpen(false);
   };
 
-  // กรองข้อมูลตาม Search
   const filteredCertificates = certificates.filter(cert => 
     cert.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
     (cert.issuedBy && cert.issuedBy.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -199,11 +236,13 @@ export default function CertificatesPage() {
                 ) : (
                   filteredCertificates.map((cert) => (
                     <div key={cert.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col">
-                      <h3 className="text-[19px] font-bold text-gray-900 mb-1">{cert.name}</h3>
+                      <div className="flex items-start justify-between">
+                        <h3 className="text-[19px] font-bold text-gray-900 mb-1">{cert.name}</h3>
+                      </div>
                       <p className="text-[13px] text-gray-500 mb-4">Issued by {cert.issuedBy || "Unknown"} | {cert.issueDate || ""}</p>
                       <p className="text-[14px] text-gray-700 leading-relaxed mb-6 max-w-[85%]">{cert.description}</p>
 
-                      <div className="flex items-center justify-between mt-auto">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mt-auto gap-4">
                         <div className="flex flex-wrap gap-2">
                           {(cert.tags || []).map((tag, idx) => (
                             <span key={idx} className="px-3 py-1.5 bg-[#EFF6FF] text-[#3B82F6] text-[11px] font-bold rounded-md">
@@ -211,15 +250,25 @@ export default function CertificatesPage() {
                             </span>
                           ))}
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
                           <button onClick={() => handleDelete(cert.id)} className="text-gray-400 hover:text-red-500 transition-colors mr-2">
                             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                               <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
                             </svg>
                           </button>
-                          <button className="px-5 py-2 border border-[#3B82F6] text-[#3B82F6] text-xs font-bold rounded-md hover:bg-blue-50 transition-colors shadow-sm">
-                            View File
-                          </button>
+                          
+                          {/* 💡 ปุ่ม View File ที่กดเพื่อดูไฟล์ที่อัปโหลดไว้ */}
+                          {cert.url && (
+                            <a 
+                              href={cert.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="px-5 py-2 border border-[#3B82F6] text-[#3B82F6] text-xs font-bold rounded-md hover:bg-blue-50 transition-colors shadow-sm text-center"
+                            >
+                              View File
+                            </a>
+                          )}
+                          
                           <button 
                             onClick={() => handleEditClick(cert)}
                             className="px-5 py-2 border border-[#3B82F6] text-[#3B82F6] text-xs font-bold rounded-md hover:bg-blue-50 transition-colors shadow-sm"
@@ -237,7 +286,6 @@ export default function CertificatesPage() {
         </div>
       </div>
 
-      {/* Component Modal ที่แยกออกมา */}
       <CertificatesModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

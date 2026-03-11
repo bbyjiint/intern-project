@@ -170,6 +170,7 @@ model CandidateUniversity {
   degreeName     String
   fieldOfStudy   String
   yearOfStudy    String
+  endDate        DateTime?
   gpa            Float? 
   isCurrent      Boolean     @default(false)  
 

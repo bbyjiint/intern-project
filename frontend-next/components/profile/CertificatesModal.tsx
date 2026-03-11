@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { apiFetch } from "@/lib/api";
 
 export interface ModalCertificate {
   id?: string
@@ -10,6 +11,11 @@ export interface ModalCertificate {
   date?: string
   tags?: string[]
   file?: File | null
+}
+
+interface MasterSkill {
+  id: string;
+  name: string;
 }
 
 interface CertificatesModalProps {
@@ -35,6 +41,25 @@ export default function CertificatesModal({
   })
   const [selectedSkill, setSelectedSkill] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
+  const [availableSkills, setAvailableSkills] = useState<MasterSkill[]>([]);
+  const [isLoadingSkills, setIsLoadingSkills] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      const fetchSkills = async () => {
+        setIsLoadingSkills(true);
+        try {
+          const data = await apiFetch<{ skills: MasterSkill[] }>('/api/skills');
+          setAvailableSkills(data.skills || []);
+        } catch (error) {
+          console.error("Failed to fetch master skills:", error);
+        } finally {
+          setIsLoadingSkills(false);
+        }
+      };
+      fetchSkills();
+    }
+  }, [isOpen]);
 
   // อัปเดตข้อมูลเมื่อมีการแก้ไข และล้าง Error
   useEffect(() => {
@@ -47,6 +72,7 @@ export default function CertificatesModal({
       setFormData({ name: '', description: '', issuedBy: '', date: '', tags: [], file: null })
     }
     setErrorMsg('')
+    setSelectedSkill('') // รีเซ็ต Dropdown ด้วย
   }, [editingCertificate, isOpen])
 
   if (!isOpen) return null
@@ -210,17 +236,18 @@ export default function CertificatesModal({
             </label>
             <div className="flex gap-2">
               <select
-                className="flex-1 px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-500"
+                className={`flex-1 px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all text-gray-500 ${isLoadingSkills ? 'opacity-50 cursor-not-allowed' : ''}`}
                 value={selectedSkill}
                 onChange={(e) => setSelectedSkill(e.target.value)}
+                disabled={isLoadingSkills}
               >
-                <option value="">Select skill</option>
-                <option value="UI Design">UI Design</option>
-                <option value="UX Design">UX Design</option>
-                <option value="Wireframing">Wireframing</option>
-                <option value="Prototyping">Prototyping</option>
-                <option value="Figma">Figma</option>
-                <option value="React">React</option>
+                <option value="">{isLoadingSkills ? 'Loading skills...' : 'Select skill'}</option>
+                {/* 2. วนลูปแสดงผล Skill ที่ดึงมาจาก DB */}
+                {availableSkills.map((skill) => (
+                  <option key={skill.id} value={skill.name}>
+                    {skill.name}
+                  </option>
+                ))}
               </select>
               <button
                 onClick={handleAddSkill}

@@ -59,11 +59,19 @@ export default function SkillsPage() {
         // รองรับกรณีที่ Backend ส่งมาเป็น Rating (1, 2, 3) หรือ String
         if (s.level === 'intermediate' || s.level === 'Intermediate' || s.rating === 2) levelStr = "Intermediate";
         if (s.level === 'advanced' || s.level === 'Advanced' || s.rating === 3) levelStr = "Advanced";
+        
+        // 2. จัดการ Category (แปลงจาก Enum ของ DB ให้ตรงกับ UI)
+        let displayCategory = "Technical Skill";
+        if (s.category === "BUSINESS") displayCategory = "Business Skills";
+        // กรณีที่ข้อมูลบางอันเป็นตัวพิมพ์เล็ก-ใหญ่มาแล้ว (Fallback)
+        else if (s.category === "Business Skills" || s.category === "Technical Skill") {
+            displayCategory = s.category;
+        }
 
         return {
           id: s.id,
           name: s.name || s.skill?.name || "Unknown Skill", // รองรับโครงสร้าง DB
-          category: s.category || "Technical Skill",
+          category: displayCategory,
           level: levelStr,
           status: "Not Verified", // ค่าจำลอง
         };
@@ -249,7 +257,6 @@ export default function SkillsPage() {
                   <option value="Select Category">Select Category</option>
                   <option value="Technical Skill">Technical Skill</option>
                   <option value="Business Skills">Business Skills</option>
-                  <option value="Soft Skill">Soft Skill</option>
                 </select>
                 <svg
                   className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"

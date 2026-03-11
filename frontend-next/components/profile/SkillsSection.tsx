@@ -13,12 +13,16 @@ interface SkillsSectionProps {
 export default function SkillsSection({ skills, onAdd, onEdit }: SkillsSectionProps) {
   const router = useRouter() 
   
-  // 💡 จัดกลุ่มตาม Category ใหม่ที่ตั้งไว้ใน DB
-  const technicalSkills = skills.filter(s => s.category === 'Technical Skill')
-  const businessSkills = skills.filter(s => s.category === 'Business Skills')
+  const technicalSkills = skills.filter(s => 
+    (s.category as string) === 'Technical Skill' || (s.category as string) === 'TECHNICAL'
+  )
+  
+  const businessSkills = skills.filter(s => 
+    (s.category as string) === 'Business Skills' || (s.category as string) === 'BUSINESS'
+  )
 
   const SkillItem = ({ skill }: { skill: Skill }) => {
-    // 💡 ปรับการคำนวณ % ตาม Rating (1, 2, 3) หรือ Level ("Beginner", "Intermediate", "Advanced")
+    // ปรับการคำนวณ % ตาม Rating (1, 2, 3) หรือ Level ("Beginner", "Intermediate", "Advanced")
     let percentage = 33.33;
     let color = "#68B383"; // เขียว Beginner
     
@@ -61,7 +65,7 @@ export default function SkillsSection({ skills, onAdd, onEdit }: SkillsSectionPr
           </div>
         </div>
 
-        {/* 💡 Progress Bar ปรับสีตามความเก่ง */}
+        {/* Progress Bar ปรับสีตามความเก่ง */}
         <div className="relative w-full h-2.5 bg-gray-100 rounded-full overflow-hidden mb-1 flex">
             <div className="absolute inset-0 flex">
                 <div className="h-full w-1/3 border-r border-white/50 z-20"></div>
