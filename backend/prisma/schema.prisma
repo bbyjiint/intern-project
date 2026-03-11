@@ -180,8 +180,29 @@ model CandidateUniversity {
   CandidateProfile CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   University       University       @relation(fields: [universityId], references: [id])
 
+  transcripts EducationTranscript[]
+
   @@index([candidateId])
   @@index([universityId])
+}
+
+model EducationTranscript {
+  id           String   @id @default(uuid())
+  educationId  String
+  candidateId  String
+
+  name         String
+  url          String
+  fileSize     Int?
+  fileType     String?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  Education    CandidateUniversity @relation(fields: [educationId], references: [id], onDelete: Cascade)
+
+  @@index([educationId])
+  @@index([candidateId])
 }
 
 model CandidateProfile {

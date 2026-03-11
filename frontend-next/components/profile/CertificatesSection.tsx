@@ -1,29 +1,35 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
-import CertificatesModal, { ModalCertificate } from "./CertificatesModal"; // ตรวจสอบ path ให้ถูกต้อง
+import CertificatesModal, { ModalCertificate } from "./CertificatesModal";
 import { useProfile } from "@/hooks/useProfile";
 import { apiFetch } from "@/lib/api";
+import { useRouter } from "next/navigation";
 
 export interface Certificate {
-  id: string; 
+  id: string;
   name: string;
-  issuedBy: string;
-  date: string;
-  description: string;
+  url: string;
+  type?: string | null;
+  description?: string | null;
+  issuedBy?: string | null;
+  issueDate?: string | null;
+  certificateId?: string | null;
+  certificateUrl?: string | null;
+  createdAt: string;
   tags: string[];
-  url?: string; 
 }
 
 export default function CertificateSection() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
   const { profileData, refetch } = useProfile();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentCert, setCurrentCert] = useState<ModalCertificate | null>(null);
-  const [certificates, setCertificates] = useState<Certificate[]>([]); 
+  const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
-  // 💡 เพิ่มส่วนนี้เข้าไปครับ
   useEffect(() => {
     if (isModalOpen) {
       document.body.style.overflow = "hidden";
@@ -31,34 +37,101 @@ export default function CertificateSection() {
       document.body.style.overflow = "auto";
     }
 
-    // คืนค่าเดิมเมื่อปิดหรือเปลี่ยนหน้า
     return () => {
       document.body.style.overflow = "auto";
     };
   }, [isModalOpen]);
 
-  // ข้อมูลเริ่มต้น (ตัวอย่าง)
-  useEffect(() => {
-    if (profileData?.certificates) {
-      const mappedCerts = profileData.certificates.map((cert: any) => {
-        // แปลงวันที่จาก ISO ของ DB เป็น YYYY-MM-DD เพื่อให้ Input Type Date นำไปแสดงผลได้
-        const formattedDate = cert.issueDate
-          ? new Date(cert.issueDate).toISOString().split("T")[0]
-          : "";
+  const fetchCertificates = useCallback(async () => {
+    try {
+      const data = await apiFetch<{ certificates: any[] }>(
+        "/api/candidates/certificates",
+      );
 
-        return {
-          id: cert.id,
-          name: cert.name,
-          issuedBy: cert.issuedBy || "",
-          date: formattedDate,
-          description: cert.description || "",
-          tags: cert.relatedSkills || [],
-          url: cert.url,
-        };
-      });
-      setCertificates(mappedCerts);
+      if (data.certificates) {
+        const formattedCerts = data.certificates.map((cert) => {
+          // แปลง DateTime ของ Prisma กลับมาเป็นแค่ string วันที่แบบ YYYY-MM-DD สำหรับให้ <input type="date"> ใช้งานได้
+          const dateStr = cert.issueDate
+            ? new Date(cert.issueDate).toISOString().split("T")[0]
+            : "";
+
+          return {
+            id: cert.id,
+            name: cert.name,
+            url: cert.url,
+            type: cert.type,
+            description: cert.description || "",
+            issuedBy: cert.issuedBy || "", // ดึงตรงๆ จาก Database เลย
+            issueDate: dateStr, // ดึงตรงๆ จาก Database เลย
+            tags: cert.relatedSkills || [], // Database ใช้ชื่อ relatedSkills แต่ frontend เราใช้ชื่อ tags
+            createdAt: cert.createdAt,
+          };
+        });
+
+        setCertificates(formattedCerts);
+      }
+    } catch (error) {
+      console.error("Failed to fetch certificates:", error);
     }
-  }, [profileData]);
+  }, []);
+
+  // useEffect(() => {
+  //   if (profileData?.certificates) {
+  //     const API_BASE_URL =
+  //       process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+
+  //     const mappedCerts: Certificate[] = profileData.certificates.map(
+  //       (cert: any) => {
+  //         const formattedDate = cert.issueDate
+  //           ? new Date(cert.issueDate).toISOString().split("T")[0]
+  //           : "";
+
+  //         let fileUrl = cert.url;
+  //         if (fileUrl && fileUrl.startsWith("/uploads")) {
+  //           fileUrl = `${API_BASE_URL}${fileUrl}`;
+  //         }
+
+  //         return {
+  //           id: cert.id,
+  //           name: cert.name,
+  //           url: fileUrl,
+  //           description: cert.description || "",
+  //           issuedBy: cert.issuedBy || "",
+  //           issueDate: formattedDate,
+  //           tags: cert.relatedSkills || cert.tags || [],
+  //           createdAt: cert.createdAt,
+  //         };
+  //       },
+  //     );
+  //     setCertificates(mappedCerts);
+  //   }
+  // }, [profileData]);
+
+  useEffect(() => {
+    const checkAuthAndFetchData = async () => {
+      try {
+        const userData = await apiFetch<{ user: { role: string | null } }>(
+          "/api/auth/me",
+        );
+        if (userData.user.role === "COMPANY") {
+          router.push("/employer/profile");
+          return;
+        }
+        if (!userData.user.role) {
+          router.push("/role-selection");
+          return;
+        }
+
+        // ถ้า Auth ผ่าน ให้ดึงข้อมูล Certificate เลย
+        await fetchCertificates();
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Auth error:", error);
+        setIsLoading(false);
+      }
+    };
+    checkAuthAndFetchData();
+  }, [router, fetchCertificates]);
 
   const handleAddNew = () => {
     setCurrentCert(null);
@@ -66,18 +139,25 @@ export default function CertificateSection() {
   };
 
   const handleEdit = (cert: Certificate) => {
-    setCurrentCert(cert);
-    setIsModalOpen(true);
-  };
+  setCurrentCert({
+    id: cert.id,
+    name: cert.name,
+    description: cert.description ?? undefined,
+    issuedBy: cert.issuedBy ?? undefined,
+    date: cert.issueDate ?? undefined,
+    tags: cert.tags ?? [],
+  });
 
-  // ลบ Certificate
+  setIsModalOpen(true);
+};
+
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this certificate?")) {
       try {
         await apiFetch(`/api/candidates/certificates/${id}`, {
           method: "DELETE",
         });
-        await refetch(); // รีเฟรชข้อมูลใหม่จาก DB
+        await refetch();
       } catch (error) {
         console.error("Delete error:", error);
         alert("Failed to delete certificate.");
@@ -88,7 +168,6 @@ export default function CertificateSection() {
   const handleSave = async (data: ModalCertificate) => {
     setIsSaving(true);
     try {
-      // ⚠️ เนื่องจากมีการอัปโหลดไฟล์ ต้องใช้ FormData แทน JSON
       const formData = new FormData();
       formData.append("name", data.name);
       if (data.description) formData.append("description", data.description);
@@ -96,33 +175,38 @@ export default function CertificateSection() {
       if (data.date)
         formData.append("issueDate", new Date(data.date).toISOString());
 
-      // ส่ง Array ของ Tags (Skills)
-      if (data.tags) {
-        data.tags.forEach((tag) => formData.append("relatedSkills", tag));
+      if (data.tags && data.tags.length > 0) {
+        formData.append("tags", JSON.stringify(data.tags));
       }
 
-      // ถ้ามีการแนบไฟล์ใหม่
       if (data.file) {
         formData.append("file", data.file);
       }
 
+      const API_BASE_URL =
+        process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
       const endpoint = currentCert?.id
-        ? `/api/candidates/certificates/${currentCert.id}`
-        : `/api/candidates/certificates`;
+        ? `${API_BASE_URL}/api/candidates/certificates/${currentCert.id}`
+        : `${API_BASE_URL}/api/candidates/certificates`;
 
       const method = currentCert?.id ? "PUT" : "POST";
 
-      // ใช้ fetch ดิบๆ แทน apiFetch สำหรับส่ง FormData เพื่อป้องกันปัญหา Content-Type พัง
-      await apiFetch(endpoint, {
+      const response = await fetch(endpoint, {
         method: method,
-        body: formData, // ส่ง formData ไปตรงๆ แบบนี้เลย ไม่ต้องใช้ JSON.stringify()
+        credentials: "include",
+        body: formData,
       });
 
-      await refetch(); // โหลดข้อมูลใหม่จาก DB ทันทีหลังเซฟเสร็จ
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "Failed to save certificate");
+      }
+
+      await fetchCertificates();
       setIsModalOpen(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Save error:", error);
-      alert("Failed to save certificate. Please try again.");
+      alert(error.message || "Failed to save certificate. Please try again.");
     } finally {
       setIsSaving(false);
     }
@@ -130,7 +214,6 @@ export default function CertificateSection() {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8 mb-6">
-      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center space-x-2">
           <div className="text-blue-600">
@@ -142,13 +225,13 @@ export default function CertificateSection() {
         </div>
         <button
           onClick={handleAddNew}
-          className="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition-all shadow-md shadow-blue-100 active:scale-95"
+          disabled={isSaving}
+          className="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition-all shadow-md shadow-blue-100 active:scale-95 disabled:opacity-50"
         >
           + Add Certificate
         </button>
       </div>
 
-      {/* List of Certificates */}
       <div className="space-y-6">
         {certificates.length === 0 ? (
           <p className="text-center py-10 text-gray-400 italic bg-gray-50 rounded-xl border-2 border-dashed">
@@ -170,15 +253,13 @@ export default function CertificateSection() {
                       {cert.issuedBy}
                     </span>
                     <span className="text-gray-300">|</span>
-                    <span>{cert.date}</span>
+                    <span>{cert.issueDate}</span>
                   </p>
                   <p className="text-sm text-gray-600 leading-relaxed mb-5 max-w-3xl">
-                    {cert.description || 'No description provided.'}
+                    {cert.description || "No description provided."}
                   </p>
 
-                  {/* Tags */}
                   <div className="flex flex-wrap gap-2 mb-2">
-
                     {cert.tags.map((tag) => (
                       <span
                         key={tag}
@@ -191,7 +272,6 @@ export default function CertificateSection() {
                 </div>
               </div>
 
-              {/* Actions */}
               <div className="flex justify-end items-center space-x-3 mt-4 pt-4 border-t border-gray-50">
                 <button
                   onClick={() => handleDelete(cert.id)}
@@ -234,7 +314,6 @@ export default function CertificateSection() {
         )}
       </div>
 
-      {/* View All Link */}
       {certificates.length > 0 && (
         <div className="mt-8 pt-6 border-t border-gray-50">
           <Link
@@ -259,7 +338,6 @@ export default function CertificateSection() {
         </div>
       )}
 
-      {/* Modal */}
       <CertificatesModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}

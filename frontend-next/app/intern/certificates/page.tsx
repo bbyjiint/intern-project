@@ -62,6 +62,18 @@ export default function CertificatesPage() {
   }, []);
 
   useEffect(() => {
+      if (isModalOpen) {
+        document.body.style.overflow = "hidden";
+      } else {
+        document.body.style.overflow = "auto";
+      }
+
+      return () => {
+        document.body.style.overflow = "auto";
+      };
+    }, [isModalOpen]);
+
+  useEffect(() => {
     const checkAuthAndFetchData = async () => {
       try {
         const userData = await apiFetch<{ user: { role: string | null } }>("/api/auth/me");
@@ -85,7 +97,6 @@ export default function CertificatesPage() {
     checkAuthAndFetchData();
   }, [router, fetchCertificates]);
 
-  // 💡 ฟังก์ชันลบข้อมูลผ่าน API
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this certificate?")) return;
     try {
@@ -142,10 +153,7 @@ export default function CertificatesPage() {
 
       const response = await fetch(url, {
         method: editingCert?.id ? "PUT" : "POST",
-        headers: {
-          // ห้ามใส่ "Content-Type" เบราว์เซอร์จะจัดการไฟล์ให้อัตโนมัติ
-          ...(token ? { "Authorization": `Bearer ${token}` } : {})
-        },
+        credentials: "include", 
         body: formData,
       });
 
