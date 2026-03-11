@@ -196,9 +196,6 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
           url: file.url,
           type: file.type,
           description: file.description,
-          issuedBy: file.issuedBy,           
-          issueDate: file.issueDate,         
-          relatedSkills: file.relatedSkills, 
           createdAt: file.createdAt.toISOString(),
         })),
       },
@@ -505,21 +502,12 @@ candidatesRouter.get("/resumes", requireAuth, requireRole("CANDIDATE"), async (r
   try {
     const candidateId = await getCandidateIdForUser(userId);
 
-    // const contactFiles = await prisma.candidateContactFile.findMany({
-    //   where: { candidateId },
-    //   orderBy: { createdAt: "desc" },
-    // });
-
-    // return res.json({ resumes: contactFiles });
-
-    const resume = await prisma.candidateResume.findFirst({
-      where: {
-      candidateId,
-      isPrimary: true,
-      },
+    const contactFiles = await prisma.candidateContactFile.findMany({
+      where: { candidateId },
+      orderBy: { createdAt: "desc" },
     });
 
-    return res.json({ resume });
+    return res.json({ resumes: contactFiles });
   } catch (e: any) {
     if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
       return res.status(404).json({ error: "Candidate profile not found" });
@@ -528,14 +516,6 @@ candidatesRouter.get("/resumes", requireAuth, requireRole("CANDIDATE"), async (r
     return res.status(500).json({ error: e?.message || "Failed to fetch resumes" });
   }
 });
-
-function generateResumeName(candidateId: string, originalName: string) {
-  const ext = originalName.split(".").pop();
-  const shortId = candidateId.slice(0, 8);
-  const timestamp = Date.now();
-
-  return `resume_${shortId}_${timestamp}.${ext}`;
-}
 
 // Upload a resume (file upload)
 candidatesRouter.post("/resumes", requireAuth, requireRole("CANDIDATE"), (req: AuthedRequest, res, next) => {
@@ -563,8 +543,7 @@ candidatesRouter.post("/resumes", requireAuth, requireRole("CANDIDATE"), (req: A
     }
 
     const { name, type } = (req as any).body ?? {};
-    const fileName = generateResumeName(candidateId, file.originalname);
-    // const fileName = name || file.originalname;
+    const fileName = name || file.originalname;
 
     // Determine file type (RESUME, PORTFOLIO, or OTHER)
     let fileType: "RESUME" | "PORTFOLIO" | "OTHER" = "RESUME";
@@ -590,22 +569,27 @@ candidatesRouter.post("/resumes", requireAuth, requireRole("CANDIDATE"), (req: A
     const existingResumes = await prisma.candidateResume.findMany({
       where: { candidateId },
     });
-    await prisma.candidateResume.updateMany({
-      where: { candidateId, isPrimary: true },
-      data: { isPrimary: false },
-    });
+    const isPrimary = existingResumes.length === 0;
+
+    // If this is set as primary, unset other primary resumes
+    if (isPrimary) {
+      await prisma.candidateResume.updateMany({
+        where: { candidateId, isPrimary: true },
+        data: { isPrimary: false },
+      });
+    }
 
     const resume = await prisma.candidateResume.create({
       data: {
-      id: randomUUID(),
-      candidateId,
-      name: generateResumeName(candidateId, file.originalname),
-      url: uploadResult.url,
-      fileSize: file.size || null,
-      fileType: file.mimetype || null,
-      isPrimary: true,
-    },
-  });
+        id: randomUUID(),
+        candidateId,
+        name: fileName,
+        url: uploadResult.url,
+        fileSize: file.size || null,
+        fileType: file.mimetype || null,
+        isPrimary,
+      },
+    });
 
     return res.status(201).json({ resume });
   } catch (e: any) {
@@ -1159,105 +1143,6 @@ candidatesRouter.put("/education/:id", requireAuth, requireRole("CANDIDATE"), as
     return res.status(500).json({ error: e?.message || "Failed to update education" });
   }
 });
-
-candidatesRouter.delete("/education/:id", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
-  const userId = req.user!.id;
-  const educationId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
-
-  try {
-    const candidateId = await getCandidateIdForUser(userId);
-
-    const existingEducation = await prisma.candidateUniversity.findUnique({
-      where: { id: educationId },
-      select: { candidateId: true },
-    });
-
-    if (!existingEducation) return res.status(404).json({ error: "Education entry not found" });
-    if (existingEducation.candidateId !== candidateId) return res.status(403).json({ error: "Forbidden" });
-
-    await prisma.candidateUniversity.delete({
-      where: { id: educationId },
-    });
-
-    return res.json({ success: true });
-  } catch (e: any) {
-    return res.status(500).json({ error: e?.message || "Failed to delete education" });
-  }
-});
-
-function getParam(param: string | string[] | undefined): string | undefined {
-  if (!param) return undefined
-  return Array.isArray(param) ? param[0] : param
-}
-
-candidatesRouter.post(
-  "/education/:educationId/transcript",
-  requireAuth,
-  requireRole("CANDIDATE"),
-  uploadResume.single("file"),
-  async (req: AuthedRequest, res) => {
-    const userId = req.user!.id
-    const educationId =
-      typeof req.params.educationId === "string"
-        ? req.params.educationId
-        : req.params.educationId[0]
-
-    try {
-      const candidateId = await getCandidateIdForUser(userId)
-
-      const file = (req as any).file
-      if (!file) {
-        return res.status(400).json({ error: "File is required" })
-      }
-
-      const uploadResult = await fileStorage.uploadFile(file, "transcripts")
-
-      const transcript = await prisma.educationTranscript.create({
-        data: {
-          id: randomUUID(),
-          educationId,
-          candidateId,
-          name: file.originalname,
-          url: uploadResult.url,
-        },
-      })
-
-      return res.status(201).json({ transcript })
-    } catch (e) {
-      console.error(e)
-      return res.status(500).json({ error: "Upload failed" })
-    }
-  }
-)
-
-candidatesRouter.get(
-  "/education/:educationId/transcript",
-  requireAuth,
-  requireRole("CANDIDATE"),
-  async (req: AuthedRequest, res) => {
-
-    const userId = req.user!.id;
-    const educationId = getParam(req.params.educationId)
-
-    try {
-      const candidateId = await getCandidateIdForUser(userId);
-
-      const transcripts = await prisma.educationTranscript.findMany({
-        where: {
-          candidateId,
-          educationId,
-        },
-        orderBy: { createdAt: "desc" },
-      });
-
-      return res.json({ transcripts });
-
-    } catch (e) {
-      console.error("Error fetching transcripts:", e);
-      return res.status(500).json({ error: "Failed to fetch transcripts" });
-    }
-  }
-);
 
 // Delete a certificate
 candidatesRouter.delete("/certificates/:id", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
