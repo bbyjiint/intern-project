@@ -4,6 +4,15 @@ import prisma from '../utils/prisma'
 
 const messagesRouter = Router()
 
+function initialsFromName(name: string) {
+  return name
+    .split(' ')
+    .map((n: string) => n[0] ?? '')
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+}
+
 // Get all conversations (for both company and candidate)
 messagesRouter.get('/conversations', requireAuth, async (req: AuthedRequest, res) => {
   try {
@@ -37,7 +46,7 @@ messagesRouter.get('/conversations', requireAuth, async (req: AuthedRequest, res
             include: {
               User: true,
               CandidateUniversity: {
-                orderBy: [{ isCurrent: 'desc' }, { endDate: 'desc' }],
+                orderBy: [{ isCurrent: 'desc' }, { updatedAt: 'desc' }],
                 take: 1,
                 include: { University: { select: { name: true } } },
               },
@@ -53,9 +62,7 @@ messagesRouter.get('/conversations', requireAuth, async (req: AuthedRequest, res
 
       // Format conversations with unread count
       const formattedConversations = (await Promise.all(
-        conversations
-          .filter((conv) => conv.Candidate !== null) // Filter out conversations with null candidates
-          .map(async (conv) => {
+        conversations.map(async (conv) => {
             const unreadCount = await prisma.message.count({
               where: {
                 conversationId: conv.id,
@@ -69,23 +76,16 @@ messagesRouter.get('/conversations', requireAuth, async (req: AuthedRequest, res
             return {
               id: conv.id,
               candidateId: conv.candidateId,
-              candidateName: conv.Candidate?.fullName || 'Unknown',
-              candidateInitials: conv.Candidate?.fullName
-                ? conv.Candidate.fullName
-                    .split(' ')
-                    .map((n) => n[0])
-                    .join('')
-                    .toUpperCase()
-                    .slice(0, 2)
-                : 'U',
-              candidateRole: conv.Candidate?.desiredPosition || 'Intern',
-              candidateUniversity: conv.Candidate?.CandidateUniversity?.[0]?.University?.name || 'Unknown University',
+              candidateName: conv.Candidate.fullName || 'Unknown',
+              candidateInitials: conv.Candidate.fullName ? initialsFromName(conv.Candidate.fullName) : 'U',
+              candidateRole: conv.Candidate.desiredPosition || 'Intern',
+              candidateUniversity: conv.Candidate.CandidateUniversity[0]?.University?.name || 'Unknown University',
               lastMessage: lastMessage?.text || '',
               lastMessageTime: lastMessage?.createdAt || conv.createdAt,
               unreadCount,
             }
           })
-      )).filter((conv) => conv !== null)
+      ))
 
       res.json({ conversations: formattedConversations })
     } else if (user.role === 'CANDIDATE') {
@@ -128,27 +128,17 @@ messagesRouter.get('/conversations', requireAuth, async (req: AuthedRequest, res
 
           const lastMessage = conv.Messages[0] || null
 
-          // Handle null Company (orphaned conversation)
-          if (!conv.Company) {
-            return null // Skip this conversation
-          }
-
           return {
             id: conv.id,
             companyId: conv.companyId,
             companyName: conv.Company.companyName,
-            companyInitials: conv.Company.companyName
-              .split(' ')
-              .map((n) => n[0])
-              .join('')
-              .toUpperCase()
-              .slice(0, 2),
+            companyInitials: initialsFromName(conv.Company.companyName),
             lastMessage: lastMessage?.text || '',
             lastMessageTime: lastMessage?.createdAt || conv.createdAt,
             unreadCount,
           }
         })
-      )).filter((conv) => conv !== null) // Remove null conversations
+      ))
 
       res.json({ conversations: formattedConversations })
     } else {
@@ -215,7 +205,7 @@ messagesRouter.post('/conversations', requireAuth, requireRole('COMPANY'), async
         Candidate: {
           include: {
             CandidateUniversity: {
-              orderBy: [{ isCurrent: 'desc' }, { endDate: 'desc' }],
+              orderBy: [{ isCurrent: 'desc' }, { updatedAt: 'desc' }],
               take: 1,
               include: { University: { select: { name: true } } },
             },
@@ -245,15 +235,10 @@ messagesRouter.post('/conversations', requireAuth, requireRole('COMPANY'), async
           candidateId: existingConversation.candidateId,
           candidateName: existingConversation.Candidate.fullName || 'Unknown',
           candidateInitials: existingConversation.Candidate.fullName
-            ? existingConversation.Candidate.fullName
-                .split(' ')
-                .map((n) => n[0])
-                .join('')
-                .toUpperCase()
-                .slice(0, 2)
+            ? initialsFromName(existingConversation.Candidate.fullName)
             : 'U',
           candidateRole: existingConversation.Candidate.desiredPosition || 'Intern',
-          candidateUniversity: existingConversation.Candidate.CandidateUniversity?.[0]?.University?.name || 'Unknown University',
+          candidateUniversity: existingConversation.Candidate.CandidateUniversity[0]?.University?.name || 'Unknown University',
           lastMessage: lastMessage?.text || '',
           lastMessageTime: lastMessage?.createdAt || existingConversation.createdAt,
           unreadCount,
@@ -284,7 +269,7 @@ messagesRouter.post('/conversations', requireAuth, requireRole('COMPANY'), async
         Candidate: {
           include: {
             CandidateUniversity: {
-              orderBy: [{ isCurrent: 'desc' }, { endDate: 'desc' }],
+              orderBy: [{ isCurrent: 'desc' }, { updatedAt: 'desc' }],
               take: 1,
               include: { University: { select: { name: true } } },
             },
@@ -305,15 +290,10 @@ messagesRouter.post('/conversations', requireAuth, requireRole('COMPANY'), async
         candidateId: conversation.candidateId,
         candidateName: conversation.Candidate.fullName || 'Unknown',
         candidateInitials: conversation.Candidate.fullName
-          ? conversation.Candidate.fullName
-              .split(' ')
-              .map((n) => n[0])
-              .join('')
-              .toUpperCase()
-              .slice(0, 2)
+          ? initialsFromName(conversation.Candidate.fullName)
           : 'U',
         candidateRole: conversation.Candidate.desiredPosition || 'Intern',
-        candidateUniversity: conversation.Candidate.CandidateUniversity?.[0]?.University?.name || 'Unknown University',
+        candidateUniversity: conversation.Candidate.CandidateUniversity[0]?.University?.name || 'Unknown University',
         lastMessage: lastMessage?.text || '',
         lastMessageTime: lastMessage?.createdAt || conversation.createdAt,
         unreadCount: 0,
@@ -494,19 +474,9 @@ messagesRouter.get('/conversations/:conversationId/messages', requireAuth, async
         ? conversation.Company.companyName
         : conversation.Candidate.fullName || 'Unknown'
       const senderInitials = isCompany
-        ? conversation.Company.companyName
-            .split(' ')
-            .map((n) => n[0])
-            .join('')
-            .toUpperCase()
-            .slice(0, 2)
+        ? initialsFromName(conversation.Company.companyName)
         : conversation.Candidate.fullName
-          ? conversation.Candidate.fullName
-              .split(' ')
-              .map((n) => n[0])
-              .join('')
-              .toUpperCase()
-              .slice(0, 2)
+          ? initialsFromName(conversation.Candidate.fullName)
           : 'U'
 
       return {
