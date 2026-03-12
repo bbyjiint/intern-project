@@ -15,8 +15,6 @@ export interface Certificate {
   description?: string | null;
   issuedBy?: string | null;
   issueDate?: string | null;
-  certificateId?: string | null;
-  certificateUrl?: string | null;
   createdAt: string;
   tags?: string[];
 }
@@ -24,45 +22,40 @@ export interface Certificate {
 export default function CertificatesPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCert, setEditingCert] = useState<ModalCertificate | null>(null);
 
-  // ฟังก์ชันสำหรับดึงข้อมูล Certificate จาก Database
   const fetchCertificates = useCallback(async () => {
     try {
-      const data = await apiFetch<{ certificates: any[] }>("/api/candidates/certificates");
-      
-      if (data.certificates) {
-        const formattedCerts = data.certificates.map((cert) => {
-          // แปลง DateTime ของ Prisma กลับมาเป็นแค่ string วันที่แบบ YYYY-MM-DD สำหรับให้ <input type="date"> ใช้งานได้
-          const dateStr = cert.issueDate ? new Date(cert.issueDate).toISOString().split('T')[0] : "";
-
-          return {
-            id: cert.id,
-            name: cert.name,
-            url: cert.url,
-            type: cert.type,
-            description: cert.description || "",
-            issuedBy: cert.issuedBy || "", // ดึงตรงๆ จาก Database เลย
-            issueDate: dateStr,            // ดึงตรงๆ จาก Database เลย
-            tags: cert.relatedSkills || [], // Database ใช้ชื่อ relatedSkills แต่ frontend เราใช้ชื่อ tags
-            createdAt: cert.createdAt,
-          };
-        });
-
-        setCertificates(formattedCerts);
-      }
+      const data = await apiFetch<{ profile: any }>("/api/candidates/profile");
+      const raw = data.profile?.files?.certificates || [];
+      const mapped: Certificate[] = raw.map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        url: c.url,
+        type: c.type,
+        description: c.description || "",
+        issuedBy: c.issuedBy || "",
+        issueDate: c.issueDate
+          ? new Date(c.issueDate).toLocaleDateString("en-GB", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })
+          : "",
+        tags: c.relatedSkills || [],
+        createdAt: c.createdAt,
+      }));
+      setCertificates(mapped);
     } catch (error) {
       console.error("Failed to fetch certificates:", error);
     }
   }, []);
 
   useEffect(() => {
-    const checkAuthAndFetchData = async () => {
+    const checkAuth = async () => {
       try {
         const userData = await apiFetch<{ user: { role: string | null } }>("/api/auth/me");
         if (userData.user.role === "COMPANY") {
@@ -73,26 +66,21 @@ export default function CertificatesPage() {
           router.push("/role-selection");
           return;
         }
-        
-        // ถ้า Auth ผ่าน ให้ดึงข้อมูล Certificate เลย
         await fetchCertificates();
         setIsLoading(false);
       } catch (error) {
-        console.error("Auth error:", error);
         setIsLoading(false);
       }
     };
-    checkAuthAndFetchData();
+    checkAuth();
   }, [router, fetchCertificates]);
 
-  // 💡 ฟังก์ชันลบข้อมูลผ่าน API
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this certificate?")) return;
     try {
       await apiFetch(`/api/candidates/certificates/${id}`, { method: "DELETE" });
-      setCertificates((prev) => prev.filter((c) => c.id !== id));
+      await fetchCertificates();
     } catch (error) {
-      console.error("Failed to delete certificate:", error);
       alert("Failed to delete certificate.");
     }
   };
@@ -117,64 +105,41 @@ export default function CertificatesPage() {
   const handleSaveModal = async (savedData: ModalCertificate) => {
     try {
       const formData = new FormData();
-      
       formData.append("name", savedData.name);
       if (savedData.description) formData.append("description", savedData.description);
       if (savedData.issuedBy) formData.append("issuedBy", savedData.issuedBy);
-      if (savedData.date) formData.append("issueDate", savedData.date);
-      
-      // แปลง Tags เป็น JSON String
-      if (savedData.tags && savedData.tags.length > 0) {
-        formData.append("tags", JSON.stringify(savedData.tags));
+      if (savedData.date) formData.append("issueDate", new Date(savedData.date).toISOString());
+      if (savedData.tags) {
+        savedData.tags.forEach((tag) => formData.append("relatedSkills", tag));
       }
-      
-      if (savedData.file) {
-        formData.append("file", savedData.file);
-      }
+      if (savedData.file) formData.append("file", savedData.file);
 
-      // ใช้ fetch ธรรมดา เพื่อป้องกันการใส่ Header Content-Type แบบผิดๆ
-      const token = localStorage.getItem("token"); // ดึง Token ตามระบบของคุณ
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-      
-      const url = editingCert?.id
-        ? `${API_BASE_URL}/api/candidates/certificates/${editingCert.id}`
-        : `${API_BASE_URL}/api/candidates/certificates`;
+      const endpoint = editingCert?.id
+        ? `/api/candidates/certificates/${editingCert.id}`
+        : `/api/candidates/certificates`;
+      const method = editingCert?.id ? "PUT" : "POST";
 
-      const response = await fetch(url, {
-        method: editingCert?.id ? "PUT" : "POST",
-        headers: {
-          // ห้ามใส่ "Content-Type" เบราว์เซอร์จะจัดการไฟล์ให้อัตโนมัติ
-          ...(token ? { "Authorization": `Bearer ${token}` } : {})
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Failed to save certificate");
-      }
-
-      await fetchCertificates(); // ดึงข้อมูลใหม่
+      await apiFetch(endpoint, { method, body: formData });
+      await fetchCertificates();
       setIsModalOpen(false);
-      
-    } catch (error: any) {
-      console.error("Failed to save certificate:", error);
-      alert(error.message || "Failed to save certificate. Please try again.");
+    } catch (error) {
+      alert("Failed to save certificate. Please try again.");
     }
   };
 
-  const filteredCertificates = certificates.filter(cert => 
-    cert.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    (cert.issuedBy && cert.issuedBy.toLowerCase().includes(searchQuery.toLowerCase()))
+  const filteredCertificates = certificates.filter(
+    (cert) =>
+      cert.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (cert.issuedBy && cert.issuedBy.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (
     <div className="min-h-screen bg-[#F4F7FA] flex flex-col">
       <InternNavbar />
-      
+
       <div className="flex flex-1">
         <Sidebar />
-        
+
         <div className="layout-container layout-page flex-1 overflow-y-auto">
           {isLoading ? (
             <div className="flex items-center justify-center min-h-[60vh]">
@@ -185,14 +150,28 @@ export default function CertificatesPage() {
               {/* Header */}
               <div className="flex flex-col lg:flex-row lg:items-start justify-between mb-8 gap-4">
                 <div>
-                  <h1 className="text-[36px] font-extrabold text-gray-900 mb-1 tracking-tight">Certificate</h1>
-                  <p className="text-gray-500 text-sm">A collection of certificate you have created and added to your profile.</p>
+                  <h1 className="text-[36px] font-extrabold text-gray-900 mb-1 tracking-tight">
+                    Certificate
+                  </h1>
+                  <p className="text-gray-500 text-sm">
+                    A collection of certificate you have created and added to your profile.
+                  </p>
                 </div>
-                
+
                 <div className="flex items-center gap-4">
                   <div className="relative w-full lg:w-72">
-                    <svg className="w-4 h-4 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    <svg
+                      className="w-4 h-4 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
                     </svg>
                     <input
                       type="text"
@@ -213,10 +192,17 @@ export default function CertificatesPage() {
 
               {/* Filters */}
               <div className="flex items-center justify-between mb-6">
-                <button className="px-8 py-2 text-sm font-bold rounded-lg border border-[#3B82F6] text-[#3B82F6] bg-white shadow-sm">All</button>
+                <button className="px-8 py-2 text-sm font-bold rounded-lg border border-[#3B82F6] text-[#3B82F6] bg-white shadow-sm">
+                  All
+                </button>
                 <button className="flex items-center gap-2 px-5 py-2 bg-white border border-gray-200 text-gray-800 font-bold text-sm rounded-lg hover:bg-gray-50 shadow-sm">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                    />
                   </svg>
                   Filter Skill
                 </button>
@@ -235,41 +221,53 @@ export default function CertificatesPage() {
                   </div>
                 ) : (
                   filteredCertificates.map((cert) => (
-                    <div key={cert.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col">
-                      <div className="flex items-start justify-between">
-                        <h3 className="text-[19px] font-bold text-gray-900 mb-1">{cert.name}</h3>
-                      </div>
-                      <p className="text-[13px] text-gray-500 mb-4">Issued by {cert.issuedBy || "Unknown"} | {cert.issueDate || ""}</p>
-                      <p className="text-[14px] text-gray-700 leading-relaxed mb-6 max-w-[85%]">{cert.description}</p>
+                    <div
+                      key={cert.id}
+                      className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col"
+                    >
+                      <h3 className="text-[19px] font-bold text-gray-900 mb-1">{cert.name}</h3>
+                      <p className="text-[13px] text-gray-500 mb-4">
+                        Issued by {cert.issuedBy || "Unknown"} | {cert.issueDate || ""}
+                      </p>
+                      <p className="text-[14px] text-gray-700 leading-relaxed mb-6 max-w-[85%]">
+                        {cert.description}
+                      </p>
 
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mt-auto gap-4">
+                      <div className="flex items-center justify-between mt-auto">
                         <div className="flex flex-wrap gap-2">
                           {(cert.tags || []).map((tag, idx) => (
-                            <span key={idx} className="px-3 py-1.5 bg-[#EFF6FF] text-[#3B82F6] text-[11px] font-bold rounded-md">
+                            <span
+                              key={idx}
+                              className="px-3 py-1.5 bg-[#EFF6FF] text-[#3B82F6] text-[11px] font-bold rounded-md"
+                            >
                               {tag}
                             </span>
                           ))}
                         </div>
-                        <div className="flex items-center gap-3 w-full sm:w-auto justify-end">
-                          <button onClick={() => handleDelete(cert.id)} className="text-gray-400 hover:text-red-500 transition-colors mr-2">
+                        <div className="flex items-center gap-3">
+                          <button
+                            onClick={() => handleDelete(cert.id)}
+                            className="text-gray-400 hover:text-red-500 transition-colors mr-2"
+                          >
                             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+                              <path
+                                fillRule="evenodd"
+                                d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                clipRule="evenodd"
+                              />
                             </svg>
                           </button>
-                          
-                          {/* 💡 ปุ่ม View File ที่กดเพื่อดูไฟล์ที่อัปโหลดไว้ */}
-                          {cert.url && (
-                            <a 
-                              href={cert.url} 
-                              target="_blank" 
-                              rel="noopener noreferrer" 
-                              className="px-5 py-2 border border-[#3B82F6] text-[#3B82F6] text-xs font-bold rounded-md hover:bg-blue-50 transition-colors shadow-sm text-center"
+                          {cert.url && cert.url !== "#" && (
+                            <a
+                              href={cert.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-5 py-2 border border-[#3B82F6] text-[#3B82F6] text-xs font-bold rounded-md hover:bg-blue-50 transition-colors shadow-sm"
                             >
                               View File
                             </a>
                           )}
-                          
-                          <button 
+                          <button
                             onClick={() => handleEditClick(cert)}
                             className="px-5 py-2 border border-[#3B82F6] text-[#3B82F6] text-xs font-bold rounded-md hover:bg-blue-50 transition-colors shadow-sm"
                           >

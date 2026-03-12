@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { apiFetch } from "@/lib/api";
 import Link from "next/link";
 import { Project } from "@/hooks/useProfile";
@@ -67,56 +67,6 @@ export default function ProjectsSection({
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
   const displayedProjects = projects.slice(0, 3);
-
-  useEffect(() => {
-    const isAnyModalOpen = isModalOpen || isUploadOpen;
-
-    if (isAnyModalOpen) {
-      const scrollY = window.scrollY;
-      
-      // ล็อคทั้ง html และ body
-      document.documentElement.style.height = "100vh";
-      document.documentElement.style.overflow = "hidden";
-      
-      document.body.style.position = "fixed";
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = "100%";
-      document.body.style.height = "100vh"; // เพิ่มความชัวร์
-      document.body.style.overflow = "hidden";
-      
-      // ป้องกันการลากเลื่อนบนมือถือ (iOS)
-      const preventDefault = (e: TouchEvent) => {
-        // ยอมให้เลื่อนได้เฉพาะใน Modal (ต้องระบุ class หรือ id ของ modal container)
-        if (!(e.target as HTMLElement).closest('.modal-content-container')) {
-          if (e.touches.length > 1) return; // ยอมให้ zoom ได้
-          e.preventDefault();
-        }
-      };
-      
-      document.addEventListener('touchmove', preventDefault, { passive: false });
-      
-      return () => {
-        document.removeEventListener('touchmove', preventDefault);
-      };
-    } else {
-      // คืนค่า
-      const scrollY = document.body.style.top;
-      
-      document.documentElement.style.height = "";
-      document.documentElement.style.overflow = "";
-      
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.width = "";
-      document.body.style.height = "";
-      document.body.style.overflow = "";
-      
-      if (scrollY) {
-        window.scrollTo(0, parseInt(scrollY) * -1);
-      }
-    }
-  }, [isModalOpen, isUploadOpen]);
-      
 
   const handleOpenUpload = (project: Project) => {
     setSelectedProject(project);
@@ -239,16 +189,19 @@ export default function ProjectsSection({
                       icon="github"
                       label="Github Linked"
                       active={!!project.githubUrl}
+                      url={project.githubUrl}
                     />
                     <CredibilityItem
                       icon="link"
                       label="Project Link"
                       active={!!project.projectUrl}
+                      url={project.projectUrl}
                     />
                     <CredibilityItem
                       icon="file"
                       label="Documentation"
                       active={!!project.fileUrl}
+                      url={project.fileUrl}
                     />
                   </div>
                 </div>
@@ -414,13 +367,21 @@ function CredibilityItem({
   icon,
   label,
   active,
+  url,
 }: {
   icon: "github" | "link" | "file";
   label: string;
   active: boolean;
+  url?: string;
 }) {
   return (
-    <div
+    <a
+      href={active && url ? url : undefined}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={(e) => {
+        if (!active) e.preventDefault();
+      }}
       className={`flex items-center justify-between p-3 border rounded-xl transition-all ${active ? "bg-white border-green-100 shadow-sm" : "bg-gray-50/50 border-gray-100 opacity-60"}`}
     >
       <div className="flex items-center gap-3">
@@ -488,6 +449,6 @@ function CredibilityItem({
           </svg>
         )}
       </div>
-    </div>
+    </a>
   );
 }

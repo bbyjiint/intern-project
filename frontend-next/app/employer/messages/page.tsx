@@ -322,11 +322,6 @@ export default function MessagesPage() {
   const [loading, setLoading] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const chatContainerRef = useRef<HTMLDivElement>(null)
-  const selectedConversationRef = useRef<Conversation | null>(null)
-
-  useEffect(() => {
-    selectedConversationRef.current = selectedConversation
-  }, [selectedConversation])
 
   // Check role and load conversations
   useEffect(() => {
@@ -361,19 +356,11 @@ export default function MessagesPage() {
         const data = await apiFetch<{ conversations: Conversation[] }>('/api/messages/conversations')
         
         // Convert timestamp strings to Date objects
-        const currentSelected = selectedConversationRef.current
-        const converted = data.conversations.map((conv: any) => {
-          const preservedMessages =
-            currentSelected?.id === conv.id
-              ? currentSelected.messages
-              : conversations.find((existing) => existing.id === conv.id)?.messages
-
-          return {
-            ...conv,
-            lastMessageTime: new Date(conv.lastMessageTime),
-            messages: preservedMessages || [],
-          }
-        })
+        const converted = data.conversations.map((conv: any) => ({
+          ...conv,
+          lastMessageTime: new Date(conv.lastMessageTime),
+          messages: [], // Will be loaded when conversation is selected
+        }))
         
         setConversations(converted)
         // Set first conversation as selected if we have conversations and none is selected
@@ -384,12 +371,8 @@ export default function MessagesPage() {
             : null
 
           if (targetConversation) {
-            setSelectedConversation((current) =>
-              current?.id === targetConversation.id
-                ? { ...targetConversation, messages: current.messages }
-                : targetConversation
-            )
-          } else if (!currentSelected) {
+            setSelectedConversation(targetConversation)
+          } else if (!selectedConversation) {
             setSelectedConversation(converted[0])
           }
         }
@@ -409,23 +392,19 @@ export default function MessagesPage() {
           try {
             const data = await apiFetch<{ conversations: Conversation[] }>('/api/messages/conversations')
             setConversations((prevConversations) => {
-              const currentSelected = selectedConversationRef.current
               const converted = data.conversations.map((conv: any) => ({
                 ...conv,
                 lastMessageTime: new Date(conv.lastMessageTime),
-                messages:
-                  (currentSelected?.id === conv.id
-                    ? currentSelected.messages
-                    : prevConversations.find(c => c.id === conv.id)?.messages) || [],
+                messages: prevConversations.find(c => c.id === conv.id)?.messages || [],
               }))
               
               // Update selected conversation if it exists
-              if (currentSelected) {
-                const updated = converted.find(c => c.id === currentSelected.id)
+              if (selectedConversation) {
+                const updated = converted.find(c => c.id === selectedConversation.id)
                 if (updated) {
                   setSelectedConversation({
                     ...updated,
-                    messages: currentSelected.messages,
+                    messages: selectedConversation.messages,
                   })
                 }
               }
@@ -441,7 +420,7 @@ export default function MessagesPage() {
     }, 3000)
 
     return () => clearInterval(interval)
-  }, [router, targetConversationId])
+  }, [router, selectedConversation, targetConversationId])
 
   useEffect(() => {
     if (!targetConversationId || conversations.length === 0) return
@@ -456,12 +435,10 @@ export default function MessagesPage() {
   useEffect(() => {
     if (!selectedConversation) return
 
-    const conversationId = selectedConversation.id
-
     const loadMessages = async () => {
       try {
         const data = await apiFetch<{ messages: Message[] }>(
-          `/api/messages/conversations/${conversationId}/messages`
+          `/api/messages/conversations/${selectedConversation.id}/messages`
         )
         
         // Convert timestamp strings to Date objects
@@ -472,25 +449,21 @@ export default function MessagesPage() {
 
         // Check if we have new messages (compare by length or last message ID)
         const hasNewMessages = 
-          !selectedConversationRef.current?.messages || 
-          converted.length !== selectedConversationRef.current.messages.length ||
-          (converted.length > 0 && selectedConversationRef.current.messages.length > 0 &&
-           converted[converted.length - 1].id !== selectedConversationRef.current.messages[selectedConversationRef.current.messages.length - 1].id)
+          !selectedConversation.messages || 
+          converted.length !== selectedConversation.messages.length ||
+          (converted.length > 0 && selectedConversation.messages.length > 0 &&
+           converted[converted.length - 1].id !== selectedConversation.messages[selectedConversation.messages.length - 1].id)
 
         // Update conversation with messages
-        setSelectedConversation((current) =>
-          current?.id === conversationId
-            ? {
-                ...current,
-                messages: converted,
-              }
-            : current
-        )
+        setSelectedConversation({
+          ...selectedConversation,
+          messages: converted,
+        })
 
         // Update conversations list
         setConversations((prev) =>
           prev.map((conv) =>
-            conv.id === conversationId
+            conv.id === selectedConversation.id
               ? { ...conv, messages: converted }
               : conv
           )

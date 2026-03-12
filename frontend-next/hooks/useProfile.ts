@@ -9,15 +9,28 @@ export interface ProfileData {
   contactEmail?: string
   phoneNumber?: string
   bio?: string
+  professionalSummary?: string
   profileImage?: string
+
+  gender?: string
+  nationality?: string
+  dateOfBirth?: string
+
+  preferredPositions?: string[]
+  preferredLocations?: string[]
+
+  internshipPeriod?: string
+
   desiredPosition?: string
   introductionVideo?: string
+
   education?: Education[]
   experience?: Experience[]
   projects?: Project[]
   certificates?: Certificate[]
   resume?: ResumeFile
   skills?: Skill[]
+
   internshipDetails?: InternshipDetails
   interestedCompanies?: InterestedCompany[]
 }
@@ -37,9 +50,6 @@ export interface Education {
   startDate?: string
   endDate?: string
   isCurrent?: boolean
-  relevantCoursework?: string[]
-  achievements?: string[]
-  extracurriculars?: string[]
 }
 
 export interface Experience {
@@ -50,10 +60,8 @@ export interface Experience {
   startDate?: string
   endDate?: string
   isCurrent?: boolean
-  manager?: string
   description?: string
   responsibilities?: string[]
-  linkedProjects?: number
 }
 
 export interface Project {
@@ -63,8 +71,10 @@ export interface Project {
   description?: string
   startDate?: string
   endDate?: string
-  linkedToExperience?: string
   skills?: string[]
+  githubUrl?: string
+  projectUrl?: string
+  fileUrl?: string
 }
 
 export interface Certificate {
@@ -89,10 +99,9 @@ export interface ResumeFile {
 export interface Skill {
   id: string
   name: string
-  category: 'technical' | 'business'
+  category: string  // เปลี่ยนจาก 'technical' | 'business' เป็น string
   rating?: number
-  level?: string;
-  linkedToExperience?: string
+  level?: string    // เพิ่ม level ด้วย
 }
 
 export interface InternshipDetails {
@@ -109,25 +118,24 @@ export interface InterestedCompany {
 }
 
 export function useProfile() {
+
   const [profileData, setProfileData] = useState<ProfileData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const fetchProfile = async () => {
+
     try {
+
       setIsLoading(true)
       setError(null)
+
       const data = await apiFetch<{ profile: any }>('/api/candidates/profile')
-      
-      // Transform API data to match our interface
-      // API returns data in format: { profile: { fullName, email, phoneNumber, aboutYou, education, experience, skills, ... } }
-      // Transform API data to match our interface
-      // API returns: { profile: { fullName, email, phoneNumber, aboutYou, education, experience, skills, ... } }
       const profile = data.profile
-      
-      // Map education from API format (university, degree) to our format
-      const education: Education[] = (profile.education || []).map((edu: any, index: number) => ({
-        id: edu.id || `edu-${index}`,
+
+      // ---------- Education ----------
+      const education: Education[] = (profile.education || []).map((edu: any, i: number) => ({
+        id: edu.id || `edu-${i}`,
         university: edu.university,
         universityName: edu.university,
         degree: edu.degree,
@@ -138,128 +146,142 @@ export function useProfile() {
         startYear: edu.startYear,
         endYear: edu.endYear,
         yearOfStudy: edu.yearOfStudy,
-        startDate: edu.startDate || (edu.startYear ? `${edu.startYear}-01-01` : undefined),
-        endDate: edu.endDate || (edu.endYear ? `${edu.endYear}-12-31` : undefined),
-        isCurrent: edu.isCurrent ?? !edu.endDate,
-        relevantCoursework: edu.coursework || [],
-        achievements: edu.achievements || [],
-        extracurriculars: edu.extracurriculars || [],
+        startDate: edu.startDate,
+        endDate: edu.endDate,
+        isCurrent: edu.isCurrent ?? !edu.endDate
       }))
-      
-      // Map experience from API format
-      const experience: Experience[] = (profile.experience || []).map((exp: any, index: number) => ({
-        id: exp.id || `exp-${index}`,
+
+      // ---------- Experience ----------
+      const experience: Experience[] = (profile.experience || []).map((exp: any, i: number) => ({
+        id: exp.id || `exp-${i}`,
         position: exp.position || exp.title,
         companyName: exp.companyName || exp.company,
-        department: exp.department || null,
+        department: exp.department,
         startDate: exp.startDate,
         endDate: exp.endDate,
         isCurrent: !exp.endDate,
-        manager: exp.manager || null,
-        description: exp.description || '',
-        responsibilities: exp.responsibilities || (exp.description ? exp.description.split('\n').filter((l: string) => l.trim()) : []),
-        linkedProjects: exp.linkedProjects,
+        description: exp.description,
+        responsibilities: exp.responsibilities || []
       }))
-      
-      // Map skills from API format (name, level) to our format (name, rating)
-      const skills: Skill[] = (profile.skills || []).map((skill: any, index: number) => {
-        // Convert level string to rating number (1-10 scale)
-        let rating = 0
-        if (skill.level === 'beginner') rating = 3
-        else if (skill.level === 'intermediate') rating = 6
-        else if (skill.level === 'advanced') rating = 9
-        
-        return {
-          id: skill.id || `skill-${index}`,
-          name: skill.name,
-          category: skill.category || 'technical',
-          rating: skill.rating || rating,
-          linkedToExperience: skill.linkedToExperience,
-        }
-      })
 
-      const rawCerts = profile.CertificateFile || profile.certificates || [];
-      const mappedCertificates: Certificate[] = rawCerts.map((cert: any) => ({
-        id: cert.id,
-        name: cert.name,
-        url: cert.url || '',
-        type: cert.type,
-        description: cert.description,
-        issuedBy: cert.issuedBy,
-        issueDate: cert.issueDate,
-        relatedSkills: cert.relatedSkills || []
-      }))
-      
-      const certificates: Certificate[] = ((profile.files?.certificates || profile.certificates) || []).map((cert: any) => {
-        let parsedDescription: any = {}
-        if (typeof cert.description === 'string' && cert.description.trim().startsWith('{')) {
-          try {
-            parsedDescription = JSON.parse(cert.description)
-          } catch {
-            parsedDescription = {}
-          }
+      // ---------- Skills ----------
+      const skills: Skill[] = (profile.skills || []).map((s: any, i: number) => {
+        let rating = s.rating
+        if (!rating && s.level) {
+          if (s.level === 'beginner') rating = 1
+          if (s.level === 'intermediate') rating = 2
+          if (s.level === 'advanced') rating = 3
         }
 
         return {
-          id: cert.id,
-          name: cert.name,
-          url: cert.url,
-          type: cert.type,
-          description: parsedDescription.descriptionText || cert.description || '',
-          issuedBy: parsedDescription.issuedBy || '',
-          date: parsedDescription.issueDate || '',
-          tags: parsedDescription.tags || [],
-          createdAt: cert.createdAt,
+          id: s.id || `skill-${i}`,
+          name: s.name,
+          category: s.category,
+          rating,
+          level: s.level
         }
       })
 
+      // ---------- Certificates ----------
+      const certificates: Certificate[] = (profile.files?.certificates || profile.certificates || profile.CertificateFile || []).map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        url: c.url,
+        type: c.type,
+        description: c.description,
+        issuedBy: c.issuedBy,
+        date: c.issueDate,
+        tags: c.relatedSkills || [],
+        createdAt: c.createdAt
+      }))
+
+      // ---------- Transform ----------
       const transformed: ProfileData = {
         id: profile.id,
         fullName: profile.fullName,
         contactEmail: profile.email || profile.contactEmail,
         phoneNumber: profile.phoneNumber,
+
         bio: profile.aboutYou || profile.professionalSummary || profile.bio,
         profileImage: profile.profileImage,
+
+        gender: profile.gender,
+        nationality: profile.nationality,
+        dateOfBirth: profile.dateOfBirth,
+
+        preferredPositions:
+          profile.preferredPositions ||
+          profile.positionsOfInterest ||
+          [],
+
+        preferredLocations:
+          profile.preferredLocations ||
+          profile.CandidatePreferredProvince?.map((p: any) => p.provinceId) ||
+          [],
+
+        internshipPeriod:
+          profile.internshipPeriod ||
+          (profile.availableStartDate && profile.availableEndDate
+            ? `${profile.availableStartDate} - ${profile.availableEndDate}`
+            : ""),
+
         desiredPosition: profile.desiredPosition,
         introductionVideo: profile.introductionVideo,
-        education: education,
-        experience: experience,
+
+        education,
+        experience,
         projects: profile.projects || [],
         certificates,
-        resume: profile.resume || (profile.resumeFile || profile.resumeUrl ? {
-          name: profile.resumeFile,
-          url: profile.resumeUrl,
-        } : undefined),
-        skills: skills,
+
+        resume:
+          profile.resume ||
+          (profile.resumeFile || profile.resumeUrl
+            ? {
+              name: profile.resumeFile,
+              url: profile.resumeUrl
+            }
+            : undefined),
+
+        skills,
+
         internshipDetails: {
           desiredPosition: profile.desiredPosition,
           availableStartDate: profile.availableStartDate,
           availableEndDate: profile.availableEndDate,
-          motivation: profile.motivation,
+          motivation: profile.motivation
         },
-        interestedCompanies: profile.interestedCompanies || [],
+
+        interestedCompanies: profile.interestedCompanies || []
       }
-      
+
       setProfileData(transformed)
       localStorage.setItem('internProfileData', JSON.stringify(transformed))
+
     } catch (err: any) {
+
       console.error('Failed to fetch profile:', err)
+
       if (err.status === 404) {
+
         setProfileData(null)
+
       } else {
+
         setError(err.message || 'Failed to load profile')
-        // Try to load from localStorage as fallback
+
         const saved = localStorage.getItem('internProfileData')
+
         if (saved) {
           try {
             setProfileData(JSON.parse(saved))
-          } catch (e) {
-            console.error('Failed to parse saved profile:', e)
-          }
+          } catch { }
         }
       }
+
     } finally {
+
       setIsLoading(false)
+
     }
   }
 
@@ -268,11 +290,13 @@ export function useProfile() {
   }, [])
 
   const calculateCompletion = (profile: ProfileData | null): number => {
+
     if (!profile) return 0
 
     const checks = [
+
       !!profile.profileImage,
-      !!profile.bio && profile.bio.trim().length > 0,
+      !!profile.bio,
       !!profile.resume,
       !!profile.introductionVideo,
       profile.education && profile.education.length > 0,
@@ -280,7 +304,8 @@ export function useProfile() {
       profile.projects && profile.projects.length > 0,
       profile.skills && profile.skills.length > 0,
       !!profile.internshipDetails?.desiredPosition,
-      profile.certificates && profile.certificates.length > 0,
+      profile.certificates && profile.certificates.length > 0
+
     ]
 
     const completed = checks.filter(Boolean).length
@@ -290,10 +315,12 @@ export function useProfile() {
   const completionPercentage = calculateCompletion(profileData)
 
   return {
+
     profileData,
     isLoading,
     error,
     completionPercentage,
-    refetch: fetchProfile,
+    refetch: fetchProfile
+
   }
 }

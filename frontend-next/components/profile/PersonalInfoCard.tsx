@@ -1,47 +1,41 @@
-'use client'
+"use client";
 
-import { useState, useMemo, useEffect } from 'react'
-import { ProfileData } from '@/hooks/useProfile'
-import PersonalModal from './PersonalModal'
+import { useState, useMemo } from "react";
+import { ProfileData } from "@/hooks/useProfile";
+import PersonalModal from "./PersonalModal";
 
 interface PersonalInfoCardProps {
-  profile: ProfileData
-  onRefresh?: () => void
+  profile: ProfileData;
+  onRefresh?: () => void;
 }
 
-export default function PersonalInfoCard({ profile, onRefresh }: PersonalInfoCardProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false)
+export default function PersonalInfoCard({
+  profile,
+  onRefresh,
+}: PersonalInfoCardProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // 💡 เพิ่มส่วนนี้เข้าไปครับ
-  useEffect(() => {
-    if (isModalOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "auto";
-    }
-
-    // คืนค่าเดิมเมื่อปิดหรือเปลี่ยนหน้า
-    return () => {
-      document.body.style.overflow = "auto";
-    };
-  }, [isModalOpen]);
-  
   const stats = useMemo(() => {
-    const skills = profile.skills || []
-    const projects = profile.projects || []
+    const skills = profile.skills || [];
+    const projects = profile.projects || [];
 
     return {
-      verifiedSkillTest: skills.filter(s => s.rating && s.rating > 7).length,
-      verifiedCertificate: skills.filter(s => s.category === 'technical').length,
-      notVerifiedSkills: skills.filter(s => !s.rating).length,
-      projectUploaded: projects.filter(p => p.skills && p.skills.length > 0).length,
-      projectNoFile: projects.filter(p => !p.skills || p.skills.length === 0).length,
-    }
-  }, [profile])
+      verifiedSkillTest: skills.filter((s) => s.rating && s.rating > 7).length,
+      verifiedCertificate: skills.filter((s) => s.category === "technical")
+        .length,
+      notVerifiedSkills: skills.filter((s) => !s.rating).length,
+      projectUploaded: projects.filter((p) => p.skills && p.skills.length > 0)
+        .length,
+      projectNoFile: projects.filter((p) => !p.skills || p.skills.length === 0)
+        .length,
+    };
+  }, [profile]);
 
-  const displayRoles = profile.positionsOfInterest?.length 
-    ? profile.positionsOfInterest 
-    : ['Candidate']
+  const displayRoles = profile.preferredPositions?.length
+    ? profile.preferredPositions
+    : ["Candidate"];
+
+  const prefix = profile.gender?.toLowerCase() === "female" ? "Ms." : "Mr.";
 
   return (
     <>
@@ -57,17 +51,37 @@ export default function PersonalInfoCard({ profile, onRefresh }: PersonalInfoCar
         {/* Profile Header Section */}
         <div className="flex items-start gap-6 mb-6">
           <img
-            src={profile.profileImage || "/api/placeholder/100/100"}
+            src={
+              profile.profileImage
+                ? profile.profileImage.startsWith("http")
+                  ? profile.profileImage
+                  : `http://localhost:5001${profile.profileImage}`
+                : "https://placehold.co/100x100"
+            }
             alt="Profile"
             className="w-24 h-24 rounded-full object-cover shadow-sm bg-slate-50"
           />
           <div className="pt-1">
             <h2 className="text-2xl font-bold text-slate-900 mb-1">
-              {profile.fullName || 'Candidate Name'}
+              {profile.fullName
+                ? `${prefix} ${profile.fullName}`
+                : "Candidate Name"}
             </h2>
             <div className="flex flex-col text-slate-400 text-sm space-y-0.5">
-              <span>Phone: {profile.phoneNumber || '-'}</span>
-              <span>Email: {profile.contactEmail || '-'}</span>
+              <span>
+                Phone:{" "}
+                {(() => {
+                  const digits = (profile.phoneNumber || "")
+                    .replace(/\D/g, "")
+                    .slice(0, 10);
+                  if (digits.length > 6)
+                    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+                  if (digits.length > 3)
+                    return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+                  return digits || "-";
+                })()}
+              </span>
+              <span>Email: {profile.contactEmail || "-"}</span>
             </div>
           </div>
         </div>
@@ -80,7 +94,10 @@ export default function PersonalInfoCard({ profile, onRefresh }: PersonalInfoCar
         {/* Positions Tags */}
         <div className="flex flex-wrap gap-2 mb-6">
           {displayRoles.map((role, idx) => (
-            <span key={idx} className="px-4 py-1.5 bg-[#E2E8F0] text-slate-700 text-xs font-bold rounded-md">
+            <span
+              key={idx}
+              className="px-4 py-1.5 bg-[#E2E8F0] text-slate-700 text-xs font-bold rounded-md"
+            >
               {role}
             </span>
           ))}
@@ -88,7 +105,9 @@ export default function PersonalInfoCard({ profile, onRefresh }: PersonalInfoCar
 
         {/* Profile Completion Bar */}
         <div className="flex items-center gap-4 mb-10">
-          <span className="text-sm font-bold text-slate-900">Profile Completion:</span>
+          <span className="text-sm font-bold text-slate-900">
+            Profile Completion:
+          </span>
           <div className="bg-blue-600 text-white text-[11px] font-bold px-3 py-0.5 rounded-full min-w-[70px] text-center">
             100/100
           </div>
@@ -99,7 +118,13 @@ export default function PersonalInfoCard({ profile, onRefresh }: PersonalInfoCar
           <div className="flex justify-between items-center px-6 py-4">
             <h3 className="font-bold text-slate-800">AI Validation Status</h3>
             <span className="flex items-center gap-1.5 px-3 py-1 bg-[#F0FDF4] text-[#4ADE80] border border-[#DCFCE7] rounded-full text-xs font-bold">
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/></svg>
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
               Verified
             </span>
           </div>
@@ -107,9 +132,23 @@ export default function PersonalInfoCard({ profile, onRefresh }: PersonalInfoCar
           <div className="px-6 pb-6 space-y-6">
             {/* Education Row */}
             <div className="flex items-start gap-4">
-              <span className="w-20 text-slate-400 font-medium text-sm pt-0.5">Education</span>
+              <span className="w-20 text-slate-400 font-medium text-sm pt-0.5">
+                Education
+              </span>
               <div className="flex items-center gap-2 text-sm text-slate-600">
-                <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/></svg>
+                <svg
+                  className="w-5 h-5 text-green-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={3}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
                 Verified
               </div>
             </div>
@@ -118,18 +157,54 @@ export default function PersonalInfoCard({ profile, onRefresh }: PersonalInfoCar
 
             {/* Skills Row */}
             <div className="flex items-start gap-4">
-              <span className="w-20 text-slate-400 font-medium text-sm pt-0.5">Skills</span>
+              <span className="w-20 text-slate-400 font-medium text-sm pt-0.5">
+                Skills
+              </span>
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2 text-sm text-slate-600">
-                  <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/></svg>
+                  <svg
+                    className="w-5 h-5 text-green-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={3}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
                   {stats.verifiedSkillTest} Verified By Skill Test
                 </div>
                 <div className="flex items-center gap-2 text-sm text-slate-600">
-                  <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/></svg>
+                  <svg
+                    className="w-5 h-5 text-green-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={3}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
                   {stats.verifiedCertificate} Evidence By Certificate
                 </div>
                 <div className="flex items-center gap-2 text-sm text-slate-600">
-                  <svg className="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/></svg>
+                  <svg
+                    className="w-5 h-5 text-red-400"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
                   {stats.notVerifiedSkills} Not Verified
                 </div>
               </div>
@@ -139,14 +214,38 @@ export default function PersonalInfoCard({ profile, onRefresh }: PersonalInfoCar
 
             {/* Project Row */}
             <div className="flex items-start gap-4">
-              <span className="w-20 text-slate-400 font-medium text-sm pt-0.5">Project</span>
+              <span className="w-20 text-slate-400 font-medium text-sm pt-0.5">
+                Project
+              </span>
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2 text-sm text-slate-600">
-                  <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7"/></svg>
+                  <svg
+                    className="w-5 h-5 text-green-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={3}
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
                   {stats.projectUploaded} File Uploaded
                 </div>
                 <div className="flex items-center gap-2 text-sm text-slate-600">
-                  <svg className="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"/></svg>
+                  <svg
+                    className="w-5 h-5 text-red-400"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
                   {stats.projectNoFile} No File Uploaded
                 </div>
               </div>
@@ -164,5 +263,5 @@ export default function PersonalInfoCard({ profile, onRefresh }: PersonalInfoCar
         }}
       />
     </>
-  )
+  );
 }

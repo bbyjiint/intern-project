@@ -5,12 +5,12 @@ import { randomUUID } from "crypto";
 
 export const profilesRouter = Router();
 
-function normalizeEducationLevel(value: unknown): "BACHELOR" | "MASTERS" | "PHD" {
-  const normalized = String(value || "")
-    .trim()
-    .toUpperCase()
-    .replace(/[^A-Z]/g, "");
+function normalizeEducationLevel(value: unknown): string {
+  const normalized = String(value || "").trim().toUpperCase().replace(/[^A-Z_]/g, "");
 
+  if (normalized === "BELOW_HIGH_SCHOOL") return "BELOW_HIGH_SCHOOL";
+  if (normalized === "HIGH_SCHOOL") return "HIGH_SCHOOL";
+  if (normalized === "HIGHER_VOCATIONAL") return "HIGHER_VOCATIONAL";
   if (normalized === "BACHELOR" || normalized === "BACHELORS") return "BACHELOR";
   if (normalized === "MASTER" || normalized === "MASTERS") return "MASTERS";
   if (normalized === "PHD" || normalized === "DOCTORATE") return "PHD";
@@ -36,7 +36,7 @@ profilesRouter.get("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
         User: { select: { email: true } },
         CandidateUniversity: {
           include: { University: { select: { name: true } } },
-          orderBy: [{ isCurrent: "desc" }, { endDate: "desc" }],
+          orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
         },
         WorkHistory: {
           orderBy: { startDate: "desc" },
@@ -91,8 +91,6 @@ profilesRouter.get("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
         fieldOfStudy: cu.fieldOfStudy || "",
         yearOfStudy: cu.yearOfStudy || "",
         isCurrent: cu.isCurrent,
-        endDate: cu.endDate ? cu.endDate.toISOString().split("T")[0] : "",
-        endYear: cu.isCurrent ? null : (cu.endDate ? cu.endDate.getFullYear().toString() : null),
         gpa: cu.gpa ? cu.gpa.toString() : null,
         // Note: coursework and achievements are not stored in schema currently
         // TODO: Add fields to CandidateUniversity model if needed
@@ -124,6 +122,13 @@ profilesRouter.get("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
         name: project.name || "",
         role: project.role || "",
         description: project.description || "",
+        startDate: project.startDate || "",
+        endDate: project.endDate || "",
+        relatedSkills: project.relatedSkills || [],
+        githubUrl: project.githubUrl || "",
+        projectUrl: project.projectUrl || "",
+        fileUrl: project.fileUrl || "",
+        fileName: project.fileName || "",   
       })),
     };
 
@@ -220,23 +225,26 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
       });
 
       // Create new preferred province entries
-      for (const provinceId of preferredLocations) {
-        if (provinceId && typeof provinceId === 'string') {
-          // Verify province exists
-          const province = await prisma.province.findUnique({
-            where: { id: provinceId },
-          });
+      for (const provinceValue of preferredLocations) {
+        if (provinceValue && typeof provinceValue === "string") {
+
+          const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(provinceValue)
+          const province = await prisma.province.findFirst({
+            where: isUUID
+              ? { id: provinceValue }
+              : { OR: [{ name: provinceValue }, { thname: provinceValue }] }
+          })
 
           if (province) {
             await prisma.candidatePreferredProvince.create({
               data: {
                 id: randomUUID(),
                 candidateId: candidateProfile.id,
-                provinceId: provinceId,
+                provinceId: province.id,
               },
             });
           } else {
-            console.warn(`Province not found: ${provinceId}`);
+            console.warn(`Province not found: ${provinceValue}`);
           }
         }
       }
@@ -280,8 +288,6 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
             degreeName,
             fieldOfStudy,
             yearOfStudy,
-            endYearStr,
-            hasEndYear,
             isCurrent: edu.isCurrent === true || !hasEndYear,
             educationLevel: normalizeEducationLevel(edu.educationLevel),
             gpa: edu.gpa ? parseFloat(edu.gpa) : null,
@@ -292,8 +298,6 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
           degreeName: string;
           fieldOfStudy: string;
           yearOfStudy: string;
-          endYearStr: string;
-          hasEndYear: boolean;
           isCurrent: boolean;
           educationLevel: "BACHELOR" | "MASTERS" | "PHD";
           gpa: number | null;
@@ -342,7 +346,6 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
               yearOfStudy: edu.yearOfStudy,
               gpa: Number.isFinite(edu.gpa) ? edu.gpa : null,
               isCurrent: edu.isCurrent,
-              endDate: edu.hasEndYear ? new Date(`${edu.endYearStr}-01-01`) : null,
             }
           });
 

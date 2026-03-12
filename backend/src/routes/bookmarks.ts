@@ -22,26 +22,14 @@ bookmarksRouter.get("/", requireAuth, requireRole("COMPANY"), async (req: Authed
       where: { companyId: companyProfile.id },
       include: {
         Candidate: {
-          select: {
-            id: true,
-            fullName: true,
-            desiredPosition: true,
-            bio: true,
+          include: {
             User: { select: { email: true } },
             CandidateUniversity: {
-              orderBy: [{ isCurrent: "desc" }, { updatedAt: "desc" }],
+              orderBy: [{ isCurrent: "desc" }, { endDate: "desc" }],
               take: 1,
-              select: {
-                isCurrent: true,
-                degreeName: true,
-                University: { select: { name: true } },
-              },
+              include: { University: { select: { name: true } } },
             },
-            UserSkill: {
-              select: {
-                Skills: { select: { name: true } },
-              },
-            },
+            UserSkill: { include: { Skills: { select: { name: true } } } },
           },
         },
       },
@@ -56,6 +44,11 @@ bookmarksRouter.get("/", requireAuth, requireRole("COMPANY"), async (req: Authed
       return (first + (second ?? "")).toUpperCase();
     }
 
+    function formatGradDate(d?: Date | null) {
+      if (!d) return "N/A";
+      return d.toLocaleString("en-US", { month: "short", year: "numeric" });
+    }
+
     const candidates = bookmarks.map((bookmark) => {
       const c = bookmark.Candidate;
       const name = c.fullName ?? c.User.email;
@@ -65,6 +58,7 @@ bookmarksRouter.get("/", requireAuth, requireRole("COMPANY"), async (req: Authed
       
       const uni = primaryEdu?.University?.name ?? "Unknown University";
       const skills = c.UserSkill.map((us) => us.Skills.name);
+      const endDate = primaryEdu?.endDate ?? null;
 
       // Major: derive ONLY from CandidateUniversity.degreeName.
       // CandidateProfile should not be used as a source of education details.
@@ -76,7 +70,7 @@ bookmarksRouter.get("/", requireAuth, requireRole("COMPANY"), async (req: Authed
         role: c.desiredPosition ?? "Intern",
         university: uni,
         major: major ?? "N/A",
-        graduationDate: primaryEdu?.isCurrent ? "Present" : null,
+        graduationDate: endDate ? formatGradDate(endDate) : (primaryEdu?.isCurrent ? "Present" : null),
         skills,
         initials: initialsFromName(name),
         email: c.User.email,

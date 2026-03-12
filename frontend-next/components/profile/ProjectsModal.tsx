@@ -11,7 +11,7 @@ export interface ProjectData {
   startDate?: string
   endDate?: string
   linkedToExperience?: string
-  relatedSkills: string[]
+  relatedSkills: string[] // เปลี่ยนจาก skills เป็น relatedSkills
   githubUrl?: string
   projectUrl?: string
 }
@@ -29,7 +29,7 @@ const MONTH_NAMES = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Date helpers
+// Date helpers (ดึงมาจาก ProjectsSection เพื่อให้ Format ตรงกัน)
 // ─────────────────────────────────────────────────────────────────────────────
 
 function parseDateValue(val: string): { month: number; year: number } | null {
@@ -59,7 +59,7 @@ function toInputString(val: string): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MonthYearPicker
+// MonthYearPicker (copied from ProjectsSection)
 // ─────────────────────────────────────────────────────────────────────────────
 
 function MonthYearPicker({
@@ -196,18 +196,22 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
     projectUrl: '',
   })
   const [selectedSkill, setSelectedSkill] = useState('')
-  const [errorMsg, setErrorMsg] = useState('')
+  const [errorMsg, setErrorMsg] = useState('') // State สำหรับเก็บข้อความแจ้งเตือน
 
   const [availableSkills, setAvailableSkills] = useState<MasterSkill[]>([])
   const [isLoadingSkills, setIsLoadingSkills] = useState(false)
+
+  // สร้าง Ref สำหรับเรียกเปิดปฏิทิน
+  const startPickerRef = useRef<HTMLInputElement>(null)
+  const endPickerRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (isOpen) {
       if (editingProject) {
         setFormData({
           ...editingProject,
-          startDate: toDisplayDate(editingProject.startDate || ''),
-          endDate: toDisplayDate(editingProject.endDate || ''),
+            startDate: toDisplayDate(editingProject.startDate || ''),
+            endDate: toDisplayDate(editingProject.endDate || ''),
           relatedSkills: editingProject.relatedSkills || (editingProject as any).skills || [],
         })
       } else {
@@ -244,6 +248,34 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
     }
   }, [isOpen, availableSkills.length])
 
+  const handleDateInput = (e: React.ChangeEvent<HTMLInputElement>, field: 'startDate' | 'endDate') => {
+    setErrorMsg(''); // ล้าง Error เมื่อมีการพิมพ์/เลือกวันที่
+
+    const rawValue = e.target.value;
+
+    if (rawValue.includes('-')) {
+      const [year, month] = rawValue.split('-');
+      setFormData({ ...formData, [field]: `${month}/${year}` });
+      return;
+    }
+
+    let value = rawValue.replace(/\D/g, '')
+    if (value.length > 6) value = value.slice(0, 6)
+
+    if (value.length >= 3) {
+      value = `${value.slice(0, 2)}/${value.slice(2)}`
+    }
+    setFormData({ ...formData, [field]: value })
+  }
+
+  const formatToMonthValue = (dateStr: string) => {
+    if (dateStr.includes('/')) {
+      const [m, y] = dateStr.split('/');
+      if (y && m && y.length === 4) return `${y}-${m.padStart(2, '0')}`;
+    }
+    return '';
+  }
+
   if (!isOpen) return null
 
   const handleAddSkill = () => {
@@ -265,6 +297,7 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
   }
 
   const handleSubmit = () => {
+    // 1. ตรวจสอบฟิลด์บังคับ
     if (
       !formData.name.trim() || 
       !formData.role?.trim() || 
@@ -276,8 +309,9 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
       return
     }
 
-    const startP = parseDateValue(formData.startDate || '');
-    const endP = parseDateValue(formData.endDate || '');
+    // 2. ตรวจสอบ Format วันที่ก่อนบันทึก
+    const startP = parseDateValue(formData.startDate);
+    const endP = parseDateValue(formData.endDate);
     if (!startP || !endP) {
       setErrorMsg('Please enter a valid date (MM/YYYY).')
       return
@@ -288,6 +322,7 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
       return
     }
 
+    // 3. เตรียม Data ส่งกลับ (แปลงเป็น DisplayDate "Jan 2024" ตาม ProjectsSection)
     const dataToSave: ProjectData = {
       ...formData,
       startDate: toDisplayDate(formData.startDate || ''),
@@ -297,6 +332,8 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
     onSave(dataToSave)
     onClose()
   }
+
+  if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 overflow-y-auto" onClick={onClose}>
@@ -332,18 +369,14 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
             />
           </div>
 
-          {/* Role (แก้ไขให้รับเฉพาะตัวอักษร) */}
+          {/* Role */}
           <div>
             <label className="mb-1.5 block text-sm font-semibold text-[#0273B1]">Role *</label>
             <input
               type="text"
               placeholder="e.g., Web developer"
               value={formData.role}
-              onChange={(e) => {
-                // ✅ อนุญาตเฉพาะตัวอักษรไทย-อังกฤษ และช่องว่าง
-                const val = e.target.value.replace(/[^a-zA-Zก-๙\s]/g, '');
-                setFormData({ ...formData, role: val });
-              }}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
               className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-blue-500 outline-none text-gray-700"
             />
           </div>

@@ -7,35 +7,21 @@ import { useProfile } from "@/hooks/useProfile";
 import { apiFetch } from "@/lib/api";
 
 export interface Certificate {
-  id: string; 
+  id: string;
   name: string;
   issuedBy: string;
   date: string;
   description: string;
   tags: string[];
-  url?: string; 
+  url?: string;
 }
 
 export default function CertificateSection() {
   const { profileData, refetch } = useProfile();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [currentCert, setCurrentCert] = useState<ModalCertificate | null>(null);
-  const [certificates, setCertificates] = useState<Certificate[]>([]); 
+  const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [isSaving, setIsSaving] = useState(false);
-
-  // 💡 เพิ่มส่วนนี้เข้าไปครับ
-  useEffect(() => {
-    if (isModalOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "auto";
-    }
-
-    // คืนค่าเดิมเมื่อปิดหรือเปลี่ยนหน้า
-    return () => {
-      document.body.style.overflow = "auto";
-    };
-  }, [isModalOpen]);
 
   // ข้อมูลเริ่มต้น (ตัวอย่าง)
   useEffect(() => {
@@ -44,7 +30,7 @@ export default function CertificateSection() {
         // แปลงวันที่จาก ISO ของ DB เป็น YYYY-MM-DD เพื่อให้ Input Type Date นำไปแสดงผลได้
         const formattedDate = cert.issueDate
           ? new Date(cert.issueDate).toISOString().split("T")[0]
-          : "";
+          : cert.date || "";
 
         return {
           id: cert.id,
@@ -52,7 +38,7 @@ export default function CertificateSection() {
           issuedBy: cert.issuedBy || "",
           date: formattedDate,
           description: cert.description || "",
-          tags: cert.relatedSkills || [],
+          tags: cert.tags || cert.relatedSkills || [],
           url: cert.url,
         };
       });
@@ -170,15 +156,22 @@ export default function CertificateSection() {
                       {cert.issuedBy}
                     </span>
                     <span className="text-gray-300">|</span>
-                    <span>{cert.date}</span>
+                    <span>
+                      {cert.date
+                        ? new Date(cert.date).toLocaleDateString("en-GB", {
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          })
+                        : ""}
+                    </span>
                   </p>
                   <p className="text-sm text-gray-600 leading-relaxed mb-5 max-w-3xl">
-                    {cert.description || 'No description provided.'}
+                    {cert.description || "No description provided."}
                   </p>
 
                   {/* Tags */}
                   <div className="flex flex-wrap gap-2 mb-2">
-
                     {cert.tags.map((tag) => (
                       <span
                         key={tag}
