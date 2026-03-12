@@ -528,7 +528,7 @@ profilesRouter.get("/companies/profile", requireAuth, requireRole("COMPANY"), as
       subdistrictId: companyProfile.subdistrictId || "",
       phoneNumber: companyProfile.CompanyPhones[0]?.phone || "",
       email: companyProfile.CompanyEmails[0]?.email || companyProfile.User.email,
-      websiteUrl: "", // Not stored in schema currently
+      websiteUrl: companyProfile.websiteUrl || "",
       contactName: companyProfile.recruiterName || "",
       profileImage: companyProfile.logoURL || "",
     };
@@ -598,6 +598,7 @@ profilesRouter.put("/companies/profile", requireAuth, requireRole("COMPANY"), as
         province: province !== undefined ? province : companyProfile.province, // Keep for backward compatibility
         postcode: postcode !== undefined ? postcode : companyProfile.postcode,
         recruiterName: contactName !== undefined ? contactName : companyProfile.recruiterName,
+        websiteUrl: websiteUrl !== undefined ? websiteUrl : companyProfile.websiteUrl,
         updatedAt: new Date(),
       };
 
@@ -655,6 +656,7 @@ profilesRouter.put("/companies/profile", requireAuth, requireRole("COMPANY"), as
           subdistrictId: normalizedSubdistrictId ?? null,
           postcode: postcode || undefined,
           recruiterName: contactName || undefined,
+          websiteUrl: websiteUrl || undefined,
           ...(profileImage && { logoURL: profileImage }),
           updatedAt: new Date(),
         },

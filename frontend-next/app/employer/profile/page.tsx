@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import EmployerNavbar from '@/components/EmployerNavbar'
 import EmployerSidebar from '@/components/EmployerSidebar'
 import SearchableDropdown from '@/components/SearchableDropdown'
+import CompanyInfoEditPopup from '@/components/CompanyInfoEditPopup'
 import { apiFetch } from '@/lib/api'
 
 interface CompanyProfileData {
@@ -77,6 +78,7 @@ export default function EmployerProfilePage() {
     contactName: '',
   })
   const [savingSection, setSavingSection] = useState<'address' | 'contact' | null>(null)
+  const [isEditPopupOpen, setIsEditPopupOpen] = useState(false)
 
   useEffect(() => {
     // Check user role first, then fetch profile data
@@ -320,6 +322,25 @@ export default function EmployerProfilePage() {
 
   const goToStep = (step: number) => {
     router.push(`/employer/profile-setup?step=${step}`)
+  }
+
+  const handleEditCompanyInfo = () => {
+    setIsEditPopupOpen(true)
+  }
+
+  const handleCompanyInfoSave = async () => {
+    // Reload profile data after save
+    try {
+      const data = await apiFetch<{ profile: CompanyProfileData }>('/api/companies/profile')
+      if (data && data.profile) {
+        setProfileData(data.profile)
+        localStorage.setItem('employerProfileData', JSON.stringify(data.profile))
+        // Dispatch event to update navbar logo if changed
+        window.dispatchEvent(new Event('profileImageUpdated'))
+      }
+    } catch (error) {
+      console.error('Failed to reload profile data:', error)
+    }
   }
 
   const updateProfileCache = (updatedProfile: CompanyProfileData) => {
@@ -590,7 +611,7 @@ export default function EmployerProfilePage() {
                       </div>
 
                       <button
-                        onClick={() => goToStep(1)}
+                        onClick={handleEditCompanyInfo}
                         className="rounded-[6px] border px-[14px] py-[6px] text-[13px] font-medium text-[#0273B1] transition-colors hover:bg-[#F0F4F8]"
                         style={{ borderColor: '#0273B1' }}
                       >
@@ -855,6 +876,23 @@ export default function EmployerProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Company Info Edit Popup */}
+      {profileData && (
+        <CompanyInfoEditPopup
+          isOpen={isEditPopupOpen}
+          onClose={() => setIsEditPopupOpen(false)}
+          onSave={handleCompanyInfoSave}
+          initialData={{
+            companyName: profileData.companyName || '',
+            companyDescription: profileData.companyDescription || '',
+            businessType: profileData.businessType || '',
+            companySize: profileData.companySize || '',
+            websiteUrl: profileData.websiteUrl || '',
+            profileImage: profileData.profileImage,
+          }}
+        />
+      )}
     </div>
   )
 }
