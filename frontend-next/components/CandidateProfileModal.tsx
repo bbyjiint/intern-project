@@ -13,9 +13,19 @@ interface CandidateProfileModalProps {
     major: string
     graduationDate: string
     skills: string[]
+    preferredPositions?: string[]
     initials: string
     email?: string
     about?: string
+    phoneNumber?: string | null
+    internshipPeriod?: string | null
+    preferredLocations?: string[]
+    location?: string | null
+    profileImage?: string | null
+    yearOfStudy?: string | null
+    gpa?: string | null
+    degreeName?: string | null
+    isCurrent?: boolean
   }
   onClose: () => void
 }
@@ -60,6 +70,33 @@ export default function CandidateProfileModal({ candidate, onClose }: CandidateP
     }
   }
 
+  // ดึง preferredLocations ทั้งหมดมาแสดง
+  const locationDisplay =
+    candidate.preferredLocations && candidate.preferredLocations.length > 0
+      ? candidate.preferredLocations.join(', ')
+      : candidate.location || '-'
+
+  // แสดง preferredPositions ถ้ามี ถ้าไม่มีค่อย fallback ไป skills
+  const positionTags =
+    candidate.preferredPositions && candidate.preferredPositions.length > 0
+      ? candidate.preferredPositions
+      : candidate.skills
+
+  // Education บรรทัด 1: University | Year X (Currently studying) หรือ graduationDate
+  const eduLine1 = `${candidate.university} | ${
+    candidate.isCurrent
+      ? `Year ${candidate.yearOfStudy || '-'} (Currently studying)`
+      : candidate.yearOfStudy
+      ? `Year ${candidate.yearOfStudy}`
+      : candidate.graduationDate || '-'
+  }`
+
+  // Education บรรทัด 2: DegreeName in FieldOfStudy | GPA: X.XX
+  const degreeDisplay = candidate.degreeName && candidate.major && candidate.degreeName !== candidate.major
+    ? `${candidate.degreeName} in ${candidate.major}`
+    : candidate.degreeName || candidate.major || '-'
+  const eduLine2 = candidate.gpa ? `${degreeDisplay} | GPA: ${candidate.gpa}` : degreeDisplay
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
       <div
@@ -78,12 +115,23 @@ export default function CandidateProfileModal({ candidate, onClose }: CandidateP
 
         <div className="flex items-start justify-between gap-6">
           <div className="flex items-start gap-5">
-            <div className="flex h-[84px] w-[84px] items-center justify-center overflow-hidden rounded-full bg-[#E5E7EB] text-[28px] font-semibold text-white">
-              {candidate.initials}
+            {/* Profile Image */}
+            <div className="flex h-[84px] w-[84px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#E5E7EB] text-[28px] font-semibold text-white">
+              {candidate.profileImage ? (
+                <img
+                  src={candidate.profileImage}
+                  alt={candidate.name}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <span className="text-[#6B7280]">{candidate.initials}</span>
+              )}
             </div>
             <div className="pt-2">
               <h2 className="text-[18px] font-bold leading-none text-[#111827]">{candidate.name}</h2>
-              <p className="mt-[10px] text-[12px] text-[#9CA3AF]">Phone: 089-123-4567</p>
+              {candidate.phoneNumber && (
+                <p className="mt-[10px] text-[12px] text-[#9CA3AF]">Phone: {candidate.phoneNumber}</p>
+              )}
               <p className="mt-[6px] text-[12px] text-[#9CA3AF]">
                 Email {candidate.email || `${candidate.name.toLowerCase().replace(/\s+/g, '.')}@example.com`}
               </p>
@@ -102,40 +150,38 @@ export default function CandidateProfileModal({ candidate, onClose }: CandidateP
           <div>
             <h3 className="text-[14px] font-bold text-[#344164]">About Me</h3>
             <p className="mt-[8px] max-w-[820px] text-[12px] leading-[1.55] text-[#51617C]">
-              {candidate.about || 'Passionate software engineering intern with a focus on full-stack development and data analysis. Eager to learn modern web technologies and contribute to impactful projects. Strong foundation in Python, JavaScript, and SQL with experience building RESTful APIs and interactive dashboards.'}
+              {candidate.about || '-'}
             </p>
           </div>
 
           <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-5">
             <div>
               <h3 className="text-[14px] font-bold text-[#344164]">Education</h3>
-              <p className="mt-[8px] text-[12px] leading-[1.45] text-[#51617C]">
-                {candidate.university} | {candidate.graduationDate === 'Present' ? 'Currently studying' : candidate.graduationDate || 'Year 4'}
-              </p>
-              <p className="mt-[2px] text-[12px] leading-[1.45] text-[#51617C]">
-                {candidate.major || 'Bachelor of Engineering'} | GPA: 3.50
-              </p>
+              <p className="mt-[8px] text-[12px] leading-[1.45] text-[#51617C]">{eduLine1}</p>
+              <p className="mt-[2px] text-[12px] leading-[1.45] text-[#51617C]">{eduLine2}</p>
             </div>
 
             <div>
               <h3 className="text-[14px] font-bold text-[#344164]">Positions of Interest</h3>
               <div className="mt-[10px] flex flex-wrap gap-[8px]">
-                {candidate.skills.slice(0, 3).map((skill, index) => (
-                  <span key={`${skill}-${index}`} className="rounded-[6px] bg-[#E5E7EB] px-[14px] py-[5px] text-[12px] font-semibold text-[#374151]">
-                    {skill}
+                {positionTags.length > 0 ? positionTags.slice(0, 5).map((pos, index) => (
+                  <span key={`${pos}-${index}`} className="rounded-[6px] bg-[#E5E7EB] px-[14px] py-[5px] text-[12px] font-semibold text-[#374151]">
+                    {pos}
                   </span>
-                ))}
+                )) : <p className="text-[12px] text-[#51617C]">-</p>}
               </div>
             </div>
 
             <div>
               <h3 className="text-[14px] font-bold text-[#344164]">Internship Period</h3>
-              <p className="mt-[8px] text-[12px] leading-[1.45] text-[#51617C]">5 January 2026 - 24 April 2026 (4 Month)</p>
+              <p className="mt-[8px] text-[12px] leading-[1.45] text-[#51617C]">
+                {candidate.internshipPeriod || '-'}
+              </p>
             </div>
 
             <div>
               <h3 className="text-[14px] font-bold text-[#344164]">Preferred Locations</h3>
-              <p className="mt-[8px] text-[12px] leading-[1.45] text-[#51617C]">{candidate.location || 'Bangkok, Chiangmai'}</p>
+              <p className="mt-[8px] text-[12px] leading-[1.45] text-[#51617C]">{locationDisplay}</p>
             </div>
           </div>
 
@@ -159,4 +205,3 @@ export default function CandidateProfileModal({ candidate, onClose }: CandidateP
     </div>
   )
 }
-

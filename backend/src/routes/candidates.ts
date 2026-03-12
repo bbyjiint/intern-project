@@ -16,6 +16,21 @@ function initialsFromName(name: string) {
   return (first + (second ?? "")).toUpperCase();
 }
 
+function formatInternshipPeriod(raw: string | null): string | null {
+  if (!raw) return null;
+  // รองรับ format "2026-03-01 - 2026-03-07" หรือ "2026-03-01 - 2026-04-24"
+  const match = raw.match(/(\d{4}-\d{2}-\d{2})\s*-\s*(\d{4}-\d{2}-\d{2})/);
+  if (!match) return raw; // ถ้าไม่ match ส่งกลับ raw เดิม
+
+  const start = new Date(match[1]);
+  const end = new Date(match[2]);
+
+  const months = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 30));
+
+  const fmt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+  return `${fmt.format(start)} - ${fmt.format(end)} (${months} Month)`;
+}
+
 function normalizeEducationLevel(value: unknown): string {
   const normalized = String(value || "").trim().toUpperCase().replace(/[^A-Z_]/g, "");
 
@@ -67,18 +82,9 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
         },
 
         CandidateUniversity: {
-          include: {
-            University: {
-              select: {
-                name: true,
-                thname: true,
-              }
-            },
-          },
-          orderBy: { createdAt: "desc" },
-        },
-        WorkHistory: {
-          orderBy: { startDate: "desc" },
+          include: { University: { select: { name: true, province: true } } },
+          orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
+          // ไม่ต้องแก้ — gpa มีอยู่แล้วใน CandidateUniversity model
         },
         UserSkill: {
           include: {
@@ -259,7 +265,12 @@ candidatesRouter.get("/", requireAuth, requireRole("COMPANY"), async (req, res) 
     include: {
       User: { select: { email: true } },
       CandidateUniversity: {
-        include: { University: { select: { name: true, province: true } } }
+        include: { University: { select: { name: true, province: true } } },
+        orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
+      },
+      CandidatePreferredProvince: {
+        include: { Province: { select: { name: true } } },
+        orderBy: { createdAt: "asc" },
       },
       UserSkill: { include: { Skills: { select: { name: true } } } },
     },
@@ -274,7 +285,8 @@ candidatesRouter.get("/", requireAuth, requireRole("COMPANY"), async (req, res) 
 
     const uni = primaryEdu?.University?.name ?? null;
 
-    const location = primaryEdu?.University?.province ?? null;
+    const preferredLocation = c.CandidatePreferredProvince[0]?.Province?.name ?? null;
+    const location = preferredLocation ?? primaryEdu?.University?.province ?? null;
 
     const skills = c.UserSkill.map((us: typeof c.UserSkill[0]) => us.Skills.name);
 
@@ -288,21 +300,33 @@ candidatesRouter.get("/", requireAuth, requireRole("COMPANY"), async (req, res) 
 
     // Major: derive ONLY from CandidateUniversity.degreeName.
     // CandidateProfile should not be used as a source of education details.
-    const major = primaryEdu?.degreeName ?? null;
+    const major = primaryEdu?.fieldOfStudy ?? primaryEdu?.degreeName ?? null;
+
+    const role = c.desiredPosition ?? (c.preferredPositions.length > 0 ? c.preferredPositions[0] : "Intern");
 
     return {
       id: c.id,
       name,
-      role: c.desiredPosition ?? "Intern",
+      role,
       university: uni ?? "Unknown University",
       major,
-      location: location ?? null,
+      location,
       graduationDate,
       skills,
       initials: initialsFromName(name),
       email: c.User.email,
       about: c.bio ?? "",
+      preferredPositions: c.preferredPositions ?? [],
+      preferredLocations: c.CandidatePreferredProvince.map((p) => p.Province.name),
+      internshipPeriod: formatInternshipPeriod(c.internshipPeriod ?? null),
+      yearOfStudy: primaryEdu?.yearOfStudy ?? null,
+      gpa: primaryEdu?.gpa ? primaryEdu.gpa.toString() : null,           
+      degreeName: primaryEdu?.degreeName ?? null,                         
+      isCurrent: primaryEdu?.isCurrent ?? false,
+      phoneNumber: c.phoneNumber ?? null,
+      profileImage: c.profileImage ?? null,
     };
+
   });
 
   return res.json({ candidates: items });
