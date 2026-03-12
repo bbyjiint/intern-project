@@ -22,6 +22,7 @@ interface EmployerJobPostCardProps {
   post: EmployerJobPostCardData
   onToggleStatus: () => void
   onDelete: () => void
+  isTogglePending?: boolean
 }
 
 const workTypeStyles: Record<string, string> = {
@@ -34,6 +35,7 @@ export default function EmployerJobPostCard({
   post,
   onToggleStatus,
   onDelete,
+  isTogglePending = false,
 }: EmployerJobPostCardProps) {
   return (
     <div className="flex h-full min-h-[274px] flex-col rounded-[12px] bg-white px-[20px] py-[18px] shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
@@ -95,10 +97,11 @@ export default function EmployerJobPostCard({
             type="checkbox"
             checked={post.isOpen}
             onChange={onToggleStatus}
+            disabled={isTogglePending}
             className="peer sr-only"
             aria-label={post.isOpen ? 'Open post' : 'Closed post'}
           />
-          <div className="h-[24px] w-[44px] rounded-full bg-[#D1D5DB] transition-colors duration-200 peer-checked:bg-[#2563EB]" />
+          <div className="h-[24px] w-[44px] rounded-full bg-[#D1D5DB] transition-colors duration-200 peer-checked:bg-[#2563EB] peer-disabled:cursor-not-allowed peer-disabled:opacity-60" />
           <div className="absolute left-[2px] top-[2px] h-[20px] w-[20px] rounded-full bg-white shadow-[0_1px_3px_rgba(15,23,42,0.18)] transition-transform duration-200 peer-checked:translate-x-5" />
         </label>
 

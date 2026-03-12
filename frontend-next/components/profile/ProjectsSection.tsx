@@ -7,28 +7,70 @@ import { Project } from "@/hooks/useProfile";
 import ProjectUploadModal from "./ProjectUploadModal";
 import ProjectsModal, { ProjectData } from "./ProjectsModal";
 
-interface ProjectsSectionProps {
-  projects: Project[];
-  onAdd: () => void;
-  onEdit: (id: string) => void;
-  onUpdateProject: (id: string, data: any) => Promise<void>;
-  onRefresh?: () => void;
+// --- 1. ส่วน Delete Confirmation Modal (สำหรับ Project) ---
+interface DeleteModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  projectName: string;
+  isDeleting: boolean;
 }
 
-const MONTH_NAMES = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
+function DeleteConfirmationModal({ isOpen, onClose, onConfirm, projectName, isDeleting }: DeleteModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={() => !isDeleting && onClose()}
+      ></div>
+      
+      {/* Modal Content */}
+      <div className="relative bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 text-center animate-in fade-in zoom-in duration-200">
+        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        
+        <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Project?</h3>
+        <p className="text-gray-500 mb-6">
+          Are you sure you want to delete <span className="font-semibold text-gray-700">"{projectName}"</span>? This action cannot be undone.
+        </p>
+        
+        <div className="flex gap-3">
+          <button
+            disabled={isDeleting}
+            onClick={onClose}
+            className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-colors disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            disabled={isDeleting}
+            onClick={onConfirm}
+            className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center"
+          >
+            {isDeleting ? (
+               <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            ) : "Delete"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- 2. Helper Functions ---
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 function parseToISODate(displayDate: string) {
   if (!displayDate) return undefined;
   const [monthStr, year] = displayDate.split(" ");
-  const mIndex = MONTH_NAMES.findIndex(
-    (m) => m.toLowerCase() === monthStr.toLowerCase(),
-  );
-  if (mIndex !== -1 && year) {
-    return new Date(parseInt(year), mIndex, 1).toISOString();
-  }
+  const mIndex = MONTH_NAMES.findIndex((m) => m.toLowerCase() === monthStr.toLowerCase());
+  if (mIndex !== -1 && year) return new Date(parseInt(year), mIndex, 1).toISOString();
   return undefined;
 }
 
@@ -39,73 +81,51 @@ function formatDisplayDate(isoString?: string) {
   return `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-export default function ProjectsSection({
-  projects,
-  onAdd,
-  onEdit,
-  onUpdateProject,
-  onRefresh,
-}: ProjectsSectionProps) {
+// --- 3. Main ProjectsSection Component ---
+interface ProjectsSectionProps {
+  projects: Project[];
+  onRefresh?: () => void;
+}
+
+export default function ProjectsSection({ projects, onRefresh }: ProjectsSectionProps) {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [selectedProject, setSelectedProject] = useState<any | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<ProjectData | null>(null);
-  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isDeletingLoading, setIsDeletingLoading] = useState(false);
+
+  const [deleteModalState, setDeleteModalState] = useState<{ isOpen: boolean; id: string; name: string }>({
+    isOpen: false,
+    id: "",
+    name: "",
+  });
 
   const displayedProjects = projects.slice(0, 3);
 
-  // ✅ แก้บัค: ส่ง project object ที่มีข้อมูลครบ รวมถึง startDate/endDate
+  // Modal Scroll Lock
+  useEffect(() => {
+    const isAnyModalOpen = isModalOpen || isUploadOpen || deleteModalState.isOpen;
+    document.body.style.overflow = isAnyModalOpen ? "hidden" : "auto";
+  }, [isModalOpen, isUploadOpen, deleteModalState.isOpen]);
+
   const handleOpenUpload = (project: any) => {
     setSelectedProject({
-      id: project.id,
-      name: project.name,
-      role: project.role,
-      description: project.description,
-      startDate: project.startDate || null,   // ✅ ส่งวันที่ไปด้วย
-      endDate: project.endDate || null,       // ✅ ส่งวันที่ไปด้วย
+      ...project,
       relatedSkills: project.relatedSkills || (project as any).skills || [],
-      githubUrl: (project as any).githubUrl || "",
-      projectUrl: (project as any).projectUrl || "",
-      fileUrl: (project as any).fileUrl || "",
-      fileName: (project as any).fileName || "",
     });
     setIsUploadOpen(true);
   };
 
-  useEffect(() => {
-    const isAnyModalOpen = isModalOpen || isUploadOpen;
-    if (isAnyModalOpen) {
-      const scrollY = window.scrollY;
-      document.documentElement.style.height = "100vh";
-      document.documentElement.style.overflow = "hidden";
-      document.body.style.position = "fixed";
-      document.body.style.top = `-${scrollY}px`;
-      document.body.style.width = "100%";
-      document.body.style.overflow = "hidden";
-      return () => {};
-    } else {
-      const scrollY = document.body.style.top;
-      document.documentElement.style.height = "";
-      document.documentElement.style.overflow = "";
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.width = "";
-      document.body.style.overflow = "";
-      if (scrollY) window.scrollTo(0, parseInt(scrollY) * -1);
-    }
-  }, [isModalOpen, isUploadOpen]);
-
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete project "${name}"?`)) return;
+  const handleConfirmDelete = async () => {
     try {
-      setIsDeleting(id);
-      await apiFetch(`/api/candidates/projects/${id}`, { method: "DELETE" });
+      setIsDeletingLoading(true);
+      await apiFetch(`/api/candidates/projects/${deleteModalState.id}`, { method: "DELETE" });
       onRefresh?.();
+      setDeleteModalState({ isOpen: false, id: "", name: "" });
     } catch (err) {
-      console.error("Failed to delete project", err);
-      alert("Failed to delete project. Please try again.");
+      alert("Failed to delete project.");
     } finally {
-      setIsDeleting(null);
+      setIsDeletingLoading(false);
     }
   };
 
@@ -126,7 +146,6 @@ export default function ProjectsSection({
 
   return (
     <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-100">
-      {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2 text-blue-600">
           <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -135,57 +154,38 @@ export default function ProjectsSection({
           <h2 className="text-xl font-bold text-gray-900">Projects</h2>
         </div>
         <button
-          onClick={() => {
-            setEditingProject(null);
-            setIsModalOpen(true);
-          }}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm transition-colors shadow-md shadow-blue-100"
+          onClick={() => { setEditingProject(null); setIsModalOpen(true); }}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-sm transition-colors shadow-md"
         >
           + Add Project
         </button>
       </div>
 
       {projects.length === 0 ? (
-        <p className="text-gray-400 italic py-10 text-center border-2 border-dashed border-gray-50 rounded-xl">
-          No projects provided.
-        </p>
+        <p className="text-gray-400 italic py-10 text-center border-2 border-dashed border-gray-50 rounded-xl">No projects provided.</p>
       ) : (
         <div className="space-y-8">
           {displayedProjects.map((project: any) => {
             const hasAnyFile = !!(project.githubUrl || project.projectUrl || project.fileUrl);
-
             return (
               <div key={project.id} className="relative border border-gray-100 rounded-xl p-6 bg-white hover:border-blue-100 transition-all">
-                {/* Status Badge */}
                 <div className="absolute top-6 right-6">
-                  <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border transition-colors ${
-                    hasAnyFile
-                      ? "bg-green-50 text-green-600 border-green-200"
-                      : "bg-blue-50 text-blue-600 border-blue-200"
-                  }`}>
+                  <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border ${hasAnyFile ? "bg-green-50 text-green-600 border-green-200" : "bg-blue-50 text-blue-600 border-blue-200"}`}>
                     <div className={`w-1.5 h-1.5 rounded-full ${hasAnyFile ? "bg-green-500" : "bg-blue-500"}`} />
                     {hasAnyFile ? "File Uploaded" : "No File Uploaded"}
                   </div>
                 </div>
 
-                {/* Project Info */}
                 <div className="mb-4 pr-32">
                   <h3 className="text-lg font-bold text-gray-900">{project.name}</h3>
                   <p className="text-sm text-gray-500 mt-1">
-                    Role: {project.role || "Contributor"} |{" "}
-                    {formatDisplayDate(project.startDate) || "N/A"} -{" "}
-                    {formatDisplayDate(project.endDate) || "Present"}
+                    Role: {project.role || "Contributor"} | {formatDisplayDate(project.startDate) || "N/A"} - {formatDisplayDate(project.endDate) || "Present"}
                   </p>
-                  <p className="text-gray-600 text-sm mt-3 leading-relaxed line-clamp-2">
-                    {project.description || "No description provided."}
-                  </p>
+                  <p className="text-gray-600 text-sm mt-3 leading-relaxed line-clamp-2">{project.description || "No description provided."}</p>
                 </div>
 
-                {/* Credibility Section */}
                 <div className="mb-6">
-                  <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">
-                    Project Credibility
-                  </h4>
+                  <h4 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Project Credibility</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <CredibilityItem icon="github" label="Github Linked" active={!!project.githubUrl} url={project.githubUrl} />
                     <CredibilityItem icon="link" label="Project Link" active={!!project.projectUrl} url={project.projectUrl} />
@@ -193,56 +193,24 @@ export default function ProjectsSection({
                   </div>
                 </div>
 
-                {/* Skills & Actions */}
                 <div className="flex items-center justify-between border-t border-gray-50 pt-4">
                   <div className="flex flex-wrap gap-2">
-                    {((project as any).skills || (project as any).relatedSkills)?.length > 0 ? (
-                      ((project as any).skills || (project as any).relatedSkills).map((skill: string) => (
-                        <span key={skill} className="px-3 py-1 bg-blue-50 text-blue-600 text-[11px] font-bold rounded-md">
-                          {skill}
-                        </span>
-                      ))
-                    ) : (
-                      <span className="text-gray-300 text-xs italic">No skills tagged</span>
-                    )}
+                    {((project as any).skills || (project as any).relatedSkills)?.map((skill: string) => (
+                      <span key={skill} className="px-3 py-1 bg-blue-50 text-blue-600 text-[11px] font-bold rounded-md">{skill}</span>
+                    ))}
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {/* ปุ่มลบ */}
                     <button
-                      onClick={() => handleDelete(project.id, project.name)}
-                      disabled={isDeleting === project.id}
-                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all border border-transparent hover:border-red-100"
-                      title="Delete Project"
+                      onClick={() => setDeleteModalState({ isOpen: true, id: project.id, name: project.name })}
+                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
                     >
-                      {isDeleting === project.id ? (
-                        <div className="w-5 h-5 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      )}
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     </button>
-
-                    {/* ✅ ปุ่ม Upload Files */}
-                    <button
-                      onClick={() => handleOpenUpload(project)}
-                      className={`px-4 py-1.5 border-2 rounded-lg text-sm font-bold transition-all ${
-                        hasAnyFile
-                          ? "border-blue-600 text-blue-600 hover:bg-blue-50"
-                          : "border-gray-200 text-gray-500 hover:bg-gray-50"
-                      }`}
-                    >
+                    <button onClick={() => handleOpenUpload(project)} className={`px-4 py-1.5 border-2 rounded-lg text-sm font-bold transition-all ${hasAnyFile ? "border-blue-600 text-blue-600 hover:bg-blue-50" : "border-gray-200 text-gray-500 hover:bg-gray-50"}`}>
                       {hasAnyFile ? "Edit Files" : "Upload Files"}
                     </button>
-
-                    {/* ✅ ปุ่ม Edit Project */}
-                    <button
-                      onClick={() => handleEditClick(project)}
-                      className="px-4 py-1.5 bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg text-sm font-bold transition-all"
-                    >
-                      Edit Project
-                    </button>
+                    <button onClick={() => handleEditClick(project)} className="px-4 py-1.5 bg-white border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg text-sm font-bold transition-all">Edit Project</button>
                   </div>
                 </div>
               </div>
@@ -251,81 +219,46 @@ export default function ProjectsSection({
         </div>
       )}
 
-      {/* View All Footer */}
+      {/* View All */}
       {projects.length > 3 && (
         <div className="mt-8 text-center border-t border-gray-50 pt-6">
           <Link href="/intern/project" className="inline-flex items-center gap-2 text-blue-600 font-bold hover:gap-3 transition-all">
             View all projects ({projects.length})
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
           </Link>
         </div>
       )}
 
-      {/* Upload Modal */}
-      <ProjectUploadModal
-        isOpen={isUploadOpen}
-        onClose={() => setIsUploadOpen(false)}
-        project={selectedProject}
-        onUpdate={async () => { onRefresh?.(); }}
-        onRefresh={onRefresh}  // ✅ ส่ง onRefresh ไปด้วย
-      />
+      {/* Modals */}
+      <ProjectUploadModal isOpen={isUploadOpen} onClose={() => setIsUploadOpen(false)} project={selectedProject} onUpdate={async () => onRefresh?.()} onRefresh={onRefresh} />
 
-      {/* Edit/Add Modal */}
       <ProjectsModal
         isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setEditingProject(null);
-        }}
+        onClose={() => { setIsModalOpen(false); setEditingProject(null); }}
         onSave={async (projectData) => {
-          try {
-            const payload = {
-              name: projectData.name,
-              role: projectData.role,
-              description: projectData.description || "",
-              startDate: parseToISODate(projectData.startDate || ""),
-              endDate: parseToISODate(projectData.endDate || ""),
-              relatedSkills: projectData.relatedSkills || [],
-              githubUrl: projectData.githubUrl || "",
-              projectUrl: projectData.projectUrl || "",
-            };
-
-            if (editingProject?.id) {
-              await apiFetch(`/api/candidates/projects/${editingProject.id}`, {
-                method: "PUT",
-                body: JSON.stringify(payload),
-              });
-            } else {
-              await apiFetch("/api/candidates/projects", {
-                method: "POST",
-                body: JSON.stringify(payload),
-              });
-            }
-
-            onRefresh?.();
-            setIsModalOpen(false);
-            setEditingProject(null);
-          } catch (err) {
-            console.error("Failed saving project", err);
-          }
+          const payload = { ...projectData, startDate: parseToISODate(projectData.startDate || ""), endDate: parseToISODate(projectData.endDate || "") };
+          const method = editingProject?.id ? "PUT" : "POST";
+          const url = editingProject?.id ? `/api/candidates/projects/${editingProject.id}` : "/api/candidates/projects";
+          await apiFetch(url, { method, body: JSON.stringify(payload) });
+          onRefresh?.();
+          setIsModalOpen(false);
         }}
         editingProject={editingProject}
+      />
+
+      <DeleteConfirmationModal 
+        isOpen={deleteModalState.isOpen} 
+        onClose={() => setDeleteModalState(prev => ({ ...prev, isOpen: false }))} 
+        onConfirm={handleConfirmDelete} 
+        projectName={deleteModalState.name} 
+        isDeleting={isDeletingLoading} 
       />
     </div>
   );
 }
 
-// Helper Component
-function CredibilityItem({
-  icon, label, active, url,
-}: {
-  icon: "github" | "link" | "file";
-  label: string;
-  active: boolean;
-  url?: string;
-}) {
+// --- 4. Sub-component สำหรับ Credibility ---
+function CredibilityItem({ icon, label, active, url }: { icon: "github" | "link" | "file"; label: string; active: boolean; url?: string }) {
   return (
     <a
       href={active && url ? url : undefined}
@@ -336,30 +269,14 @@ function CredibilityItem({
     >
       <div className="flex items-center gap-3">
         <div className={`p-2 rounded-lg ${active ? "bg-green-50 text-green-600" : "bg-gray-200 text-gray-500"}`}>
-          {icon === "github" && (
-            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.041-1.416-4.041-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-            </svg>
-          )}
-          {icon === "link" && (
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-            </svg>
-          )}
-          {icon === "file" && (
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-          )}
+          {icon === "github" && <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.041-1.416-4.041-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" /></svg>}
+          {icon === "link" && <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>}
+          {icon === "file" && <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>}
         </div>
         <span className={`text-xs font-bold ${active ? "text-gray-700" : "text-gray-400"}`}>{label}</span>
       </div>
       <div className={`w-5 h-5 rounded-full flex items-center justify-center border-2 transition-all ${active ? "border-green-500 bg-green-50" : "border-gray-200"}`}>
-        {active && (
-          <svg className="w-3 h-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-          </svg>
-        )}
+        {active && <svg className="w-3 h-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
       </div>
     </a>
   );

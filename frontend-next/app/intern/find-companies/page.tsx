@@ -1,67 +1,18 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import InternNavbar from "@/components/InternNavbar";
-import Sidebar from "@/components/InternSidebar";
 import JobCard, {JobPostData} from "@/components/profile/JobCard"; // แก้ Path ให้ตรงกับ Component ที่เราสร้าง
-import { usePathname, useRouter } from "next/navigation";
-
-const mockJobs: JobPostData[] = [
-  {
-    id: "1",
-    jobTitle: "รับนักศึกษาฝึกงาน AI Engineer",
-    companyName: "Trinity Securities Co., Ltd.",
-    companyEmail: "info@trinitythai.com",
-    location: "Bangkok",
-    workType: "Hybrid",
-    roleType: "AI Developer",
-    applicants: 4,
-    allowance: "5,000 - 7,000 THB",
-    timeAgo: "1 hour ago",
-  },
-  {
-    id: "2",
-    jobTitle: "Frontend Developer Intern",
-    companyName: "Tech Space Co.",
-    companyEmail: "hr@techspace.co.th",
-    location: "Bangkok",
-    workType: "On Site",
-    roleType: "Frontend Developer",
-    applicants: 12,
-    allowance: "8,000 - 10,000 THB",
-    timeAgo: "3 hours ago",
-  },
-  {
-    id: "3",
-    jobTitle: "Backend Node.js Intern",
-    companyName: "Data Systems Inc.",
-    companyEmail: "contact@datasys.com",
-    location: "Chiang Mai",
-    workType: "Remote",
-    roleType: "Backend Developer",
-    applicants: 2,
-    allowance: "10,000 - 15,000 THB",
-    timeAgo: "1 day ago",
-  },
-  {
-    id: "4",
-    jobTitle: "AI Researcher (Intern)",
-    companyName: "Future Vision Ai",
-    companyEmail: "career@futurevision.ai",
-    location: "Bangkok",
-    workType: "Remote",
-    roleType: "AI Developer",
-    applicants: 8,
-    allowance: "Unpaid",
-    timeAgo: "2 days ago",
-  },
-];
+import { useRouter } from "next/navigation";
+import { apiFetch } from "@/lib/api";
 
 export default function FindCompaniesPage() {
   const router = useRouter();
-  const [jobs] = useState<JobPostData[]>(mockJobs);
-  const [bookmarkedJobs, setBookmarkedJobs] = useState<Set<string>>(new Set(["1", "2"]));
+  const [jobs, setJobs] = useState<JobPostData[]>([]);
+  const [bookmarkedJobs, setBookmarkedJobs] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const [positionFilter, setPositionFilter] = useState("");
   const [formatFilters, setFormatFilters] = useState({
@@ -74,6 +25,36 @@ export default function FindCompaniesPage() {
   const SLIDER_MAX = 50000;
   const [minSalary, setMinSalary] = useState("0");
   const [maxSalary, setMaxSalary] = useState(SLIDER_MAX.toString());
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadJobs = async () => {
+      setIsLoading(true);
+      setLoadError(null);
+
+      try {
+        const response = await apiFetch<{ jobPosts: JobPostData[] }>("/api/job-posts/public");
+        if (!isMounted) return;
+        setJobs(response.jobPosts || []);
+      } catch (error) {
+        if (!isMounted) return;
+        console.error("Failed to load public job posts:", error);
+        setLoadError(error instanceof Error ? error.message : "Failed to load job posts");
+        setJobs([]);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadJobs();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const toggleFormat = (key: keyof typeof formatFilters) => {
     setFormatFilters((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -437,6 +418,12 @@ export default function FindCompaniesPage() {
         {/* ================= MAIN CONTENT ================= */}
         <div className="flex-1 p-6 lg:p-10 overflow-y-auto">
           <div className="layout-container">
+            {loadError && (
+              <div className="mb-6 rounded-xl border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">
+                {loadError}
+              </div>
+            )}
+
             {/* Header Row: Search */}
             <div className="flex justify-end mb-8">
               <div className="relative w-full max-w-md">
@@ -465,11 +452,15 @@ export default function FindCompaniesPage() {
 
             {/* Jobs Count */}
             <h2 className="text-[17px] font-extrabold text-gray-900 mb-6">
-              {filteredJobs.length} Total Job Post
+              {isLoading ? "Loading job posts..." : `${filteredJobs.length} Total Job Post`}
             </h2>
 
             {/* Job Cards Grid */}
-            {filteredJobs.length === 0 ? (
+            {isLoading ? (
+              <div className="text-center py-20 text-gray-500 bg-white rounded-xl shadow-sm border border-gray-100">
+                Loading available job posts...
+              </div>
+            ) : filteredJobs.length === 0 ? (
               <div className="text-center py-20 text-gray-500 bg-white rounded-xl shadow-sm border border-gray-100">
                 No jobs match your selected filters. Try adjusting your search
                 criteria.
