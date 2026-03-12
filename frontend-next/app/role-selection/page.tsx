@@ -134,125 +134,91 @@ export default function RoleSelectionPage() {
   }
 
   return (
-    <div className="layout-container flex min-h-screen items-center justify-center py-8 bg-gray-50 dark:bg-gray-900 transition-colors">
-      <div className="max-w-4xl w-full">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 md:p-12 transition-colors">
-          <div className="text-center mb-12">
-            <h1 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 transition-colors">
-              Ready to get started?
-            </h1>
-            <p className="text-base text-gray-600 dark:text-gray-300 max-w-2xl mx-auto transition-colors">
-              Join thousands of students and employers already using our platform to build the future of finance.
-            </p>
+  /* 1. เปลี่ยนพื้นหลังที่ Wrapper นอกสุดให้คลุมทั้งจอ (min-h-screen และ w-full) */
+  <div className="min-h-screen w-full flex items-center justify-center py-12 px-4 bg-gray-50 dark:bg-gray-900 transition-colors">
+    
+    {/* 2. ส่วนของเนื้อหาหลัก */}
+    <div className="max-w-4xl w-full">
+      
+      {/* 3. กล่อง Card ใหญ่ (เพิ่ม shadow และ border ให้ดูมีมิติ) */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 md:p-16 border border-gray-100 dark:border-gray-700 transition-colors">
+        
+        <div className="text-center mb-12">
+          <h1 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+            Ready to get started?
+          </h1>
+          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+            Join thousands of students and employers already using our platform to build the future of finance.
+          </p>
+        </div>
+
+        {error && (
+          <div className="mb-8 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">
+            {error}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Intern Card */}
+          <div
+            onMouseEnter={() => setHoveredRole('intern')}
+            onMouseLeave={() => setHoveredRole(null)}
+          >
+            <RoleCard
+              icon={
+                <div 
+                  className="w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300"
+                  style={{ 
+                    backgroundColor: (selectedRole === 'intern' || hoveredRole === 'intern') ? '#E3F2FD' : '#F5F5F5' 
+                  }}
+                >
+                  <svg className="w-12 h-12" style={{ color: (selectedRole === 'intern' || hoveredRole === 'intern') ? '#0273B1' : '#1C2D4F' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14v7M5.176 14.248a12.078 12.078 0 01.665-6.479L12 14l-6.824-2.998a11.952 11.952 0 00-2.978 3.246zM18.824 11.002a12.078 12.078 0 01.665 6.479L12 14l6.824-2.998a11.952 11.952 0 012.978 3.246z" />
+                  </svg>
+                </div>
+              }
+              title="I'm an Intern"
+              description="Looking for internships and entry-level roles."
+              buttonText={isSubmitting ? 'Please wait...' : 'Continue as Intern'}
+              onClick={handleInternClick}
+              isSelected={selectedRole === 'intern'}
+              onCardClick={handleInternSelect}
+              isHovered={hoveredRole === 'intern'}
+            />
           </div>
 
-          {error && (
-            <div className="mb-6 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-400 transition-colors">
-              {error}
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div
-              onMouseEnter={() => setHoveredRole('intern')}
-              onMouseLeave={() => setHoveredRole(null)}
-            >
-              <RoleCard
-                icon={
-                  <div 
-                    className="w-20 h-20 rounded-full flex items-center justify-center transition-colors"
-                    style={(selectedRole === 'intern' || hoveredRole === 'intern') 
-                      ? { backgroundColor: '#E3F2FD' } 
-                      : { backgroundColor: '#F5F5F5' }
-                    }
-                  >
-                    <svg
-                      className="w-10 h-10 transition-colors"
-                      style={{ 
-                        color: (selectedRole === 'intern' || hoveredRole === 'intern') 
-                          ? '#0273B1' 
-                          : '#1C2D4F' 
-                      }}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 14l9-5-9-5-9 5 9 5z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 14v7M5.176 14.248a12.078 12.078 0 01.665-6.479L12 14l-6.824-2.998a11.952 11.952 0 00-2.978 3.246zM18.824 11.002a12.078 12.078 0 01.665 6.479L12 14l6.824-2.998a11.952 11.952 0 012.978 3.246z"
-                      />
-                    </svg>
-                  </div>
-                }
-                title="I'm a Intern"
-                description="Looking for internships and entry-level roles."
-                buttonText={isSubmitting ? 'Please wait...' : 'Continue as Intern'}
-                onClick={handleInternClick}
-                isSelected={selectedRole === 'intern'}
-                onCardClick={handleInternSelect}
-                isHovered={hoveredRole === 'intern'}
-              />
-            </div>
-
-            <div
-              onMouseEnter={() => setHoveredRole('employer')}
-              onMouseLeave={() => setHoveredRole(null)}
-            >
-              <RoleCard
-                icon={
-                  <div 
-                    className="w-20 h-20 rounded-full flex items-center justify-center transition-colors"
-                    style={(selectedRole === 'employer' || hoveredRole === 'employer') 
-                      ? { backgroundColor: '#E3F2FD' } 
-                      : { backgroundColor: '#F5F5F5' }
-                    }
-                  >
-                    <svg
-                      className="w-10 h-10 transition-colors"
-                      style={{ 
-                        color: (selectedRole === 'employer' || hoveredRole === 'employer') 
-                          ? '#0273B1' 
-                          : '#1C2D4F' 
-                      }}
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                      />
-                    </svg>
-                  </div>
-                }
-                title="I'm an Employer"
-                description="Looking to hire top finance talent."
-                buttonText={isSubmitting ? 'Please wait...' : 'Continue as Employer'}
-                onClick={handleEmployerClick}
-                isSelected={selectedRole === 'employer'}
-                onCardClick={handleEmployerSelect}
-                isHovered={hoveredRole === 'employer'}
-              />
-            </div>
+          {/* Employer Card */}
+          <div
+            onMouseEnter={() => setHoveredRole('employer')}
+            onMouseLeave={() => setHoveredRole(null)}
+          >
+            <RoleCard
+              icon={
+                <div 
+                  className="w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300"
+                  style={{ 
+                    backgroundColor: (selectedRole === 'employer' || hoveredRole === 'employer') ? '#E3F2FD' : '#F5F5F5' 
+                  }}
+                >
+                  <svg className="w-12 h-12" style={{ color: (selectedRole === 'employer' || hoveredRole === 'employer') ? '#0273B1' : '#1C2D4F' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+              }
+              title="I'm an Employer"
+              description="Looking to hire top finance talent."
+              buttonText={isSubmitting ? 'Please wait...' : 'Continue as Employer'}
+              onClick={handleEmployerClick}
+              isSelected={selectedRole === 'employer'}
+              onCardClick={handleEmployerSelect}
+              isHovered={hoveredRole === 'employer'}
+            />
           </div>
         </div>
       </div>
     </div>
+  </div>
   )
 }
