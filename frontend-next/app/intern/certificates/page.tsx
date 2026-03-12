@@ -27,6 +27,12 @@ export default function CertificatesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCert, setEditingCert] = useState<ModalCertificate | null>(null);
 
+  // --- ส่วนที่เพิ่มใหม่: สำหรับ Delete Confirmation Popup ---
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [certToDelete, setCertToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  // ---------------------------------------------------
+
   const fetchCertificates = useCallback(async () => {
     try {
       const data = await apiFetch<{ profile: any }>("/api/candidates/profile");
@@ -53,19 +59,18 @@ export default function CertificatesPage() {
       console.error("Failed to fetch certificates:", error);
     }
   }, []);
-        // 💡 เพิ่มส่วนนี้เข้าไปครับ
-    useEffect(() => {
-      if (isModalOpen) {
-        document.body.style.overflow = "hidden";
-      } else {
-        document.body.style.overflow = "auto";
-      }
-  
-      // คืนค่าเดิมเมื่อปิดหรือเปลี่ยนหน้า
-      return () => {
-        document.body.style.overflow = "auto";
-      };
-    }, [isModalOpen]);
+
+  useEffect(() => {
+    // ป้องกันการ Scroll เมื่อเปิด Modal ใดๆ
+    if (isModalOpen || isDeleteModalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [isModalOpen, isDeleteModalOpen]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -88,13 +93,25 @@ export default function CertificatesPage() {
     checkAuth();
   }, [router, fetchCertificates]);
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this certificate?")) return;
+  // ฟังก์ชันเรียกเปิด Popup ยืนยันการลบ
+  const openDeleteConfirm = (id: string) => {
+    setCertToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  // ฟังก์ชันลบจริงเมื่อกดยืนยันใน Popup
+  const handleConfirmDelete = async () => {
+    if (!certToDelete) return;
+    setIsDeleting(true);
     try {
-      await apiFetch(`/api/candidates/certificates/${id}`, { method: "DELETE" });
+      await apiFetch(`/api/candidates/certificates/${certToDelete}`, { method: "DELETE" });
       await fetchCertificates();
+      setIsDeleteModalOpen(false);
+      setCertToDelete(null);
     } catch (error) {
       alert("Failed to delete certificate.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -120,7 +137,7 @@ export default function CertificatesPage() {
       const formData = new FormData();
       formData.append("name", savedData.name);
       if (savedData.description) formData.append("description", savedData.description);
-      if (savedData.issuedBy) formData.append("issuedBy", savedData.issuedBy);
+      if (savedBy) formData.append("issuedBy", savedData.issuedBy || "");
       if (savedData.date) formData.append("issueDate", new Date(savedData.date).toISOString());
       if (savedData.tags) {
         savedData.tags.forEach((tag) => formData.append("relatedSkills", tag));
@@ -160,7 +177,7 @@ export default function CertificatesPage() {
             </div>
           ) : (
             <>
-              {/* Header */}
+              {/* Header Section */}
               <div className="flex flex-col lg:flex-row lg:items-start justify-between mb-8 gap-4">
                 <div>
                   <h1 className="text-[36px] font-extrabold text-gray-900 mb-1 tracking-tight">
@@ -179,12 +196,7 @@ export default function CertificatesPage() {
                       stroke="currentColor"
                       viewBox="0 0 24 24"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                      />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                     <input
                       type="text"
@@ -210,12 +222,7 @@ export default function CertificatesPage() {
                 </button>
                 <button className="flex items-center gap-2 px-5 py-2 bg-white border border-gray-200 text-gray-800 font-bold text-sm rounded-lg hover:bg-gray-50 shadow-sm">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-                    />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                   </svg>
                   Filter Skill
                 </button>
@@ -226,7 +233,7 @@ export default function CertificatesPage() {
                 {filteredCertificates.length} Total Certificate
               </h2>
 
-              {/* List */}
+              {/* Certificates List */}
               <div className="space-y-4">
                 {filteredCertificates.length === 0 ? (
                   <div className="text-center py-10 text-gray-500 bg-white rounded-xl shadow-sm border border-gray-100">
@@ -259,15 +266,11 @@ export default function CertificatesPage() {
                         </div>
                         <div className="flex items-center gap-3">
                           <button
-                            onClick={() => handleDelete(cert.id)}
+                            onClick={() => openDeleteConfirm(cert.id)}
                             className="text-gray-400 hover:text-red-500 transition-colors mr-2"
                           >
                             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                              <path
-                                fillRule="evenodd"
-                                d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                                clipRule="evenodd"
-                              />
+                              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
                             </svg>
                           </button>
                           {cert.url && cert.url !== "#" && (
@@ -296,6 +299,50 @@ export default function CertificatesPage() {
           )}
         </div>
       </div>
+
+      {/* --- ส่วนที่เพิ่มใหม่: Delete Confirmation Modal UI --- */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => !isDeleting && setIsDeleteModalOpen(false)}
+          ></div>
+          
+          {/* Modal Content */}
+          <div className="relative bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 text-center animate-in fade-in zoom-in duration-200">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Certificate?</h3>
+            <p className="text-gray-500 mb-6">
+              Are you sure you want to delete this certificate? This action cannot be undone.
+            </p>
+            
+            <div className="flex gap-3">
+              <button
+                disabled={isDeleting}
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={isDeleting}
+                onClick={handleConfirmDelete}
+                className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center"
+              >
+                {isDeleting ? (
+                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                ) : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <CertificatesModal
         isOpen={isModalOpen}
