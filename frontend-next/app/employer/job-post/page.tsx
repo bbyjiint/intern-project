@@ -42,6 +42,8 @@ export default function JobPostPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [isCreatingJobPost, setIsCreatingJobPost] = useState(false)
   const [createJobPostError, setCreateJobPostError] = useState<string | null>(null)
+  const [jobPostActionError, setJobPostActionError] = useState<string | null>(null)
+  const [togglingPostId, setTogglingPostId] = useState<string | null>(null)
 
   const getRelativeTimeLabel = (value: string) => {
     const createdAt = new Date(value)
@@ -224,6 +226,38 @@ export default function JobPostPage() {
     setShowDeleteModal(true)
   }
 
+  const handleToggleStatus = async (post: JobPost) => {
+    if (togglingPostId === post.id) return
+
+    const nextIsOpen = !post.isOpen
+    const nextState = nextIsOpen ? 'PUBLISHED' : 'CLOSED'
+
+    setJobPostActionError(null)
+    setTogglingPostId(post.id)
+    setJobPosts((prev) => prev.map((item) => (item.id === post.id ? { ...item, isOpen: nextIsOpen } : item)))
+
+    try {
+      const response = await apiFetch<{
+        success: boolean
+        jobPost?: {
+          state?: string | null
+        } | null
+      }>(`/api/job-posts/${post.id}`, {
+        method: 'PUT',
+        body: JSON.stringify({ state: nextState }),
+      })
+
+      const resolvedIsOpen = response.jobPost?.state ? response.jobPost.state !== 'CLOSED' : nextIsOpen
+      setJobPosts((prev) => prev.map((item) => (item.id === post.id ? { ...item, isOpen: resolvedIsOpen } : item)))
+    } catch (error) {
+      console.error('Failed to toggle job post status:', error)
+      setJobPosts((prev) => prev.map((item) => (item.id === post.id ? { ...item, isOpen: post.isOpen } : item)))
+      setJobPostActionError(error instanceof Error ? error.message : 'Failed to update job post status')
+    } finally {
+      setTogglingPostId((current) => (current === post.id ? null : current))
+    }
+  }
+
   const handleConfirmDelete = async () => {
     if (!jobToDelete) return
     try {
@@ -350,6 +384,12 @@ export default function JobPostPage() {
 
         <div className="flex-1 bg-[#E6EBF4]">
           <div className="layout-container layout-page">
+            {jobPostActionError && (
+              <div className="mb-4 rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-[14px] text-[#B91C1C]">
+                {jobPostActionError}
+              </div>
+            )}
+
             {createJobPostError && (
               <div className="mb-4 rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-[14px] text-[#B91C1C]">
                 {createJobPostError}
@@ -423,11 +463,8 @@ export default function JobPostPage() {
                 <EmployerJobPostCard
                   key={post.id}
                   post={post}
-                  onToggleStatus={() => {
-                    setJobPosts((prev) =>
-                      prev.map((item) => (item.id === post.id ? { ...item, isOpen: !item.isOpen } : item))
-                    )
-                  }}
+                  isTogglePending={togglingPostId === post.id}
+                  onToggleStatus={() => void handleToggleStatus(post)}
                   onDelete={() => handleDeleteClick(post)}
                 />
               ))}
