@@ -3,10 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import InternNavbar from "@/components/InternNavbar";
+import { apiFetch } from "@/lib/api";
 
-// 1. Interface สำหรับหน้า Detail (เตรียมพร้อมต่อ Backend)
 interface JobDetailData {
   id: string;
+  state?: string;
   postedDate: string;
   jobTitle: string;
   companyName: string;
@@ -28,66 +29,67 @@ interface JobDetailData {
   mapEmbedUrl: string;
 }
 
-// 2. Mock Data (จำลองข้อมูลให้ตรงกับในรูป)
-const mockJobDetail: JobDetailData = {
-  id: "1",
-  postedDate: "3 January 2026",
-  jobTitle: "รับนักศึกษาฝึกงาน AI Engineer",
-  companyName: "Trinity Securities Co., Ltd.",
-  companyEmail: "info@trinitythai.com",
-  workType: "Hybrid",
-  roleType: "AI Developer",
-  positionsAvailable: 3,
-  jobDescription: [
-    "ร่วมออกแบบและพัฒนาโมดูลด้านปัญญาประดิษฐ์ เพื่อประยุกต์ใช้ในโครงการของบริษัท",
-    "วิเคราะห์และช่วยทีมในการเตรียมและจัดการชุดข้อมูล (Data Cleaning, Preprocessing)",
-    "ทำ Web Scraping / Data Crawling เพื่อรวบรวมข้อมูลจากเว็บไซต์และ API",
-    "สร้างและทดสอบโมเดล Machine Learning / Deep Learning สำหรับการประมวลผลภาพ เสียง หรือข้อความ",
-  ],
-  qualifications: [
-    "นักศึกษาระดับปริญญาตรีสาขา Computer Science, Engineering, Data Science, AI หรือสาขาที่เกี่ยวข้อง",
-    "มีพื้นฐานในการเขียนโปรแกรมภาษา Python และเข้าใจพื้นฐาน AI / ML",
-    "เข้าใจพื้นฐานของ Machine Learning / Deep Learning",
-    "เข้าใจหลักการทำงานของ NLP (Tokenization, Embedding, Sentiment Analysis เบื้องต้น)",
-    "ค้นคว้าเทคโนโลยีใหม่ ๆ และสามารถ เรียนรู้ด้วยตนเอง (Self-learning)",
-  ],
-  gpa: "> 3.50",
-  allowance: "5,000 - 7,000 THB",
-  location: "Bangkok",
-  workingDaysHours: "Monday–Friday, 9:30 AM – 4:00 PM",
-  companyDescription:
-    "Trinity Securities Co., Ltd. is a leading Thai securities company providing comprehensive financial and investment services. The company offers brokerage services, investment advisory, wealth management, and capital market solutions for individual and institutional clients.",
-  contactPhone: "+66 2 343 9500",
-  contactDepartment: "Human Resources Department",
-  address:
-    "90 Ratchadaphisek Road, 25th Floor, Lumphini, Pathum Wan, Bangkok 10330, Thailand",
-  mapEmbedUrl:
-    "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3875.5946115984633!2d100.56066291527715!3d13.742962390352528!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x30e29eef26f33273%3A0xc345f2bd6de02cf6!2sTrinity%20Securities%20Co.%2C%20Ltd.!5e0!3m2!1sen!2sth!4v1675234567890!5m2!1sen!2sth",
-};
-
 export default function JobDetailPage() {
   const router = useRouter();
   const params = useParams();
-  const jobId = params?.id; // ดึง ID จาก URL (เช่น /intern/job/1)
+  const jobId = typeof params?.id === "string" ? params.id : Array.isArray(params?.id) ? params.id[0] : "";
 
   const [job, setJob] = useState<JobDetailData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [isApplying, setIsApplying] = useState(false);
+  const [hasApplied, setHasApplied] = useState(false);
+  const [applyMessage, setApplyMessage] = useState<string | null>(null);
 
-  // 3. จำลองการดึงข้อมูลจาก Backend
   useEffect(() => {
     const fetchJobDetail = async () => {
-      // TODO: อนาคตให้ใช้ apiFetch ดึงข้อมูลจาก Backend โดยใช้ jobId
-      // const response = await apiFetch(`/api/jobs/${jobId}`);
-      
-      // ตอนนี้ใช้ Mock Data ไปก่อน
-      setTimeout(() => {
-        setJob(mockJobDetail);
+      if (!jobId) {
+        setLoadError("Job post not found");
         setIsLoading(false);
-      }, 500); // ดีเลย์จำลองการโหลด
+        return;
+      }
+
+      setIsLoading(true);
+      setLoadError(null);
+
+      try {
+        const response = await apiFetch<{ jobPost: JobDetailData }>(`/api/job-posts/public/${jobId}`);
+        setJob(response.jobPost);
+      } catch (error) {
+        console.error("Failed to load job detail:", error);
+        setLoadError(error instanceof Error ? error.message : "Failed to load job detail");
+        setJob(null);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    fetchJobDetail();
+    void fetchJobDetail();
   }, [jobId]);
+
+  const handleApply = async () => {
+    if (!job || isApplying || hasApplied) return;
+
+    setIsApplying(true);
+    setApplyMessage(null);
+
+    try {
+      const response = await apiFetch<{
+        application: { id: string; status: string; createdAt: string };
+        alreadyApplied: boolean;
+      }>(`/api/job-posts/${job.id}/apply`, {
+        method: "POST",
+      });
+
+      setHasApplied(true);
+      setApplyMessage(response.alreadyApplied ? "You already applied for this position." : "Application submitted successfully.");
+    } catch (error: any) {
+      console.error("Failed to apply for job post:", error);
+      setApplyMessage(error?.message || "Failed to apply for this position.");
+    } finally {
+      setIsApplying(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -100,7 +102,18 @@ export default function JobDetailPage() {
     );
   }
 
-  if (!job) return <div>Job not found</div>;
+  if (!job) {
+    return (
+      <div className="min-h-screen bg-[#F4F7FA] flex flex-col">
+        <InternNavbar />
+        <div className="flex flex-1 items-center justify-center px-6">
+          <div className="rounded-xl bg-white px-6 py-8 text-center shadow-sm border border-gray-100 text-gray-600">
+            {loadError || "Job not found"}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#F4F7FA] flex flex-col">
@@ -204,10 +217,29 @@ export default function JobDetailPage() {
               >
                 Back
               </button>
-              <button className="px-8 py-3 rounded-lg bg-[#2563EB] text-white font-bold hover:bg-blue-700 shadow-md shadow-blue-200 transition-colors">
-                &gt;&gt; Apply for this position
+              <button
+                onClick={() => void handleApply()}
+                disabled={isApplying || hasApplied || job.state === "CLOSED"}
+                className="px-8 py-3 rounded-lg bg-[#2563EB] text-white font-bold hover:bg-blue-700 shadow-md shadow-blue-200 transition-colors disabled:cursor-not-allowed disabled:bg-[#94A3B8] disabled:shadow-none"
+              >
+                {job.state === "CLOSED"
+                  ? "Position closed"
+                  : hasApplied
+                  ? "Applied"
+                  : isApplying
+                  ? "Applying..."
+                  : ">> Apply for this position"}
               </button>
             </div>
+            {applyMessage && (
+              <div
+                className={`mt-4 rounded-lg px-4 py-3 text-sm ${
+                  hasApplied ? "bg-[#EFF6FF] text-[#1D4ED8]" : "bg-[#FEF2F2] text-[#B91C1C]"
+                }`}
+              >
+                {applyMessage}
+              </div>
+            )}
           </div>
 
           {/* ================= RIGHT COLUMN: Job Poster Info ================= */}
@@ -262,15 +294,21 @@ export default function JobDetailPage() {
               </p>
               {/* Google Maps Embed Placeholder */}
               <div className="w-full h-48 bg-gray-200 rounded-xl overflow-hidden border border-gray-200">
-                <iframe
-                  src={job.mapEmbedUrl}
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  allowFullScreen={false}
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                ></iframe>
+                {job.mapEmbedUrl ? (
+                  <iframe
+                    src={job.mapEmbedUrl}
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    allowFullScreen={false}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  ></iframe>
+                ) : (
+                  <div className="flex h-full items-center justify-center text-sm text-gray-500">
+                    Map not available
+                  </div>
+                )}
               </div>
             </div>
 
