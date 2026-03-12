@@ -7,9 +7,8 @@ import Sidebar from "@/components/InternSidebar";
 import { apiFetch } from "@/lib/api";
 import ProjectsModal, { ProjectData } from "@/components/profile/ProjectsModal";
 import ProjectUploadModal from "@/components/profile/ProjectUploadModal";
-import { useProfile } from "@/hooks/useProfile";
+import { Project, useProfile } from "@/hooks/useProfile";
 
-// Interface สำหรับข้อมูลโปรเจกต์ที่จะแสดงใน UI
 interface UIProject {
   id: string;
   title: string;
@@ -24,6 +23,11 @@ interface UIProject {
   githubUrl?: string;
   projectUrl?: string;
   fileUrl?: string;
+  fileName?: string;
+  // ✅ เก็บวันที่ดิบจาก DB ไว้ด้วย เพื่อส่งต่อให้ Upload Modal
+  rawStartDate?: string | null;
+  rawEndDate?: string | null;
+  relatedSkills?: string[];
 }
 
 const MONTH_NAMES = [
@@ -31,20 +35,28 @@ const MONTH_NAMES = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
-// ฟังก์ชันแปลงวันที่กลับเป็น ISO String (เพื่อส่งเข้า DB)
 function parseToISODate(displayDate: string) {
   if (!displayDate) return undefined;
   const [monthStr, year] = displayDate.split(" ");
-  const mIndex = MONTH_NAMES.findIndex((m) => m.toLowerCase() === monthStr.toLowerCase());
+  const mIndex = MONTH_NAMES.findIndex(
+    (m) => m.toLowerCase() === monthStr.toLowerCase(),
+  );
   if (mIndex !== -1 && year) {
     return new Date(parseInt(year), mIndex, 1).toISOString();
   }
   return undefined;
 }
 
+function formatDisplayDate(isoString?: string | null) {
+  if (!isoString) return "";
+  const d = new Date(isoString);
+  if (isNaN(d.getTime())) return "";
+  return `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
+}
+
 export default function ProjectPage() {
   const router = useRouter();
-  const { profileData, refetch, isLoading: profileLoading } = useProfile(); // ดึงข้อมูลโปรไฟล์จาก DB
+  const { profileData, refetch, isLoading: profileLoading } = useProfile();
 
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [projects, setProjects] = useState<UIProject[]>([]);
@@ -57,18 +69,33 @@ export default function ProjectPage() {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [projectToUpload, setProjectToUpload] = useState<any | null>(null);
 
-  // 💡 แมปข้อมูลจาก Database เข้าสู่ UI State เมื่อโหลดเสร็จ
+  useEffect(() => {
+    const isAnyModalOpen = isModalOpen || isUploadModalOpen;
+    if (isAnyModalOpen) {
+      const scrollY = window.scrollY;
+      document.documentElement.style.height = "100vh";
+      document.documentElement.style.overflow = "hidden";
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = "100%";
+      document.body.style.overflow = "hidden";
+      return () => {};
+    } else {
+      const scrollY = document.body.style.top;
+      document.documentElement.style.height = "";
+      document.documentElement.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+      document.body.style.overflow = "";
+      if (scrollY) window.scrollTo(0, parseInt(scrollY) * -1);
+    }
+  }, [isModalOpen, isUploadModalOpen]);
+
+  // ✅ แก้บัค: เก็บ rawStartDate และ rawEndDate ไว้ใน UIProject
   useEffect(() => {
     if (profileData?.projects) {
       const mappedProjects: UIProject[] = profileData.projects.map((p: any) => {
-        // ฟังก์ชันแปลง Date จาก DB เป็นแบบแสดงผล (Jan 2024)
-        const formatDisplayDate = (isoString?: string) => {
-          if (!isoString) return "";
-          const d = new Date(isoString);
-          if (isNaN(d.getTime())) return "";
-          return `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
-        };
-
         const sd = formatDisplayDate(p.startDate);
         const ed = formatDisplayDate(p.endDate);
         const period = sd && ed ? `${sd} - ${ed}` : sd || ed || "No date";
@@ -80,6 +107,7 @@ export default function ProjectPage() {
           period,
           description: p.description || "",
           skills: p.relatedSkills || p.skills || [],
+          relatedSkills: p.relatedSkills || p.skills || [],
           uploadStatus: p.fileUrl ? "File Uploaded" : "No File Uploaded",
           githubLinked: !!p.githubUrl,
           projectLinked: !!p.projectUrl,
@@ -87,29 +115,17 @@ export default function ProjectPage() {
           githubUrl: p.githubUrl,
           projectUrl: p.projectUrl,
           fileUrl: p.fileUrl,
+          fileName: p.fileName,
+          // ✅ เก็บวันที่ดิบจาก DB
+          rawStartDate: p.startDate || null,
+          rawEndDate: p.endDate || null,
         };
       });
-      
-      // เรียงจากใหม่สุดไปเก่าสุด (โดยอิงจาก ID หรือ วันที่)
+
       setProjects(mappedProjects.reverse());
     }
   }, [profileData]);
-  
-  // 💡 แก้ไข: ป้องกันการ Scroll พื้นหลังเมื่อ Modal เปิด
-  useEffect(() => {
-    if (isModalOpen || isUploadModalOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "auto";
-    }
 
-    // Cleanup function: เพื่อคืนค่าเดิมเมื่อ Component นี้ถูกถอดออก (unmount)
-    return () => {
-      document.body.style.overflow = "auto";
-    };
-  }, [isModalOpen, isUploadModalOpen]);
-
-  // เช็คสถานะการเข้าสู่ระบบ
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -151,12 +167,29 @@ export default function ProjectPage() {
     setIsModalOpen(true);
   };
 
-  // 💡 ยิง API: ลบข้อมูลโปรเจกต์
+  // ✅ แก้บัค: เปิด Upload Modal พร้อมข้อมูลครบ รวมถึงวันที่ดิบ
+  const handleOpenUpload = (project: UIProject) => {
+    setProjectToUpload({
+      id: project.id,
+      name: project.title,
+      role: project.role,
+      description: project.description,
+      startDate: project.rawStartDate || null,  // ✅ ใช้ rawStartDate
+      endDate: project.rawEndDate || null,      // ✅ ใช้ rawEndDate
+      relatedSkills: project.relatedSkills || project.skills || [],
+      githubUrl: project.githubUrl || "",
+      projectUrl: project.projectUrl || "",
+      fileUrl: project.fileUrl || "",
+      fileName: project.fileName || "",
+    });
+    setIsUploadModalOpen(true);
+  };
+
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this project?")) {
       try {
         await apiFetch(`/api/candidates/projects/${id}`, { method: "DELETE" });
-        await refetch(); // ดึงข้อมูลใหม่จาก DB หลังลบ
+        await refetch();
       } catch (error) {
         console.error("Failed to delete project:", error);
         alert("Failed to delete project.");
@@ -164,10 +197,8 @@ export default function ProjectPage() {
     }
   };
 
-  // 💡 ยิง API: สร้าง/อัปเดตข้อมูลโปรเจกต์
   const handleSave = async (formData: ProjectData) => {
     try {
-      // เตรียมข้อมูลให้ตรงกับฝั่ง Database
       const payload = {
         name: formData.name,
         role: formData.role,
@@ -178,20 +209,18 @@ export default function ProjectPage() {
       };
 
       if (currentProject?.id) {
-        // Edit Mode
         await apiFetch(`/api/candidates/projects/${currentProject.id}`, {
           method: "PUT",
           body: JSON.stringify(payload),
         });
       } else {
-        // Add Mode
         await apiFetch(`/api/candidates/projects`, {
           method: "POST",
           body: JSON.stringify(payload),
         });
       }
 
-      await refetch(); // ดึงข้อมูลใหม่จาก DB
+      await refetch();
       setIsModalOpen(false);
     } catch (error) {
       console.error("Failed to save project:", error);
@@ -199,8 +228,9 @@ export default function ProjectPage() {
     }
   };
 
-  const handleUpdateFiles = () => {
-    refetch(); // หากอัปโหลดไฟล์เสร็จ ให้รีเฟรชข้อมูลโปรไฟล์เพื่ออัปเดตสถานะไฟล์
+  // ✅ แก้บัค: refetch หลัง upload เสมอ
+  const handleUpdateFiles = async () => {
+    await refetch();
   };
 
   const filteredProjects = projects.filter((p) => {
@@ -228,21 +258,12 @@ export default function ProjectPage() {
               {/* Header */}
               <div className="flex flex-col lg:flex-row lg:items-start justify-between mb-8 gap-4">
                 <div>
-                  <h1 className="text-[32px] font-extrabold text-gray-900 tracking-tight">
-                    Projects
-                  </h1>
-                  <p className="text-sm text-gray-500 mt-1">
-                    A collection of projects you have created.
-                  </p>
+                  <h1 className="text-[32px] font-extrabold text-gray-900 tracking-tight">Projects</h1>
+                  <p className="text-sm text-gray-500 mt-1">A collection of projects you have created.</p>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="relative w-full lg:w-72">
-                    <svg
-                      className="w-4 h-4 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
+                    <svg className="w-4 h-4 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                     <input
@@ -281,28 +302,23 @@ export default function ProjectPage() {
                 </div>
               </div>
 
-              {/* Project Cards */}
               <h2 className="text-base font-extrabold text-gray-900 mb-4">
                 {filteredProjects.length} Total Projects
               </h2>
-              
+
               {filteredProjects.length === 0 ? (
                 <div className="text-center py-12 bg-white border border-gray-200 rounded-xl shadow-sm">
-                  <p className="text-gray-500 font-medium">No projects found. Click "+ Add Project" to get started.</p>
+                  <p className="text-gray-500 font-medium">
+                    No projects found. Click "+ Add Project" to get started.
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-6">
                   {filteredProjects.map((project) => (
-                    <div
-                      key={project.id}
-                      className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
-                    >
-                      {/* Card Header & Badge */}
+                    <div key={project.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                      {/* Card Header */}
                       <div className="flex justify-between items-start mb-2">
-                        <h3 className="text-[17px] font-bold text-gray-900">
-                          {project.title}
-                        </h3>
-                        {/* Status Badge */}
+                        <h3 className="text-[17px] font-bold text-gray-900">{project.title}</h3>
                         {project.uploadStatus === "No File Uploaded" ? (
                           <span className="flex items-center gap-1.5 px-3 py-1 bg-[#F0F7FF] text-[#0273B1] text-xs font-bold rounded-full border border-[#DBF0FF]">
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -320,113 +336,83 @@ export default function ProjectPage() {
                           </span>
                         )}
                       </div>
-                      
-                      <p className="text-sm text-gray-500 mb-4">
-                        Role: {project.role} | {project.period}
-                      </p>
+
+                      <p className="text-sm text-gray-500 mb-4">Role: {project.role} | {project.period}</p>
                       <p className="text-[14px] text-gray-700 leading-relaxed mb-6 whitespace-pre-wrap">
                         {project.description}
                       </p>
 
-                      {/* Upload Files UI Section */}
+                      {/* Credibility Boxes */}
                       <div className="mb-2">
-                        <h4 className="text-sm font-bold text-gray-900 mb-3">
-                          Upload Files for Credibility
-                        </h4>
+                        <h4 className="text-sm font-bold text-gray-900 mb-3">Upload Files for Credibility</h4>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            
-                            {/* GitHub Box */}
-                            <a
-                              href={project.githubLinked && project.githubUrl ? project.githubUrl : undefined}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => { if (!project.githubLinked) e.preventDefault(); }}
-                              className={`flex items-center justify-between px-4 py-3 border rounded-lg transition-all ${
-                                project.githubLinked
-                                  ? "border-blue-100 bg-white hover:bg-blue-50 hover:shadow-sm cursor-pointer"
-                                  : "border-gray-100 bg-gray-50/50 cursor-default opacity-80"
-                              }`}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${project.githubLinked ? 'bg-[#EBF5FF] text-[#3B82F6]' : 'bg-gray-200 text-gray-400'}`}>
-                                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                    <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.379.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.161 22 16.416 22 12c0-5.523-4.477-10-10-10z" />
-                                  </svg>
-                                </div>
-                                <span className={`text-sm font-medium ${project.githubLinked ? 'text-gray-900' : 'text-gray-500'}`}>Github Linked</span>
+                          {/* GitHub */}
+                          <a
+                            href={project.githubLinked && project.githubUrl ? project.githubUrl : undefined}
+                            target="_blank" rel="noopener noreferrer"
+                            onClick={(e) => { if (!project.githubLinked) e.preventDefault(); }}
+                            className={`flex items-center justify-between px-4 py-3 border rounded-lg transition-all ${project.githubLinked ? "border-blue-100 bg-white hover:bg-blue-50 cursor-pointer" : "border-gray-100 bg-gray-50/50 cursor-default opacity-80"}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${project.githubLinked ? "bg-[#EBF5FF] text-[#3B82F6]" : "bg-gray-200 text-gray-400"}`}>
+                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M12 2C6.477 2 2 6.477 2 12c0 4.42 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.379.203 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.161 22 16.416 22 12c0-5.523-4.477-10-10-10z" />
+                                </svg>
                               </div>
-                              {project.githubLinked ? (
-                                <svg className="w-5 h-5 text-[#8BC34A]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeWidth="2"></circle><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4"></path></svg>
-                              ) : (
-                                <svg className="w-5 h-5 text-[#FF5252]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeWidth="2"></circle><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 9l-6 6M9 9l6 6"></path></svg>
-                              )}
-                            </a>
+                              <span className={`text-sm font-medium ${project.githubLinked ? "text-gray-900" : "text-gray-500"}`}>Github Linked</span>
+                            </div>
+                            <StatusIcon active={project.githubLinked} />
+                          </a>
 
-                            {/* Project Link Box */}
-                            <a
-                              href={project.projectLinked && project.projectUrl ? project.projectUrl : undefined}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => { if (!project.projectLinked) e.preventDefault(); }}
-                              className={`flex items-center justify-between px-4 py-3 border rounded-lg transition-all ${
-                                project.projectLinked
-                                  ? "border-blue-100 bg-white hover:bg-blue-50 hover:shadow-sm cursor-pointer"
-                                  : "border-gray-100 bg-gray-50/50 cursor-default opacity-80"
-                              }`}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${project.projectLinked ? 'bg-[#EBF5FF] text-[#3B82F6]' : 'bg-gray-200 text-gray-400'}`}>
-                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" /></svg>
-                                </div>
-                                <span className={`text-sm font-medium ${project.projectLinked ? 'text-gray-900' : 'text-gray-500'}`}>Project Linked</span>
+                          {/* Project Link */}
+                          <a
+                            href={project.projectLinked && project.projectUrl ? project.projectUrl : undefined}
+                            target="_blank" rel="noopener noreferrer"
+                            onClick={(e) => { if (!project.projectLinked) e.preventDefault(); }}
+                            className={`flex items-center justify-between px-4 py-3 border rounded-lg transition-all ${project.projectLinked ? "border-blue-100 bg-white hover:bg-blue-50 cursor-pointer" : "border-gray-100 bg-gray-50/50 cursor-default opacity-80"}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${project.projectLinked ? "bg-[#EBF5FF] text-[#3B82F6]" : "bg-gray-200 text-gray-400"}`}>
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9" />
+                                </svg>
                               </div>
-                              {project.projectLinked ? (
-                                <svg className="w-5 h-5 text-[#8BC34A]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeWidth="2"></circle><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4"></path></svg>
-                              ) : (
-                                <svg className="w-5 h-5 text-[#FF5252]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeWidth="2"></circle><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 9l-6 6M9 9l6 6"></path></svg>
-                              )}
-                            </a>
+                              <span className={`text-sm font-medium ${project.projectLinked ? "text-gray-900" : "text-gray-500"}`}>Project Linked</span>
+                            </div>
+                            <StatusIcon active={project.projectLinked} />
+                          </a>
 
-                            {/* Upload File Box */}
-                            <a
-                              href={project.fileUploaded && project.fileUrl ? project.fileUrl : undefined}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              onClick={(e) => { if (!project.fileUploaded) e.preventDefault(); }}
-                              className={`flex items-center justify-between px-4 py-3 border rounded-lg transition-all ${
-                                project.fileUploaded
-                                  ? "border-blue-100 bg-white hover:bg-blue-50 hover:shadow-sm cursor-pointer"
-                                  : "border-gray-100 bg-gray-50/50 cursor-default opacity-80"
-                              }`}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${project.fileUploaded ? 'bg-[#EBF5FF] text-[#3B82F6]' : 'bg-gray-200 text-gray-400'}`}>
-                                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" /></svg>
-                                </div>
-                                <span className={`text-sm font-medium ${project.fileUploaded ? 'text-gray-900' : 'text-gray-500'}`}>Upload File</span>
+                          {/* File */}
+                          <a
+                            href={project.fileUploaded && project.fileUrl ? project.fileUrl : undefined}
+                            target="_blank" rel="noopener noreferrer"
+                            onClick={(e) => { if (!project.fileUploaded) e.preventDefault(); }}
+                            className={`flex items-center justify-between px-4 py-3 border rounded-lg transition-all ${project.fileUploaded ? "border-blue-100 bg-white hover:bg-blue-50 cursor-pointer" : "border-gray-100 bg-gray-50/50 cursor-default opacity-80"}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${project.fileUploaded ? "bg-[#EBF5FF] text-[#3B82F6]" : "bg-gray-200 text-gray-400"}`}>
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clipRule="evenodd" />
+                                </svg>
                               </div>
-                              {project.fileUploaded ? (
-                                <svg className="w-5 h-5 text-[#8BC34A]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeWidth="2"></circle><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4"></path></svg>
-                              ) : (
-                                <svg className="w-5 h-5 text-[#FF5252]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeWidth="2"></circle><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 9l-6 6M9 9l6 6"></path></svg>
-                              )}
-                            </a>
+                              <span className={`text-sm font-medium ${project.fileUploaded ? "text-gray-900" : "text-gray-500"}`}>Upload File</span>
+                            </div>
+                            <StatusIcon active={project.fileUploaded} />
+                          </a>
                         </div>
                       </div>
 
-                      {/* Card Footer: Skills & Action Buttons */}
+                      {/* Footer */}
                       <div className="flex flex-col md:flex-row md:items-center justify-between mt-6 gap-4 border-t pt-4">
                         <div className="flex flex-wrap gap-2">
                           {project.skills.map((skill, idx) => (
-                            <span
-                              key={idx}
-                              className="px-3 py-1 bg-[#EBF5FF] text-[#2563EB] text-[11px] font-bold rounded"
-                            >
+                            <span key={idx} className="px-3 py-1 bg-[#EBF5FF] text-[#2563EB] text-[11px] font-bold rounded">
                               {skill}
                             </span>
                           ))}
                         </div>
                         <div className="flex items-center gap-3">
+                          {/* ปุ่มลบ */}
                           <button
                             className="text-gray-400 hover:text-red-500 transition-colors mr-1"
                             onClick={() => handleDelete(project.id)}
@@ -436,15 +422,16 @@ export default function ProjectPage() {
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                             </svg>
                           </button>
-                          <button 
+
+                          {/* ✅ ปุ่ม Upload/Edit Files - ใช้ handleOpenUpload */}
+                          <button
                             className="px-4 py-1.5 border border-[#3B82F6] text-[#3B82F6] text-xs font-bold rounded-md hover:bg-blue-50 transition-colors whitespace-nowrap"
-                            onClick={() => {
-                              setProjectToUpload(project);
-                              setIsUploadModalOpen(true);
-                            }}
+                            onClick={() => handleOpenUpload(project)}
                           >
                             {project.uploadStatus === "No File Uploaded" ? "Upload Files" : "Edit Files"}
                           </button>
+
+                          {/* ✅ ปุ่ม Edit Project */}
                           <button
                             className="px-4 py-1.5 border border-[#3B82F6] text-[#3B82F6] text-xs font-bold rounded-md hover:bg-blue-50 transition-colors whitespace-nowrap"
                             onClick={() => handleEditClick(project)}
@@ -468,12 +455,33 @@ export default function ProjectPage() {
         onSave={handleSave}
         editingProject={currentProject}
       />
+
+      {/* ✅ แก้บัค: ใช้ handleUpdateFiles ที่ทำ refetch จริงๆ */}
       <ProjectUploadModal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
         project={projectToUpload}
         onUpdate={handleUpdateFiles}
+        onRefresh={handleUpdateFiles}
       />
     </div>
+  );
+}
+
+// Helper component
+function StatusIcon({ active }: { active: boolean }) {
+  if (active) {
+    return (
+      <svg className="w-5 h-5 text-[#8BC34A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="10" strokeWidth="2"></circle>
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4"></path>
+      </svg>
+    );
+  }
+  return (
+    <svg className="w-5 h-5 text-[#FF5252]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="10" strokeWidth="2"></circle>
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 9l-6 6M9 9l6 6"></path>
+    </svg>
   );
 }

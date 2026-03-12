@@ -5,6 +5,13 @@ import { randomUUID } from "crypto";
 
 export const bookmarksRouter = Router();
 
+function initialsFromName(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const first = parts[0]?.[0] ?? "?";
+  const second = parts.length > 1 ? parts[parts.length - 1]?.[0] : parts[0]?.[1];
+  return (first + (second ?? "")).toUpperCase();
+}
+
 // Get all bookmarked candidates for the company
 bookmarksRouter.get("/", requireAuth, requireRole("COMPANY"), async (req: AuthedRequest, res) => {
   const userId = req.user!.id;
@@ -22,39 +29,19 @@ bookmarksRouter.get("/", requireAuth, requireRole("COMPANY"), async (req: Authed
       where: { companyId: companyProfile.id },
       include: {
         Candidate: {
-          select: {
-            id: true,
-            fullName: true,
-            desiredPosition: true,
-            bio: true,
+          include: {
             User: { select: { email: true } },
             CandidateUniversity: {
               orderBy: [{ isCurrent: "desc" }, { updatedAt: "desc" }],
               take: 1,
-              select: {
-                isCurrent: true,
-                degreeName: true,
-                University: { select: { name: true } },
-              },
+              include: { University: { select: { name: true } } },
             },
-            UserSkill: {
-              select: {
-                Skills: { select: { name: true } },
-              },
-            },
+            UserSkill: { include: { Skills: { select: { name: true } } } },
           },
         },
       },
       orderBy: { createdAt: "desc" },
     });
-
-    // Format candidates similar to the candidates list endpoint
-    function initialsFromName(name: string) {
-      const parts = name.trim().split(/\s+/).filter(Boolean);
-      const first = parts[0]?.[0] ?? "?";
-      const second = parts.length > 1 ? parts[parts.length - 1]?.[0] : parts[0]?.[1];
-      return (first + (second ?? "")).toUpperCase();
-    }
 
     const candidates = bookmarks.map((bookmark) => {
       const c = bookmark.Candidate;
@@ -64,7 +51,7 @@ bookmarksRouter.get("/", requireAuth, requireRole("COMPANY"), async (req: Authed
       const primaryEdu = c.CandidateUniversity[0] ?? null;
       
       const uni = primaryEdu?.University?.name ?? "Unknown University";
-      const skills = c.UserSkill.map((us) => us.Skills.name);
+      const skills = c.UserSkill.map((us: { Skills: { name: string } }) => us.Skills.name);
 
       // Major: derive ONLY from CandidateUniversity.degreeName.
       // CandidateProfile should not be used as a source of education details.
@@ -76,7 +63,7 @@ bookmarksRouter.get("/", requireAuth, requireRole("COMPANY"), async (req: Authed
         role: c.desiredPosition ?? "Intern",
         university: uni,
         major: major ?? "N/A",
-        graduationDate: primaryEdu?.isCurrent ? "Present" : null,
+        graduationDate: primaryEdu?.isCurrent ? "Present" : (primaryEdu?.yearOfStudy ?? null),
         skills,
         initials: initialsFromName(name),
         email: c.User.email,

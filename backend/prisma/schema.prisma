@@ -170,7 +170,6 @@ model CandidateUniversity {
   degreeName     String
   fieldOfStudy   String
   yearOfStudy    String
-  endDate        DateTime?
   gpa            Float? 
   isCurrent      Boolean     @default(false)  
 
@@ -517,6 +516,10 @@ model UserProjects {
   startDate     String?          // "Mar 2024" format
   endDate       String?          // "Apr 2024" format
   relatedSkills String[]         @default([])
+  githubUrl     String?          
+  projectUrl    String?          
+  fileUrl       String? 
+  fileName      String?          
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
   Profile       CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)

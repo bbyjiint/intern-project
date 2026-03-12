@@ -39,9 +39,9 @@ class FileStorageService {
         region: config.s3Region,
         credentials: config.s3AccessKeyId && config.s3SecretAccessKey
           ? {
-              accessKeyId: config.s3AccessKeyId,
-              secretAccessKey: config.s3SecretAccessKey,
-            }
+            accessKeyId: config.s3AccessKeyId,
+            secretAccessKey: config.s3SecretAccessKey,
+          }
           : undefined,
         endpoint: config.s3Endpoint,
         forcePathStyle: config.s3Endpoint ? true : false, // Use path-style for S3-compatible services
@@ -132,7 +132,7 @@ class FileStorageService {
 
     // Generate URL
     const url = this.config.publicUrl
-      ? `${this.config.publicUrl}/${key}`
+      ? `${this.config.publicUrl}/uploads/${key}`
       : `/uploads/${key}`;
 
     return {

@@ -5,7 +5,7 @@ const nextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: "http://127.0.0.1:5001/api/:path*",  // ← ใช้ IP แทน localhost
+        destination: "http://intern-backend:5001/api/:path*",   // ← ใช้ IP แทน localhost
       },
     ]
   },

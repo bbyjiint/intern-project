@@ -6,7 +6,6 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { fileStorage } from "../utils/fileStorage";
-import { SkillCategory } from "@prisma/client";
 
 export const candidatesRouter = Router();
 
@@ -17,21 +16,16 @@ function initialsFromName(name: string) {
   return (first + (second ?? "")).toUpperCase();
 }
 
-function normalizeEducationLevel(value: unknown): "BACHELOR" | "MASTERS" | "PHD" {
-  const normalized = String(value || "")
-    .trim()
-    .toUpperCase()
-    .replace(/[^A-Z]/g, "");
+function normalizeEducationLevel(value: unknown): string {
+  const normalized = String(value || "").trim().toUpperCase().replace(/[^A-Z_]/g, "");
 
+  if (normalized === "BELOW_HIGH_SCHOOL") return "BELOW_HIGH_SCHOOL";
+  if (normalized === "HIGH_SCHOOL") return "HIGH_SCHOOL";
+  if (normalized === "HIGHER_VOCATIONAL") return "HIGHER_VOCATIONAL";
   if (normalized === "BACHELOR" || normalized === "BACHELORS") return "BACHELOR";
   if (normalized === "MASTER" || normalized === "MASTERS") return "MASTERS";
   if (normalized === "PHD" || normalized === "DOCTORATE") return "PHD";
   return "BACHELOR";
-}
-
-function formatGradDate(d?: Date | null) {
-  if (!d) return null;
-  return d.toLocaleString("en-US", { month: "short", year: "numeric" });
 }
 
 // Utility to remove a locally stored file if it exists.
@@ -71,6 +65,41 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
             createdAt: true,
           }
         },
+
+        CandidateUniversity: {
+          include: {
+            University: {
+              select: {
+                name: true,
+                thname: true,
+              }
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        },
+        WorkHistory: {
+          orderBy: { startDate: "desc" },
+        },
+        UserSkill: {
+          include: {
+            Skills: {
+              select: {
+                name: true,
+              }
+            }
+          },
+          orderBy: { rating: "desc" },
+        },
+        CandidateContactFile: {
+          orderBy: { createdAt: "desc" },
+        },
+        CertificateFile: {
+          orderBy: { createdAt: "desc" },
+        },
+        UserProjects: {
+          orderBy: { createdAt: "desc" },
+        },
+
         CandidatePreferredProvince: {
           include: {
             Province: {
@@ -80,6 +109,218 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
             },
           },
           orderBy: { createdAt: "asc" },
+        },
+
+        CandidateResume: {
+          where: { isPrimary: true },
+          take: 1,
+          orderBy: { createdAt: "desc" },
+        },
+      },
+    });
+
+    if (!candidateProfile) {
+      return res.status(404).json({ error: "Profile not found" });
+    }
+
+    // Format the response for frontend
+    const profileData = {
+      id: candidateProfile.id,
+      userId: candidateProfile.userId,
+      fullName: candidateProfile.fullName || null,
+
+      email: candidateProfile.contactEmail || candidateProfile.User.email,
+      phoneNumber: candidateProfile.phoneNumber || null,
+
+      profileImage: candidateProfile.profileImage || null,
+
+      gender: candidateProfile.gender || null,
+
+      dateOfBirth: candidateProfile.dateOfBirth
+        ? candidateProfile.dateOfBirth.toISOString()
+        : null,
+
+      nationality: candidateProfile.nationality || null,
+
+      internshipPeriod: candidateProfile.internshipPeriod || null,
+
+      preferredPositions: candidateProfile.preferredPositions || [],
+
+      preferredLocations: candidateProfile.CandidatePreferredProvince.map(
+        (entry) => entry.Province.name
+      ),
+
+      desiredPosition: candidateProfile.desiredPosition || null,
+      bio: candidateProfile.bio || null,
+      resumeUrl: candidateProfile.CandidateResume[0]?.url || null,
+      resumeFile: candidateProfile.CandidateResume[0]?.name || null,
+      resume: candidateProfile.CandidateResume[0]
+        ? {
+          id: candidateProfile.CandidateResume[0].id,
+          name: candidateProfile.CandidateResume[0].name,
+          url: candidateProfile.CandidateResume[0].url,
+          createdAt: candidateProfile.CandidateResume[0].createdAt.toISOString(),
+        }
+        : null,
+      education: candidateProfile.CandidateUniversity.map((cu) => ({
+        id: cu.id,
+        university: cu.University.name,
+        educationLevel: cu.educationLevel,
+        degree: cu.degreeName,
+        fieldOfStudy: cu.fieldOfStudy,
+        yearOfStudy: cu.yearOfStudy,
+        gpa: cu.gpa ? cu.gpa.toString() : null,
+        isCurrent: cu.isCurrent,
+      })),
+      experience: candidateProfile.WorkHistory.map((wh) => ({
+        id: wh.id,
+        position: wh.position,
+        companyName: wh.companyName,
+        startDate: wh.startDate ? wh.startDate.toISOString().split("T")[0] : null,
+        endDate: wh.endDate ? wh.endDate.toISOString().split("T")[0] : null,
+        description: wh.description || null,
+        startYear: wh.startDate ? wh.startDate.getFullYear() : null,
+        endYear: wh.endDate ? wh.endDate.getFullYear() : null,
+      })),
+      skills: candidateProfile.UserSkill.map((us) => {
+        const ratingMap: Record<number, string> = {
+          1: "beginner",
+          2: "intermediate",
+          3: "advanced",
+        };
+        return {
+          id: us.id,
+          name: us.Skills.name,
+          level: ratingMap[us.rating || 1] || "beginner",
+          rating: us.rating || 1,
+          category: us.category,
+        };
+      }),
+      files: {
+        contactFiles: candidateProfile.CandidateContactFile.map((file) => ({
+          id: file.id,
+          name: file.name,
+          url: file.url,
+          type: file.type,
+          createdAt: file.createdAt.toISOString(),
+        })),
+        certificates: candidateProfile.CertificateFile.map((file) => ({
+          id: file.id,
+          name: file.name,
+          url: file.url,
+          type: file.type,
+          description: file.description,
+          issuedBy: file.issuedBy || "",
+          issueDate: file.issueDate ? file.issueDate.toISOString().split("T")[0] : "",
+          relatedSkills: file.relatedSkills || [],
+          createdAt: file.createdAt.toISOString(),
+        })),
+      },
+      projects: candidateProfile.UserProjects.map((project) => ({
+        id: project.id,
+        name: project?.name || "",
+        role: project?.role || "",
+        description: project?.description || "",
+        startDate: project.startDate || "",
+        endDate: project.endDate || "",
+        relatedSkills: project.relatedSkills || [],
+        githubUrl: project.githubUrl || "",   // ← เพิ่ม
+        projectUrl: project.projectUrl || "", // ← เพิ่ม
+        fileUrl: project.fileUrl || "",
+        fileName: project.fileName || "",
+      })),
+      createdAt: candidateProfile.createdAt.toISOString(),
+      updatedAt: candidateProfile.updatedAt.toISOString(),
+    };
+
+    return res.json({ profile: profileData });
+  } catch (error: any) {
+    console.error("Error fetching candidate profile:", error);
+    return res.status(500).json({
+      error: error.message || "Failed to fetch candidate profile"
+    });
+  }
+});
+
+// Employer dashboard list
+candidatesRouter.get("/", requireAuth, requireRole("COMPANY"), async (req, res) => {
+  const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
+
+  const candidates = await prisma.candidateProfile.findMany({
+    where: q
+      ? {
+        OR: [
+          { fullName: { contains: q, mode: "insensitive" } },
+          { desiredPosition: { contains: q, mode: "insensitive" } },
+          { User: { email: { contains: q, mode: "insensitive" } } },
+        ],
+      }
+      : undefined,
+    include: {
+      User: { select: { email: true } },
+      CandidateUniversity: {
+        include: { University: { select: { name: true, province: true } } }
+      },
+      UserSkill: { include: { Skills: { select: { name: true } } } },
+    },
+    take: 50,
+  });
+
+  const items = candidates.map((c) => {
+    const name = c.fullName ?? c.User.email;
+
+    // Pick the primary education record (current one or latest by endDate)
+    const primaryEdu = c.CandidateUniversity[0] ?? null;
+
+    const uni = primaryEdu?.University?.name ?? null;
+
+    const location = primaryEdu?.University?.province ?? null;
+
+    const skills = c.UserSkill.map((us: typeof c.UserSkill[0]) => us.Skills.name);
+
+    // derive graduation date from endDate or yearOfStudy/current flag
+    let graduationDate: string | null = null;
+    if (primaryEdu?.isCurrent) {
+      graduationDate = "Present";
+    } else if (primaryEdu?.yearOfStudy) {
+      graduationDate = primaryEdu.yearOfStudy;
+    }
+
+    // Major: derive ONLY from CandidateUniversity.degreeName.
+    // CandidateProfile should not be used as a source of education details.
+    const major = primaryEdu?.degreeName ?? null;
+
+    return {
+      id: c.id,
+      name,
+      role: c.desiredPosition ?? "Intern",
+      university: uni ?? "Unknown University",
+      major,
+      location: location ?? null,
+      graduationDate,
+      skills,
+      initials: initialsFromName(name),
+      email: c.User.email,
+      about: c.bio ?? "",
+    };
+  });
+
+  return res.json({ candidates: items });
+});
+
+// Get full candidate profile by ID (for companies to view)
+candidatesRouter.get("/:id", requireAuth, requireRole("COMPANY"), async (req, res) => {
+  const candidateId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
+
+  try {
+    const candidateProfile = await prisma.candidateProfile.findUnique({
+      where: { id: candidateId },
+      include: {
+        User: {
+          select: {
+            email: true,
+            createdAt: true,
+          }
         },
         CandidateUniversity: {
           include: {
@@ -114,16 +355,21 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
         UserProjects: {
           orderBy: { createdAt: "desc" },
         },
-        CandidateResume: {
-          where: { isPrimary: true },
-          take: 1,
-          orderBy: { createdAt: "desc" },
+        CandidatePreferredProvince: {
+          include: {
+            Province: {
+              select: {
+                name: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "asc" },
         },
       },
     });
 
     if (!candidateProfile) {
-      return res.status(404).json({ error: "Profile not found" });
+      return res.status(404).json({ error: "Candidate profile not found" });
     }
 
     // Format the response for frontend
@@ -135,17 +381,10 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
       phoneNumber: candidateProfile.phoneNumber || null,
       profileImage: candidateProfile.profileImage || null,
       desiredPosition: candidateProfile.desiredPosition || null,
+      internshipPeriod: candidateProfile.internshipPeriod || null,
       bio: candidateProfile.bio || null,
-      resumeUrl: candidateProfile.CandidateResume[0]?.url || null,
-      resumeFile: candidateProfile.CandidateResume[0]?.name || null,
-      resume: candidateProfile.CandidateResume[0]
-        ? {
-            id: candidateProfile.CandidateResume[0].id,
-            name: candidateProfile.CandidateResume[0].name,
-            url: candidateProfile.CandidateResume[0].url,
-            createdAt: candidateProfile.CandidateResume[0].createdAt.toISOString(),
-          }
-        : null,
+      preferredPositions: candidateProfile.preferredPositions || [],
+      preferredLocations: candidateProfile.CandidatePreferredProvince.map((entry: { Province: { name: string } }) => entry.Province.name),
       education: candidateProfile.CandidateUniversity.map((cu) => ({
         id: cu.id,
         university: cu.University.name,
@@ -153,10 +392,7 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
         degree: cu.degreeName,
         fieldOfStudy: cu.fieldOfStudy,
         yearOfStudy: cu.yearOfStudy,
-        gpa: cu.gpa ? cu.gpa.toString() : null,
-        endDate: cu.endDate ? cu.endDate.toISOString().split("T")[0] : null,
-        endYear: cu.isCurrent ? null : (cu.endDate ? cu.endDate.getFullYear().toString() : null),
-        isCurrent: cu.isCurrent,
+        gpa: cu.gpa ? cu.gpa.toString() : null
       })),
       experience: candidateProfile.WorkHistory.map((wh) => ({
         id: wh.id,
@@ -175,11 +411,9 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
           3: "advanced",
         };
         return {
-          id: us.id,
           name: us.Skills.name,
           level: ratingMap[us.rating || 1] || "beginner",
           rating: us.rating || 1,
-          category: us.category
         };
       }),
       files: {
@@ -196,17 +430,24 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
           url: file.url,
           type: file.type,
           description: file.description,
+          issuedBy: file.issuedBy || "",
+          issueDate: file.issueDate ? file.issueDate.toISOString().split("T")[0] : "",
+          relatedSkills: file.relatedSkills || [],
           createdAt: file.createdAt.toISOString(),
         })),
       },
       projects: candidateProfile.UserProjects.map((project) => ({
         id: project.id,
-        name: project.name,
-        role: project.role,
-        description: project.description,
+        name: project?.name || "",
+        role: project?.role || "",
+        description: project?.description || "",
         startDate: project.startDate || "",
         endDate: project.endDate || "",
         relatedSkills: project.relatedSkills || [],
+        githubUrl: project.githubUrl || "",
+        projectUrl: project.projectUrl || "",
+        fileUrl: project.fileUrl || "",
+        fileName: project.fileName || "",
       })),
       createdAt: candidateProfile.createdAt.toISOString(),
       updatedAt: candidateProfile.updatedAt.toISOString(),
@@ -221,10 +462,38 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
   }
 });
 
+
+candidatesRouter.post(
+  "/projects/upload",
+  requireAuth, requireRole("CANDIDATE"),
+  (req: AuthedRequest, res, next) => {
+    uploadProjectFile.single("file")(req as any, res, (err: any) => {
+      if (err) return res.status(400).json({ error: err.message });
+      next();
+    });
+  },
+  async (req: AuthedRequest, res) => {
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+    try {
+      const fileBuffer = req.file.buffer || (req.file.path ? fs.readFileSync(req.file.path) : Buffer.from([]));
+      const result = await fileStorage.uploadFile(
+        { ...req.file, buffer: fileBuffer } as Express.Multer.File,
+        "projects", undefined
+      );
+      cleanupLocalFile(req.file);
+      return res.json({ url: result.url });
+    } catch (e: any) {
+      cleanupLocalFile(req.file);
+      return res.status(500).json({ error: e?.message || "Upload failed" });
+    }
+  }
+);
+
 // Create a new project
 candidatesRouter.post("/projects", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
   const userId = req.user!.id;
-  const { name, role, description, startDate, endDate, relatedSkills } = req.body ?? {};
+  const { name, role, description, startDate, endDate, relatedSkills, githubUrl, projectUrl, fileUrl, fileName } = req.body ?? {};
+
 
   console.log("POST /projects body:", JSON.stringify(req.body))
 
@@ -245,6 +514,10 @@ candidatesRouter.post("/projects", requireAuth, requireRole("CANDIDATE"), async 
         startDate: startDate || null,
         endDate: endDate || null,
         relatedSkills: relatedSkills || [],
+        githubUrl: githubUrl ?? null,
+        projectUrl: projectUrl ?? null,
+        fileUrl: fileUrl ?? null,
+        fileName: fileName ?? null,
       },
     });
 
@@ -265,6 +538,125 @@ candidatesRouter.post("/projects", requireAuth, requireRole("CANDIDATE"), async 
   }
 });
 
+// Update a project
+candidatesRouter.put("/projects/:id", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
+  const userId = req.user!.id;
+  const projectId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
+  const {
+    name,
+    role,
+    description,
+    startDate,
+    endDate,
+    relatedSkills,
+    githubUrl,
+    projectUrl,
+    fileUrl,
+    fileName
+  } = req.body ?? {};
+
+  if (!name || !role) {
+    return res.status(400).json({ error: "Name and role are required" });
+  }
+
+  try {
+    const candidateId = await getCandidateIdForUser(userId);
+
+    const existingProject = await prisma.userProjects.findUnique({
+      where: { id: projectId },
+      select: { candidateId: true },
+    });
+
+    if (!existingProject) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+
+    if (existingProject.candidateId !== candidateId) {
+      return res.status(403).json({ error: "You don't have permission to update this project" });
+    }
+
+    const project = await prisma.userProjects.update({
+      where: { id: projectId },
+      data: {
+        name,
+        role,
+        description: description || "",
+        startDate: startDate || null,
+        endDate: endDate || null,
+        relatedSkills: relatedSkills || [],
+        githubUrl: githubUrl ?? null,
+        projectUrl: projectUrl ?? null,
+        fileUrl: fileUrl ?? null,
+        fileName: fileName ?? null,
+      },
+    });
+
+    return res.json({
+      project: {
+        ...project,
+        startDate: project.startDate || "",
+        endDate: project.endDate || "",
+        relatedSkills: project.relatedSkills || [],
+        githubUrl: project.githubUrl || "",
+        projectUrl: project.projectUrl || "",
+        fileUrl: project.fileUrl || "",
+        fileName: project.fileName || "",
+      }
+    });
+  } catch (e: any) {
+    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
+      return res.status(404).json({ error: "Candidate profile not found" });
+    }
+    console.error("Error updating project:", e);
+    return res.status(500).json({ error: e?.message || "Failed to update project" });
+  }
+});
+
+// Delete a project
+candidatesRouter.delete("/projects/:id", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
+  const userId = req.user!.id;
+  const projectId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
+
+  try {
+    const candidateId = await getCandidateIdForUser(userId);
+
+    const existingProject = await prisma.userProjects.findUnique({
+      where: { id: projectId },
+      select: { candidateId: true, fileUrl: true },
+    });
+
+    if (!existingProject) {
+      return res.status(404).json({ error: "Project not found" });
+    }
+
+    if (existingProject.candidateId !== candidateId) {
+      return res.status(403).json({ error: "You don't have permission to delete this project" });
+    }
+
+    // ✅ ลบไฟล์จริงก่อน ถ้ามี
+    if (existingProject.fileUrl) {
+      try {
+        const fileKey = fileStorage.extractKeyFromUrl(existingProject.fileUrl);
+        if (fileKey) await fileStorage.deleteFile(fileKey);
+      } catch (e) {
+        console.error("Error deleting project file:", e);
+      }
+    }
+
+    await prisma.userProjects.delete({
+      where: { id: projectId },
+    });
+
+    return res.json({ success: true });
+  } catch (e: any) {
+    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
+      return res.status(404).json({ error: "Candidate profile not found" });
+    }
+    console.error("Error deleting project:", e);
+    return res.status(500).json({ error: e?.message || "Failed to delete project" });
+  }
+});
+
 // Create a new education entry
 candidatesRouter.post("/education", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
   const userId = req.user!.id;
@@ -279,7 +671,9 @@ candidatesRouter.post("/education", requireAuth, requireRole("CANDIDATE"), async
 
     // Find university by name
     const university = await prisma.university.findFirst({
-      where: { name: universityName },
+      where: {
+        name: { equals: universityName, mode: "insensitive" }
+      },
     });
 
     if (!university) {
@@ -300,14 +694,13 @@ candidatesRouter.post("/education", requireAuth, requireRole("CANDIDATE"), async
     const education = await prisma.candidateUniversity.create({
       data: {
         id: randomUUID(),
-        CandidateProfile: { connect: { id: candidateId } },
-        University: { connect: { id: university.id } },
+        candidateId,
+        universityId: university.id,
         educationLevel: normalizeEducationLevel(educationLevel),
         degreeName: degreeName,
         fieldOfStudy: fieldOfStudy || degreeName,
         yearOfStudy: yearOfStudy || "",
         gpa: gpa ? parseFloat(gpa.toString()) : null,
-        endDate: endDate ? new Date(endDate) : null,
         isCurrent: isCurrent || false,
       },
     });
@@ -320,6 +713,181 @@ candidatesRouter.post("/education", requireAuth, requireRole("CANDIDATE"), async
     }
     console.error("Error creating education:", e);
     return res.status(500).json({ error: e?.message || "Failed to create education" });
+  }
+});
+
+// Update an education entry
+candidatesRouter.put("/education/:id", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
+  const userId = req.user!.id;
+  const educationId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
+  const { universityName, degreeName, fieldOfStudy, yearOfStudy, educationLevel, gpa, endDate, isCurrent, relevantCoursework, achievements } = req.body ?? {};
+
+  if (!universityName || !degreeName || !educationLevel) {
+    return res.status(400).json({ error: "University name, degree name, and education level are required" });
+  }
+
+  try {
+    const candidateId = await getCandidateIdForUser(userId);
+
+    // Verify that the education entry belongs to this candidate
+    const existingEducation = await prisma.candidateUniversity.findUnique({
+      where: { id: educationId },
+      select: { candidateId: true },
+    });
+
+    if (!existingEducation) {
+      return res.status(404).json({ error: "Education entry not found" });
+    }
+
+    if (existingEducation.candidateId !== candidateId) {
+      return res.status(403).json({ error: "You don't have permission to update this education entry" });
+    }
+
+    // Find university by name
+    const university = await prisma.university.findFirst({
+      where: {
+        name: { equals: universityName, mode: "insensitive" }
+      },
+    });
+
+    if (!university) {
+      return res.status(400).json({ error: "University not found" });
+    }
+
+    // Store coursework and achievements as JSON
+    const additionalData: any = {};
+    if (relevantCoursework && relevantCoursework.length > 0) {
+      additionalData.relevantCoursework = relevantCoursework;
+    }
+    if (achievements && achievements.length > 0) {
+      additionalData.achievements = achievements;
+    }
+
+    const education = await prisma.candidateUniversity.update({
+      where: { id: educationId },
+      data: {
+        universityId: university.id,
+        educationLevel: normalizeEducationLevel(educationLevel),
+        degreeName: degreeName,
+        fieldOfStudy: fieldOfStudy || degreeName,
+        yearOfStudy: yearOfStudy || "",
+        gpa: gpa ? parseFloat(gpa.toString()) : null,
+        isCurrent: isCurrent || false,
+      },
+    });
+
+    return res.json({ education });
+  } catch (e: any) {
+    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
+      return res.status(404).json({ error: "Candidate profile not found" });
+    }
+    console.error("Error updating education:", e);
+    return res.status(500).json({ error: e?.message || "Failed to update education" });
+  }
+});
+
+candidatesRouter.delete("/education/:id", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
+  const userId = req.user!.id
+  const educationId = typeof req.params.id === "string" ? req.params.id : req.params.id[0]
+
+  try {
+    const candidateId = await getCandidateIdForUser(userId)
+
+    const existing = await prisma.candidateUniversity.findUnique({
+      where: { id: educationId },
+      select: { candidateId: true },
+    })
+
+    if (!existing) return res.status(404).json({ error: "Education not found" })
+    if (existing.candidateId !== candidateId) return res.status(403).json({ error: "No permission" })
+
+    await prisma.candidateUniversity.delete({ where: { id: educationId } })
+
+    return res.json({ success: true })
+  } catch (e: any) {
+    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") return res.status(404).json({ error: "Candidate profile not found" })
+    return res.status(500).json({ error: e?.message || "Failed to delete education" })
+  }
+})
+
+// Create a new experience entry
+candidatesRouter.post("/experience", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
+  const userId = req.user!.id;
+  const { position, companyName, startDate, endDate, isCurrent, description, location, technicalSkills } = req.body ?? {};
+
+  if (!position || !companyName) {
+    return res.status(400).json({ error: "Position and company name are required" });
+  }
+
+  try {
+    const candidateId = await getCandidateIdForUser(userId);
+
+    const experience = await prisma.workHistory.create({
+      data: {
+        id: randomUUID(),
+        candidateId,
+        position,
+        companyName,
+        startDate: startDate ? new Date(startDate) : null,
+        description: description || null,
+      },
+    });
+
+    return res.status(201).json({ experience });
+  } catch (e: any) {
+    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
+      return res.status(404).json({ error: "Candidate profile not found" });
+    }
+    console.error("Error creating experience:", e);
+    return res.status(500).json({ error: e?.message || "Failed to create experience" });
+  }
+});
+
+// Update an experience entry
+candidatesRouter.put("/experience/:id", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
+  const userId = req.user!.id;
+  const experienceId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
+  const { position, companyName, startDate, endDate, isCurrent, description, location, technicalSkills } = req.body ?? {};
+
+  if (!position || !companyName) {
+    return res.status(400).json({ error: "Position and company name are required" });
+  }
+
+  try {
+    const candidateId = await getCandidateIdForUser(userId);
+
+    // Verify that the experience entry belongs to this candidate
+    const existingExperience = await prisma.workHistory.findUnique({
+      where: { id: experienceId },
+      select: { candidateId: true },
+    });
+
+    if (!existingExperience) {
+      return res.status(404).json({ error: "Experience entry not found" });
+    }
+
+    if (existingExperience.candidateId !== candidateId) {
+      return res.status(403).json({ error: "You don't have permission to update this experience entry" });
+    }
+
+    const experience = await prisma.workHistory.update({
+      where: { id: experienceId },
+      data: {
+        position,
+        companyName,
+        startDate: startDate ? new Date(startDate) : null,
+        endDate: endDate ? new Date(endDate) : null,
+        description: description || null,
+      },
+    });
+
+    return res.json({ experience });
+  } catch (e: any) {
+    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
+      return res.status(404).json({ error: "Candidate profile not found" });
+    }
+    console.error("Error updating experience:", e);
+    return res.status(500).json({ error: e?.message || "Failed to update experience" });
   }
 });
 
@@ -342,40 +910,6 @@ candidatesRouter.get("/certificates", requireAuth, requireRole("CANDIDATE"), asy
     }
     console.error("Error fetching certificates:", e);
     return res.status(500).json({ error: e?.message || "Failed to fetch certificates" });
-  }
-});
-
-// Create a new experience entry
-candidatesRouter.post("/experience", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
-  const userId = req.user!.id;
-  const { position, companyName, startDate, endDate, isCurrent, description, location, technicalSkills } = req.body ?? {};
-
-  if (!position || !companyName) {
-    return res.status(400).json({ error: "Position and company name are required" });
-  }
-
-  try {
-    const candidateId = await getCandidateIdForUser(userId);
-
-    const experience = await prisma.workHistory.create({
-      data: {
-        id: randomUUID(),
-        Profile: { connect: { id: candidateId } },
-        position,
-        companyName,
-        startDate: startDate ? new Date(startDate) : null,
-        endDate: endDate ? new Date(endDate) : null,
-        description: description || null,
-      },
-    });
-
-    return res.status(201).json({ experience });
-  } catch (e: any) {
-    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
-      return res.status(404).json({ error: "Candidate profile not found" });
-    }
-    console.error("Error creating experience:", e);
-    return res.status(500).json({ error: e?.message || "Failed to create experience" });
   }
 });
 
@@ -435,9 +969,85 @@ const uploadResume = multer({
   },
 });
 
+// Upload middleware for profile image
+const uploadProfileImage = multer({
+  storage: multer.memoryStorage(), // <-- เปลี่ยนตรงนี้
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const isImage = /\.(jpg|jpeg|png|webp)$/i.test(file.originalname) || file.mimetype.startsWith("image/");
+    isImage ? cb(null, true) : cb(new Error("Only image files allowed"));
+  },
+});
+
+const uploadProjectFile = multer({
+  storage: createStorage("projects"),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const ok = /\.(pdf|docx)$/i.test(file.originalname);
+    ok ? cb(null, true) : cb(new Error("Only PDF or DOCX allowed"));
+  },
+});
+
+// POST /api/candidates/profile/image
+candidatesRouter.post("/profile/image", requireAuth, requireRole("CANDIDATE"), (req: AuthedRequest, res, next) => {
+  uploadProfileImage.single("file")(req as any, res, (err: any) => {
+    if (err) return res.status(400).json({ error: err.message });
+    next();
+  });
+}, async (req: AuthedRequest, res) => {
+  const userId = req.user!.id;
+  try {
+    const file = req.file;
+    if (!file) return res.status(400).json({ error: "File is required" });
+
+    // ✅ ดึง profileImage เก่าก่อน
+    const existingProfile = await prisma.candidateProfile.findUnique({
+      where: { userId },
+      select: { profileImage: true },
+    });
+
+    const fileBuffer = file.buffer || (file.path ? fs.readFileSync(file.path) : Buffer.from([]));
+    const uploadResult = await fileStorage.uploadFile(
+      { ...file, buffer: fileBuffer } as Express.Multer.File,
+      "profiles",
+      undefined
+    );
+    cleanupLocalFile(file);
+
+    // ✅ ลบไฟล์เก่าหลัง upload ใหม่สำเร็จ
+    if (existingProfile?.profileImage) {
+      try {
+        const oldKey = fileStorage.extractKeyFromUrl(existingProfile.profileImage);
+        if (oldKey) await fileStorage.deleteFile(oldKey);
+      } catch (e) {
+        console.error("Error deleting old profile image:", e);
+      }
+    }
+
+    await prisma.candidateProfile.update({
+      where: { userId },
+      data: { profileImage: uploadResult.url, updatedAt: new Date() },
+    });
+
+    return res.json({ url: uploadResult.url });
+  } catch (e: any) {
+    cleanupLocalFile(req.file);
+    return res.status(500).json({ error: e?.message || "Upload failed" });
+  }
+});
+
+// Upload a certificate (file upload)
 candidatesRouter.post("/certificates", requireAuth, requireRole("CANDIDATE"), (req: AuthedRequest, res, next) => {
   uploadCertificate.single("file")(req as any, res, (err: any) => {
-    if (err) return res.status(400).json({ error: err.message || "File upload error" });
+    if (err) {
+      if (err instanceof multer.MulterError) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(400).json({ error: "File size exceeds 10MB limit" });
+        }
+        return res.status(400).json({ error: err.message });
+      }
+      return res.status(400).json({ error: err.message || "File upload error" });
+    }
     next();
   });
 }, async (req: AuthedRequest, res) => {
@@ -445,33 +1055,39 @@ candidatesRouter.post("/certificates", requireAuth, requireRole("CANDIDATE"), (r
 
   try {
     const candidateId = await getCandidateIdForUser(userId);
-    const file = (req as any).file;
-    if (!file) return res.status(400).json({ error: "File is required" });
 
-    // รับค่าจาก FormData
-    const { name, issuedBy, issueDate, description, tags } = (req as any).body ?? {};
+    const file = (req as any).file;
+    if (!file) {
+      return res.status(400).json({ error: "File is required" });
+    }
+
+    const { name, issuedBy, issueDate, certificateId, certificateUrl } = (req as any).body ?? {};
     const fileName = name || file.originalname;
 
-    // Upload file
-    const fileBuffer = req.file?.buffer || (req.file?.path ? fs.readFileSync(req.file.path) : Buffer.from([]));
+    // Upload file to storage (S3 or local)
+    // For memory storage (S3), use buffer directly; for disk storage (local), read from path
+    const fileBuffer = req.file?.buffer || (req.file?.path ? fs.readFileSync(req.file.path) : Buffer.from([]))
     const uploadResult = await fileStorage.uploadFile(
       { ...req.file, buffer: fileBuffer } as Express.Multer.File,
       "certificates",
-      undefined 
+      undefined // Let storage service generate filename
     );
+
+    // Clean up local temp file if using disk storage
     cleanupLocalFile(req.file as Express.Multer.File);
 
-    // 💡 แปลง Tags (ที่ Frontend ส่งมาเป็น JSON String) ให้กลับเป็น Array
-    let relatedSkillsArray: string[] = [];
-    if (tags) {
-      try {
-        relatedSkillsArray = JSON.parse(tags);
-      } catch {
-        relatedSkillsArray = typeof tags === "string" ? [tags] : [];
-      }
+    // Store additional fields in description as JSON string
+    // In production, you might want to add these as separate columns in the schema
+    let relatedSkills: string[] = [];
+    const rawSkills = (req as any).body?.relatedSkills;
+    if (Array.isArray(rawSkills)) {
+      relatedSkills = rawSkills;
+    } else if (typeof rawSkills === "string") {
+      try { relatedSkills = JSON.parse(rawSkills); } catch { relatedSkills = [rawSkills]; }
     }
 
-    // 💡 บันทึกลง Database ตรงตามคอลัมน์
+    const plainDescription = (req as any).body?.description || null;
+
     const certificate = await prisma.certificateFile.create({
       data: {
         id: randomUUID(),
@@ -479,17 +1095,146 @@ candidatesRouter.post("/certificates", requireAuth, requireRole("CANDIDATE"), (r
         name: fileName,
         url: uploadResult.url,
         type: req.file!.mimetype,
-        description: description || null,
-        issuedBy: issuedBy || null,
-        issueDate: issueDate ? new Date(issueDate) : null,
-        relatedSkills: relatedSkillsArray, // ✅ บันทึก Skill ลง DB ช่องนี้
+        description: plainDescription,   // ✅ เก็บแค่ description จริงๆ
+        issuedBy: issuedBy || null,      // ✅ เก็บลง column ตรงๆ
+        issueDate: issueDate ? new Date(issueDate) : null,  // ✅
+        relatedSkills: relatedSkills,    // ✅
       },
     });
 
     return res.status(201).json({ certificate });
   } catch (e: any) {
+    // Clean up uploaded file if database operation fails
     cleanupLocalFile(req.file as Express.Multer.File);
+
+    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
+      return res.status(404).json({ error: "Candidate profile not found" });
+    }
+    console.error("Error creating certificate:", e);
     return res.status(500).json({ error: e?.message || "Failed to create certificate" });
+  }
+});
+
+// แก้ไข Certificate
+candidatesRouter.put("/certificates/:id", requireAuth, requireRole("CANDIDATE"), (req: AuthedRequest, res, next) => {
+  uploadCertificate.single("file")(req as any, res, (err: any) => {
+    if (err) return res.status(400).json({ error: err.message });
+    next();
+  });
+}, async (req: AuthedRequest, res) => {
+  const userId = req.user!.id;
+  const certificateId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
+
+  try {
+    const candidateId = await getCandidateIdForUser(userId);
+
+    const existing = await prisma.certificateFile.findUnique({
+      where: { id: certificateId },
+      select: { candidateId: true, url: true },
+    });
+
+    if (!existing) return res.status(404).json({ error: "Certificate not found" });
+    if (existing.candidateId !== candidateId) return res.status(403).json({ error: "No permission" });
+
+    const { name, issuedBy, issueDate } = (req as any).body ?? {};
+
+    let relatedSkills: string[] = [];
+    const rawSkills = (req as any).body?.relatedSkills;
+    if (Array.isArray(rawSkills)) {
+      relatedSkills = rawSkills;
+    } else if (typeof rawSkills === "string") {
+      try { relatedSkills = JSON.parse(rawSkills); } catch { relatedSkills = [rawSkills]; }
+    }
+
+    const plainDescription = (req as any).body?.description || null;
+
+    // ถ้ามีไฟล์ใหม่ ให้อัปโหลดและลบของเก่า
+    let newUrl = existing.url;
+    let newType: string | undefined;
+
+    if (req.file) {
+      const fileBuffer = req.file.buffer || (req.file.path ? fs.readFileSync(req.file.path) : Buffer.from([]));
+      const uploadResult = await fileStorage.uploadFile(
+        { ...req.file, buffer: fileBuffer } as Express.Multer.File,
+        "certificates",
+        undefined
+      );
+      cleanupLocalFile(req.file);
+      try {
+        const oldKey = fileStorage.extractKeyFromUrl(existing.url);
+        if (oldKey) await fileStorage.deleteFile(oldKey);
+      } catch { }
+      newUrl = uploadResult.url;
+      newType = req.file.mimetype;
+    }
+
+    const certificate = await prisma.certificateFile.update({
+      where: { id: certificateId },
+      data: {
+        name: name || undefined,
+        url: newUrl,
+        ...(newType && { type: newType }),
+        description: plainDescription,
+        issuedBy: issuedBy || null,
+        issueDate: issueDate ? new Date(issueDate) : null,
+        relatedSkills,
+      },
+    });
+
+    return res.json({ certificate });
+  } catch (e: any) {
+    cleanupLocalFile(req.file);
+    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") return res.status(404).json({ error: "Candidate profile not found" });
+    return res.status(500).json({ error: e?.message || "Failed to update certificate" });
+  }
+});
+
+// Delete a certificate
+candidatesRouter.delete("/certificates/:id", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
+  const userId = req.user!.id;
+  const certificateId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
+
+  try {
+    const candidateId = await getCandidateIdForUser(userId);
+
+    // Get certificate with file URL
+    const existingCertificate = await prisma.certificateFile.findUnique({
+      where: { id: certificateId },
+      select: { candidateId: true, url: true },
+    });
+
+    if (!existingCertificate) {
+      return res.status(404).json({ error: "Certificate not found" });
+    }
+
+    if (existingCertificate.candidateId !== candidateId) {
+      return res.status(403).json({ error: "You don't have permission to delete this certificate" });
+    }
+
+    // Delete file from storage (S3 or local)
+    try {
+      const fileKey = fileStorage.extractKeyFromUrl(existingCertificate.url);
+      if (fileKey) {
+        await fileStorage.deleteFile(fileKey);
+      }
+    } catch (storageError: any) {
+      console.error("Error deleting file from storage:", storageError);
+      // Continue with database deletion even if storage deletion fails
+      // (file might have been manually deleted or storage might be unavailable)
+    }
+
+    // Delete database record
+    await prisma.certificateFile.delete({
+      where: { id: certificateId },
+    });
+
+    return res.json({ success: true });
+  } catch (e: any) {
+    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
+      return res.status(404).json({ error: "Candidate profile not found" });
+    }
+    console.error("Error deleting certificate:", e);
+    return res.status(500).json({ error: e?.message || "Failed to delete certificate" });
   }
 });
 
@@ -565,19 +1310,24 @@ candidatesRouter.post("/resumes", requireAuth, requireRole("CANDIDATE"), (req: A
     // Clean up local temp file if using disk storage
     cleanupLocalFile(req.file as Express.Multer.File);
 
-    // Check if this should be the primary resume (if no other resumes exist)
+    // Delete all existing resumes (file storage + db records)
     const existingResumes = await prisma.candidateResume.findMany({
       where: { candidateId },
+      select: { id: true, url: true },
     });
-    const isPrimary = existingResumes.length === 0;
 
-    // If this is set as primary, unset other primary resumes
-    if (isPrimary) {
-      await prisma.candidateResume.updateMany({
-        where: { candidateId, isPrimary: true },
-        data: { isPrimary: false },
-      });
+    for (const existing of existingResumes) {
+      try {
+        const fileKey = fileStorage.extractKeyFromUrl(existing.url);
+        if (fileKey) await fileStorage.deleteFile(fileKey);
+      } catch (e) {
+        console.error("Error deleting old resume file:", e);
+      }
     }
+
+    await prisma.candidateResume.deleteMany({
+      where: { candidateId },
+    });
 
     const resume = await prisma.candidateResume.create({
       data: {
@@ -587,7 +1337,7 @@ candidatesRouter.post("/resumes", requireAuth, requireRole("CANDIDATE"), (req: A
         url: uploadResult.url,
         fileSize: file.size || null,
         fileType: file.mimetype || null,
-        isPrimary,
+        isPrimary: true,
       },
     });
 
@@ -601,149 +1351,6 @@ candidatesRouter.post("/resumes", requireAuth, requireRole("CANDIDATE"), (req: A
     }
     console.error("Error creating resume:", e);
     return res.status(500).json({ error: e?.message || "Failed to create resume" });
-  }
-});
-
-function normalizeSkillCategory(val: string): "TECHNICAL" | "BUSINESS" {
-  const mapping: Record<string, "TECHNICAL" | "BUSINESS"> = {
-    "Technical Skill": "TECHNICAL",
-    "Business Skills": "BUSINESS",
-  };
-
-  return mapping[val] || "TECHNICAL";
-}
-
-candidatesRouter.post("/skills", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
-  const userId = req.user!.id;
-  const { name, category, level } = req.body ?? {};
-
-  if (!name || !level) {
-    return res.status(400).json({ error: "Skill name and proficiency level are required" });
-  }
-
-  try {
-    const candidateId = await getCandidateIdForUser(userId);
-
-    let skill = await prisma.skills.findFirst({
-      where: { 
-        name: { equals: name, mode: 'insensitive' } 
-      },
-    });
-
-    if (!skill) {
-      skill = await prisma.skills.create({
-        data: { name: name },
-      });
-    }
-
-    let rating = 1;
-    if (level === "Intermediate") rating = 2;
-    else if (level === "Advanced") rating = 3;
-
-    const prismaCategory = normalizeSkillCategory(category);
-
-    const existingUserSkill = await prisma.userSkill.findFirst({
-      where: {
-        candidateId: candidateId,
-        skillId: skill.id
-      }
-    });
-
-    if (existingUserSkill) {
-      const updatedSkill = await prisma.userSkill.update({
-        where: { id: existingUserSkill.id },
-        data: 
-        { rating: rating,
-          category: prismaCategory
-
-        }
-      });
-      return res.status(200).json({ message: "Skill updated", skill: updatedSkill });
-    }
-
-    const userSkill = await prisma.userSkill.create({
-      data: {
-        id: randomUUID(), 
-        candidateId: candidateId,
-        skillId: skill.id,
-        rating: rating,
-        category: prismaCategory
-      },
-    });
-
-    return res.status(201).json({ message: "Skill added successfully", skill: userSkill });
-  } catch (e: any) {
-    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
-      return res.status(404).json({ error: "Candidate profile not found" });
-    }
-    console.error("Error adding skill:", e);
-    return res.status(500).json({ error: e?.message || "Failed to add skill" });
-  }
-});
-
-candidatesRouter.put("/certificates/:id", requireAuth, requireRole("CANDIDATE"), (req: AuthedRequest, res, next) => {
-  uploadCertificate.single("file")(req as any, res, (err: any) => {
-    if (err) return res.status(400).json({ error: err.message || "File upload error" });
-    next();
-  });
-}, async (req: AuthedRequest, res) => {
-  const userId = req.user!.id;
-  const certificateId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
-
-  try {
-    const candidateId = await getCandidateIdForUser(userId);
-    
-    // เช็คสิทธิ์
-    const existingCert = await prisma.certificateFile.findUnique({ where: { id: certificateId } });
-    if (!existingCert) return res.status(404).json({ error: "Certificate not found" });
-    if (existingCert.candidateId !== candidateId) return res.status(403).json({ error: "Forbidden" });
-
-    const { name, issuedBy, issueDate, description, tags } = (req as any).body ?? {};
-    
-    // จัดการ Array ของ Skill
-    let relatedSkillsArray: string[] = existingCert.relatedSkills;
-    if (tags) {
-      try { relatedSkillsArray = JSON.parse(tags); } 
-      catch { relatedSkillsArray = typeof tags === "string" ? [tags] : []; }
-    }
-
-    let fileUrl = existingCert.url;
-    let fileType = existingCert.type;
-
-    // ถ้ามีการอัปโหลดไฟล์ใหม่มาทับ
-    if (req.file) {
-      const fileBuffer = req.file.buffer || (req.file.path ? fs.readFileSync(req.file.path) : Buffer.from([]));
-      const uploadResult = await fileStorage.uploadFile(
-        { ...req.file, buffer: fileBuffer } as Express.Multer.File, "certificates", undefined
-      );
-      cleanupLocalFile(req.file as Express.Multer.File);
-      fileUrl = uploadResult.url;
-      fileType = req.file.mimetype;
-      
-      try {
-        const oldKey = fileStorage.extractKeyFromUrl(existingCert.url);
-        if (oldKey) await fileStorage.deleteFile(oldKey);
-      } catch (e) { console.error(e) }
-    }
-
-    // 💡 อัปเดตข้อมูล
-    const certificate = await prisma.certificateFile.update({
-      where: { id: certificateId },
-      data: {
-        name: name || existingCert.name,
-        url: fileUrl,
-        type: fileType,
-        description: description || null,
-        issuedBy: issuedBy || null,
-        issueDate: issueDate ? new Date(issueDate) : null,
-        relatedSkills: relatedSkillsArray, // ✅ อัปเดต Skill
-      },
-    });
-
-    return res.json({ certificate });
-  } catch (e: any) {
-    cleanupLocalFile(req.file as Express.Multer.File);
-    return res.status(500).json({ error: e?.message || "Failed to update certificate" });
   }
 });
 
@@ -784,6 +1391,67 @@ candidatesRouter.delete("/skills/:id", requireAuth, requireRole("CANDIDATE"), as
   }
 });
 
+candidatesRouter.post("/skills", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
+  const userId = req.user!.id;
+  const { name, category, level } = req.body ?? {};
+
+  if (!name || !level) {
+    return res.status(400).json({ error: "Skill name and proficiency level are required" });
+  }
+
+  try {
+    const candidateId = await getCandidateIdForUser(userId);
+
+    let skill = await prisma.skills.findFirst({
+      where: {
+        name: { equals: name, mode: 'insensitive' }
+      },
+    });
+
+    if (!skill) {
+      skill = await prisma.skills.create({
+        data: { name: name },
+      });
+    }
+
+    let rating = 1;
+    if (level === "Intermediate") rating = 2;
+    else if (level === "Advanced") rating = 3;
+
+    const existingUserSkill = await prisma.userSkill.findFirst({
+      where: {
+        candidateId: candidateId,
+        skillId: skill.id
+      }
+    });
+
+    if (existingUserSkill) {
+      const updatedSkill = await prisma.userSkill.update({
+        where: { id: existingUserSkill.id },
+        data: { rating: rating }
+      });
+      return res.status(200).json({ message: "Skill updated", skill: updatedSkill });
+    }
+
+    const userSkill = await prisma.userSkill.create({
+      data: {
+        id: randomUUID(),
+        candidateId: candidateId,
+        skillId: skill.id,
+        rating: rating,
+      },
+    });
+
+    return res.status(201).json({ message: "Skill added successfully", skill: userSkill });
+  } catch (e: any) {
+    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
+      return res.status(404).json({ error: "Candidate profile not found" });
+    }
+    console.error("Error adding skill:", e);
+    return res.status(500).json({ error: e?.message || "Failed to add skill" });
+  }
+});
+
 candidatesRouter.put("/skills/:id", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
   const userId = req.user!.id;
   const userSkillId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
@@ -821,8 +1489,6 @@ candidatesRouter.put("/skills/:id", requireAuth, requireRole("CANDIDATE"), async
       finalSkillId = masterSkill.id;
     }
 
-    const prismaCategory = normalizeSkillCategory(category);
-
     let rating = 1;
     if (level === "Intermediate") rating = 2;
     else if (level === "Advanced") rating = 3;
@@ -830,9 +1496,9 @@ candidatesRouter.put("/skills/:id", requireAuth, requireRole("CANDIDATE"), async
     const updatedSkill = await prisma.userSkill.update({
       where: { id: userSkillId },
       data: {
-        skillId: finalSkillId,
+        skillId: finalSkillId, // 👈 อัปเดต skillId ด้วย เผื่อเปลี่ยนชื่อสกิล
         rating: rating,
-        category: prismaCategory, 
+        category: category, // เอาคอมเมนต์ออก ถ้าตาราง UserSkill มีช่อง category
       },
     });
 
@@ -843,615 +1509,5 @@ candidatesRouter.put("/skills/:id", requireAuth, requireRole("CANDIDATE"), async
     }
     console.error("Error updating skill:", e);
     return res.status(500).json({ error: e?.message || "Failed to update skill" });
-  }
-});
-
-// Get full candidate profile by ID (for companies to view)
-candidatesRouter.get("/:id", requireAuth, requireRole("COMPANY"), async (req, res) => {
-  const candidateId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
-
-  try {
-    const candidateProfile = await prisma.candidateProfile.findUnique({
-      where: { id: candidateId },
-      include: {
-        User: {
-          select: {
-            email: true,
-            createdAt: true,
-          }
-        },
-        CandidateUniversity: {
-          include: {
-            University: {
-              select: {
-                name: true,
-                thname: true,
-              }
-            },
-          },
-          orderBy: { createdAt: "desc" },
-        },
-        WorkHistory: {
-          orderBy: { startDate: "desc" },
-        },
-        UserSkill: {
-          include: {
-            Skills: {
-              select: {
-                name: true,
-              }
-            }
-          },
-          orderBy: { rating: "desc" },
-        },
-        CandidateContactFile: {
-          orderBy: { createdAt: "desc" },
-        },
-        CertificateFile: {
-          orderBy: { createdAt: "desc" },
-        },
-        UserProjects: {
-          orderBy: { createdAt: "desc" },
-        },
-      },
-    });
-
-    if (!candidateProfile) {
-      return res.status(404).json({ error: "Candidate profile not found" });
-    }
-
-    // Format the response for frontend
-    const profileData = {
-      id: candidateProfile.id,
-      userId: candidateProfile.userId,
-      fullName: candidateProfile.fullName || null,
-      email: candidateProfile.contactEmail || candidateProfile.User.email,
-      phoneNumber: candidateProfile.phoneNumber || null,
-      profileImage: candidateProfile.profileImage || null,
-      desiredPosition: candidateProfile.desiredPosition || null,
-      internshipPeriod: candidateProfile.internshipPeriod || null,
-      bio: candidateProfile.bio || null,
-      preferredPositions: candidateProfile.preferredPositions || [],
-      preferredLocations: candidateProfile.CandidatePreferredProvince.map((entry) => entry.Province.name),
-      education: candidateProfile.CandidateUniversity.map((cu) => ({
-        id: cu.id,
-        university: cu.University.name,
-        educationLevel: cu.educationLevel,
-        degree: cu.degreeName,
-        fieldOfStudy: cu.fieldOfStudy,
-        yearOfStudy: cu.yearOfStudy,
-        gpa: cu.gpa ? cu.gpa.toString() : null
-      })),
-      experience: candidateProfile.WorkHistory.map((wh) => ({
-        id: wh.id,
-        position: wh.position,
-        companyName: wh.companyName,
-        startDate: wh.startDate ? wh.startDate.toISOString().split("T")[0] : null,
-        endDate: wh.endDate ? wh.endDate.toISOString().split("T")[0] : null,
-        description: wh.description || null,
-        startYear: wh.startDate ? wh.startDate.getFullYear() : null,
-        endYear: wh.endDate ? wh.endDate.getFullYear() : null,
-      })),
-      skills: candidateProfile.UserSkill.map((us) => {
-        const ratingMap: Record<number, string> = {
-          1: "beginner",
-          2: "intermediate",
-          3: "advanced",
-        };
-        return {
-          name: us.Skills.name,
-          level: ratingMap[us.rating || 1] || "beginner",
-          rating: us.rating || 1,
-        };
-      }),
-      files: {
-        contactFiles: candidateProfile.CandidateContactFile.map((file) => ({
-          id: file.id,
-          name: file.name,
-          url: file.url,
-          type: file.type,
-          createdAt: file.createdAt.toISOString(),
-        })),
-        certificates: candidateProfile.CertificateFile.map((file) => ({
-          id: file.id,
-          name: file.name,
-          url: file.url,
-          type: file.type,
-          description: file.description,
-          createdAt: file.createdAt.toISOString(),
-        })),
-      },
-      projects: candidateProfile.UserProjects.map((project) => ({
-        id: project.id,
-        name: project.name,
-        role: project.role,
-        description: project.description,
-        startDate: project.startDate || "",
-        endDate: project.endDate || "",
-        relatedSkills: project.relatedSkills || [],
-      })),
-      createdAt: candidateProfile.createdAt.toISOString(),
-      updatedAt: candidateProfile.updatedAt.toISOString(),
-    };
-
-    return res.json({ profile: profileData });
-  } catch (error: any) {
-    console.error("Error fetching candidate profile:", error);
-    return res.status(500).json({
-      error: error.message || "Failed to fetch candidate profile"
-    });
-  }
-});
-
-// Update a project
-candidatesRouter.put("/projects/:id", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
-  const userId = req.user!.id;
-  const projectId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
-  const { name, role, description, startDate, endDate, relatedSkills } = req.body ?? {};
-
-  if (!name || !role) {
-    return res.status(400).json({ error: "Name and role are required" });
-  }
-
-  try {
-    const candidateId = await getCandidateIdForUser(userId);
-
-    // Verify that the project belongs to this candidate
-    const existingProject = await prisma.userProjects.findUnique({
-      where: { id: projectId },
-      select: { candidateId: true },
-    });
-
-    if (!existingProject) {
-      return res.status(404).json({ error: "Project not found" });
-    }
-
-    if (existingProject.candidateId !== candidateId) {
-      return res.status(403).json({ error: "You don't have permission to update this project" });
-    }
-
-    const project = await prisma.userProjects.update({
-      where: { id: projectId },
-      data: {
-        name,
-        role,
-        description: description || "",
-        startDate: startDate || null,
-        endDate: endDate || null,
-        relatedSkills: relatedSkills || [],
-      },
-    });
-
-    return res.json({
-      project: {
-        ...project,
-        startDate: project.startDate || "",
-        endDate: project.endDate || "",
-        relatedSkills: project.relatedSkills || [],
-      }
-    });
-  } catch (e: any) {
-    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
-      return res.status(404).json({ error: "Candidate profile not found" });
-    }
-    console.error("Error updating project:", e);
-    return res.status(500).json({ error: e?.message || "Failed to update project" });
-  }
-});
-
-// Delete a project
-candidatesRouter.delete("/projects/:id", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
-  const userId = req.user!.id;
-  const projectId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
-
-  try {
-    const candidateId = await getCandidateIdForUser(userId);
-
-    // Verify that the project belongs to this candidate
-    const existingProject = await prisma.userProjects.findUnique({
-      where: { id: projectId },
-      select: { candidateId: true },
-    });
-
-    if (!existingProject) {
-      return res.status(404).json({ error: "Project not found" });
-    }
-
-    if (existingProject.candidateId !== candidateId) {
-      return res.status(403).json({ error: "You don't have permission to delete this project" });
-    }
-
-    await prisma.userProjects.delete({
-      where: { id: projectId },
-    });
-
-    return res.json({ success: true });
-  } catch (e: any) {
-    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
-      return res.status(404).json({ error: "Candidate profile not found" });
-    }
-    console.error("Error deleting project:", e);
-    return res.status(500).json({ error: e?.message || "Failed to delete project" });
-  }
-});
-
-// Update an education entry
-candidatesRouter.put("/education/:id", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
-  const userId = req.user!.id;
-  const educationId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
-  const { universityName, degreeName, fieldOfStudy, yearOfStudy, educationLevel, gpa, endDate, isCurrent, relevantCoursework, achievements } = req.body ?? {};
-
-  if (!universityName || !degreeName || !educationLevel) {
-    return res.status(400).json({ error: "University name, degree name, and education level are required" });
-  }
-
-  try {
-    const candidateId = await getCandidateIdForUser(userId);
-
-    // Verify that the education entry belongs to this candidate
-    const existingEducation = await prisma.candidateUniversity.findUnique({
-      where: { id: educationId },
-      select: { candidateId: true },
-    });
-
-    if (!existingEducation) {
-      return res.status(404).json({ error: "Education entry not found" });
-    }
-
-    if (existingEducation.candidateId !== candidateId) {
-      return res.status(403).json({ error: "You don't have permission to update this education entry" });
-    }
-
-    // Find university by name
-    const university = await prisma.university.findFirst({
-      where: { name: universityName },
-    });
-
-    if (!university) {
-      return res.status(400).json({ error: "University not found" });
-    }
-
-    // Store coursework and achievements as JSON
-    const additionalData: any = {};
-    if (relevantCoursework && relevantCoursework.length > 0) {
-      additionalData.relevantCoursework = relevantCoursework;
-    }
-    if (achievements && achievements.length > 0) {
-      additionalData.achievements = achievements;
-    }
-
-    const education = await prisma.candidateUniversity.update({
-      where: { id: educationId },
-      data: {
-        University: { connect: { id: university.id } },
-        educationLevel: normalizeEducationLevel(educationLevel),
-        degreeName: degreeName,
-        fieldOfStudy: fieldOfStudy || degreeName,
-        yearOfStudy: yearOfStudy || "",
-        gpa: gpa ? parseFloat(gpa.toString()) : null,
-        endDate: endDate ? new Date(endDate) : null,
-        isCurrent: isCurrent || false,
-      },
-    });
-
-    return res.json({ education });
-  } catch (e: any) {
-    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
-      return res.status(404).json({ error: "Candidate profile not found" });
-    }
-    console.error("Error updating education:", e);
-    return res.status(500).json({ error: e?.message || "Failed to update education" });
-  }
-});
-
-// Delete a certificate
-candidatesRouter.delete("/certificates/:id", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
-  const userId = req.user!.id;
-  const certificateId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
-
-  try {
-    const candidateId = await getCandidateIdForUser(userId);
-
-    // Get certificate with file URL
-    const existingCertificate = await prisma.certificateFile.findUnique({
-      where: { id: certificateId },
-      select: { candidateId: true, url: true },
-    });
-
-    if (!existingCertificate) {
-      return res.status(404).json({ error: "Certificate not found" });
-    }
-
-    if (existingCertificate.candidateId !== candidateId) {
-      return res.status(403).json({ error: "You don't have permission to delete this certificate" });
-    }
-
-    // Delete file from storage (S3 or local)
-    try {
-      const fileKey = fileStorage.extractKeyFromUrl(existingCertificate.url);
-      if (fileKey) {
-        await fileStorage.deleteFile(fileKey);
-      }
-    } catch (storageError: any) {
-      console.error("Error deleting file from storage:", storageError);
-      // Continue with database deletion even if storage deletion fails
-      // (file might have been manually deleted or storage might be unavailable)
-    }
-
-    // Delete database record
-    await prisma.certificateFile.delete({
-      where: { id: certificateId },
-    });
-
-    return res.json({ success: true });
-  } catch (e: any) {
-    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
-      return res.status(404).json({ error: "Candidate profile not found" });
-    }
-    console.error("Error deleting certificate:", e);
-    return res.status(500).json({ error: e?.message || "Failed to delete certificate" });
-  }
-});
-
-// Update an experience entry
-candidatesRouter.put("/experience/:id", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
-  const userId = req.user!.id;
-  const experienceId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
-  const { position, companyName, startDate, endDate, isCurrent, description, location, technicalSkills } = req.body ?? {};
-
-  if (!position || !companyName) {
-    return res.status(400).json({ error: "Position and company name are required" });
-  }
-
-  try {
-    const candidateId = await getCandidateIdForUser(userId);
-
-    // Verify that the experience entry belongs to this candidate
-    const existingExperience = await prisma.workHistory.findUnique({
-      where: { id: experienceId },
-      select: { candidateId: true },
-    });
-
-    if (!existingExperience) {
-      return res.status(404).json({ error: "Experience entry not found" });
-    }
-
-    if (existingExperience.candidateId !== candidateId) {
-      return res.status(403).json({ error: "You don't have permission to update this experience entry" });
-    }
-
-    const experience = await prisma.workHistory.update({
-      where: { id: experienceId },
-      data: {
-        position,
-        companyName,
-        startDate: startDate ? new Date(startDate) : null,
-        endDate: endDate ? new Date(endDate) : null,
-        description: description || null,
-      },
-    });
-
-    return res.json({ experience });
-  } catch (e: any) {
-    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
-      return res.status(404).json({ error: "Candidate profile not found" });
-    }
-    console.error("Error updating experience:", e);
-    return res.status(500).json({ error: e?.message || "Failed to update experience" });
-  }
-});
-
-// Employer dashboard list
-candidatesRouter.get("/", requireAuth, requireRole("COMPANY"), async (req, res) => {
-  const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
-
-  try {
-    const candidates = await prisma.candidateProfile.findMany({
-      where: q
-        ? {
-            OR: [
-              { fullName: { contains: q, mode: "insensitive" } },
-              { desiredPosition: { contains: q, mode: "insensitive" } },
-              { User: { email: { contains: q, mode: "insensitive" } } },
-            ],
-          }
-        : undefined,
-      select: {
-        id: true,
-        fullName: true,
-        desiredPosition: true,
-        bio: true,
-        User: { select: { email: true } },
-        CandidateUniversity: {
-          orderBy: [{ isCurrent: "desc" }, { updatedAt: "desc" }],
-          take: 1,
-          select: {
-            degreeName: true,
-            yearOfStudy: true,
-            isCurrent: true,
-            University: { select: { name: true, province: true } },
-          },
-        },
-        UserSkill: {
-          select: {
-            Skills: { select: { name: true } },
-          },
-        },
-      },
-      take: 50,
-    });
-
-    const items = candidates.map((c) => {
-      const name = c.fullName ?? c.User.email;
-      const primaryEdu = c.CandidateUniversity[0] ?? null;
-      const uni = primaryEdu?.University?.name ?? null;
-      const location = primaryEdu?.University?.province ?? null;
-      const skills = c.UserSkill.map((us) => us.Skills.name);
-
-      let graduationDate: string | null = null;
-      if (primaryEdu?.isCurrent) {
-        graduationDate = "Present";
-      } else if (primaryEdu?.yearOfStudy) {
-        graduationDate = primaryEdu.yearOfStudy;
-      }
-
-      return {
-        id: c.id,
-        name,
-        role: c.desiredPosition ?? "Intern",
-        university: uni ?? "Unknown University",
-        major: primaryEdu?.degreeName ?? null,
-        location: location ?? null,
-        graduationDate,
-        skills,
-        initials: initialsFromName(name),
-        email: c.User.email,
-        about: c.bio ?? "",
-      };
-    });
-
-    return res.json({ candidates: items });
-  } catch (error: any) {
-    console.error("Error fetching candidates list:", error);
-    return res.status(500).json({
-      error: error.message || "Failed to fetch candidates",
-    });
-  }
-});
-
-// Get full candidate profile by ID (for companies to view)
-candidatesRouter.get("/:id", requireAuth, requireRole("COMPANY"), async (req, res) => {
-  const candidateId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
-
-  try {
-    const candidateProfile = await prisma.candidateProfile.findUnique({
-      where: { id: candidateId },
-      include: {
-        User: {
-          select: {
-            email: true,
-            createdAt: true,
-          }
-        },
-        CandidateUniversity: {
-          include: {
-            University: {
-              select: {
-                name: true,
-                thname: true,
-              }
-            },
-          },
-          orderBy: { createdAt: "desc" },
-        },
-        WorkHistory: {
-          orderBy: { startDate: "desc" },
-        },
-        UserSkill: {
-          include: {
-            Skills: {
-              select: {
-                name: true,
-              }
-            }
-          },
-          orderBy: { rating: "desc" },
-        },
-        CandidateContactFile: {
-          orderBy: { createdAt: "desc" },
-        },
-        CertificateFile: {
-          orderBy: { createdAt: "desc" },
-        },
-        UserProjects: {
-          orderBy: { createdAt: "desc" },
-        },
-      },
-    });
-
-    if (!candidateProfile) {
-      return res.status(404).json({ error: "Candidate profile not found" });
-    }
-
-    // Format the response for frontend
-    const profileData = {
-      id: candidateProfile.id,
-      userId: candidateProfile.userId,
-      fullName: candidateProfile.fullName || null,
-      email: candidateProfile.contactEmail || candidateProfile.User.email,
-      phoneNumber: candidateProfile.phoneNumber || null,
-      profileImage: candidateProfile.profileImage || null,
-      desiredPosition: candidateProfile.desiredPosition || null,
-      internshipPeriod: candidateProfile.internshipPeriod || null,
-      bio: candidateProfile.bio || null,
-      preferredPositions: candidateProfile.preferredPositions || [],
-      preferredLocations: candidateProfile.CandidatePreferredProvince.map((entry) => entry.Province.name),
-      education: candidateProfile.CandidateUniversity.map((cu) => ({
-        id: cu.id,
-        university: cu.University.name,
-        educationLevel: cu.educationLevel,
-        degree: cu.degreeName,
-        fieldOfStudy: cu.fieldOfStudy,
-        yearOfStudy: cu.yearOfStudy,
-        gpa: cu.gpa ? cu.gpa.toString() : null
-      })),
-      experience: candidateProfile.WorkHistory.map((wh) => ({
-        id: wh.id,
-        position: wh.position,
-        companyName: wh.companyName,
-        startDate: wh.startDate ? wh.startDate.toISOString().split("T")[0] : null,
-        endDate: wh.endDate ? wh.endDate.toISOString().split("T")[0] : null,
-        description: wh.description || null,
-        startYear: wh.startDate ? wh.startDate.getFullYear() : null,
-        endYear: wh.endDate ? wh.endDate.getFullYear() : null,
-      })),
-      skills: candidateProfile.UserSkill.map((us) => {
-        const ratingMap: Record<number, string> = {
-          1: "beginner",
-          2: "intermediate",
-          3: "advanced",
-        };
-        return {
-          name: us.Skills.name,
-          level: ratingMap[us.rating || 1] || "beginner",
-          rating: us.rating || 1,
-        };
-      }),
-      files: {
-        contactFiles: candidateProfile.CandidateContactFile.map((file) => ({
-          id: file.id,
-          name: file.name,
-          url: file.url,
-          type: file.type,
-          createdAt: file.createdAt.toISOString(),
-        })),
-        certificates: candidateProfile.CertificateFile.map((file) => ({
-          id: file.id,
-          name: file.name,
-          url: file.url,
-          type: file.type,
-          description: file.description,
-          createdAt: file.createdAt.toISOString(),
-        })),
-      },
-      projects: candidateProfile.UserProjects.map((project) => ({
-        id: project.id,
-        name: project.name,
-        role: project.role,
-        description: project.description,
-        startDate: project.startDate || "",
-        endDate: project.endDate || "",
-        relatedSkills: project.relatedSkills || [],
-      })),
-      createdAt: candidateProfile.createdAt.toISOString(),
-      updatedAt: candidateProfile.updatedAt.toISOString(),
-    };
-
-    return res.json({ profile: profileData });
-  } catch (error: any) {
-    console.error("Error fetching candidate profile:", error);
-    return res.status(500).json({
-      error: error.message || "Failed to fetch candidate profile"
-    });
   }
 });

@@ -129,6 +129,12 @@ export default function InternProfilePage() {
                 onRefresh={refetch} 
               />
 
+              {/* Resume */}
+              <ResumeSection
+                resumeData={profileData.resume}
+                onRefresh={refetch}
+              />
+
               {/* Education */}
               <EducationSection
                 education={profileData.education || []}
@@ -137,15 +143,18 @@ export default function InternProfilePage() {
                 onRefresh={refetch}
               />
 
-              {/* Resume */}
-              <ResumeSection
-                resumeData={profileData.resume}
-                onRefresh={refetch}
-              />
-
               {/* Projects */}
               <ProjectsSection
                 projects={profileData.projects || []}
+                onAdd={() => {}}
+                onEdit={(id) => {}}
+                onUpdateProject={() => {}} 
+                onRefresh={refetch}
+              />
+
+              {/* Skills */}
+              <SkillsSection
+                skills={profileData.skills || []}
                 onAdd={() => {}}
                 onEdit={(id) => {}}
                 onRefresh={refetch}
@@ -154,14 +163,6 @@ export default function InternProfilePage() {
               {/* Certificates */}
               <CertificatesSection
                 certificates={profileData.certificates || []}
-                onAdd={() => {}}
-                onEdit={(id) => {}}
-                onRefresh={refetch}
-              />
-
-              {/* Skills */}
-              <SkillsSection
-                skills={profileData.skills || []}
                 onAdd={() => {}}
                 onEdit={(id) => {}}
                 onRefresh={refetch}
