@@ -23,6 +23,21 @@ export default function CertificateSection() {
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
+      // 💡 เพิ่มส่วนนี้เข้าไปครับ
+    useEffect(() => {
+      if (isModalOpen) {
+        document.body.style.overflow = "hidden";
+      } else {
+        document.body.style.overflow = "auto";
+      }
+  
+      // คืนค่าเดิมเมื่อปิดหรือเปลี่ยนหน้า
+      return () => {
+        document.body.style.overflow = "auto";
+      };
+    }, [isModalOpen]);
+  
+
   // ข้อมูลเริ่มต้น (ตัวอย่าง)
   useEffect(() => {
     if (profileData?.certificates) {

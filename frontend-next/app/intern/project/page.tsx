@@ -74,6 +74,20 @@ export default function ProjectPage() {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [projectToUpload, setProjectToUpload] = useState<any | null>(null);
 
+        // 💡 เพิ่มส่วนนี้เข้าไปครับ
+    useEffect(() => {
+      if (isModalOpen) {
+        document.body.style.overflow = "hidden";
+      } else {
+        document.body.style.overflow = "auto";
+      }
+  
+      // คืนค่าเดิมเมื่อปิดหรือเปลี่ยนหน้า
+      return () => {
+        document.body.style.overflow = "auto";
+      };
+    }, [isModalOpen]);
+
   // 💡 แมปข้อมูลจาก Database เข้าสู่ UI State เมื่อโหลดเสร็จ
   useEffect(() => {
     if (profileData?.projects) {

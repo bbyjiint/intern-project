@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Education } from "@/hooks/useProfile";
 import EducationModal from "./EducationModal";
 
@@ -21,6 +21,20 @@ export default function EducationSection({
   const [editingEducation, setEditingEducation] = useState<Education | null>(
     null,
   );
+      // 💡 เพิ่มส่วนนี้เข้าไปครับ
+    useEffect(() => {
+      if (isModalOpen) {
+        document.body.style.overflow = "hidden";
+      } else {
+        document.body.style.overflow = "auto";
+      }
+  
+      // คืนค่าเดิมเมื่อปิดหรือเปลี่ยนหน้า
+      return () => {
+        document.body.style.overflow = "auto";
+      };
+    }, [isModalOpen]);
+  
 
   const handleDelete = async (id: string) => {
     console.log("Delete id:", id);

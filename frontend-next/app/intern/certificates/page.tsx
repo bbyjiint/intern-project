@@ -53,6 +53,19 @@ export default function CertificatesPage() {
       console.error("Failed to fetch certificates:", error);
     }
   }, []);
+        // 💡 เพิ่มส่วนนี้เข้าไปครับ
+    useEffect(() => {
+      if (isModalOpen) {
+        document.body.style.overflow = "hidden";
+      } else {
+        document.body.style.overflow = "auto";
+      }
+  
+      // คืนค่าเดิมเมื่อปิดหรือเปลี่ยนหน้า
+      return () => {
+        document.body.style.overflow = "auto";
+      };
+    }, [isModalOpen]);
 
   useEffect(() => {
     const checkAuth = async () => {

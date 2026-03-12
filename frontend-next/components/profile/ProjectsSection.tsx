@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { apiFetch } from "@/lib/api";
 import Link from "next/link";
 import { Project } from "@/hooks/useProfile";
@@ -72,6 +72,58 @@ export default function ProjectsSection({
     setSelectedProject(project);
     setIsUploadOpen(true);
   };
+
+  useEffect(() => {
+    const isAnyModalOpen = isModalOpen || isUploadOpen;
+
+    if (isAnyModalOpen) {
+      const scrollY = window.scrollY;
+      
+      // ล็อคทั้ง html และ body
+      document.documentElement.style.height = "100vh";
+      document.documentElement.style.overflow = "hidden";
+      
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.width = "100%";
+      document.body.style.height = "100vh"; // เพิ่มความชัวร์
+      document.body.style.overflow = "hidden";
+      
+      // ป้องกันการลากเลื่อนบนมือถือ (iOS)
+      const preventDefault = (e: TouchEvent) => {
+        // ยอมให้เลื่อนได้เฉพาะใน Modal (ต้องระบุ class หรือ id ของ modal container)
+        if (!(e.target as HTMLElement).closest('.modal-content-container')) {
+          if (e.touches.length > 1) return; // ยอมให้ zoom ได้
+          e.preventDefault();
+        }
+      };
+      
+      document.addEventListener('touchmove', preventDefault, { passive: false });
+      
+      return () => {
+        document.removeEventListener('touchmove', preventDefault);
+      };
+    } else {
+      // คืนค่า
+      const scrollY = document.body.style.top;
+      
+      document.documentElement.style.height = "";
+      document.documentElement.style.overflow = "";
+      
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.width = "";
+      document.body.style.height = "";
+      document.body.style.overflow = "";
+      
+      if (scrollY) {
+        window.scrollTo(0, parseInt(scrollY) * -1);
+      }
+    }
+  }, [isModalOpen, isUploadOpen]);
+      
+
+  
 
   // ฟังก์ชันสำหรับการลบโปรเจกต์
   const handleDelete = async (id: string, name: string) => {
