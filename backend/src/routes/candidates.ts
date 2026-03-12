@@ -552,7 +552,6 @@ candidatesRouter.put("/projects/:id", requireAuth, requireRole("CANDIDATE"), asy
   try {
     const candidateId = await getCandidateIdForUser(userId);
 
-    // Verify that the project belongs to this candidate
     const existingProject = await prisma.userProjects.findUnique({
       where: { id: projectId },
       select: { candidateId: true },
@@ -579,7 +578,6 @@ candidatesRouter.put("/projects/:id", requireAuth, requireRole("CANDIDATE"), asy
         projectUrl: projectUrl ?? null,
         fileUrl: fileUrl ?? null,
         fileName: fileName ?? null,
-
       },
     });
 
@@ -612,10 +610,9 @@ candidatesRouter.delete("/projects/:id", requireAuth, requireRole("CANDIDATE"), 
   try {
     const candidateId = await getCandidateIdForUser(userId);
 
-    // Verify that the project belongs to this candidate
     const existingProject = await prisma.userProjects.findUnique({
       where: { id: projectId },
-      select: { candidateId: true },
+      select: { candidateId: true, fileUrl: true },
     });
 
     if (!existingProject) {
@@ -624,6 +621,16 @@ candidatesRouter.delete("/projects/:id", requireAuth, requireRole("CANDIDATE"), 
 
     if (existingProject.candidateId !== candidateId) {
       return res.status(403).json({ error: "You don't have permission to delete this project" });
+    }
+
+    // ✅ ลบไฟล์จริงก่อน ถ้ามี
+    if (existingProject.fileUrl) {
+      try {
+        const fileKey = fileStorage.extractKeyFromUrl(existingProject.fileUrl);
+        if (fileKey) await fileStorage.deleteFile(fileKey);
+      } catch (e) {
+        console.error("Error deleting project file:", e);
+      }
     }
 
     await prisma.userProjects.delete({
@@ -983,6 +990,12 @@ candidatesRouter.post("/profile/image", requireAuth, requireRole("CANDIDATE"), (
     const file = req.file;
     if (!file) return res.status(400).json({ error: "File is required" });
 
+    // ✅ ดึง profileImage เก่าก่อน
+    const existingProfile = await prisma.candidateProfile.findUnique({
+      where: { userId },
+      select: { profileImage: true },
+    });
+
     const fileBuffer = file.buffer || (file.path ? fs.readFileSync(file.path) : Buffer.from([]));
     const uploadResult = await fileStorage.uploadFile(
       { ...file, buffer: fileBuffer } as Express.Multer.File,
@@ -990,6 +1003,16 @@ candidatesRouter.post("/profile/image", requireAuth, requireRole("CANDIDATE"), (
       undefined
     );
     cleanupLocalFile(file);
+
+    // ✅ ลบไฟล์เก่าหลัง upload ใหม่สำเร็จ
+    if (existingProfile?.profileImage) {
+      try {
+        const oldKey = fileStorage.extractKeyFromUrl(existingProfile.profileImage);
+        if (oldKey) await fileStorage.deleteFile(oldKey);
+      } catch (e) {
+        console.error("Error deleting old profile image:", e);
+      }
+    }
 
     await prisma.candidateProfile.update({
       where: { userId },

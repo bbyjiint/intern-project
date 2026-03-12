@@ -265,7 +265,6 @@ export default function SkillsModal({ isOpen, onClose, onSave, editingSkill }: S
             {editingSkill ? "Save Changes" : "Add Skill"}
           </button>
         </div>
-
       </div>
     </div>
   );
