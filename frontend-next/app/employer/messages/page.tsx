@@ -322,6 +322,30 @@ export default function MessagesPage() {
   const [loading, setLoading] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const chatContainerRef = useRef<HTMLDivElement>(null)
+  const selectedConversationRef = useRef<Conversation | null>(null)
+
+  useEffect(() => {
+    selectedConversationRef.current = selectedConversation
+  }, [selectedConversation])
+
+  const handleSelectConversation = (conversation: Conversation) => {
+    setSelectedConversation((prev) =>
+      prev?.id === conversation.id
+        ? { ...conversation, messages: prev.messages }
+        : conversation
+    )
+
+    setConversations((prev) =>
+      prev.map((item) =>
+        item.id === conversation.id ? { ...item, unreadCount: 0 } : item
+      )
+    )
+
+    const nextUrl = `/employer/messages?conversationId=${encodeURIComponent(conversation.id)}`
+    if (typeof window !== 'undefined' && window.location.search !== `?conversationId=${conversation.id}`) {
+      router.replace(nextUrl)
+    }
+  }
 
   // Check role and load conversations
   useEffect(() => {
@@ -356,11 +380,18 @@ export default function MessagesPage() {
         const data = await apiFetch<{ conversations: Conversation[] }>('/api/messages/conversations')
         
         // Convert timestamp strings to Date objects
-        const converted = data.conversations.map((conv: any) => ({
-          ...conv,
-          lastMessageTime: new Date(conv.lastMessageTime),
-          messages: [], // Will be loaded when conversation is selected
-        }))
+        const currentSelected = selectedConversationRef.current
+        const converted = data.conversations.map((conv: any) => {
+          const existingConversation = currentSelected?.id === conv.id
+            ? currentSelected
+            : conversations.find((existing) => existing.id === conv.id)
+
+          return {
+            ...conv,
+            lastMessageTime: new Date(conv.lastMessageTime),
+            messages: existingConversation?.messages || [], // Preserve loaded messages when refreshing the list
+          }
+        })
         
         setConversations(converted)
         // Set first conversation as selected if we have conversations and none is selected
@@ -371,8 +402,12 @@ export default function MessagesPage() {
             : null
 
           if (targetConversation) {
-            setSelectedConversation(targetConversation)
-          } else if (!selectedConversation) {
+            setSelectedConversation((prev) =>
+              prev?.id === targetConversation.id
+                ? { ...targetConversation, messages: prev.messages }
+                : targetConversation
+            )
+          } else if (!selectedConversationRef.current) {
             setSelectedConversation(converted[0])
           }
         }
@@ -392,20 +427,33 @@ export default function MessagesPage() {
           try {
             const data = await apiFetch<{ conversations: Conversation[] }>('/api/messages/conversations')
             setConversations((prevConversations) => {
-              const converted = data.conversations.map((conv: any) => ({
-                ...conv,
-                lastMessageTime: new Date(conv.lastMessageTime),
-                messages: prevConversations.find(c => c.id === conv.id)?.messages || [],
-              }))
+              const currentSelected = selectedConversationRef.current
+              const converted = data.conversations.map((conv: any) => {
+                const prev = prevConversations.find(c => c.id === conv.id)
+                const preservedMessages =
+                  currentSelected?.id === conv.id
+                    ? currentSelected.messages
+                    : prev?.messages || []
+
+                return {
+                  ...conv,
+                  lastMessageTime: new Date(conv.lastMessageTime),
+                  messages: preservedMessages,
+                }
+              })
               
               // Update selected conversation if it exists
-              if (selectedConversation) {
-                const updated = converted.find(c => c.id === selectedConversation.id)
+              if (currentSelected) {
+                const updated = converted.find(c => c.id === currentSelected.id)
                 if (updated) {
-                  setSelectedConversation({
-                    ...updated,
-                    messages: selectedConversation.messages,
-                  })
+                  setSelectedConversation((prev) =>
+                    prev?.id === updated.id
+                      ? {
+                          ...updated,
+                          messages: prev.messages,
+                        }
+                      : prev
+                  )
                 }
               }
               
@@ -420,14 +468,18 @@ export default function MessagesPage() {
     }, 3000)
 
     return () => clearInterval(interval)
-  }, [router, selectedConversation, targetConversationId])
+  }, [router, targetConversationId])
 
   useEffect(() => {
     if (!targetConversationId || conversations.length === 0) return
 
     const targetConversation = conversations.find((conversation) => conversation.id === targetConversationId)
     if (targetConversation && selectedConversation?.id !== targetConversation.id) {
-      setSelectedConversation(targetConversation)
+      setSelectedConversation((prev) =>
+        prev?.id === targetConversation.id
+          ? { ...targetConversation, messages: prev.messages }
+          : targetConversation
+      )
     }
   }, [conversations, selectedConversation?.id, targetConversationId])
 
@@ -455,9 +507,12 @@ export default function MessagesPage() {
            converted[converted.length - 1].id !== selectedConversation.messages[selectedConversation.messages.length - 1].id)
 
         // Update conversation with messages
-        setSelectedConversation({
-          ...selectedConversation,
-          messages: converted,
+        setSelectedConversation((current) => {
+          if (!current || current.id !== selectedConversation.id) return current
+          return {
+            ...current,
+            messages: converted,
+          }
         })
 
         // Update conversations list
@@ -533,11 +588,14 @@ export default function MessagesPage() {
       })
 
       setConversations(updatedConversations)
-      setSelectedConversation({
-        ...selectedConversation,
-        lastMessage: newMessage.trim(),
-        lastMessageTime: new Date(),
-        messages: [...selectedConversation.messages, newMsg],
+      setSelectedConversation((current) => {
+        if (!current || current.id !== selectedConversation.id) return current
+        return {
+          ...current,
+          lastMessage: newMessage.trim(),
+          lastMessageTime: new Date(),
+          messages: [...current.messages, newMsg],
+        }
       })
       setNewMessage('')
     } catch (error) {
@@ -614,16 +672,7 @@ export default function MessagesPage() {
               filteredConversations.map((conv) => (
                 <div
                   key={conv.id}
-                  onClick={() => {
-                    setSelectedConversation(conv)
-                    // Mark as read when selected
-                    if (conv.unreadCount > 0) {
-                      const updated = conversations.map((c) =>
-                        c.id === conv.id ? { ...c, unreadCount: 0 } : c
-                      )
-                      setConversations(updated)
-                    }
-                  }}
+                  onClick={() => handleSelectConversation(conv)}
                   className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
                     selectedConversation?.id === conv.id ? 'bg-blue-50' : ''
                   }`}
