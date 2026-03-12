@@ -30,6 +30,24 @@ function relativeDateLabel(date: Date): string {
   return date.toLocaleDateString();
 }
 
+function formatAllowance(
+  allowance: number | null,
+  allowancePeriod: "MONTH" | "WEEK" | "DAY" | null,
+  noAllowance: boolean
+): string {
+  if (noAllowance) return "No allowance";
+  if (allowance && allowancePeriod) {
+    const periodMap: Record<string, string> = {
+      MONTH: "Month",
+      WEEK: "Week",
+      DAY: "Day",
+    };
+    return `${allowance.toLocaleString()} THB/${periodMap[allowancePeriod] || allowancePeriod}`;
+  }
+  if (allowance) return `${allowance.toLocaleString()} THB`;
+  return "Not specified";
+}
+
 async function getCandidateIdForUser(userId: string): Promise<string> {
   const candidate = await prisma.candidateProfile.findUnique({
     where: { userId },
@@ -181,17 +199,27 @@ internRouter.get("/applications", requireAuth, requireRole("CANDIDATE"), async (
       orderBy: { createdAt: "desc" },
       include: {
         JobPost: {
-          include: { Company: { select: { companyName: true, logoURL: true } } },
+          include: {
+            Company: {
+              include: {
+                User: { select: { email: true } },
+                CompanyEmails: { select: { email: true }, take: 1 },
+              },
+            },
+            _count: {
+              select: { Applications: true },
+            },
+          },
         },
       },
     });
 
     // Map backend application status to the UI's applied page statuses.
-    const statusMap: Record<string, "viewed" | "interviewed" | "accepted" | "rejected"> = {
-      NEW: "viewed",
-      SHORTLISTED: "interviewed",
-      REVIEWED: "interviewed",
-      REJECTED: "rejected",
+    const statusMap: Record<string, "Applied" | "Accept" | "Decline"> = {
+      NEW: "Applied",
+      SHORTLISTED: "Accept",
+      REVIEWED: "Accept",
+      REJECTED: "Decline",
     };
 
     const bookmarked = await prisma.jobBookmark.findMany({
@@ -207,13 +235,18 @@ internRouter.get("/applications", requireAuth, requireRole("CANDIDATE"), async (
         id: post.id,
         jobTitle: post.jobTitle,
         companyName: post.Company?.companyName || "Company Name",
+        companyEmail:
+          post.Company?.CompanyEmails?.[0]?.email ||
+          post.Company?.User?.email ||
+          "info@example.com",
         companyLogo: post.Company?.logoURL || "TRINITY",
         location,
         workType: workplaceLabel(post.workplaceType),
-        skills: [],
-        description: post.jobDescription || "",
-        appliedDate: relativeDateLabel(a.createdAt),
-        status: statusMap[a.status] ?? "viewed",
+        roleType: post.jobType || "Internship",
+        applicants: post._count?.Applications || 0,
+        allowance: formatAllowance(post.allowance, post.allowancePeriod, post.noAllowance),
+        timeAgo: relativeDateLabel(a.createdAt),
+        status: statusMap[a.status] ?? "Applied",
         isBookmarked: bookmarkedSet.has(post.id),
       };
     });
