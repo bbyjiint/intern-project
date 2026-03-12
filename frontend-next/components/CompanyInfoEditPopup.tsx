@@ -12,7 +12,6 @@ interface CompanyInfoEditPopupProps {
     companyDescription: string
     businessType: string
     companySize: string
-    websiteUrl?: string
     profileImage?: string
   }
 }
@@ -28,13 +27,11 @@ export default function CompanyInfoEditPopup({
     companyDescription: initialData.companyDescription || '',
     businessType: initialData.businessType || '',
     companySize: initialData.companySize || '',
-    websiteUrl: initialData.websiteUrl || '',
-    companyLogo: initialData.profileImage || null,
+    companyLogo: initialData.profileImage || null as string | null,
   })
   const [isSaving, setIsSaving] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Update form data when initialData changes
   useEffect(() => {
     if (isOpen) {
       setFormData({
@@ -42,7 +39,6 @@ export default function CompanyInfoEditPopup({
         companyDescription: initialData.companyDescription || '',
         businessType: initialData.businessType || '',
         companySize: initialData.companySize || '',
-        websiteUrl: initialData.websiteUrl || '',
         companyLogo: initialData.profileImage || null,
       })
     }
@@ -52,19 +48,41 @@ export default function CompanyInfoEditPopup({
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
 
+    // แสดง preview ก่อนระหว่าง upload
     const reader = new FileReader()
-    reader.onloadend = () => {
-      setFormData((prev) => ({ ...prev, companyLogo: reader.result as string }))
+    reader.onloadend = async () => {
+      const preview = reader.result as string
+      setFormData((prev) => ({ ...prev, companyLogo: preview }))
+
+      try {
+        const uploadForm = new FormData()
+        uploadForm.append('file', file)
+
+        const res = await fetch('/api/companies/profile/logo', {
+          method: 'POST',
+          body: uploadForm,
+          credentials: 'include',
+        })
+        const data = await res.json()
+
+        if (data.url) {
+          setFormData((prev) => {
+            const updated = { ...prev, companyLogo: data.url }
+            return updated
+          })
+        }
+      } catch (err) {
+        console.error('Logo upload failed:', err)
+      }
     }
     reader.readAsDataURL(file)
   }
 
   const handleSave = async () => {
-    // Validate required fields
     if (!formData.companyName.trim()) {
       alert('Company Name is required')
       return
@@ -89,12 +107,11 @@ export default function CompanyInfoEditPopup({
         companyDescription: formData.companyDescription,
         businessType: formData.businessType,
         companySize: formData.companySize,
-        websiteUrl: formData.websiteUrl || '',
       }
 
-      // If logo changed, include it
-      if (formData.companyLogo && formData.companyLogo !== initialData.profileImage) {
-        payload.profileImage = formData.companyLogo
+      // ส่ง profileImage เฉพาะตอนที่เปลี่ยนหรือลบรูป
+      if (formData.companyLogo !== initialData.profileImage) {
+        payload.profileImage = formData.companyLogo || null
       }
 
       await apiFetch('/api/companies/profile', {
@@ -209,20 +226,6 @@ export default function CompanyInfoEditPopup({
                   rows={4}
                   maxLength={2000}
                   className="min-h-[100px] w-full resize-none rounded-[6px] border border-[#D1D5DB] bg-white px-[14px] py-[10px] text-[14px] text-[#1E293B] outline-none transition focus:border-[#0273B1] focus:ring-2 focus:ring-[#BFDBFE]"
-                />
-              </div>
-
-              {/* Website URL */}
-              <div>
-                <label className="mb-[5px] block text-[14px] font-semibold text-[#253858]">
-                  Website URL
-                </label>
-                <input
-                  type="text"
-                  value={formData.websiteUrl}
-                  onChange={(e) => handleChange('websiteUrl', e.target.value)}
-                  placeholder="https://example.com"
-                  className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] bg-white px-[14px] text-[14px] text-[#1E293B] outline-none transition focus:border-[#0273B1] focus:ring-2 focus:ring-[#BFDBFE]"
                 />
               </div>
             </div>

@@ -934,4 +934,8 @@ VALUES
   (gen_random_uuid(), (SELECT id FROM "Province" WHERE code = '96'), 'Chanae', 'จะแนะ', '9612', '96220', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
   (gen_random_uuid(), (SELECT id FROM "Province" WHERE code = '96'), 'Cho-Airong', 'เจาะไอร้อง', '9613', '96130', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
 ON CONFLICT ("provinceId", "name") 
-DO NOTHING;
+DO NOTHING -- 
+  "thname" = EXCLUDED."thname",
+  "code" = EXCLUDED."code",
+  "postalCode" = EXCLUDED."postalCode",
+  "updatedAt" = CURRENT_TIMESTAMP;
