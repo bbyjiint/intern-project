@@ -261,7 +261,7 @@ export function useProfile() {
 
       console.error('Failed to fetch profile:', err)
 
-      if (err.status === 404) {
+      if (err.status === 404 || err.status === 403) {
 
         setProfileData(null)
 

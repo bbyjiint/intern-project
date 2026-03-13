@@ -86,6 +86,9 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
           orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
           // ไม่ต้องแก้ — gpa มีอยู่แล้วใน CandidateUniversity model
         },
+        WorkHistory: {              // ← เพิ่มตรงนี้
+          orderBy: { startDate: "desc" },
+        },
         UserSkill: {
           include: {
             Skills: {
@@ -320,8 +323,8 @@ candidatesRouter.get("/", requireAuth, requireRole("COMPANY"), async (req, res) 
       preferredLocations: c.CandidatePreferredProvince.map((p) => p.Province.name),
       internshipPeriod: formatInternshipPeriod(c.internshipPeriod ?? null),
       yearOfStudy: primaryEdu?.yearOfStudy ?? null,
-      gpa: primaryEdu?.gpa ? primaryEdu.gpa.toString() : null,           
-      degreeName: primaryEdu?.degreeName ?? null,                         
+      gpa: primaryEdu?.gpa ? primaryEdu.gpa.toString() : null,
+      degreeName: primaryEdu?.degreeName ?? null,
       isCurrent: primaryEdu?.isCurrent ?? false,
       phoneNumber: c.phoneNumber ?? null,
       profileImage: c.profileImage ?? null,
