@@ -80,7 +80,7 @@ export default function EmployerApplicantsOverviewCard({ post }: EmployerApplica
       <div className="grid grid-cols-[150px_1fr] gap-y-[8px]">
         <p className="text-[12px] text-[#8B94A7]">Preferred</p>
         <p className="text-[13px] text-[#6B7280]">{post.preferred}</p>
-        <p className="text-[12px] text-[#8B94A7]">Number of applicants</p>
+        <p className="text-[12px] text-[#8B94A7]">Position available</p>
         <p className="text-[13px] text-[#6B7280]">{post.applicantsCount}</p>
         <p className="text-[12px] text-[#8B94A7]">Allowance</p>
         <p className="text-[13px] font-semibold text-[#111827]">{post.allowance}</p>
