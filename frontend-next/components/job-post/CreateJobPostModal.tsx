@@ -1,6 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
+import { apiFetch } from '@/lib/api'
+import SearchableDropdown from '@/components/SearchableDropdown'
 
 export interface CreateJobPostModalValues {
   jobTitle: string
@@ -9,6 +11,9 @@ export interface CreateJobPostModalValues {
   allowance: string
   allowancePeriod: 'Month' | 'Week' | 'Day'
   gpa: string
+  positions: string[]
+  preferredLocation: string
+  workingDaysHours: string
   jobDescription: string
   jobSpecification: string
 }
@@ -16,6 +21,9 @@ export interface CreateJobPostModalValues {
 interface CreateJobPostModalProps {
   isOpen: boolean
   isSubmitting: boolean
+  title?: string
+  submitLabel?: string
+  initialValues?: CreateJobPostModalValues
   onClose: () => void
   onSubmit: (values: CreateJobPostModalValues) => Promise<void> | void
 }
@@ -27,34 +35,105 @@ const initialValues: CreateJobPostModalValues = {
   allowance: '',
   allowancePeriod: 'Month',
   gpa: '',
+  positions: [],
+  preferredLocation: '',
+  workingDaysHours: '',
   jobDescription: '',
   jobSpecification: '',
 }
 
+// Common positions list
+const POSITION_OPTIONS = [
+  'Frontend Developer',
+  'Backend Developer',
+  'Full Stack Developer',
+  'Software Engineer',
+  'Data Scientist',
+  'Data Analyst',
+  'AI Developer',
+  'Machine Learning Engineer',
+  'DevOps Engineer',
+  'UI/UX Designer',
+  'Product Manager',
+  'Business Analyst',
+  'Marketing Intern',
+  'HR Intern',
+  'Finance Intern',
+  'Accounting Intern',
+  'Graphic Designer',
+  'Content Writer',
+  'Digital Marketing',
+  'Sales Intern',
+]
+
 export default function CreateJobPostModal({
   isOpen,
   isSubmitting,
+  title = 'Create Job Post',
+  submitLabel = 'Create Job Post',
+  initialValues: initialFormValues,
   onClose,
   onSubmit,
 }: CreateJobPostModalProps) {
   const [values, setValues] = useState<CreateJobPostModalValues>(initialValues)
+  const [provinces, setProvinces] = useState<Array<{ id: string; name: string; thname: string | null }>>([])
+  const [provincesLoading, setProvincesLoading] = useState(false)
+  const [showPositionsDropdown, setShowPositionsDropdown] = useState(false)
+  const positionsDropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (isOpen) {
-      setValues(initialValues)
+      setValues(initialFormValues ?? initialValues)
+      loadProvinces()
     }
-  }, [isOpen])
+  }, [initialFormValues, isOpen])
+
+  // Close positions dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (positionsDropdownRef.current && !positionsDropdownRef.current.contains(event.target as Node)) {
+        setShowPositionsDropdown(false)
+      }
+    }
+
+    if (showPositionsDropdown) {
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [showPositionsDropdown])
+
+  const loadProvinces = async () => {
+    setProvincesLoading(true)
+    try {
+      const response = await apiFetch<{ provinces: Array<{ id: string; name: string; thname: string | null; code: string | null }> }>('/api/addresses/provinces')
+      setProvinces(response.provinces || [])
+    } catch (err) {
+      console.error('Failed to load provinces:', err)
+      setProvinces([])
+    } finally {
+      setProvincesLoading(false)
+    }
+  }
+
+  const togglePosition = (position: string) => {
+    setValues((prev) => ({
+      ...prev,
+      positions: prev.positions.includes(position)
+        ? prev.positions.filter((p) => p !== position)
+        : [...prev.positions, position],
+    }))
+  }
 
   if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-6" onClick={onClose}>
       <div
-        className="w-full max-w-[620px] rounded-[16px] bg-white px-4 pb-4 pt-4 shadow-[0_24px_60px_rgba(15,23,42,0.18)] sm:px-5 sm:pb-5"
+        className="w-full max-w-[620px] max-h-[75vh] rounded-[16px] bg-white px-4 pb-4 pt-4 shadow-[0_24px_60px_rgba(15,23,42,0.18)] sm:px-5 sm:pb-5 flex flex-col"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="mb-3 flex items-start justify-between gap-4">
-          <h2 className="text-[20px] font-bold leading-none text-[#111827] sm:text-[22px]">Create Job Post</h2>
+          <h2 className="text-[20px] font-bold leading-none text-[#111827] sm:text-[22px]">{title}</h2>
           <button
             type="button"
             onClick={onClose}
@@ -72,7 +151,7 @@ export default function CreateJobPostModal({
             event.preventDefault()
             await onSubmit(values)
           }}
-          className="space-y-3"
+          className="space-y-3 overflow-y-auto flex-1 pr-1"
         >
           <div>
             <label className="mb-1.5 block text-[14px] font-semibold text-[#111827]">Job Title</label>
@@ -115,29 +194,16 @@ export default function CreateJobPostModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-[1fr_220px]">
-            <div>
-              <label className="mb-1.5 block text-[14px] font-semibold text-[#111827]">Number of applicants</label>
-              <input
-                type="number"
-                min="0"
-                value={values.positionsAvailable}
-                onChange={(event) => setValues((prev) => ({ ...prev, positionsAvailable: event.target.value }))}
-                placeholder="Enter positions"
-                className="h-[38px] w-full rounded-[8px] border border-[#CBD5E1] px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
-              />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-[14px] font-semibold text-[#111827]">GPA</label>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={values.gpa}
-                onChange={(event) => setValues((prev) => ({ ...prev, gpa: event.target.value }))}
-                placeholder="3.50"
-                className="h-[38px] w-full rounded-[8px] border border-[#CBD5E1] px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
-              />
-            </div>
+          <div>
+            <label className="mb-1.5 block text-[14px] font-semibold text-[#111827]">Number of applicants</label>
+            <input
+              type="number"
+              min="0"
+              value={values.positionsAvailable}
+              onChange={(event) => setValues((prev) => ({ ...prev, positionsAvailable: event.target.value }))}
+              placeholder="Enter number of available positions"
+              className="h-[38px] w-full rounded-[8px] border border-[#CBD5E1] px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
+            />
           </div>
 
           <div>
@@ -196,6 +262,112 @@ export default function CreateJobPostModal({
             />
           </div>
 
+          <div>
+            <label className="mb-1.5 block text-[14px] font-semibold text-[#111827]">GPA</label>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={values.gpa}
+              onChange={(event) => setValues((prev) => ({ ...prev, gpa: event.target.value }))}
+              placeholder="Enter minimum GPA (e.g. 2.75)"
+              className="h-[38px] w-full rounded-[8px] border border-[#CBD5E1] px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-[14px] font-semibold text-[#111827]">Positions</label>
+            <div className="relative" ref={positionsDropdownRef}>
+              <button
+                type="button"
+                onClick={() => setShowPositionsDropdown(!showPositionsDropdown)}
+                className="h-[38px] w-full rounded-[8px] border border-[#CBD5E1] bg-white px-3 text-left text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] flex items-center justify-between"
+              >
+                <span className={values.positions.length > 0 ? 'text-[#111827]' : 'text-[#9CA3AF]'}>
+                  {values.positions.length > 0
+                    ? `${values.positions.length} position${values.positions.length > 1 ? 's' : ''} selected`
+                    : 'Select one or more positions'}
+                </span>
+                <svg
+                  className={`h-4 w-4 text-[#6B7280] transition-transform ${showPositionsDropdown ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {showPositionsDropdown && (
+                <div className="absolute z-10 mt-1 w-full max-h-[200px] overflow-y-auto rounded-[8px] border border-[#CBD5E1] bg-white shadow-lg">
+                  {POSITION_OPTIONS.map((position) => (
+                    <label
+                      key={position}
+                      className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-[#F3F4F6] text-[13px] text-[#111827]"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={values.positions.includes(position)}
+                        onChange={() => togglePosition(position)}
+                        className="h-4 w-4 rounded border-[#CBD5E1] text-[#2563EB] focus:ring-[#2563EB]"
+                      />
+                      <span>{position}</span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+            {values.positions.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {values.positions.map((position) => (
+                  <span
+                    key={position}
+                    className="inline-flex items-center gap-1 rounded-[6px] bg-[#EFF6FF] px-2 py-1 text-[12px] text-[#2563EB]"
+                  >
+                    {position}
+                    <button
+                      type="button"
+                      onClick={() => togglePosition(position)}
+                      className="hover:text-[#1D4ED8]"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-[14px] font-semibold text-[#111827]">Preferred Location</label>
+            {provincesLoading ? (
+              <div className="h-[38px] w-full rounded-[8px] border border-[#CBD5E1] bg-gray-50 flex items-center justify-center">
+                <span className="text-[13px] text-[#9CA3AF]">Loading locations...</span>
+              </div>
+            ) : (
+              <SearchableDropdown
+                options={provinces.map((prov) => ({
+                  value: prov.id,
+                  label: prov.thname ? `${prov.name} (${prov.thname})` : prov.name,
+                }))}
+                value={values.preferredLocation}
+                onChange={(value) => setValues((prev) => ({ ...prev, preferredLocation: value }))}
+                placeholder="Select preferred work location"
+                className="w-full"
+                allOptionLabel="Select Location"
+              />
+            )}
+          </div>
+
+          <div>
+            <label className="mb-1.5 block text-[14px] font-semibold text-[#111827]">Working Days & Hours</label>
+            <input
+              type="text"
+              value={values.workingDaysHours}
+              onChange={(event) => setValues((prev) => ({ ...prev, workingDaysHours: event.target.value }))}
+              placeholder="e.g. Monday–Friday, 9:00 AM – 5:00 PM"
+              className="h-[38px] w-full rounded-[8px] border border-[#CBD5E1] px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
+            />
+          </div>
+
           <div className="flex justify-end gap-2 pt-1">
             <button
               type="button"
@@ -209,7 +381,7 @@ export default function CreateJobPostModal({
               disabled={isSubmitting}
               className="flex h-[36px] items-center justify-center rounded-[10px] bg-[#2563EB] px-3.5 text-[12px] font-semibold text-white transition hover:bg-[#1D4ED8] disabled:opacity-60"
             >
-              {isSubmitting ? 'Creating...' : 'Create Job Post'}
+              {isSubmitting ? 'Saving...' : submitLabel}
             </button>
           </div>
         </form>

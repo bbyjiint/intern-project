@@ -206,7 +206,7 @@ export default function JobCard({ job, onBookmarkClick, onMenuClick, onClick, sh
         </div>
         <div className="grid grid-cols-[140px_1fr] items-center">
           <span className="text-gray-400 text-[15px] leading-tight">
-            Number of<br />applicants
+            Position<br />available
           </span>
           <span className="text-gray-600 text-[15px]">{job.applicants}</span>
         </div>

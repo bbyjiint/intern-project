@@ -13,6 +13,16 @@ interface JobPost extends EmployerJobPostCardData {
   createdAt: string
 }
 
+interface EditJobPostDetails {
+  id: string
+  jobTitle?: string | null
+  workplaceType?: string | null
+  allowance?: number | null
+  allowancePeriod?: string | null
+  jobDescription?: string | null
+  jobSpecification?: string | null
+}
+
 const mockJobPosts: JobPost[] = [
   {
     id: '1',
@@ -44,6 +54,8 @@ export default function JobPostPage() {
   const [createJobPostError, setCreateJobPostError] = useState<string | null>(null)
   const [jobPostActionError, setJobPostActionError] = useState<string | null>(null)
   const [togglingPostId, setTogglingPostId] = useState<string | null>(null)
+  const [editingJobPostId, setEditingJobPostId] = useState<string | null>(null)
+  const [editingInitialValues, setEditingInitialValues] = useState<CreateJobPostModalValues | null>(null)
 
   const getRelativeTimeLabel = (value: string) => {
     const createdAt = new Date(value)
@@ -278,15 +290,68 @@ export default function JobPostPage() {
 
   const handleOpenCreateModal = () => {
     setCreateJobPostError(null)
+    setEditingJobPostId(null)
+    setEditingInitialValues(null)
     setShowCreateModal(true)
   }
 
   const handleCloseCreateModal = () => {
     setShowCreateModal(false)
+    setEditingJobPostId(null)
+    setEditingInitialValues(null)
     if (searchParams.get('create') === '1') {
       if (typeof window !== 'undefined') {
         window.history.replaceState({}, '', '/employer/job-post')
       }
+    }
+  }
+
+  const toWorkplaceValue = (value: string | null | undefined): CreateJobPostModalValues['workplaceType'] =>
+    value === 'HYBRID'
+      ? 'hybrid'
+      : value === 'REMOTE'
+      ? 'remote'
+      : value === 'ON_SITE'
+      ? 'on-site'
+      : value === 'hybrid'
+      ? 'hybrid'
+      : value === 'remote'
+      ? 'remote'
+      : 'on-site'
+
+  const toAllowancePeriodValue = (value: string | null | undefined): CreateJobPostModalValues['allowancePeriod'] =>
+    value === 'WEEK'
+      ? 'Week'
+      : value === 'DAY'
+      ? 'Day'
+      : 'Month'
+
+  const handleEditJobPost = async (postId: string) => {
+    setCreateJobPostError(null)
+    setJobPostActionError(null)
+    setEditingJobPostId(postId)
+    setShowCreateModal(true)
+
+    try {
+      const response = await apiFetch<{ jobPost: EditJobPostDetails }>(`/api/job-posts/${postId}`)
+      const jobPost = response.jobPost
+
+      setEditingInitialValues({
+        jobTitle: jobPost.jobTitle || '',
+        workplaceType: toWorkplaceValue(jobPost.workplaceType),
+        positionsAvailable: '',
+        allowance: jobPost.allowance ? String(jobPost.allowance) : '',
+        allowancePeriod: toAllowancePeriodValue(jobPost.allowancePeriod),
+        gpa: '',
+        jobDescription: jobPost.jobDescription || '',
+        jobSpecification: jobPost.jobSpecification || '',
+      })
+    } catch (error) {
+      console.error('Failed to load job post for editing:', error)
+      setCreateJobPostError(error instanceof Error ? error.message : 'Failed to load job post')
+      setShowCreateModal(false)
+      setEditingJobPostId(null)
+      setEditingInitialValues(null)
     }
   }
 
@@ -296,6 +361,22 @@ export default function JobPostPage() {
     setCreateJobPostError(null)
 
     try {
+      const payload = {
+        jobTitle: values.jobTitle,
+        workplaceType: values.workplaceType,
+        jobType: 'Internship',
+        allowance: values.allowance.replace(/,/g, '').trim(),
+        allowancePeriod: values.allowancePeriod,
+        gpa: values.gpa.trim(),
+        noAllowance: !values.allowance.trim(),
+        jobPostStatus: 'urgent',
+        jobDescription: values.jobDescription,
+        jobSpecification: values.jobSpecification,
+        locationProvince: '',
+        locationDistrict: '',
+        ...(editingJobPostId ? {} : { state: 'PUBLISHED' }),
+      }
+
       const response = await apiFetch<{
         success: boolean
         jobPost: {
@@ -315,23 +396,9 @@ export default function JobPostPage() {
             logoURL?: string | null
           } | null
         }
-      }>('/api/job-posts', {
-        method: 'POST',
-        body: JSON.stringify({
-          jobTitle: values.jobTitle,
-          workplaceType: values.workplaceType,
-          jobType: 'Internship',
-          allowance: values.allowance.replace(/,/g, '').trim(),
-          allowancePeriod: values.allowancePeriod,
-          gpa: values.gpa.trim(),
-          noAllowance: !values.allowance.trim(),
-          jobPostStatus: 'urgent',
-          jobDescription: values.jobDescription,
-          jobSpecification: values.jobSpecification,
-          locationProvince: '',
-          locationDistrict: '',
-          state: 'PUBLISHED',
-        }),
+      }>(editingJobPostId ? `/api/job-posts/${editingJobPostId}` : '/api/job-posts', {
+        method: editingJobPostId ? 'PUT' : 'POST',
+        body: JSON.stringify(payload),
       })
 
       const createdPost = response.jobPost
@@ -362,7 +429,9 @@ export default function JobPostPage() {
       }
 
       setJobPosts((prev) => {
-        const next = [optimisticPost, ...prev.filter((post) => post.id !== optimisticPost.id)]
+        const next = editingJobPostId
+          ? prev.map((post) => (post.id === optimisticPost.id ? optimisticPost : post))
+          : [optimisticPost, ...prev.filter((post) => post.id !== optimisticPost.id)]
         return next
       })
 
@@ -370,7 +439,7 @@ export default function JobPostPage() {
       handleCloseCreateModal()
     } catch (error) {
       console.error('Failed to create job post:', error)
-      setCreateJobPostError(error instanceof Error ? error.message : 'Failed to create job post')
+      setCreateJobPostError(error instanceof Error ? error.message : editingJobPostId ? 'Failed to update job post' : 'Failed to create job post')
     } finally {
       setIsCreatingJobPost(false)
     }
@@ -465,6 +534,7 @@ export default function JobPostPage() {
                   post={post}
                   isTogglePending={togglingPostId === post.id}
                   onToggleStatus={() => void handleToggleStatus(post)}
+                  onEdit={() => void handleEditJobPost(post.id)}
                   onDelete={() => handleDeleteClick(post)}
                 />
               ))}
@@ -519,6 +589,9 @@ export default function JobPostPage() {
       <CreateJobPostModal
         isOpen={showCreateModal}
         isSubmitting={isCreatingJobPost}
+        title={editingJobPostId ? 'Edit Job Post' : 'Create Job Post'}
+        submitLabel={editingJobPostId ? 'Save Changes' : 'Create Job Post'}
+        initialValues={editingInitialValues ?? undefined}
         onClose={handleCloseCreateModal}
         onSubmit={handleCreateJobPost}
       />

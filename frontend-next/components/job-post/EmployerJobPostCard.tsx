@@ -1,7 +1,5 @@
 'use client'
 
-import Link from 'next/link'
-
 export interface EmployerJobPostCardData {
   id: string
   title: string
@@ -22,6 +20,7 @@ interface EmployerJobPostCardProps {
   post: EmployerJobPostCardData
   onToggleStatus: () => void
   onDelete: () => void
+  onEdit: () => void
   isTogglePending?: boolean
 }
 
@@ -35,6 +34,7 @@ export default function EmployerJobPostCard({
   post,
   onToggleStatus,
   onDelete,
+  onEdit,
   isTogglePending = false,
 }: EmployerJobPostCardProps) {
   return (
@@ -85,7 +85,7 @@ export default function EmployerJobPostCard({
       <div className="grid grid-cols-[150px_1fr] gap-y-[8px]">
         <p className="text-[12px] text-[#8B94A7]">Preferred</p>
         <p className="text-[13px] text-[#6B7280]">{post.location}</p>
-        <p className="text-[12px] text-[#8B94A7]">Number of applicants</p>
+        <p className="text-[12px] text-[#8B94A7]">Position available</p>
         <p className="text-[13px] text-[#6B7280]">{post.applicantsCount}</p>
         <p className="text-[12px] text-[#8B94A7]">Allowance</p>
         <p className="text-[13px] font-semibold text-[#111827]">{post.allowance}</p>
@@ -116,12 +116,13 @@ export default function EmployerJobPostCard({
             </svg>
           </button>
 
-          <Link
-            href="/employer/create-job-post"
+          <button
+            type="button"
+            onClick={onEdit}
             className="flex h-[34px] items-center justify-center rounded-[8px] border border-[#2563EB] bg-white px-[18px] text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8]"
           >
             Edit Post
-          </Link>
+          </button>
         </div>
       </div>
     </div>
