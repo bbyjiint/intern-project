@@ -72,9 +72,11 @@ export interface Project {
   startDate?: string
   endDate?: string
   skills?: string[]
+  relatedSkills?: string[]   // ✅ เพิ่ม
   githubUrl?: string
   projectUrl?: string
   fileUrl?: string
+  fileName?: string          // ✅ เพิ่ม
 }
 
 export interface Certificate {
@@ -230,7 +232,20 @@ export function useProfile() {
 
         education,
         experience,
-        projects: profile.projects || [],
+        projects: (profile.projects || []).map((p: any) => ({
+          id: p.id,
+          name: p.name,
+          role: p.role,
+          description: p.description,
+          startDate: p.startDate,
+          endDate: p.endDate,
+          skills: p.relatedSkills || p.skills || [],
+          relatedSkills: p.relatedSkills || p.skills || [],
+          githubUrl: p.githubUrl,
+          projectUrl: p.projectUrl,
+          fileUrl: p.fileUrl,
+          fileName: p.fileName,       // ✅ map มาด้วย
+        })),
         certificates,
 
         resume:
