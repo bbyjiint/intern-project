@@ -72,6 +72,60 @@ internRouter.get("/job-bookmarks", requireAuth, requireRole("CANDIDATE"), async 
   }
 });
 
+// ✅ ย้ายขึ้นมาก่อน /:jobPostId เพื่อป้องกัน Express match "jobs" เป็น param
+internRouter.get("/job-bookmarks/jobs", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
+  try {
+    const candidateId = await getCandidateIdForUser(req.user!.id);
+    const bookmarks = await prisma.jobBookmark.findMany({
+      where: { candidateId },
+      orderBy: { createdAt: "desc" },
+      include: {
+        JobPost: {
+          include: {
+            Company: {
+              include: {
+                User: { select: { email: true } },
+                CompanyEmails: { select: { email: true }, take: 1 },
+              },
+            },
+            LocationProvince: { select: { name: true } },
+          },
+        },
+      },
+    });
+
+    const jobs = bookmarks.map((b) => {
+      const post = b.JobPost;
+      const location = (post as any).LocationProvince?.name || post.locationProvince || "Location not specified";
+      return {
+        id: post.id,
+        jobTitle: post.jobTitle,
+        companyName: post.Company?.companyName || "Company Name",
+        companyEmail:
+          post.Company?.CompanyEmails?.[0]?.email ||
+          post.Company?.User?.email ||
+          "",
+        companyLogo: post.Company?.logoURL || "",
+        location,
+        workType: workplaceLabel(post.workplaceType),
+        positions: Array.isArray(post.positions) ? post.positions : [],
+        roleType: "Internship",
+        applicants: post.positionsAvailable || 0,
+        allowance: formatAllowance(post.allowance, post.allowancePeriod, post.noAllowance),
+        timeAgo: post.createdAt
+          ? new Date(post.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
+          : "",
+        isBookmarked: true,
+      };
+    });
+
+    return res.json({ jobs });
+  } catch (e: any) {
+    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") return res.status(404).json({ error: "Candidate profile not found" });
+    return res.status(500).json({ error: e?.message || "Failed to load bookmarked jobs" });
+  }
+});
+
 internRouter.post("/job-bookmarks/:jobPostId", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
   const jobPostId = asParam((req.params as any).jobPostId);
   if (!jobPostId) return res.status(400).json({ error: "jobPostId is required" });
@@ -99,48 +153,6 @@ internRouter.delete("/job-bookmarks/:jobPostId", requireAuth, requireRole("CANDI
   } catch (e: any) {
     if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") return res.status(404).json({ error: "Candidate profile not found" });
     return res.status(500).json({ error: e?.message || "Failed to remove bookmark" });
-  }
-});
-
-internRouter.get("/job-bookmarks/jobs", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
-  try {
-    const candidateId = await getCandidateIdForUser(req.user!.id);
-    const bookmarks = await prisma.jobBookmark.findMany({
-      where: { candidateId },
-      orderBy: { createdAt: "desc" },
-      include: {
-        JobPost: {
-          include: {
-            Company: { select: { companyName: true, logoURL: true } },
-          },
-        },
-      },
-    });
-
-    const jobs = bookmarks.map((b) => {
-      const post = b.JobPost;
-      const location = [post.locationDistrict, post.locationProvince].filter(Boolean).join(", ") || "Location not specified";
-      return {
-        id: post.id,
-        jobTitle: post.jobTitle,
-        companyName: post.Company?.companyName || "Company Name",
-        companyLogo: post.Company?.logoURL || "TRINITY",
-        location,
-        workType: workplaceLabel(post.workplaceType),
-        skills: [],
-        description: post.jobDescription || "",
-        postedDate: post.createdAt
-          ? new Date(post.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })
-          : "",
-        status: undefined,
-        isApplied: undefined,
-      };
-    });
-
-    return res.json({ jobs });
-  } catch (e: any) {
-    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") return res.status(404).json({ error: "Candidate profile not found" });
-    return res.status(500).json({ error: e?.message || "Failed to load bookmarked jobs" });
   }
 });
 
@@ -206,6 +218,7 @@ internRouter.get("/applications", requireAuth, requireRole("CANDIDATE"), async (
                 CompanyEmails: { select: { email: true }, take: 1 },
               },
             },
+            LocationProvince: { select: { name: true } },
             _count: {
               select: { Applications: true },
             },
@@ -214,7 +227,6 @@ internRouter.get("/applications", requireAuth, requireRole("CANDIDATE"), async (
       },
     });
 
-    // Map backend application status to the UI's applied page statuses.
     const statusMap: Record<string, "Applied" | "Accept" | "Decline"> = {
       NEW: "Applied",
       SHORTLISTED: "Accept",
@@ -230,7 +242,7 @@ internRouter.get("/applications", requireAuth, requireRole("CANDIDATE"), async (
 
     const applications = apps.map((a) => {
       const post = a.JobPost;
-      const location = [post.locationDistrict, post.locationProvince].filter(Boolean).join(", ") || "Location not specified";
+      const location = (post as any).LocationProvince?.name || post.locationProvince || "Location not specified";
       return {
         id: post.id,
         jobTitle: post.jobTitle,
@@ -242,8 +254,9 @@ internRouter.get("/applications", requireAuth, requireRole("CANDIDATE"), async (
         companyLogo: post.Company?.logoURL || "TRINITY",
         location,
         workType: workplaceLabel(post.workplaceType),
-        roleType: post.jobType || "Internship",
-        applicants: post._count?.Applications || 0,
+        positions: Array.isArray(post.positions) ? post.positions : [],
+        roleType: "Internship",
+        applicants: post.positionsAvailable || 0,
         allowance: formatAllowance(post.allowance, post.allowancePeriod, post.noAllowance),
         timeAgo: relativeDateLabel(a.createdAt),
         status: statusMap[a.status] ?? "Applied",
@@ -257,4 +270,3 @@ internRouter.get("/applications", requireAuth, requireRole("CANDIDATE"), async (
     return res.status(500).json({ error: e?.message || "Failed to load applications" });
   }
 });
-

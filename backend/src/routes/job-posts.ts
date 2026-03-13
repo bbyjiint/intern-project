@@ -51,20 +51,18 @@ jobPostsRouter.post("/job-posts", requireAuth, requireRole("COMPANY"), async (re
   const {
     jobTitle,
     locationProvince,
-    locationDistrict,
-    jobType,
     positionsAvailable,
     gpa,
     workplaceType, // 'on-site' | 'hybrid' | 'remote'
     allowance,
     allowancePeriod, // 'Month' | 'Week' | 'Day'
     noAllowance,
-    jobPostStatus, // 'urgent' | 'not-urgent'
     jobDescription,
     jobSpecification,
     screeningQuestions,
-    rejectionMessage,
     state, // Optional: 'DRAFT' | 'PUBLISHED' | 'CLOSED', defaults to 'DRAFT'
+    positions,        // เพิ่ม
+    workingDaysHours, // เพิ่ม
   } = req.body;
 
   try {
@@ -91,12 +89,6 @@ jobPostsRouter.post("/job-posts", requireAuth, requireRole("COMPANY"), async (re
       Day: "DAY",
     };
 
-    // Map frontend jobPostStatus to database enum
-    const jobPostStatusMap: Record<string, "URGENT" | "NOT_URGENT"> = {
-      urgent: "URGENT",
-      "not-urgent": "NOT_URGENT",
-    };
-
     // Map frontend state to database enum
     const stateMap: Record<string, "DRAFT" | "PUBLISHED" | "CLOSED"> = {
       DRAFT: "DRAFT",
@@ -115,8 +107,6 @@ jobPostsRouter.post("/job-posts", requireAuth, requireRole("COMPANY"), async (re
         companyId: companyProfile.id,
         jobTitle: jobTitle || "",
         locationProvince: locationProvince || null,
-        locationDistrict: locationDistrict || null,
-        jobType: jobType || null,
         positionsAvailable:
           positionsAvailable !== undefined && positionsAvailable !== null && positionsAvailable !== ""
             ? Number(positionsAvailable)
@@ -126,11 +116,12 @@ jobPostsRouter.post("/job-posts", requireAuth, requireRole("COMPANY"), async (re
         allowance: noAllowance ? null : (allowance ? parseFloat(allowance) : null),
         allowancePeriod: noAllowance ? null : (allowancePeriod ? allowancePeriodMap[allowancePeriod] : null),
         noAllowance: noAllowance || false,
-        jobPostStatus: jobPostStatusMap[jobPostStatus] || "NOT_URGENT",
         jobDescription: jobDescription || null,
         jobSpecification: jobSpecification || null,
-        rejectionMessage: rejectionMessage || null,
-        state: jobPostState, // Use mapped state, defaults to DRAFT if not provided or invalid
+        positions: Array.isArray(positions) ? positions : [],
+        workingDaysHours: workingDaysHours || null,
+        locationProvinceId: req.body.preferredLocation || null,
+        state: jobPostState,
       },
     });
 
@@ -138,7 +129,7 @@ jobPostsRouter.post("/job-posts", requireAuth, requireRole("COMPANY"), async (re
     if (Array.isArray(screeningQuestions) && screeningQuestions.length > 0) {
       for (let i = 0; i < screeningQuestions.length; i++) {
         const question = screeningQuestions[i];
-        
+
         // Map frontend questionType to database enum
         const questionTypeMap: Record<string, "TEXT" | "MULTIPLE_CHOICE"> = {
           text: "TEXT",
@@ -191,6 +182,7 @@ jobPostsRouter.post("/job-posts", requireAuth, requireRole("COMPANY"), async (re
             logoURL: true,
           },
         },
+        LocationProvince: { select: { name: true } },
       },
     });
 
@@ -218,13 +210,13 @@ jobPostsRouter.get("/job-posts/public", async (req, res) => {
           select: {
             companyName: true,
             logoURL: true,
+            CompanyEmails: { select: { email: true }, take: 1 },
+            User: { select: { email: true } },
           },
         },
+        LocationProvince: { select: { name: true } },
       },
-      orderBy: [
-        { jobPostStatus: "asc" }, // URGENT first
-        { createdAt: "desc" }, // Then newest first
-      ],
+      orderBy: { createdAt: "desc" },
     });
 
     // Format job posts for frontend
@@ -233,54 +225,32 @@ jobPostsRouter.get("/job-posts/public", async (req, res) => {
       const allowanceStr = formatAllowance(post.allowance, post.allowancePeriod, post.noAllowance);
 
       // Format location
-      const locationParts = [post.locationDistrict, post.locationProvince].filter(Boolean);
-      const location = locationParts.length > 0 ? locationParts.join(", ") : "Location not specified";
+      const location = post.locationProvince || "Location not specified";
 
       // Format posted date
       const postedDate = post.createdAt
         ? new Date(post.createdAt).toLocaleDateString("en-GB", {
-            day: "numeric",
-            month: "long",
-            year: "numeric",
-          })
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        })
         : "Date not available";
       // Extract company logo initials from company name if logoURL is an image
       const companyName = post.Company?.companyName || "Company Name";
-      let companyLogo = "TRINITY"; // Default fallback
-      
-      if (post.Company?.logoURL) {
-        // Check if logoURL is a base64 image or image URL
-        if (post.Company.logoURL.startsWith("data:image") || 
-            post.Company.logoURL.startsWith("http") ||
-            post.Company.logoURL.includes("base64")) {
-          // Extract initials from company name (first 7 characters max, uppercase)
-          companyLogo = companyName.substring(0, 7).toUpperCase().replace(/\s+/g, "");
-        } else {
-          // Use logoURL as-is if it's just text
-          companyLogo = post.Company.logoURL;
-        }
-      } else if (companyName) {
-        // Extract initials from company name if no logoURL
-        companyLogo = companyName.substring(0, 7).toUpperCase().replace(/\s+/g, "");
-      }
+      const companyLogo = post.Company?.logoURL || "";
 
       return {
         id: post.id,
         jobTitle: post.jobTitle || "Untitled Job",
         companyName,
+        companyEmail: post.Company?.CompanyEmails?.[0]?.email || post.Company?.User?.email || "",
         companyLogo,
-        location,
+        location: (post as any).LocationProvince?.name || post.locationProvince || "Location not specified",
         workType: formatWorkplaceType(post.workplaceType),
-        jobType: post.jobType || "internship",
-        seniorityLevel: "student", // Default, can be enhanced later
-        field: "IT&Software", // Default, can be enhanced later
-        positions: post.positionsAvailable || 1,
+        positionsAvailable: post.positionsAvailable || 0,
+        positions: Array.isArray(post.positions) ? post.positions : [],
         allowance: allowanceStr,
-        skills: [], // Can be enhanced later if skills are stored
         postedDate,
-        jobDescription: post.jobDescription || "",
-        jobSpecification: post.jobSpecification || "",
-        isUrgent: post.jobPostStatus === "URGENT",
       };
     });
 
@@ -314,6 +284,7 @@ jobPostsRouter.get("/job-posts/public/:id", async (req, res) => {
             Subdistrict: { select: { name: true } },
           },
         },
+        LocationProvince: { select: { name: true } }, // ✅ เพิ่มบรรทัดนี้
       },
     });
 
@@ -327,7 +298,7 @@ jobPostsRouter.get("/job-posts/public/:id", async (req, res) => {
       jobPost.Company?.User?.email ||
       "info@example.com";
     const companyLogo = jobPost.Company?.logoURL || companyName.substring(0, 7).toUpperCase().replace(/\s+/g, "");
-    const location = [jobPost.locationDistrict, jobPost.locationProvince].filter(Boolean).join(", ") || "Location not specified";
+    const location = jobPost.locationProvince || "Location not specified";
     const address = [
       jobPost.Company?.addressDetails,
       jobPost.Company?.Subdistrict?.name,
@@ -343,26 +314,28 @@ jobPostsRouter.get("/job-posts/public/:id", async (req, res) => {
         id: jobPost.id,
         state: jobPost.state,
         postedDate: new Date(jobPost.createdAt).toLocaleDateString("en-GB", {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
+          day: "numeric", month: "long", year: "numeric",
         }),
         jobTitle: jobPost.jobTitle,
         companyName,
         companyEmail,
         companyLogo,
+        workplaceType: jobPost.workplaceType,        // ✅ ส่ง raw enum ไปด้วย
+        positions: Array.isArray(jobPost.positions) ? jobPost.positions : [], // ✅ เพิ่ม
         workType: formatWorkplaceType(jobPost.workplaceType),
-        roleType: jobPost.jobType ? jobPost.jobType.replace(/[-_]/g, " ").replace(/\b\w/g, (char) => char.toUpperCase()) : "Internship",
+        roleType: "Internship",
         positionsAvailable: jobPost.positionsAvailable || 1,
         jobDescription: jobPost.jobDescription ? jobPost.jobDescription.split("\n").map((line) => line.trim()).filter(Boolean) : [],
         qualifications: jobPost.jobSpecification ? jobPost.jobSpecification.split("\n").map((line) => line.trim()).filter(Boolean) : [],
         gpa: jobPost.gpa || "Not specified",
-        allowance: formatAllowance(jobPost.allowance, jobPost.allowancePeriod, jobPost.noAllowance),
-        location,
-        workingDaysHours: "Not specified",
+        allowance: jobPost.noAllowance ? null : (jobPost.allowance || null),  // ✅ ส่งตัวเลข
+        allowancePeriod: jobPost.allowancePeriod || null,                      // ✅ เพิ่ม
+        noAllowance: jobPost.noAllowance,                                      // ✅ เพิ่ม
+        location: (jobPost as any).LocationProvince?.name || jobPost.locationProvince || "Location not specified", // ✅ แก้
+        workingDaysHours: jobPost.workingDaysHours || "Not specified",         // ✅ แก้จาก hardcode
         companyDescription: jobPost.Company?.about || "No company description available.",
         contactPhone: jobPost.Company?.CompanyPhones[0]?.phone || "Not specified",
-        contactDepartment: jobPost.Company?.recruiterPosition || jobPost.Company?.recruiterName || "Hiring Team",
+        contactDepartment: jobPost.Company?.recruiterName || "Hiring Team",
         address,
         mapEmbedUrl: "",
       },
@@ -393,11 +366,12 @@ jobPostsRouter.get("/job-posts", requireAuth, requireRole("COMPANY"), async (req
       include: {
         ScreeningQuestions: {
           include: {
-            Choices: {
-              orderBy: { order: "asc" },
-            },
+            Choices: { orderBy: { order: "asc" } },
           },
           orderBy: { order: "asc" },
+        },
+        LocationProvince: {
+          select: { name: true },
         },
       },
       orderBy: { createdAt: "desc" },
@@ -447,6 +421,7 @@ jobPostsRouter.get("/job-posts/:id", requireAuth, requireRole("COMPANY"), async 
             logoURL: true,
           },
         },
+        LocationProvince: { select: { name: true } },
       },
     });
 
@@ -493,18 +468,14 @@ jobPostsRouter.put("/job-posts/:id", requireAuth, requireRole("COMPANY"), async 
     const {
       jobTitle,
       locationProvince,
-      locationDistrict,
-      jobType,
       positionsAvailable,
       gpa,
       workplaceType,
       allowance,
       allowancePeriod,
       noAllowance,
-      jobPostStatus,
       jobDescription,
       jobSpecification,
-      rejectionMessage,
       state,
       screeningQuestions,
     } = req.body;
@@ -522,11 +493,6 @@ jobPostsRouter.put("/job-posts/:id", requireAuth, requireRole("COMPANY"), async 
       Day: "DAY",
     };
 
-    const jobPostStatusMap: Record<string, "URGENT" | "NOT_URGENT"> = {
-      urgent: "URGENT",
-      "not-urgent": "NOT_URGENT",
-    };
-
     // Map frontend state to database enum
     const stateMap: Record<string, "DRAFT" | "PUBLISHED" | "CLOSED"> = {
       DRAFT: "DRAFT",
@@ -541,8 +507,6 @@ jobPostsRouter.put("/job-posts/:id", requireAuth, requireRole("COMPANY"), async 
     const updateData: any = {};
     if (jobTitle !== undefined) updateData.jobTitle = jobTitle;
     if (locationProvince !== undefined) updateData.locationProvince = locationProvince;
-    if (locationDistrict !== undefined) updateData.locationDistrict = locationDistrict;
-    if (jobType !== undefined) updateData.jobType = jobType;
     if (positionsAvailable !== undefined) {
       updateData.positionsAvailable =
         positionsAvailable !== null && positionsAvailable !== ""
@@ -561,13 +525,14 @@ jobPostsRouter.put("/job-posts/:id", requireAuth, requireRole("COMPANY"), async 
       if (allowance !== undefined) updateData.allowance = allowance ? parseFloat(allowance) : null;
       if (allowancePeriod !== undefined) updateData.allowancePeriod = allowancePeriod ? allowancePeriodMap[allowancePeriod] : null;
     }
-    if (jobPostStatus !== undefined) updateData.jobPostStatus = jobPostStatusMap[jobPostStatus] || "NOT_URGENT";
     if (jobDescription !== undefined) updateData.jobDescription = jobDescription;
     if (jobSpecification !== undefined) updateData.jobSpecification = jobSpecification;
-    if (rejectionMessage !== undefined) updateData.rejectionMessage = rejectionMessage;
     if (state !== undefined) {
       updateData.state = stateMap[state] || state; // Use mapped state if available, otherwise use the provided value
     }
+    if (req.body.positions !== undefined) updateData.positions = Array.isArray(req.body.positions) ? req.body.positions : []
+    if (req.body.workingDaysHours !== undefined) updateData.workingDaysHours = req.body.workingDaysHours || null
+    if (req.body.preferredLocation !== undefined) updateData.locationProvinceId = req.body.preferredLocation || null
 
     const updatedJobPost = await prisma.jobPost.update({
       where: { id },
@@ -640,6 +605,7 @@ jobPostsRouter.put("/job-posts/:id", requireAuth, requireRole("COMPANY"), async 
             logoURL: true,
           },
         },
+        LocationProvince: { select: { name: true } },
       },
     });
 
@@ -773,7 +739,6 @@ jobPostsRouter.get("/job-posts/:id/applicants", requireAuth, requireRole("COMPAN
       select: {
         id: true,
         jobTitle: true,
-        locationDistrict: true,
         locationProvince: true,
         workplaceType: true,
       },
@@ -855,12 +820,12 @@ jobPostsRouter.get("/job-posts/:id/applicants", requireAuth, requireRole("COMPAN
       jobPost.workplaceType === "ON_SITE"
         ? "On-site"
         : jobPost.workplaceType === "HYBRID"
-        ? "Hybrid"
-        : jobPost.workplaceType === "REMOTE"
-        ? "Remote"
-        : "Not specified";
+          ? "Hybrid"
+          : jobPost.workplaceType === "REMOTE"
+            ? "Remote"
+            : "Not specified";
 
-    const location = [jobPost.locationDistrict, jobPost.locationProvince].filter(Boolean).join(", ");
+    const location = jobPost.locationProvince || "";
 
     return res.json({
       jobPost: {

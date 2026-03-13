@@ -1,119 +1,136 @@
-'use client'
+"use client";
 
-import { useEffect, useState, useRef } from 'react'
-import { apiFetch } from '@/lib/api'
-import SearchableDropdown from '@/components/SearchableDropdown'
+import { useEffect, useState, useRef } from "react";
+import { apiFetch } from "@/lib/api";
+import SearchableDropdown from "@/components/SearchableDropdown";
 
 export interface CreateJobPostModalValues {
-  jobTitle: string
-  workplaceType: 'on-site' | 'hybrid' | 'remote'
-  positionsAvailable: string
-  allowance: string
-  allowancePeriod: 'Month' | 'Week' | 'Day'
-  gpa: string
-  positions: string[]
-  preferredLocation: string
-  workingDaysHours: string
-  jobDescription: string
-  jobSpecification: string
+  jobTitle: string;
+  workplaceType: "on-site" | "hybrid" | "remote";
+  positionsAvailable: string;
+  allowance: string;
+  allowancePeriod: "Month" | "Week" | "Day";
+  gpa: string;
+  positions: string[];
+  preferredLocation: string;
+  workingDaysHours: string;
+  jobDescription: string;
+  jobSpecification: string;
 }
 
 interface CreateJobPostModalProps {
-  isOpen: boolean
-  isSubmitting: boolean
-  title?: string
-  submitLabel?: string
-  initialValues?: CreateJobPostModalValues
-  onClose: () => void
-  onSubmit: (values: CreateJobPostModalValues) => Promise<void> | void
+  isOpen: boolean;
+  isSubmitting: boolean;
+  title?: string;
+  submitLabel?: string;
+  initialValues?: CreateJobPostModalValues;
+  onClose: () => void;
+  onSubmit: (values: CreateJobPostModalValues) => Promise<void> | void;
 }
 
 const initialValues: CreateJobPostModalValues = {
-  jobTitle: '',
-  workplaceType: 'on-site',
-  positionsAvailable: '',
-  allowance: '',
-  allowancePeriod: 'Month',
-  gpa: '',
+  jobTitle: "",
+  workplaceType: "on-site",
+  positionsAvailable: "",
+  allowance: "",
+  allowancePeriod: "Month",
+  gpa: "",
   positions: [],
-  preferredLocation: '',
-  workingDaysHours: '',
-  jobDescription: '',
-  jobSpecification: '',
-}
+  preferredLocation: "",
+  workingDaysHours: "",
+  jobDescription: "",
+  jobSpecification: "",
+};
 
 // Common positions list
 const POSITION_OPTIONS = [
-  'Frontend Developer',
-  'Backend Developer',
-  'Full Stack Developer',
-  'Software Engineer',
-  'Data Scientist',
-  'Data Analyst',
-  'AI Developer',
-  'Machine Learning Engineer',
-  'DevOps Engineer',
-  'UI/UX Designer',
-  'Product Manager',
-  'Business Analyst',
-  'Marketing Intern',
-  'HR Intern',
-  'Finance Intern',
-  'Accounting Intern',
-  'Graphic Designer',
-  'Content Writer',
-  'Digital Marketing',
-  'Sales Intern',
-]
+  "Frontend Developer",
+  "Backend Developer",
+  "Full Stack Developer",
+  "Software Engineer",
+  "Data Scientist",
+  "Data Analyst",
+  "AI Developer",
+  "Machine Learning Engineer",
+  "DevOps Engineer",
+  "UI/UX Designer",
+  "Product Manager",
+  "Business Analyst",
+  "Marketing Intern",
+  "HR Intern",
+  "Finance Intern",
+  "Accounting Intern",
+  "Graphic Designer",
+  "Content Writer",
+  "Digital Marketing",
+  "Sales Intern",
+];
 
 export default function CreateJobPostModal({
   isOpen,
   isSubmitting,
-  title = 'Create Job Post',
-  submitLabel = 'Create Job Post',
+  title = "Create Job Post",
+  submitLabel = "Create Job Post",
   initialValues: initialFormValues,
   onClose,
   onSubmit,
 }: CreateJobPostModalProps) {
-  const [values, setValues] = useState<CreateJobPostModalValues>(initialValues)
-  const [provinces, setProvinces] = useState<Array<{ id: string; name: string; thname: string | null }>>([])
-  const [provincesLoading, setProvincesLoading] = useState(false)
-  const [showPositionsDropdown, setShowPositionsDropdown] = useState(false)
-  const positionsDropdownRef = useRef<HTMLDivElement>(null)
+  const [values, setValues] = useState<CreateJobPostModalValues>(initialValues);
+  const [provinces, setProvinces] = useState<
+    Array<{ id: string; name: string; thname: string | null }>
+  >([]);
+  const [provincesLoading, setProvincesLoading] = useState(false);
+  const [showPositionsDropdown, setShowPositionsDropdown] = useState(false);
+  const positionsDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
-      setValues(initialFormValues ?? initialValues)
-      loadProvinces()
+      setValues({
+        ...initialValues,
+        ...(initialFormValues ?? {}),
+        positions: initialFormValues?.positions ?? [],
+      });
+      loadProvinces();
     }
-  }, [initialFormValues, isOpen])
+  }, [initialFormValues, isOpen]);
 
   // Close positions dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (positionsDropdownRef.current && !positionsDropdownRef.current.contains(event.target as Node)) {
-        setShowPositionsDropdown(false)
+      if (
+        positionsDropdownRef.current &&
+        !positionsDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowPositionsDropdown(false);
       }
     }
 
     if (showPositionsDropdown) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
     }
-  }, [showPositionsDropdown])
+  }, [showPositionsDropdown]);
 
   const loadProvinces = async () => {
-    setProvincesLoading(true)
+    setProvincesLoading(true);
     try {
-      const response = await apiFetch<{ provinces: Array<{ id: string; name: string; thname: string | null; code: string | null }> }>('/api/addresses/provinces')
-      setProvinces(response.provinces || [])
+      const response = await apiFetch<{
+        provinces: Array<{
+          id: string;
+          name: string;
+          thname: string | null;
+          code: string | null;
+        }>;
+      }>("/api/addresses/provinces");
+      setProvinces(response.provinces || []);
     } catch (err) {
-      console.error('Failed to load provinces:', err)
-      setProvinces([])
+      console.error("Failed to load provinces:", err);
+      setProvinces([]);
     } finally {
-      setProvincesLoading(false)
+      setProvincesLoading(false);
     }
-  }
+  };
 
   const togglePosition = (position: string) => {
     setValues((prev) => ({
@@ -121,44 +138,63 @@ export default function CreateJobPostModal({
       positions: prev.positions.includes(position)
         ? prev.positions.filter((p) => p !== position)
         : [...prev.positions, position],
-    }))
-  }
+    }));
+  };
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-6" onClick={onClose}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 px-4 py-6"
+      onClick={onClose}
+    >
       <div
         className="w-full max-w-[620px] max-h-[75vh] rounded-[16px] bg-white px-4 pb-4 pt-4 shadow-[0_24px_60px_rgba(15,23,42,0.18)] sm:px-5 sm:pb-5 flex flex-col"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="mb-3 flex items-start justify-between gap-4">
-          <h2 className="text-[20px] font-bold leading-none text-[#111827] sm:text-[22px]">{title}</h2>
+          <h2 className="text-[20px] font-bold leading-none text-[#111827] sm:text-[22px]">
+            {title}
+          </h2>
           <button
             type="button"
             onClick={onClose}
             className="rounded-full p-2 text-[#6B7280] transition hover:bg-[#F3F4F6] hover:text-[#111827]"
             aria-label="Close create job post modal"
           >
-            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 6l12 12M18 6 6 18" />
+            <svg
+              className="h-6 w-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 6l12 12M18 6 6 18"
+              />
             </svg>
           </button>
         </div>
 
         <form
           onSubmit={async (event) => {
-            event.preventDefault()
-            await onSubmit(values)
+            event.preventDefault();
+            await onSubmit(values);
           }}
           className="space-y-3 overflow-y-auto flex-1 pr-1"
         >
           <div>
-            <label className="mb-1.5 block text-[14px] font-semibold text-[#111827]">Job Title</label>
+            <label className="mb-1.5 block text-[14px] font-semibold text-[#111827]">
+              Job Title
+            </label>
             <input
               type="text"
               value={values.jobTitle}
-              onChange={(event) => setValues((prev) => ({ ...prev, jobTitle: event.target.value }))}
+              onChange={(event) =>
+                setValues((prev) => ({ ...prev, jobTitle: event.target.value }))
+              }
               placeholder="e.g. Frontend Developer Intern"
               className="h-[38px] w-full rounded-[8px] border border-[#CBD5E1] px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
               required
@@ -166,13 +202,17 @@ export default function CreateJobPostModal({
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[14px] font-semibold text-[#111827]">Internship format</label>
+            <label className="mb-1.5 block text-[14px] font-semibold text-[#111827]">
+              Internship format
+            </label>
             <div className="grid grid-cols-3 overflow-hidden rounded-[8px] border border-[#A3A3A3]">
-              {([
-                ['on-site', 'On-site'],
-                ['hybrid', 'Hybrid'],
-                ['remote', 'Remote'],
-              ] as const).map(([value, label]) => (
+              {(
+                [
+                  ["on-site", "On-site"],
+                  ["hybrid", "Hybrid"],
+                  ["remote", "Remote"],
+                ] as const
+              ).map(([value, label]) => (
                 <button
                   key={value}
                   type="button"
@@ -184,8 +224,8 @@ export default function CreateJobPostModal({
                   }
                   className={`h-[38px] border-r border-[#A3A3A3] text-[12px] font-medium transition last:border-r-0 ${
                     values.workplaceType === value
-                      ? 'bg-[#EFF6FF] text-[#2563EB]'
-                      : 'bg-white text-[#404040]'
+                      ? "bg-[#EFF6FF] text-[#2563EB]"
+                      : "bg-white text-[#404040]"
                   }`}
                 >
                   {label}
@@ -195,30 +235,46 @@ export default function CreateJobPostModal({
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[14px] font-semibold text-[#111827]">Number of applicants</label>
+            <label className="mb-1.5 block text-[14px] font-semibold text-[#111827]">
+              Number of applicants
+            </label>
             <input
               type="number"
               min="0"
               value={values.positionsAvailable}
-              onChange={(event) => setValues((prev) => ({ ...prev, positionsAvailable: event.target.value }))}
+              onChange={(event) =>
+                setValues((prev) => ({
+                  ...prev,
+                  positionsAvailable: event.target.value,
+                }))
+              }
               placeholder="Enter number of available positions"
               className="h-[38px] w-full rounded-[8px] border border-[#CBD5E1] px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
             />
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[14px] font-semibold text-[#111827]">Allowance</label>
+            <label className="mb-1.5 block text-[14px] font-semibold text-[#111827]">
+              Allowance
+            </label>
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
                 <input
                   type="text"
                   inputMode="numeric"
                   value={values.allowance}
-                  onChange={(event) => setValues((prev) => ({ ...prev, allowance: event.target.value }))}
+                  onChange={(event) =>
+                    setValues((prev) => ({
+                      ...prev,
+                      allowance: event.target.value,
+                    }))
+                  }
                   placeholder="Example: 5,000"
                   className="h-[38px] w-full rounded-[8px] border border-[#A3A3A3] px-3 pr-9 text-[13px] text-[#111827] outline-none placeholder:text-[#8A8A8A]"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[18px] text-[#404040]">฿</span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[18px] text-[#404040]">
+                  ฿
+                </span>
               </div>
               <span className="text-[20px] leading-none text-[#111827]">/</span>
               <div className="w-[110px]">
@@ -227,7 +283,8 @@ export default function CreateJobPostModal({
                   onChange={(event) =>
                     setValues((prev) => ({
                       ...prev,
-                      allowancePeriod: event.target.value as CreateJobPostModalValues['allowancePeriod'],
+                      allowancePeriod: event.target
+                        .value as CreateJobPostModalValues["allowancePeriod"],
                     }))
                   }
                   className="h-[38px] w-full appearance-none rounded-[8px] border border-[#A3A3A3] bg-white px-3 text-[13px] text-[#404040] outline-none"
@@ -241,10 +298,17 @@ export default function CreateJobPostModal({
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[14px] font-semibold text-[#111827]">Job description</label>
+            <label className="mb-1.5 block text-[14px] font-semibold text-[#111827]">
+              Job description
+            </label>
             <textarea
               value={values.jobDescription}
-              onChange={(event) => setValues((prev) => ({ ...prev, jobDescription: event.target.value }))}
+              onChange={(event) =>
+                setValues((prev) => ({
+                  ...prev,
+                  jobDescription: event.target.value,
+                }))
+              }
               placeholder="Describe responsibilities, tasks, and project scope"
               className="min-h-[92px] w-full rounded-[8px] border border-[#CBD5E1] px-3 py-2.5 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
               required
@@ -252,10 +316,17 @@ export default function CreateJobPostModal({
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[14px] font-semibold text-[#111827]">Applicant qualifications</label>
+            <label className="mb-1.5 block text-[14px] font-semibold text-[#111827]">
+              Applicant qualifications
+            </label>
             <textarea
               value={values.jobSpecification}
-              onChange={(event) => setValues((prev) => ({ ...prev, jobSpecification: event.target.value }))}
+              onChange={(event) =>
+                setValues((prev) => ({
+                  ...prev,
+                  jobSpecification: event.target.value,
+                }))
+              }
               placeholder="List required skills, education, or experience"
               className="min-h-[92px] w-full rounded-[8px] border border-[#CBD5E1] px-3 py-2.5 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
               required
@@ -263,37 +334,54 @@ export default function CreateJobPostModal({
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[14px] font-semibold text-[#111827]">GPA</label>
+            <label className="mb-1.5 block text-[14px] font-semibold text-[#111827]">
+              GPA
+            </label>
             <input
               type="text"
               inputMode="decimal"
               value={values.gpa}
-              onChange={(event) => setValues((prev) => ({ ...prev, gpa: event.target.value }))}
+              onChange={(event) =>
+                setValues((prev) => ({ ...prev, gpa: event.target.value }))
+              }
               placeholder="Enter minimum GPA (e.g. 2.75)"
               className="h-[38px] w-full rounded-[8px] border border-[#CBD5E1] px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
             />
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[14px] font-semibold text-[#111827]">Positions</label>
+            <label className="mb-1.5 block text-[14px] font-semibold text-[#111827]">
+              Positions
+            </label>
             <div className="relative" ref={positionsDropdownRef}>
               <button
                 type="button"
                 onClick={() => setShowPositionsDropdown(!showPositionsDropdown)}
                 className="h-[38px] w-full rounded-[8px] border border-[#CBD5E1] bg-white px-3 text-left text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] flex items-center justify-between"
               >
-                <span className={values.positions.length > 0 ? 'text-[#111827]' : 'text-[#9CA3AF]'}>
+                <span
+                  className={
+                    values.positions.length > 0
+                      ? "text-[#111827]"
+                      : "text-[#9CA3AF]"
+                  }
+                >
                   {values.positions.length > 0
-                    ? `${values.positions.length} position${values.positions.length > 1 ? 's' : ''} selected`
-                    : 'Select one or more positions'}
+                    ? `${values.positions.length} position${values.positions.length > 1 ? "s" : ""} selected`
+                    : "Select one or more positions"}
                 </span>
                 <svg
-                  className={`h-4 w-4 text-[#6B7280] transition-transform ${showPositionsDropdown ? 'rotate-180' : ''}`}
+                  className={`h-4 w-4 text-[#6B7280] transition-transform ${showPositionsDropdown ? "rotate-180" : ""}`}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </button>
               {showPositionsDropdown && (
@@ -337,19 +425,27 @@ export default function CreateJobPostModal({
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[14px] font-semibold text-[#111827]">Preferred Location</label>
+            <label className="mb-1.5 block text-[14px] font-semibold text-[#111827]">
+              Preferred Location
+            </label>
             {provincesLoading ? (
               <div className="h-[38px] w-full rounded-[8px] border border-[#CBD5E1] bg-gray-50 flex items-center justify-center">
-                <span className="text-[13px] text-[#9CA3AF]">Loading locations...</span>
+                <span className="text-[13px] text-[#9CA3AF]">
+                  Loading locations...
+                </span>
               </div>
             ) : (
               <SearchableDropdown
                 options={provinces.map((prov) => ({
                   value: prov.id,
-                  label: prov.thname ? `${prov.name} (${prov.thname})` : prov.name,
+                  label: prov.thname
+                    ? `${prov.name} (${prov.thname})`
+                    : prov.name,
                 }))}
                 value={values.preferredLocation}
-                onChange={(value) => setValues((prev) => ({ ...prev, preferredLocation: value }))}
+                onChange={(value) =>
+                  setValues((prev) => ({ ...prev, preferredLocation: value }))
+                }
                 placeholder="Select preferred work location"
                 className="w-full"
                 allOptionLabel="Select Location"
@@ -358,11 +454,18 @@ export default function CreateJobPostModal({
           </div>
 
           <div>
-            <label className="mb-1.5 block text-[14px] font-semibold text-[#111827]">Working Days & Hours</label>
+            <label className="mb-1.5 block text-[14px] font-semibold text-[#111827]">
+              Working Days & Hours
+            </label>
             <input
               type="text"
               value={values.workingDaysHours}
-              onChange={(event) => setValues((prev) => ({ ...prev, workingDaysHours: event.target.value }))}
+              onChange={(event) =>
+                setValues((prev) => ({
+                  ...prev,
+                  workingDaysHours: event.target.value,
+                }))
+              }
               placeholder="e.g. Monday–Friday, 9:00 AM – 5:00 PM"
               className="h-[38px] w-full rounded-[8px] border border-[#CBD5E1] px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
             />
@@ -381,11 +484,11 @@ export default function CreateJobPostModal({
               disabled={isSubmitting}
               className="flex h-[36px] items-center justify-center rounded-[10px] bg-[#2563EB] px-3.5 text-[12px] font-semibold text-white transition hover:bg-[#1D4ED8] disabled:opacity-60"
             >
-              {isSubmitting ? 'Saving...' : submitLabel}
+              {isSubmitting ? "Saving..." : submitLabel}
             </button>
           </div>
         </form>
       </div>
     </div>
-  )
+  );
 }

@@ -124,7 +124,7 @@ export default function InternAppliedPage() {
           </h2>
 
           {/* Job Application Cards Grid */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-3">
             {isLoading ? (
               <div className="text-center py-10 text-gray-500 col-span-full">
                 Loading your applications...

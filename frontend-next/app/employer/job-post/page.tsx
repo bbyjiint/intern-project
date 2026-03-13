@@ -1,452 +1,541 @@
-'use client'
+"use client";
 
-import { useCallback, useEffect, useState } from 'react'
-import Link from 'next/link'
-import { useRouter, useSearchParams } from 'next/navigation'
-import EmployerNavbar from '@/components/EmployerNavbar'
-import EmployerSidebar from '@/components/EmployerSidebar'
-import EmployerJobPostCard, { type EmployerJobPostCardData } from '@/components/job-post/EmployerJobPostCard'
-import CreateJobPostModal, { type CreateJobPostModalValues } from '@/components/job-post/CreateJobPostModal'
-import { apiFetch } from '@/lib/api'
+import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import EmployerNavbar from "@/components/EmployerNavbar";
+import EmployerSidebar from "@/components/EmployerSidebar";
+import EmployerJobPostCard, {
+  type EmployerJobPostCardData,
+} from "@/components/job-post/EmployerJobPostCard";
+import CreateJobPostModal, {
+  type CreateJobPostModalValues,
+} from "@/components/job-post/CreateJobPostModal";
+import { apiFetch } from "@/lib/api";
 
 interface JobPost extends EmployerJobPostCardData {
-  createdAt: string
+  createdAt: string;
+  secondaryTag?: string;
 }
 
 interface EditJobPostDetails {
-  id: string
-  jobTitle?: string | null
-  workplaceType?: string | null
-  positionsAvailable?: number | null
-  gpa?: string | null
-  allowance?: number | null
-  allowancePeriod?: string | null
-  jobDescription?: string | null
-  jobSpecification?: string | null
+  id: string;
+  jobTitle?: string | null;
+  workplaceType?: string | null;
+  positionsAvailable?: number | null;
+  gpa?: string | null;
+  allowance?: number | null;
+  allowancePeriod?: string | null;
+  jobDescription?: string | null;
+  jobSpecification?: string | null;
+  positions?: string[];
+  preferredLocation?: string | null;
+  locationProvinceId?: string | null;
+  workingDaysHours?: string | null;
 }
 
-const mockJobPosts: JobPost[] = [
-  {
-    id: '1',
-    title: 'Internship - UX/UI Designer',
-    companyName: 'Trinity Securities Co., Ltd.',
-    companyLogo: 'TR',
-    companyEmail: 'info@trinitythai.com',
-    location: 'Bangkok',
-    workType: 'Hybrid',
-    secondaryTag: 'UX/UI Designer',
-    applicantsCount: 0,
-    allowance: 'No allowance',
-    postedDate: '4 days ago',
-    isOpen: true,
-    createdAt: new Date().toISOString(),
-  },
-]
+const mockJobPosts: JobPost[] = [];
 
 export default function JobPostPage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const [searchQuery, setSearchQuery] = useState('')
-  const [jobPosts, setJobPosts] = useState<JobPost[]>(mockJobPosts)
-  const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [jobToDelete, setJobToDelete] = useState<JobPost | null>(null)
-  const [activeFilter, setActiveFilter] = useState<'all' | 'latest' | 'open' | 'closed'>('all')
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [isCreatingJobPost, setIsCreatingJobPost] = useState(false)
-  const [createJobPostError, setCreateJobPostError] = useState<string | null>(null)
-  const [jobPostActionError, setJobPostActionError] = useState<string | null>(null)
-  const [togglingPostId, setTogglingPostId] = useState<string | null>(null)
-  const [editingJobPostId, setEditingJobPostId] = useState<string | null>(null)
-  const [editingInitialValues, setEditingInitialValues] = useState<CreateJobPostModalValues | null>(null)
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [jobPosts, setJobPosts] = useState<JobPost[]>(mockJobPosts);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [jobToDelete, setJobToDelete] = useState<JobPost | null>(null);
+  const [activeFilter, setActiveFilter] = useState<
+    "all" | "latest" | "open" | "closed"
+  >("all");
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isCreatingJobPost, setIsCreatingJobPost] = useState(false);
+  const [createJobPostError, setCreateJobPostError] = useState<string | null>(
+    null,
+  );
+  const [jobPostActionError, setJobPostActionError] = useState<string | null>(
+    null,
+  );
+  const [togglingPostId, setTogglingPostId] = useState<string | null>(null);
+  const [editingJobPostId, setEditingJobPostId] = useState<string | null>(null);
+  const [editingInitialValues, setEditingInitialValues] =
+    useState<CreateJobPostModalValues | null>(null);
 
   const getRelativeTimeLabel = (value: string) => {
-    const createdAt = new Date(value)
-    const now = new Date()
-    const diffMs = Math.max(now.getTime() - createdAt.getTime(), 0)
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+    const createdAt = new Date(value);
+    const now = new Date();
+    const diffMs = Math.max(now.getTime() - createdAt.getTime(), 0);
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-    if (diffHours < 1) return 'just now'
-    if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`
-    if (diffDays === 1) return '1 day ago'
-    return `${diffDays} days ago`
-  }
+    if (diffHours < 1) return "just now";
+    if (diffHours < 24)
+      return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+    if (diffDays === 1) return "1 day ago";
+    return `${diffDays} days ago`;
+  };
 
   const toTitleCase = (value: string) =>
-    value
-      .replace(/[-_]/g, ' ')
-      .replace(/\b\w/g, (char) => char.toUpperCase())
+    value.replace(/[-_]/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
 
   const formatWorkTypeLabel = (value: string | null | undefined) =>
-    value === 'ON_SITE'
-      ? 'On-Site'
-      : value === 'HYBRID'
-      ? 'Hybrid'
-      : value === 'REMOTE'
-      ? 'Remote'
-      : value === 'on-site'
-      ? 'On-Site'
-      : value === 'hybrid'
-      ? 'Hybrid'
-      : value === 'remote'
-      ? 'Remote'
-      : 'On-Site'
+    value === "ON_SITE"
+      ? "On-Site"
+      : value === "HYBRID"
+        ? "Hybrid"
+        : value === "REMOTE"
+          ? "Remote"
+          : value === "on-site"
+            ? "On-Site"
+            : value === "hybrid"
+              ? "Hybrid"
+              : value === "remote"
+                ? "Remote"
+                : "On-Site";
 
   const loadJobPosts = useCallback(async () => {
     try {
       const [postsResp, companyResp] = await Promise.all([
-        apiFetch<{ jobPosts: any[] }>('/api/job-posts'),
-        apiFetch<{ profile: { companyName?: string; email?: string; companyLogo?: string; logoURL?: string; profileImage?: string } }>('/api/companies/profile'),
-      ])
+        apiFetch<{ jobPosts: any[] }>("/api/job-posts"),
+        apiFetch<{
+          profile: {
+            companyName?: string;
+            email?: string;
+            companyLogo?: string;
+            logoURL?: string;
+            profileImage?: string;
+          };
+        }>("/api/companies/profile"),
+      ]);
 
-      const companyName = companyResp?.profile?.companyName || 'Company Name'
-      const companyEmail = companyResp?.profile?.email || 'info@trinitythai.com'
+      const companyName = companyResp?.profile?.companyName || "Company Name";
+      const companyEmail =
+        companyResp?.profile?.email || "info@trinitythai.com";
       const companyLogoImage =
-        companyResp?.profile?.companyLogo || companyResp?.profile?.logoURL || companyResp?.profile?.profileImage || ''
+        companyResp?.profile?.companyLogo ||
+        companyResp?.profile?.logoURL ||
+        companyResp?.profile?.profileImage ||
+        "";
 
       const formatted = await Promise.all(
         (postsResp.jobPosts || []).map(async (post: any) => {
           const workplaceType =
-            post.workplaceType === 'ON_SITE'
-              ? 'On-Site'
-              : post.workplaceType === 'HYBRID'
-              ? 'Hybrid'
-              : post.workplaceType === 'REMOTE'
-              ? 'Remote'
-              : 'On-Site'
+            post.workplaceType === "ON_SITE"
+              ? "On-Site"
+              : post.workplaceType === "HYBRID"
+                ? "Hybrid"
+                : post.workplaceType === "REMOTE"
+                  ? "Remote"
+                  : "On-Site";
 
-          const createdAt = post.createdAt || post.updatedAt || new Date().toISOString()
-          const allowance =
-            post.noAllowance
-              ? 'No allowance'
-              : post.allowance
+          const createdAt =
+            post.createdAt || post.updatedAt || new Date().toISOString();
+          const allowance = post.noAllowance
+            ? "No allowance"
+            : post.allowance
               ? `${Number(post.allowance).toLocaleString()} THB`
-              : '-'
+              : "-";
 
-          let applicantsCount = 0
+          let applicantsCount = 0;
           try {
-            const applicantsResp = await apiFetch<{ applicants: any[] }>(`/api/job-posts/${post.id}/applicants`)
-            applicantsCount = applicantsResp.applicants?.length || 0
+            const applicantsResp = await apiFetch<{ applicants: any[] }>(
+              `/api/job-posts/${post.id}/applicants`,
+            );
+            applicantsCount = applicantsResp.applicants?.length || 0;
           } catch {
-            applicantsCount = 0
+            applicantsCount = 0;
           }
 
           return {
             id: post.id,
-            title: post.jobTitle || 'Untitled Job Post',
+            title: post.jobTitle || "Untitled Job Post",
             companyName,
             companyLogo: companyName.substring(0, 2).toUpperCase(),
             companyLogoImage,
             companyEmail,
-            location: post.locationProvince || post.locationDistrict || 'Bangkok',
+            location:
+              (post as any).LocationProvince?.name ||
+              post.locationProvince ||
+              "Not specified",
             workType: workplaceType,
-            secondaryTag: post.jobType ? toTitleCase(post.jobType) : 'AI Developer',
-            applicantsCount,
+            positions: Array.isArray(post.positions) ? post.positions : [],
+            applicantsCount: post.positionsAvailable ?? applicantsCount,
             allowance,
             postedDate: getRelativeTimeLabel(createdAt),
-            isOpen: post.state !== 'CLOSED',
+            isOpen: post.state !== "CLOSED",
             createdAt,
-          } as JobPost
-        })
-      )
+          } as JobPost;
+        }),
+      );
 
-      setJobPosts(formatted.length > 0 ? formatted : [])
+      setJobPosts(formatted.length > 0 ? formatted : []);
     } catch (e) {
-      console.error('Failed to load job posts from API, falling back to mock/local:', e)
+      console.error(
+        "Failed to load job posts from API, falling back to mock/local:",
+        e,
+      );
 
-      const savedJobPosts = localStorage.getItem('jobPosts')
+      const savedJobPosts = localStorage.getItem("jobPosts");
       if (savedJobPosts) {
         try {
-          const posts = JSON.parse(savedJobPosts)
+          const posts = JSON.parse(savedJobPosts);
           const formattedPosts = posts.map((post: any) => {
-            const createdAt = post.createdAt || new Date().toISOString()
+            const createdAt = post.createdAt || new Date().toISOString();
             return {
               id: post.id || Date.now().toString(),
-              title: post.jobTitle || post.title || 'Untitled Job Post',
-              companyName: post.companyName || 'Company Name',
-              companyLogo: (post.companyName || 'Company').substring(0, 2).toUpperCase(),
-              companyLogoImage: post.companyLogoImage || post.companyLogo || '',
-              companyEmail: post.companyEmail || 'info@trinitythai.com',
-              location: post.locationProvince || post.location || 'Bangkok',
+              title: post.jobTitle || post.title || "Untitled Job Post",
+              companyName: post.companyName || "Company Name",
+              companyLogo: (post.companyName || "Company")
+                .substring(0, 2)
+                .toUpperCase(),
+              companyLogoImage: post.companyLogoImage || post.companyLogo || "",
+              companyEmail: post.companyEmail || "info@trinitythai.com",
+              location:
+                (post as any).LocationProvince?.name ||
+                post.locationProvince ||
+                "Not specified",
               workType:
-                post.workplaceType === 'on-site'
-                  ? 'On-Site'
-                  : post.workplaceType === 'hybrid'
-                  ? 'Hybrid'
-                  : post.workplaceType === 'remote'
-                  ? 'Remote'
-                  : 'On-Site',
-              secondaryTag: post.jobType ? toTitleCase(post.jobType) : 'AI Developer',
+                post.workplaceType === "on-site"
+                  ? "On-Site"
+                  : post.workplaceType === "hybrid"
+                    ? "Hybrid"
+                    : post.workplaceType === "remote"
+                      ? "Remote"
+                      : "On-Site",
+              positions: Array.isArray(post.positions) ? post.positions : [],
               applicantsCount: post.applicantsCount || 0,
-              allowance: post.allowance ? `${post.allowance} THB` : 'No allowance',
+              allowance: post.allowance
+                ? `${post.allowance} THB`
+                : "No allowance",
               postedDate: getRelativeTimeLabel(createdAt),
-              isOpen: post.state !== 'CLOSED',
+              isOpen: post.state !== "CLOSED",
               createdAt,
-            } as JobPost
-          })
-          setJobPosts(formattedPosts.length > 0 ? formattedPosts : mockJobPosts)
-          return
+            } as JobPost;
+          });
+          setJobPosts(
+            formattedPosts.length > 0 ? formattedPosts : mockJobPosts,
+          );
+          return;
         } catch (err) {
-          console.error('Failed to parse job posts localStorage fallback:', err)
+          console.error(
+            "Failed to parse job posts localStorage fallback:",
+            err,
+          );
         }
       }
 
-      setJobPosts(mockJobPosts)
+      setJobPosts(mockJobPosts);
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
-    loadJobPosts()
-  }, [loadJobPosts])
+    loadJobPosts();
+  }, [loadJobPosts]);
 
   useEffect(() => {
-    if (searchParams.get('create') === '1') {
-      setShowCreateModal(true)
+    if (searchParams.get("create") === "1") {
+      setShowCreateModal(true);
     }
-  }, [searchParams])
+  }, [searchParams]);
 
   useEffect(() => {
     const handleOpenModal = () => {
-      setCreateJobPostError(null)
-      setShowCreateModal(true)
-    }
+      setCreateJobPostError(null);
+      setShowCreateModal(true);
+    };
 
-    window.addEventListener('openCreateJobPostModal', handleOpenModal)
+    window.addEventListener("openCreateJobPostModal", handleOpenModal);
     return () => {
-      window.removeEventListener('openCreateJobPostModal', handleOpenModal)
-    }
-  }, [])
+      window.removeEventListener("openCreateJobPostModal", handleOpenModal);
+    };
+  }, []);
 
   const filteredJobPosts = jobPosts
     .filter((post) => {
-      const query = searchQuery.toLowerCase()
+      const query = searchQuery.toLowerCase();
       const matchesSearch =
         post.title.toLowerCase().includes(query) ||
-        post.companyName.toLowerCase().includes(query)
+        post.companyName.toLowerCase().includes(query);
 
-      if (activeFilter === 'open') return matchesSearch && post.isOpen
-      if (activeFilter === 'closed') return matchesSearch && !post.isOpen
-      return matchesSearch
+      if (activeFilter === "open") return matchesSearch && post.isOpen;
+      if (activeFilter === "closed") return matchesSearch && !post.isOpen;
+      return matchesSearch;
     })
     .sort((a, b) => {
-      if (activeFilter === 'latest') {
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      if (activeFilter === "latest") {
+        return (
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
       }
-      return 0
-    })
+      return 0;
+    });
 
   const handleDeleteClick = (post: JobPost) => {
-    setJobToDelete(post)
-    setShowDeleteModal(true)
-  }
+    setJobToDelete(post);
+    setShowDeleteModal(true);
+  };
 
   const handleToggleStatus = async (post: JobPost) => {
-    if (togglingPostId === post.id) return
+    if (togglingPostId === post.id) return;
 
-    const nextIsOpen = !post.isOpen
-    const nextState = nextIsOpen ? 'PUBLISHED' : 'CLOSED'
+    const nextIsOpen = !post.isOpen;
+    const nextState = nextIsOpen ? "PUBLISHED" : "CLOSED";
 
-    setJobPostActionError(null)
-    setTogglingPostId(post.id)
-    setJobPosts((prev) => prev.map((item) => (item.id === post.id ? { ...item, isOpen: nextIsOpen } : item)))
+    setJobPostActionError(null);
+    setTogglingPostId(post.id);
+    setJobPosts((prev) =>
+      prev.map((item) =>
+        item.id === post.id ? { ...item, isOpen: nextIsOpen } : item,
+      ),
+    );
 
     try {
       const response = await apiFetch<{
-        success: boolean
+        success: boolean;
         jobPost?: {
-          state?: string | null
-        } | null
+          state?: string | null;
+        } | null;
       }>(`/api/job-posts/${post.id}`, {
-        method: 'PUT',
+        method: "PUT",
         body: JSON.stringify({ state: nextState }),
-      })
+      });
 
-      const resolvedIsOpen = response.jobPost?.state ? response.jobPost.state !== 'CLOSED' : nextIsOpen
-      setJobPosts((prev) => prev.map((item) => (item.id === post.id ? { ...item, isOpen: resolvedIsOpen } : item)))
+      const resolvedIsOpen = response.jobPost?.state
+        ? response.jobPost.state !== "CLOSED"
+        : nextIsOpen;
+      setJobPosts((prev) =>
+        prev.map((item) =>
+          item.id === post.id ? { ...item, isOpen: resolvedIsOpen } : item,
+        ),
+      );
     } catch (error) {
-      console.error('Failed to toggle job post status:', error)
-      setJobPosts((prev) => prev.map((item) => (item.id === post.id ? { ...item, isOpen: post.isOpen } : item)))
-      setJobPostActionError(error instanceof Error ? error.message : 'Failed to update job post status')
+      console.error("Failed to toggle job post status:", error);
+      setJobPosts((prev) =>
+        prev.map((item) =>
+          item.id === post.id ? { ...item, isOpen: post.isOpen } : item,
+        ),
+      );
+      setJobPostActionError(
+        error instanceof Error
+          ? error.message
+          : "Failed to update job post status",
+      );
     } finally {
-      setTogglingPostId((current) => (current === post.id ? null : current))
+      setTogglingPostId((current) => (current === post.id ? null : current));
     }
-  }
+  };
 
   const handleConfirmDelete = async () => {
-    if (!jobToDelete) return
+    if (!jobToDelete) return;
     try {
-      await apiFetch(`/api/job-posts/${jobToDelete.id}`, { method: 'DELETE' })
-      setJobPosts((prev) => prev.filter((p) => p.id !== jobToDelete.id))
+      await apiFetch(`/api/job-posts/${jobToDelete.id}`, { method: "DELETE" });
+      setJobPosts((prev) => prev.filter((p) => p.id !== jobToDelete.id));
     } catch (e) {
-      console.error('Failed to delete job post:', e)
+      console.error("Failed to delete job post:", e);
     } finally {
-      setShowDeleteModal(false)
-      setJobToDelete(null)
+      setShowDeleteModal(false);
+      setJobToDelete(null);
     }
-  }
+  };
 
   const handleCancelDelete = () => {
-    setShowDeleteModal(false)
-    setJobToDelete(null)
-  }
+    setShowDeleteModal(false);
+    setJobToDelete(null);
+  };
 
   const handleOpenCreateModal = () => {
-    setCreateJobPostError(null)
-    setEditingJobPostId(null)
-    setEditingInitialValues(null)
-    setShowCreateModal(true)
-  }
+    setCreateJobPostError(null);
+    setEditingJobPostId(null);
+    setEditingInitialValues(null);
+    setShowCreateModal(true);
+  };
 
   const handleCloseCreateModal = () => {
-    setShowCreateModal(false)
-    setEditingJobPostId(null)
-    setEditingInitialValues(null)
-    if (searchParams.get('create') === '1') {
-      if (typeof window !== 'undefined') {
-        window.history.replaceState({}, '', '/employer/job-post')
+    setShowCreateModal(false);
+    setEditingJobPostId(null);
+    setEditingInitialValues(null);
+    if (searchParams.get("create") === "1") {
+      if (typeof window !== "undefined") {
+        window.history.replaceState({}, "", "/employer/job-post");
       }
     }
-  }
+  };
 
-  const toWorkplaceValue = (value: string | null | undefined): CreateJobPostModalValues['workplaceType'] =>
-    value === 'HYBRID'
-      ? 'hybrid'
-      : value === 'REMOTE'
-      ? 'remote'
-      : value === 'ON_SITE'
-      ? 'on-site'
-      : value === 'hybrid'
-      ? 'hybrid'
-      : value === 'remote'
-      ? 'remote'
-      : 'on-site'
+  const toWorkplaceValue = (
+    value: string | null | undefined,
+  ): CreateJobPostModalValues["workplaceType"] =>
+    value === "HYBRID"
+      ? "hybrid"
+      : value === "REMOTE"
+        ? "remote"
+        : value === "ON_SITE"
+          ? "on-site"
+          : value === "hybrid"
+            ? "hybrid"
+            : value === "remote"
+              ? "remote"
+              : "on-site";
 
-  const toAllowancePeriodValue = (value: string | null | undefined): CreateJobPostModalValues['allowancePeriod'] =>
-    value === 'WEEK'
-      ? 'Week'
-      : value === 'DAY'
-      ? 'Day'
-      : 'Month'
+  const toAllowancePeriodValue = (
+    value: string | null | undefined,
+  ): CreateJobPostModalValues["allowancePeriod"] =>
+    value === "WEEK" ? "Week" : value === "DAY" ? "Day" : "Month";
 
   const handleEditJobPost = async (postId: string) => {
-    setCreateJobPostError(null)
-    setJobPostActionError(null)
-    setEditingJobPostId(postId)
-    setShowCreateModal(true)
+    setCreateJobPostError(null);
+    setJobPostActionError(null);
+    setEditingJobPostId(postId);
+    setShowCreateModal(true);
 
     try {
-      const response = await apiFetch<{ jobPost: EditJobPostDetails }>(`/api/job-posts/${postId}`)
-      const jobPost = response.jobPost
+      const response = await apiFetch<{ jobPost: EditJobPostDetails }>(
+        `/api/job-posts/${postId}`,
+      );
+      const jobPost = response.jobPost;
 
       setEditingInitialValues({
-        jobTitle: jobPost.jobTitle || '',
+        jobTitle: jobPost.jobTitle || "",
         workplaceType: toWorkplaceValue(jobPost.workplaceType),
-        positionsAvailable: jobPost.positionsAvailable != null ? String(jobPost.positionsAvailable) : '',
-        allowance: jobPost.allowance ? String(jobPost.allowance) : '',
+        positionsAvailable:
+          jobPost.positionsAvailable != null
+            ? String(jobPost.positionsAvailable)
+            : "",
+        allowance: jobPost.allowance ? String(jobPost.allowance) : "",
         allowancePeriod: toAllowancePeriodValue(jobPost.allowancePeriod),
-        gpa: jobPost.gpa || '',
-        jobDescription: jobPost.jobDescription || '',
-        jobSpecification: jobPost.jobSpecification || '',
-      })
+        gpa: jobPost.gpa || "",
+        jobDescription: jobPost.jobDescription || "",
+        jobSpecification: jobPost.jobSpecification || "",
+        positions: jobPost.positions ?? [],
+        preferredLocation: jobPost.locationProvinceId || "",
+        workingDaysHours: jobPost.workingDaysHours || "",
+      });
     } catch (error) {
-      console.error('Failed to load job post for editing:', error)
-      setCreateJobPostError(error instanceof Error ? error.message : 'Failed to load job post')
-      setShowCreateModal(false)
-      setEditingJobPostId(null)
-      setEditingInitialValues(null)
+      console.error("Failed to load job post for editing:", error);
+      setCreateJobPostError(
+        error instanceof Error ? error.message : "Failed to load job post",
+      );
+      setShowCreateModal(false);
+      setEditingJobPostId(null);
+      setEditingInitialValues(null);
     }
-  }
+  };
 
   const handleCreateJobPost = async (values: CreateJobPostModalValues) => {
-    if (isCreatingJobPost) return
-    setIsCreatingJobPost(true)
-    setCreateJobPostError(null)
+    if (isCreatingJobPost) return;
+    setIsCreatingJobPost(true);
+    setCreateJobPostError(null);
 
     try {
       const payload = {
         jobTitle: values.jobTitle,
         workplaceType: values.workplaceType,
-        jobType: 'Internship',
         positionsAvailable: values.positionsAvailable.trim(),
-        allowance: values.allowance.replace(/,/g, '').trim(),
+        allowance: values.allowance.replace(/,/g, "").trim(),
         allowancePeriod: values.allowancePeriod,
         gpa: values.gpa.trim(),
         noAllowance: !values.allowance.trim(),
-        jobPostStatus: 'urgent',
         jobDescription: values.jobDescription,
         jobSpecification: values.jobSpecification,
-        locationProvince: '',
-        locationDistrict: '',
-        ...(editingJobPostId ? {} : { state: 'PUBLISHED' }),
-      }
+        positions: values.positions ?? [],
+        workingDaysHours: values.workingDaysHours || null,
+        preferredLocation: values.preferredLocation || "",
+        ...(editingJobPostId ? {} : { state: "PUBLISHED" }),
+      };
 
       const response = await apiFetch<{
-        success: boolean
+        success: boolean;
         jobPost: {
-          id: string
-          jobTitle?: string | null
-          workplaceType?: string | null
-          jobType?: string | null
-          allowance?: number | null
-          noAllowance?: boolean | null
-          state?: string | null
-          createdAt?: string | null
-          updatedAt?: string | null
-          locationProvince?: string | null
-          locationDistrict?: string | null
+          id: string;
+          jobTitle?: string | null;
+          workplaceType?: string | null;
+          jobType?: string | null;
+          allowance?: number | null;
+          noAllowance?: boolean | null;
+          state?: string | null;
+          createdAt?: string | null;
+          updatedAt?: string | null;
+          locationProvince?: string | null;
+          locationDistrict?: string | null;
           Company?: {
-            companyName?: string | null
-            logoURL?: string | null
-          } | null
-        }
-      }>(editingJobPostId ? `/api/job-posts/${editingJobPostId}` : '/api/job-posts', {
-        method: editingJobPostId ? 'PUT' : 'POST',
-        body: JSON.stringify(payload),
-      })
+            companyName?: string | null;
+            logoURL?: string | null;
+          } | null;
+        };
+      }>(
+        editingJobPostId
+          ? `/api/job-posts/${editingJobPostId}`
+          : "/api/job-posts",
+        {
+          method: editingJobPostId ? "PUT" : "POST",
+          body: JSON.stringify(payload),
+        },
+      );
 
-      const createdPost = response.jobPost
-      const companyName = createdPost.Company?.companyName || jobPosts[0]?.companyName || 'Company Name'
-      const companyLogoImage = createdPost.Company?.logoURL || jobPosts[0]?.companyLogoImage || ''
-      const companyEmail = jobPosts[0]?.companyEmail || 'info@trinitythai.com'
-      const createdAt = createdPost.createdAt || createdPost.updatedAt || new Date().toISOString()
+      const createdPost = response.jobPost;
+      const companyName =
+        createdPost.Company?.companyName ||
+        jobPosts[0]?.companyName ||
+        "Company Name";
+      const companyLogoImage =
+        createdPost.Company?.logoURL || jobPosts[0]?.companyLogoImage || "";
+      const companyEmail = jobPosts[0]?.companyEmail || "info@trinitythai.com";
+      const createdAt =
+        createdPost.createdAt ||
+        createdPost.updatedAt ||
+        new Date().toISOString();
       const createdAllowance =
         createdPost.noAllowance || !createdPost.allowance
-          ? 'No allowance'
-          : `${Number(createdPost.allowance).toLocaleString()} THB`
+          ? "No allowance"
+          : `${Number(createdPost.allowance).toLocaleString()} THB`;
 
       const optimisticPost: JobPost = {
         id: createdPost.id,
-        title: createdPost.jobTitle || values.jobTitle || 'Untitled Job Post',
+        title: createdPost.jobTitle || values.jobTitle || "Untitled Job Post",
         companyName,
         companyLogo: companyName.substring(0, 2).toUpperCase(),
         companyLogoImage,
         companyEmail,
-        location: createdPost.locationProvince || createdPost.locationDistrict || 'Bangkok',
+        location:
+          createdPost.locationProvince ||
+          createdPost.locationDistrict ||
+          "Bangkok",
         workType: formatWorkTypeLabel(createdPost.workplaceType),
-        secondaryTag: createdPost.jobType ? toTitleCase(createdPost.jobType) : 'Internship',
+        positions: values.positions ?? [], 
+        secondaryTag: createdPost.jobType
+          ? toTitleCase(createdPost.jobType)
+          : "Internship",
         applicantsCount: 0,
         allowance: createdAllowance,
-        postedDate: 'just now',
-        isOpen: createdPost.state !== 'CLOSED',
+        postedDate: "just now",
+        isOpen: createdPost.state !== "CLOSED",
         createdAt,
-      }
+      };
 
       setJobPosts((prev) => {
         const next = editingJobPostId
-          ? prev.map((post) => (post.id === optimisticPost.id ? optimisticPost : post))
-          : [optimisticPost, ...prev.filter((post) => post.id !== optimisticPost.id)]
-        return next
-      })
+          ? prev.map((post) =>
+              post.id === optimisticPost.id ? optimisticPost : post,
+            )
+          : [
+              optimisticPost,
+              ...prev.filter((post) => post.id !== optimisticPost.id),
+            ];
+        return next;
+      });
 
-      void loadJobPosts()
-      handleCloseCreateModal()
+      void loadJobPosts();
+      handleCloseCreateModal();
     } catch (error) {
-      console.error('Failed to create job post:', error)
-      setCreateJobPostError(error instanceof Error ? error.message : editingJobPostId ? 'Failed to update job post' : 'Failed to create job post')
+      console.error("Failed to create job post:", error);
+      setCreateJobPostError(
+        error instanceof Error
+          ? error.message
+          : editingJobPostId
+            ? "Failed to update job post"
+            : "Failed to create job post",
+      );
     } finally {
-      setIsCreatingJobPost(false)
+      setIsCreatingJobPost(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-[#F6F7FB]">
@@ -481,8 +570,18 @@ export default function JobPostPage() {
               <div className="flex items-center gap-3 pt-[4px]">
                 <div className="relative">
                   <div className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2">
-                    <svg className="h-5 w-5 text-[#6B7280]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    <svg
+                      className="h-5 w-5 text-[#6B7280]"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
                     </svg>
                   </div>
                   <input
@@ -505,20 +604,23 @@ export default function JobPostPage() {
             </div>
 
             <div className="mb-[16px] flex gap-[6px]">
-              {([
-                ['all', 'All'],
-                ['latest', 'Lastest'],
-                ['open', 'Open'],
-                ['closed', 'Closed'],
-              ] as const).map(([value, label]) => (
+              {(
+                [
+                  ["all", "All"],
+                  ["latest", "Lastest"],
+                  ["open", "Open"],
+                  ["closed", "Closed"],
+                ] as const
+              ).map(([value, label]) => (
                 <button
                   key={value}
                   onClick={() => setActiveFilter(value)}
                   className="h-[36px] rounded-[7px] border px-6 text-[14px] font-semibold transition-colors"
                   style={{
-                    borderColor: activeFilter === value ? '#2563EB' : '#D1D5DB',
-                    backgroundColor: activeFilter === value ? '#FFFFFF' : '#F3F4F6',
-                    color: activeFilter === value ? '#2563EB' : '#111827',
+                    borderColor: activeFilter === value ? "#2563EB" : "#D1D5DB",
+                    backgroundColor:
+                      activeFilter === value ? "#FFFFFF" : "#F3F4F6",
+                    color: activeFilter === value ? "#2563EB" : "#111827",
                   }}
                 >
                   {label}
@@ -558,7 +660,12 @@ export default function JobPostPage() {
             <div className="mb-4 flex justify-center">
               <div className="relative h-16 w-16">
                 <svg className="h-16 w-16" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 2L2 22h20L12 2z" fill="#EF4444" stroke="#DC2626" strokeWidth="2" />
+                  <path
+                    d="M12 2L2 22h20L12 2z"
+                    fill="#EF4444"
+                    stroke="#DC2626"
+                    strokeWidth="2"
+                  />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span className="text-2xl font-bold text-white">!</span>
@@ -566,9 +673,12 @@ export default function JobPostPage() {
               </div>
             </div>
 
-            <h2 className="mb-3 text-center text-xl font-bold text-gray-900">Delete this job post?</h2>
+            <h2 className="mb-3 text-center text-xl font-bold text-gray-900">
+              Delete this job post?
+            </h2>
             <p className="mb-6 text-center text-gray-600">
-              This action will permanently delete this job post and remove all associated applicants.
+              This action will permanently delete this job post and remove all
+              associated applicants.
             </p>
 
             <div className="flex gap-4">
@@ -592,12 +702,12 @@ export default function JobPostPage() {
       <CreateJobPostModal
         isOpen={showCreateModal}
         isSubmitting={isCreatingJobPost}
-        title={editingJobPostId ? 'Edit Job Post' : 'Create Job Post'}
-        submitLabel={editingJobPostId ? 'Save Changes' : 'Create Job Post'}
+        title={editingJobPostId ? "Edit Job Post" : "Create Job Post"}
+        submitLabel={editingJobPostId ? "Save Changes" : "Create Job Post"}
         initialValues={editingInitialValues ?? undefined}
         onClose={handleCloseCreateModal}
         onSubmit={handleCreateJobPost}
       />
     </div>
-  )
+  );
 }

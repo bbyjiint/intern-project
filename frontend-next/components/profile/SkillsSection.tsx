@@ -1,23 +1,35 @@
 "use client";
 
-import { Skill } from "@/hooks/useProfile";
+import { Skill, Certificate, Project } from "@/hooks/useProfile";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 interface SkillsSectionProps {
   skills: Skill[];
+  certificates?: Certificate[];
+  projects?: Project[];
   onAdd?: () => void;
   onEdit?: (id: string) => void;
+  onRefresh?: () => void;
 }
 
 export default function SkillsSection({
   skills,
+  certificates = [],
+  projects = [],
   onAdd,
   onEdit,
+  onRefresh,
 }: SkillsSectionProps) {
   const router = useRouter();
 
-  // 💡 จัดกลุ่มตาม Category ใหม่ที่ตั้งไว้ใน DB
+  const certSkillNames = new Set(certificates.flatMap((c) => c.tags || []));
+  const projectSkillNames = new Set(
+    projects.flatMap(
+      (p) => (p as any).relatedSkills || (p as any).skills || [],
+    ),
+  );
+
   const technicalSkills = skills.filter(
     (s) =>
       s.category?.toUpperCase() === "TECHNICAL" ||
@@ -29,27 +41,46 @@ export default function SkillsSection({
       s.category === "Business Skills",
   );
 
+  // ไอคอนวงกลมติ๊กถูกสีเหลือง
+  const YellowCheck = () => (
+    <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-[#FFC456] flex-shrink-0">
+      <svg
+        className="w-2.5 h-2.5 text-white"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={3}
+          d="M5 13l4 4L19 7"
+        />
+      </svg>
+    </span>
+  );
+
   const SkillItem = ({ skill }: { skill: Skill }) => {
-    // 💡 ปรับการคำนวณ % ตาม Rating (1, 2, 3) หรือ Level ("Beginner", "Intermediate", "Advanced")
     let percentage = 33.33;
-    let color = "#68B383"; // เขียว Beginner
+    let color = "#68B383";
 
     if (skill.rating === 2 || skill.level === "Intermediate") {
       percentage = 66.66;
-      color = "#3B82F6"; // ฟ้า Intermediate
+      color = "#3B82F6";
     } else if (skill.rating === 3 || skill.level === "Advanced") {
       percentage = 100;
-      color = "#8B5CF6"; // ม่วง Advanced
+      color = "#8B5CF6";
     }
 
-    // ค่าสมมติว่าถ้าผ่านการ Test ค่อยเป็น true (ปรับได้ตาม Business Logic ของคุณ)
     const isVerified = false;
+    const hasCertEvidence = certSkillNames.has(skill.name);
+    const hasProjectEvidence = projectSkillNames.has(skill.name);
 
     return (
       <div className="mb-6 last:mb-0">
-        <div className="flex items-center justify-between mb-1">
+        <div className="flex items-center justify-between mb-1 flex-wrap gap-y-1">
           <span className="font-bold text-gray-900">{skill.name}</span>
-          <div className="flex items-center gap-2 text-xs">
+          <div className="flex items-center gap-2 text-xs flex-wrap justify-end">
             {!isVerified ? (
               <>
                 <Link
@@ -58,22 +89,37 @@ export default function SkillsSection({
                 >
                   &gt;&gt; Click here to Verified Skill
                 </Link>
-                <span className="flex items-center gap-1 text-red-500 font-semibold">
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  Not Verified
-                </span>
+                {hasCertEvidence && hasProjectEvidence ? (
+                  <span className="flex items-center gap-1 text-[#6B7280] font-medium">
+                    <YellowCheck />
+                    Evidence By Project & Certificate
+                  </span>
+                ) : hasCertEvidence ? (
+                  <span className="flex items-center gap-1 text-[#6B7280] font-medium">
+                    <YellowCheck />
+                    Evidence By Certificate
+                  </span>
+                ) : hasProjectEvidence ? (
+                  <span className="flex items-center gap-1 text-[#6B7280] font-medium">
+                    <YellowCheck />
+                    Evidence By Project
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-1 text-[#6B7280] font-medium">
+                    <svg
+                      className="w-4 h-4 text-red-400"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                    Not Verified
+                  </span>
+                )}
               </>
             ) : (
               <span className="flex items-center gap-1 text-green-600 font-bold">
@@ -94,7 +140,6 @@ export default function SkillsSection({
           </div>
         </div>
 
-        {/* 💡 Progress Bar ปรับสีตามความเก่ง */}
         <div className="relative w-full h-2.5 bg-gray-100 rounded-full overflow-hidden mb-1 flex">
           <div className="absolute inset-0 flex">
             <div className="h-full w-1/3 border-r border-white/50 z-20"></div>
@@ -107,7 +152,7 @@ export default function SkillsSection({
           ></div>
         </div>
 
-        <p className="text-[11px] font-bold mt-1" style={{ color: color }}>
+        <p className="text-[12px] font-medium mt-1" style={{ color: color }}>
           Level:{" "}
           {skill.level ||
             (percentage <= 33.33
@@ -139,7 +184,6 @@ export default function SkillsSection({
       </div>
 
       <div className="space-y-4">
-        {/* Technical Skills */}
         <div className="bg-gray-50/50 border border-gray-100 rounded-xl p-6">
           <h3 className="text-lg font-bold text-gray-800 mb-6">
             Technical Skills
@@ -153,7 +197,6 @@ export default function SkillsSection({
           )}
         </div>
 
-        {/* Business Skills */}
         <div className="bg-gray-50/50 border border-gray-100 rounded-xl p-6">
           <h3 className="text-lg font-bold text-gray-800 mb-6">
             Business Skills

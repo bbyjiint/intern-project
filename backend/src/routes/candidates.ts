@@ -233,8 +233,8 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
         startDate: project.startDate || "",
         endDate: project.endDate || "",
         relatedSkills: project.relatedSkills || [],
-        githubUrl: project.githubUrl || "",   // ← เพิ่ม
-        projectUrl: project.projectUrl || "", // ← เพิ่ม
+        githubUrl: project.githubUrl || "",   
+        projectUrl: project.projectUrl || "", 
         fileUrl: project.fileUrl || "",
         fileName: project.fileName || "",
       })),

@@ -237,7 +237,7 @@ model CompanyProfile {
   updatedAt         DateTime
   CompanyEmails     CompanyEmail[] @relation("CompanyEmails")
   CompanyPhones     CompanyPhone[] @relation("CompanyPhones")
-  JobPosts          JobPost[]
+  JobPosts          JobPost[] 
   Bookmarks         Bookmark[]
   Conversations     Conversation[]
   User              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -282,11 +282,6 @@ enum AllowancePeriod {
   DAY
 }
 
-enum JobPostStatus {
-  URGENT
-  NOT_URGENT
-}
-
 enum JobPostState {
   DRAFT
   PUBLISHED
@@ -310,18 +305,14 @@ model JobPost {
   companyId         String                 @db.Uuid
   jobTitle          String
   locationProvince  String?
-  locationDistrict  String?
-  jobType           String?
   positionsAvailable Int?
   gpa               String?
   workplaceType     WorkplaceType          @default(ON_SITE)
   allowance         Float?
   allowancePeriod   AllowancePeriod?
   noAllowance       Boolean                @default(false)
-  jobPostStatus     JobPostStatus          @default(NOT_URGENT)
   jobDescription    String?
   jobSpecification  String?
-  rejectionMessage  String?
   state             JobPostState           @default(DRAFT)
   createdAt         DateTime               @default(now())
   updatedAt         DateTime               @updatedAt
@@ -330,6 +321,10 @@ model JobPost {
   Applications      JobApplication[]
   Bookmarks         JobBookmark[]
   Ignores           JobIgnore[]
+  positions         String[]    @default([])   
+  workingDaysHours  String? 
+  locationProvinceId String?   @db.Uuid
+  LocationProvince   Province? @relation("JobPostProvince", fields: [locationProvinceId], references: [id], onDelete: SetNull)               
 
   @@index([companyId])
   @@index([state])
@@ -470,6 +465,7 @@ model Province {
   Districts District[]
   CompanyProfiles CompanyProfile[]
   CandidatePreferredProvince CandidatePreferredProvince[]
+  JobPosts    JobPost[] @relation("JobPostProvince")
 
   @@map("Province")
   @@index([code])

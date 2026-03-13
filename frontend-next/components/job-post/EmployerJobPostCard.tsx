@@ -1,34 +1,34 @@
-'use client'
+"use client";
 
 export interface EmployerJobPostCardData {
-  id: string
-  title: string
-  companyName: string
-  companyLogo: string
-  companyLogoImage?: string
-  companyEmail: string
-  location: string
-  workType: string
-  secondaryTag: string
-  applicantsCount: number
-  allowance: string
-  postedDate: string
-  isOpen: boolean
+  id: string;
+  title: string;
+  companyName: string;
+  companyLogo: string;
+  companyLogoImage?: string;
+  companyEmail: string;
+  location: string;
+  workType: string;
+  positions: string[];
+  applicantsCount: number;
+  allowance: string;
+  postedDate: string;
+  isOpen: boolean;
 }
 
 interface EmployerJobPostCardProps {
-  post: EmployerJobPostCardData
-  onToggleStatus: () => void
-  onDelete: () => void
-  onEdit: () => void
-  isTogglePending?: boolean
+  post: EmployerJobPostCardData;
+  onToggleStatus: () => void;
+  onDelete: () => void;
+  onEdit: () => void;
+  isTogglePending?: boolean;
 }
 
 const workTypeStyles: Record<string, string> = {
-  'On-Site': '#F4C14D',
-  Hybrid: '#3B82F6',
-  Remote: '#F4C14D',
-}
+  "On-Site": "#F4C14D",
+  Hybrid: "#3B82F6",
+  Remote: "#F85454",
+};
 
 export default function EmployerJobPostCard({
   post,
@@ -56,14 +56,18 @@ export default function EmployerJobPostCard({
           </div>
 
           <div className="min-w-0 pt-[1px]">
-            <h2 className="truncate text-[15px] font-bold leading-tight text-[#111827]">
+            <h2 className="truncate text-[15px] font-bold leading-tight text-[#111827]" title={post.companyName}>
               {post.companyName}
             </h2>
-            <p className="mt-[2px] text-[12px] text-[#8B94A7]">{post.companyEmail}</p>
+            <p className="mt-[2px] text-[12px] text-[#8B94A7]">
+              {post.companyEmail}
+            </p>
           </div>
         </div>
 
-        <span className="shrink-0 pt-[2px] text-[12px] text-[#C2C8D3]">{post.postedDate}</span>
+        <span className="shrink-0 pt-[2px] text-[12px] text-[#C2C8D3]">
+          {post.postedDate}
+        </span>
       </div>
 
       <h3 className="mb-[7px] min-h-[34px] text-[16px] font-bold leading-snug text-[#111827]">
@@ -72,14 +76,32 @@ export default function EmployerJobPostCard({
 
       <div className="mb-[10px] flex min-h-[30px] flex-wrap gap-[8px]">
         <span
-          className="rounded-[8px] px-[14px] py-[5px] text-[12px] font-semibold text-white"
-          style={{ backgroundColor: workTypeStyles[post.workType] || '#94A3B8' }}
+          className="rounded-[8px] px-[14px] py-[2px] text-[12px] font-semibold text-white inline-flex items-center"
+          style={{
+            backgroundColor: workTypeStyles[post.workType] || "#94A3B8",
+          }}
         >
           {post.workType}
         </span>
-        <span className="rounded-[8px] bg-[#E5E7EB] px-[14px] py-[5px] text-[12px] font-semibold text-[#4B5563]">
-          {post.secondaryTag}
-        </span>
+        {post.positions.slice(0, 3).map((pos) => (
+          <span
+            key={pos}
+            className="rounded-[8px] bg-[#E5E7EB] px-[14px] py-[2px] text-[12px] font-semibold text-[#4B5563] inline-flex items-center"
+          >
+            {pos}
+          </span>
+        ))}
+        {post.positions.length > 3 && (
+          <span
+            className="group relative rounded-[8px] bg-[#E5E7EB] px-[14px] py-[5px] text-[12px] font-semibold text-[#4B5563] cursor-default"
+            title={post.positions.slice(3).join(", ")}
+          >
+            ...
+            <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 -translate-x-1/2 whitespace-nowrap rounded-[6px] bg-[#1F2937] px-2 py-1 text-[11px] text-white opacity-0 transition-opacity group-hover:opacity-100">
+              {post.positions.slice(3).join(", ")}
+            </span>
+          </span>
+        )}
       </div>
 
       <div className="grid grid-cols-[150px_1fr] gap-y-[8px]">
@@ -88,7 +110,9 @@ export default function EmployerJobPostCard({
         <p className="text-[12px] text-[#8B94A7]">Position available</p>
         <p className="text-[13px] text-[#6B7280]">{post.applicantsCount}</p>
         <p className="text-[12px] text-[#8B94A7]">Allowance</p>
-        <p className="text-[13px] font-semibold text-[#111827]">{post.allowance}</p>
+        <p className="text-[13px] font-semibold text-[#111827]">
+          {post.allowance}
+        </p>
       </div>
 
       <div className="mt-auto flex items-center justify-between pt-[12px]">
@@ -99,7 +123,7 @@ export default function EmployerJobPostCard({
             onChange={onToggleStatus}
             disabled={isTogglePending}
             className="peer sr-only"
-            aria-label={post.isOpen ? 'Open post' : 'Closed post'}
+            aria-label={post.isOpen ? "Open post" : "Closed post"}
           />
           <div className="h-[24px] w-[44px] rounded-full bg-[#D1D5DB] transition-colors duration-200 peer-checked:bg-[#2563EB] peer-disabled:cursor-not-allowed peer-disabled:opacity-60" />
           <div className="absolute left-[2px] top-[2px] h-[20px] w-[20px] rounded-full bg-white shadow-[0_1px_3px_rgba(15,23,42,0.18)] transition-transform duration-200 peer-checked:translate-x-5" />
@@ -111,8 +135,18 @@ export default function EmployerJobPostCard({
             onClick={onDelete}
             aria-label="Delete job post"
           >
-            <svg className="h-[18px] w-[18px]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 7h12M9 7V5h6v2m-7 4v6m4-6v6m4-6v6M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12" />
+            <svg
+              className="h-[18px] w-[18px]"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 7h12M9 7V5h6v2m-7 4v6m4-6v6m4-6v6M5 7l1 12a2 2 0 002 2h8a2 2 0 002-2l1-12"
+              />
             </svg>
           </button>
 
@@ -126,5 +160,5 @@ export default function EmployerJobPostCard({
         </div>
       </div>
     </div>
-  )
+  );
 }

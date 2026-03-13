@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import InternNavbar from "@/components/InternNavbar";
-import JobCard, {JobPostData} from "@/components/profile/JobCard"; // แก้ Path ให้ตรงกับ Component ที่เราสร้าง
+import JobCard, { JobPostData } from "@/components/profile/JobCard"; // แก้ Path ให้ตรงกับ Component ที่เราสร้าง
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 
@@ -34,13 +34,39 @@ export default function FindCompaniesPage() {
       setLoadError(null);
 
       try {
-        const response = await apiFetch<{ jobPosts: JobPostData[] }>("/api/job-posts/public");
+        const response = await apiFetch<{ jobPosts: JobPostData[] }>(
+          "/api/job-posts/public",
+        );
         if (!isMounted) return;
-        setJobs(response.jobPosts || []);
+        setJobs(
+          (response.jobPosts || []).map((post: any) => ({
+            id: post.id,
+            jobTitle: post.jobTitle,
+            companyName: post.companyName,
+            companyEmail: post.companyEmail || "",
+            companyLogo: post.companyLogo,
+            location: post.location || "Location not specified",
+            workType: post.workType,
+            roleType: "",
+            positions: Array.isArray(post.positions) ? post.positions : [],
+            applicants: post.positionsAvailable || 0,
+            allowance: post.allowance,
+            timeAgo: post.postedDate,
+          })),
+        );
+
+        try {
+          const bmResp = await apiFetch<{ jobIds: string[] }>(
+            "/api/intern/job-bookmarks",
+          );
+          if (isMounted) setBookmarkedJobs(new Set(bmResp.jobIds || []));
+        } catch {}
       } catch (error) {
         if (!isMounted) return;
         console.error("Failed to load public job posts:", error);
-        setLoadError(error instanceof Error ? error.message : "Failed to load job posts");
+        setLoadError(
+          error instanceof Error ? error.message : "Failed to load job posts",
+        );
         setJobs([]);
       } finally {
         if (isMounted) {
@@ -70,14 +96,18 @@ export default function FindCompaniesPage() {
 
   const handleBookmark = async (id: string) => {
     const newBookmarks = new Set(bookmarkedJobs);
-    if (newBookmarks.has(id)) {
-      newBookmarks.delete(id);
-      // TODO: Call API to remove bookmark
-    } else {
-      newBookmarks.add(id);
-      // TODO: Call API to add bookmark
+    try {
+      if (newBookmarks.has(id)) {
+        newBookmarks.delete(id);
+        await apiFetch(`/api/intern/job-bookmarks/${id}`, { method: "DELETE" });
+      } else {
+        newBookmarks.add(id);
+        await apiFetch(`/api/intern/job-bookmarks/${id}`, { method: "POST" });
+      }
+      setBookmarkedJobs(new Set(newBookmarks));
+    } catch (error) {
+      console.error("Failed to update bookmark:", error);
     }
-    setBookmarkedJobs(newBookmarks);
   };
 
   const parseAllowance = (allowanceStr: string) => {
@@ -102,9 +132,10 @@ export default function FindCompaniesPage() {
         job.roleType.toLowerCase().includes(positionFilter.toLowerCase()) ||
         job.jobTitle.toLowerCase().includes(positionFilter.toLowerCase());
 
-      const isHybrid = job.workType === "Hybrid";
-      const isOnSite = job.workType === "On Site";
-      const isRemote = job.workType === "Remote";
+      const workType = job.workType?.toUpperCase().replace(/[-\s]/g, "_");
+      const isHybrid = workType === "HYBRID";
+      const isOnSite = workType === "ON_SITE";
+      const isRemote = workType === "REMOTE";
 
       const matchesFormat =
         (formatFilters.hybrid && isHybrid) ||
@@ -123,7 +154,10 @@ export default function FindCompaniesPage() {
   }, [jobs, searchQuery, positionFilter, formatFilters, minSalary, maxSalary]);
 
   const countWorkType = (type: string) => {
-    return jobs.filter((j) => j.workType === type).length;
+    return jobs.filter((j) => {
+      const wt = j.workType?.toUpperCase().replace(/[-\s]/g, "_");
+      return wt === type.toUpperCase().replace(/[-\s]/g, "_");
+    }).length;
   };
 
   // --- Slider Logic ---
@@ -240,7 +274,7 @@ export default function FindCompaniesPage() {
                   <span className="text-sm text-gray-700">On-Site</span>
                 </div>
                 <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                  {countWorkType("On Site")}
+                  {countWorkType("ON_SITE")}
                 </span>
               </label>
 
@@ -275,7 +309,7 @@ export default function FindCompaniesPage() {
                   <span className="text-sm text-gray-700">Hybrid</span>
                 </div>
                 <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-                  {countWorkType("Hybrid")}
+                  {countWorkType("HYBRID")}
                 </span>
               </label>
 
@@ -310,7 +344,7 @@ export default function FindCompaniesPage() {
                   <span className="text-sm text-gray-700">Remote</span>
                 </div>
                 <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">
-                  {countWorkType("Remote")}
+                  {countWorkType("REMOTE")}
                 </span>
               </label>
             </div>
@@ -452,7 +486,9 @@ export default function FindCompaniesPage() {
 
             {/* Jobs Count */}
             <h2 className="text-[17px] font-extrabold text-gray-900 mb-6">
-              {isLoading ? "Loading job posts..." : `${filteredJobs.length} Total Job Post`}
+              {isLoading
+                ? "Loading job posts..."
+                : `${filteredJobs.length} Total Job Post`}
             </h2>
 
             {/* Job Cards Grid */}
@@ -466,12 +502,12 @@ export default function FindCompaniesPage() {
                 criteria.
               </div>
             ) : (
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-3">
                 {filteredJobs.map((job) => (
                   <JobCard
                     key={job.id}
-                    job={{ ...job, isBookmarked: bookmarkedJobs.has(job.id) }} 
-                    onBookmarkClick={handleBookmark} 
+                    job={{ ...job, isBookmarked: bookmarkedJobs.has(job.id) }}
+                    onBookmarkClick={handleBookmark}
                     onClick={(id) => router.push(`/intern/job-detail/${id}`)}
                     onMenuClick={(id) => console.log("Clicked menu for:", id)}
                   />

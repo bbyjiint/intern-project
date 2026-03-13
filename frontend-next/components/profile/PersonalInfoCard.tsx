@@ -14,34 +14,61 @@ export default function PersonalInfoCard({
   onRefresh,
 }: PersonalInfoCardProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-      // 💡 เพิ่มส่วนนี้เข้าไปครับ
-    useEffect(() => {
-      if (isModalOpen) {
-        document.body.style.overflow = "hidden";
-      } else {
-        document.body.style.overflow = "auto";
-      }
-  
-      // คืนค่าเดิมเมื่อปิดหรือเปลี่ยนหน้า
-      return () => {
-        document.body.style.overflow = "auto";
-      };
-    }, [isModalOpen]);
-  
+
+  useEffect(() => {
+    if (isModalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [isModalOpen]);
 
   const stats = useMemo(() => {
     const skills = profile.skills || [];
     const projects = profile.projects || [];
+    const certificates = profile.certificates || [];
+
+    const educationVerified = false;
+
+    const certSkillNames = new Set(certificates.flatMap((c) => c.tags || []));
+    const projectSkillNames = new Set(
+      projects.flatMap((p) => (p as any).relatedSkills || (p as any).skills || []),
+    );
+
+    const verifiedCertificate = skills.filter((s) =>
+      certSkillNames.has(s.name),
+    ).length;
+
+    const verifiedProject = skills.filter((s) =>
+      projectSkillNames.has(s.name),
+    ).length;
+
+    const notVerifiedSkills = skills.filter(
+      (s) => !certSkillNames.has(s.name) && !projectSkillNames.has(s.name),
+    ).length;
+
+    const projectUploaded = projects.filter((p) => !!(p as any).fileUrl).length;
+    const projectNoFile = projects.length - projectUploaded;
+
+    const badgeStatus =
+      educationVerified && verifiedCertificate > 0 && projectUploaded > 0
+        ? "Verified"
+        : educationVerified || verifiedCertificate > 0 || projectUploaded > 0
+          ? "Partially Verified"
+          : "Not Verified";
 
     return {
-      verifiedSkillTest: skills.filter((s) => s.rating && s.rating > 7).length,
-      verifiedCertificate: skills.filter((s) => s.category === "technical")
-        .length,
-      notVerifiedSkills: skills.filter((s) => !s.rating).length,
-      projectUploaded: projects.filter((p) => p.skills && p.skills.length > 0)
-        .length,
-      projectNoFile: projects.filter((p) => !p.skills || p.skills.length === 0)
-        .length,
+      verifiedSkillTest: 0,
+      verifiedCertificate,
+      verifiedProject,
+      notVerifiedSkills,
+      projectUploaded,
+      projectNoFile,
+      educationVerified,
+      badgeStatus,
     };
   }, [profile]);
 
@@ -50,6 +77,38 @@ export default function PersonalInfoCard({
     : ["Candidate"];
 
   const prefix = profile.gender?.toLowerCase() === "female" ? "Ms." : "Mr.";
+
+  const badgeStyles: Record<string, { bg: string; text: string; border: string }> = {
+    Verified: { bg: "bg-[#F0FDF4]", text: "text-[#16A34A]", border: "border-[#DCFCE7]" },
+    "Partially Verified": { bg: "bg-[#FFFBEB]", text: "text-[#D97706]", border: "border-[#FEF3C7]" },
+    "Not Verified": { bg: "bg-[#FEF2F2]", text: "text-[#DC2626]", border: "border-[#FEE2E2]" },
+  };
+  const badge = badgeStyles[stats.badgeStatus];
+
+  // ไอคอนติ๊กถูกในวงกลมสีเขียว
+  const GreenCheck = () => (
+    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#B2CD6D] flex-shrink-0 ml-0.5">
+      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+      </svg>
+    </span>
+  );
+
+  // ไอคอนติ๊กถูกในวงกลมสีเหลือง
+  const YellowCheck = () => (
+    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#FFC456] flex-shrink-0 ml-0.5">
+      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+      </svg>
+    </span>
+  );
+
+  // ไอคอน X วงกลมสีแดง
+  const RedX = () => (
+    <svg className="w-5 h-5 text-red-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+    </svg>
+  );
 
   return (
     <>
@@ -131,7 +190,9 @@ export default function PersonalInfoCard({
         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
           <div className="flex justify-between items-center px-6 py-4">
             <h3 className="font-bold text-slate-800">AI Validation Status</h3>
-            <span className="flex items-center gap-1.5 px-3 py-1 bg-[#F0FDF4] text-[#4ADE80] border border-[#DCFCE7] rounded-full text-xs font-bold">
+            <span
+              className={`flex items-center gap-1.5 px-3 py-1 ${badge.bg} ${badge.text} border ${badge.border} rounded-full text-xs font-bold`}
+            >
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path
                   fillRule="evenodd"
@@ -139,7 +200,7 @@ export default function PersonalInfoCard({
                   clipRule="evenodd"
                 />
               </svg>
-              Verified
+              {stats.badgeStatus}
             </span>
           </div>
 
@@ -150,20 +211,11 @@ export default function PersonalInfoCard({
                 Education
               </span>
               <div className="flex items-center gap-2 text-sm text-slate-600">
-                <svg
-                  className="w-5 h-5 text-green-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={3}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-                Verified
+                {stats.educationVerified ? (
+                  <><GreenCheck /> Verified</>
+                ) : (
+                  <><RedX /> Not Verified</>
+                )}
               </div>
             </div>
 
@@ -176,49 +228,19 @@ export default function PersonalInfoCard({
               </span>
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2 text-sm text-slate-600">
-                  <svg
-                    className="w-5 h-5 text-green-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={3}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
+                  <GreenCheck />
                   {stats.verifiedSkillTest} Verified By Skill Test
                 </div>
                 <div className="flex items-center gap-2 text-sm text-slate-600">
-                  <svg
-                    className="w-5 h-5 text-green-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={3}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
+                  <YellowCheck />
                   {stats.verifiedCertificate} Evidence By Certificate
                 </div>
                 <div className="flex items-center gap-2 text-sm text-slate-600">
-                  <svg
-                    className="w-5 h-5 text-red-400"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                  <YellowCheck />
+                  {stats.verifiedProject} Evidence By Project
+                </div>
+                <div className="flex items-center gap-2 text-sm text-slate-600">
+                  <RedX />
                   {stats.notVerifiedSkills} Not Verified
                 </div>
               </div>
@@ -233,33 +255,11 @@ export default function PersonalInfoCard({
               </span>
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2 text-sm text-slate-600">
-                  <svg
-                    className="w-5 h-5 text-green-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={3}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
+                  <GreenCheck />
                   {stats.projectUploaded} File Uploaded
                 </div>
                 <div className="flex items-center gap-2 text-sm text-slate-600">
-                  <svg
-                    className="w-5 h-5 text-red-400"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
+                  <RedX />
                   {stats.projectNoFile} No File Uploaded
                 </div>
               </div>

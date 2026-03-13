@@ -1,241 +1,229 @@
-import React from 'react';
+import React from "react";
 
-// โครงสร้างข้อมูลที่จำลองให้คล้ายสิ่งที่ Backend น่าจะส่งมา
 export interface JobPostData {
   id: string;
   jobTitle: string;
   companyName: string;
   companyEmail: string;
-  companyLogo?: string; 
+  companyLogo?: string;
   location: string;
   workType: string;
   roleType: string;
+  positions?: string[];
   applicants: number;
   allowance: string;
-  timeAgo?: string; // เปลี่ยนเป็น Optional เพราะหน้า AI Match ไม่มี TimeAgo
-  status?: "Applied" | "Accept" | "Decline" | null; 
-  isBookmarked?: boolean; 
-  matchPercentage?: number; // เพิ่มสำหรับหน้า AI Match
+  timeAgo?: string;
+  status?: "Applied" | "Accept" | "Decline" | null;
+  isBookmarked?: boolean;
+  matchPercentage?: number;
 }
 
 interface JobCardProps {
   job: JobPostData;
   onBookmarkClick?: (id: string) => void;
   onMenuClick?: (id: string) => void;
-  onClick?: (id: string) => void; 
-  showActions?: boolean; // เพิ่ม Prop ว่าต้องการโชว์ปุ่ม Detail / Apply ไหม
+  onClick?: (id: string) => void;
+  showActions?: boolean;
 }
 
-export default function JobCard({ job, onBookmarkClick, onMenuClick, onClick, showActions = false }: JobCardProps) {
-  // ฟังก์ชันแยกสีของ Tag รูปแบบการทำงาน
-  const getWorkTypeStyle = (type: string) => {
-    switch (type.toLowerCase()) {
-      case "hybrid":
-        return "bg-[#3B82F6] text-white"; 
-      case "on-site":
-        return "bg-[#F59E0B] text-white"; 
-      case "remote":
-        return "bg-[#EF4444] text-white"; 
-      default:
-        return "bg-gray-400 text-white";
-    }
-  };
+const workTypeStyles: Record<string, string> = {
+  Hybrid: "#3B82F6",
+  "On-Site": "#F4C14D",
+  "On-site": "#F4C14D",
+  Remote: "#EF4444",
+};
 
-  // ฟังก์ชัน Render ป้ายสถานะแบบ Outline (ถ้ามีส่งมา)
-  const renderStatusBadge = (status?: string | null) => {
-    if (status === "Accept") {
-      return (
-        <span className="flex items-center gap-1.5 px-3 py-1 bg-[#F0FDF4] text-[#16A34A] border border-[#16A34A] text-xs font-bold rounded-full">
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"></path>
-          </svg>
-          Accept
-        </span>
-      );
-    }
-    if (status === "Decline") {
-      return (
-        <span className="flex items-center gap-1.5 px-3 py-1 bg-[#FEF2F2] text-[#EF4444] border border-[#EF4444] text-xs font-bold rounded-full">
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
-          Decline
-        </span>
-      );
-    }
-    if (status === "Applied") {
-      return (
-        <span className="flex items-center gap-1.5 px-3 py-1 bg-[#F0F7FF] text-[#3B82F6] border border-[#3B82F6] text-xs font-bold rounded-full">
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-          Applied
-        </span>
-      );
-    }
-    return null;
-  };
-
+export default function JobCard({
+  job,
+  onBookmarkClick,
+  onMenuClick,
+  onClick,
+  showActions = false,
+}: JobCardProps) {
   const renderCompanyLogo = () => {
-    if (job.companyLogo && job.companyLogo !== "TRINITY" && job.companyLogo.startsWith("http")) {
+    if (job.companyLogo && job.companyLogo.startsWith("http")) {
       return (
-        <img 
-          src={job.companyLogo} 
-          alt={`${job.companyName} logo`} 
-          className="w-14 h-14 object-cover rounded-lg border border-gray-100"
+        <img
+          src={job.companyLogo}
+          alt={job.companyName}
+          className="h-[31px] w-[31px] rounded-[4px] object-contain"
         />
       );
     }
-
     return (
-      <div className="w-14 h-14 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-        <div className="w-8 h-8 relative flex items-end justify-center">
-          <div className="absolute inset-0 bg-[#1C2D4F]" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }}></div>
-          <div className="absolute inset-[3px] bg-[#E31837]" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }}></div>
-          <span className="text-[4px] font-bold text-white z-10 mb-0.5">TRINITY</span>
-        </div>
+      <div className="flex h-[31px] w-[31px] items-center justify-center rounded-[4px] bg-[#23356E] text-[9px] font-bold text-white">
+        {job.companyName.substring(0, 2).toUpperCase()}
       </div>
     );
   };
 
-  // คำนวณเส้นรอบวงสำหรับ Circular Progress (ถ้ามีค่า matchPercentage ส่งมา)
-  const circumference = 100.5;
-  const strokeDashoffset = job.matchPercentage !== undefined 
-    ? circumference - (job.matchPercentage / 100) * circumference 
-    : 0;
-
   return (
-    <div 
-      className={`bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col h-full ${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
+    <div
+      className={`relative flex h-full min-h-[274px] flex-col rounded-[12px] bg-white px-[20px] py-[18px] shadow-[0_2px_10px_rgba(15,23,42,0.05)] ${onClick ? "cursor-pointer hover:shadow-md transition-shadow" : ""}`}
       onClick={() => onClick && onClick(job.id)}
     >
-      {/* Top Row: Company Info & Match Percent / Status */}
-      <div className="flex justify-between items-start mb-5">
-        <div className="flex items-center space-x-4">
-          {renderCompanyLogo()}
-          <div>
-            <h3 className="text-[17px] font-bold text-gray-900 leading-tight">
+      {/* Top Row */}
+      <div className="mb-[9px] flex items-start justify-between gap-2">
+        <div className="flex items-start gap-[14px]">
+          <div className="flex h-[48px] w-[48px] items-center justify-center overflow-hidden rounded-full bg-[#F3F4F7]">
+            {renderCompanyLogo()}
+          </div>
+          <div className="min-w-0 pt-[1px] max-w-[150px]">
+            <h3
+              className="truncate text-[15px] font-bold leading-tight text-[#111827]"
+              title={job.companyName}
+            >
               {job.companyName}
             </h3>
-            <p className="text-sm text-gray-400 mt-0.5">
+            <p className="mt-[2px] text-[12px] text-[#8B94A7]">
               {job.companyEmail}
             </p>
           </div>
         </div>
-        
-        {/* Right Corner (Status OR Match Percent) */}
-        <div className="flex flex-col items-end space-y-2">
-          
-          {job.status && renderStatusBadge(job.status)}
 
-          {/* AI Match Percentage Ring */}
-          {job.matchPercentage !== undefined && !job.status && (
-            <div className="relative w-[52px] h-[52px] flex items-center justify-center flex-shrink-0">
-              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                <path
-                  className="text-gray-200"
-                  strokeWidth="3.5"
-                  stroke="currentColor"
+        {/* Status Badge + Bookmark มุมบนขวา */}
+        <div className="flex items-center gap-2 shrink-0 mt-1">
+          {job.status && (
+            <span
+              className={`flex items-center gap-1 rounded-full border px-3 py-1 text-[12px] font-semibold ${
+                job.status === "Accept"
+                  ? "border-green-400 text-green-500 bg-green-50"
+                  : job.status === "Decline"
+                    ? "border-red-400 text-red-500 bg-red-50"
+                    : "border-blue-400 text-blue-500 bg-blue-50"
+              }`}
+            >
+              {job.status === "Accept" && (
+                <svg
+                  className="w-3 h-3"
                   fill="none"
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                />
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.5}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              )}
+              {job.status === "Decline" && (
+                <svg
+                  className="w-3 h-3"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.5}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              )}
+              {job.status === "Applied" && (
+                <svg
+                  className="w-3 h-3"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.5}
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              )}
+              {job.status}
+            </span>
+          )}
+          {onBookmarkClick && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onBookmarkClick(job.id);
+              }}
+              className={`shrink-0 pt-[2px] ${job.isBookmarked ? "text-gray-800" : "text-gray-300"} hover:text-gray-600 transition-colors`}
+            >
+              <svg
+                className={`w-5 h-5 ${job.isBookmarked ? "fill-current" : ""}`}
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
                 <path
-                  className="text-[#F59E0B]"
-                  strokeWidth="3.5"
-                  strokeDasharray={`${circumference}, ${circumference}`}
-                  strokeDashoffset={strokeDashoffset}
                   strokeLinecap="round"
-                  stroke="currentColor"
-                  fill="none"
-                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  strokeLinejoin="round"
+                  d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
                 />
               </svg>
-              <span className="absolute text-xs font-bold text-gray-800">
-                {job.matchPercentage}%
-              </span>
-            </div>
-          )}
-
-          {onMenuClick && !job.matchPercentage && (
-             <button 
-              onClick={(e) => { e.stopPropagation(); onMenuClick(job.id); }}
-              className="text-gray-300 hover:text-gray-500 transition-colors mt-1 pr-1"
-             >
-               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                 <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
-               </svg>
-             </button>
+            </button>
           )}
         </div>
       </div>
 
-      {/* Middle Row: Job Title & Bookmark */}
-      <div className="flex justify-between items-center mb-3">
-        <h4 className="text-[19px] font-bold text-black">
-          {job.jobTitle}
-        </h4>
-        
-        {/* Bookmark Icon */}
-        {onBookmarkClick && ( 
-          <button 
-            onClick={(e) => { e.stopPropagation(); onBookmarkClick(job.id); }}
-            className={`${job.isBookmarked ? 'text-gray-800' : 'text-gray-400'} hover:text-gray-800 transition-colors pr-1`}
+      {/* Job Title */}
+      <h2 className="mb-[4px] min-h-[34px] text-[16px] font-bold leading-snug text-[#111827]">
+        {job.jobTitle}
+      </h2>
+
+      {/* Tags */}
+      <div className="mb-[16px] flex min-h-[30px] flex-wrap gap-[8px]">
+        <span
+          className="rounded-[8px] px-[14px] py-[2px] text-[12px] font-semibold text-white inline-flex items-center"
+          style={{ backgroundColor: workTypeStyles[job.workType] || "#94A3B8" }}
+        >
+          {job.workType}
+        </span>
+        {(job.positions && job.positions.length > 0
+          ? job.positions
+          : job.roleType
+            ? [job.roleType]
+            : []
+        )
+          .slice(0, 3)
+          .map((pos) => (
+            <span
+              key={pos}
+              className="rounded-[8px] bg-[#E5E7EB] px-[14px] py-[2px] text-[12px] font-semibold text-[#4B5563] inline-flex items-center"
+            >
+              {pos}
+            </span>
+          ))}
+        {job.positions && job.positions.length > 3 && (
+          <span
+            className="group relative rounded-[8px] bg-[#E5E7EB] px-[14px] py-[2px] text-[12px] font-semibold text-[#4B5563] cursor-default"
+            title={job.positions.slice(3).join(", ")}
           >
-            <svg className={`w-6 h-6 ${job.isBookmarked ? 'fill-current' : ''}`} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-            </svg>
-          </button>
+            ...
+            <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 -translate-x-1/2 whitespace-nowrap rounded-[6px] bg-[#1F2937] px-2 py-1 text-[11px] text-white opacity-0 transition-opacity group-hover:opacity-100">
+              {job.positions.slice(3).join(", ")}
+            </span>
+          </span>
         )}
       </div>
 
-      {/* Tags */}
-      <div className="flex space-x-2 mb-6">
-        <span className={`text-[11px] font-semibold px-4 py-1.5 rounded-md ${getWorkTypeStyle(job.workType)}`}>
-          {job.workType}
-        </span>
-        <span className="bg-[#E5E7EB] text-gray-700 text-[11px] font-semibold px-4 py-1.5 rounded-md">
-          {job.roleType}
-        </span>
+      {/* Details */}
+      <div className="grid grid-cols-[150px_1fr] gap-y-[8px]">
+        <p className="text-[12px] text-[#8B94A7]">Preferred</p>
+        <p className="text-[13px] text-[#6B7280]">{job.location}</p>
+        <p className="text-[12px] text-[#8B94A7]">Number of applicants</p>
+        <p className="text-[13px] text-[#6B7280]">{job.applicants}</p>
+        <p className="text-[12px] text-[#8B94A7]">Allowance</p>
+        <p className="text-[13px] font-semibold text-[#111827]">
+          {job.allowance}
+        </p>
       </div>
 
-      {/* Job Details Grid */}
-      <div className="space-y-3 mb-6 flex-1">
-        <div className="grid grid-cols-[140px_1fr] items-start">
-          <span className="text-gray-400 text-[15px]">Preferred</span>
-          <span className="text-gray-600 text-[15px]">{job.location}</span>
-        </div>
-        <div className="grid grid-cols-[140px_1fr] items-center">
-          <span className="text-gray-400 text-[15px] leading-tight">
-            Position<br />available
-          </span>
-          <span className="text-gray-600 text-[15px]">{job.applicants}</span>
-        </div>
-        <div className="grid grid-cols-[140px_1fr] items-start">
-          <span className="text-gray-400 text-[15px]">Allowance</span>
-          <span className="text-black text-[15px] font-bold">
-            {job.allowance}
-          </span>
-        </div>
-      </div>
-
-      {/* Time Ago Footer (ถ้ามี) */}
-      {job.timeAgo && !showActions && (
-        <div className="text-right mt-auto pt-2 border-t border-transparent">
-          <span className="text-[11px] text-gray-400 font-medium">
-            {job.timeAgo}
-          </span>
-        </div>
-      )}
-
-      {/* Action Buttons Footer (สำหรับหน้า AI Match) */}
-      {showActions && (
-        <div className="grid grid-cols-2 gap-4 mt-auto pt-4 border-t border-transparent">
-          <button className="w-full py-2.5 bg-white border border-gray-300 rounded-lg text-gray-600 font-semibold text-[15px] hover:bg-gray-50 transition-colors">
-            Detail
-          </button>
-          <button className="w-full py-2.5 bg-[#F8FAFC] border border-[#3B82F6] rounded-lg text-[#3B82F6] font-semibold text-[15px] hover:bg-blue-50 transition-colors">
-            Apply
-          </button>
+      {/* Footer: เวลา มุมล่างขวา */}
+      {job.timeAgo && (
+        <div className="mt-auto flex justify-end pt-[12px]">
+          <span className="text-[12px] text-[#C2C8D3]">{job.timeAgo}</span>
         </div>
       )}
     </div>

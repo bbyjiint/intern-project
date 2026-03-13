@@ -18,7 +18,6 @@ export default function InternProfilePage() {
   const router = useRouter()
   const pathname = usePathname()
   
-  // ดึง refetch มาใช้สำหรับอัปเดตข้อมูลใหม่จาก API
   const { profileData, isLoading, completionPercentage, refetch } = useProfile()
   
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false)
@@ -82,7 +81,6 @@ export default function InternProfilePage() {
       <div className="flex flex-1">
         <Sidebar />
 
-        {/* Main Content */}
         <div className="layout-container layout-page flex-1 overflow-y-auto">
           <div className="mx-auto max-w-4xl">
           {isLoading ? (
@@ -116,26 +114,22 @@ export default function InternProfilePage() {
                 </button>
               </div>
 
-              {/* Header */}
               <ProfileHeader 
                 fullName={profileData.fullName || 'User'}
                 currentDate={currentDate}
                 completionPercentage={completionPercentage}
               />
 
-              {/* Personal Information - แก้ไขตรงนี้เพื่อให้อัปเดตทันที */}
               <PersonalInfoCard 
                 profile={profileData}
                 onRefresh={refetch} 
               />
 
-              {/* Resume */}
               <ResumeSection
                 resumeData={profileData.resume}
                 onRefresh={refetch}
               />
 
-              {/* Education */}
               <EducationSection
                 education={profileData.education || []}
                 onAdd={() => {}}
@@ -143,7 +137,6 @@ export default function InternProfilePage() {
                 onRefresh={refetch}
               />
 
-              {/* Projects */}
               <ProjectsSection
                 projects={profileData.projects || []}
                 onAdd={() => {}}
@@ -152,15 +145,16 @@ export default function InternProfilePage() {
                 onRefresh={refetch}
               />
 
-              {/* Skills */}
+              {/* ✅ เพิ่ม certificates และ projects props */}
               <SkillsSection
                 skills={profileData.skills || []}
+                certificates={profileData.certificates || []}
+                projects={profileData.projects || []}
                 onAdd={() => {}}
                 onEdit={(id) => {}}
                 onRefresh={refetch}
               />
 
-              {/* Certificates */}
               <CertificatesSection
                 certificates={profileData.certificates || []}
                 onAdd={() => {}}
