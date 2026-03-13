@@ -27,6 +27,8 @@ type SeededJob = {
   key: string;
   title: string;
   roleType: string;
+  positionsAvailable: number;
+  gpa: string;
   workplaceType: WorkplaceType;
   allowance: number | null;
   allowancePeriod: AllowancePeriod | null;
@@ -138,6 +140,8 @@ const companies: SeededCompany[] = [
         key: "trinity-software",
         title: "Software Engineering Intern",
         roleType: "Software Engineer",
+        positionsAvailable: 2,
+        gpa: ">= 3.00",
         workplaceType: WorkplaceType.HYBRID,
         allowance: 18000,
         allowancePeriod: AllowancePeriod.MONTH,
@@ -151,6 +155,8 @@ const companies: SeededCompany[] = [
         key: "trinity-data",
         title: "Data Analyst Intern",
         roleType: "Data Analyst",
+        positionsAvailable: 1,
+        gpa: ">= 3.20",
         workplaceType: WorkplaceType.ON_SITE,
         allowance: 15000,
         allowancePeriod: AllowancePeriod.MONTH,
@@ -177,6 +183,8 @@ const companies: SeededCompany[] = [
         key: "techverse-frontend",
         title: "Frontend Developer Intern",
         roleType: "Frontend Developer",
+        positionsAvailable: 3,
+        gpa: ">= 3.00",
         workplaceType: WorkplaceType.REMOTE,
         allowance: 20000,
         allowancePeriod: AllowancePeriod.MONTH,
@@ -190,6 +198,8 @@ const companies: SeededCompany[] = [
         key: "techverse-ux",
         title: "UX/UI Design Intern",
         roleType: "UX/UI Designer",
+        positionsAvailable: 2,
+        gpa: ">= 2.80",
         workplaceType: WorkplaceType.HYBRID,
         allowance: 12000,
         allowancePeriod: AllowancePeriod.MONTH,
@@ -216,6 +226,8 @@ const companies: SeededCompany[] = [
         key: "financehub-analyst",
         title: "Financial Analyst Intern",
         roleType: "Financial Analyst",
+        positionsAvailable: 2,
+        gpa: ">= 3.25",
         workplaceType: WorkplaceType.ON_SITE,
         allowance: 22000,
         allowancePeriod: AllowancePeriod.MONTH,
@@ -229,6 +241,8 @@ const companies: SeededCompany[] = [
         key: "financehub-marketing",
         title: "Marketing Intern",
         roleType: "Marketing",
+        positionsAvailable: 1,
+        gpa: ">= 2.75",
         workplaceType: WorkplaceType.HYBRID,
         allowance: null,
         allowancePeriod: null,
@@ -600,6 +614,8 @@ async function upsertCompany(
         locationProvince: address.provinceName,
         locationDistrict: address.districtName,
         jobType: job.roleType,
+        positionsAvailable: job.positionsAvailable,
+        gpa: job.gpa,
         workplaceType: job.workplaceType,
         allowance: job.allowance,
         allowancePeriod: job.allowancePeriod,

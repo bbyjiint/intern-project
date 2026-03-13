@@ -86,6 +86,9 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
           orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
           // ไม่ต้องแก้ — gpa มีอยู่แล้วใน CandidateUniversity model
         },
+        WorkHistory: {
+          orderBy: { startDate: "desc" },
+        },
         UserSkill: {
           include: {
             Skills: {
@@ -330,6 +333,54 @@ candidatesRouter.get("/", requireAuth, requireRole("COMPANY"), async (req, res) 
   });
 
   return res.json({ candidates: items });
+});
+
+candidatesRouter.get("/skills", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
+  const userId = req.user!.id;
+
+  try {
+    const candidateId = await getCandidateIdForUser(userId);
+
+    const skills = await prisma.userSkill.findMany({
+      where: { candidateId },
+      include: {
+        Skills: {
+          select: {
+            name: true,
+            category: true,
+          },
+        },
+      },
+      orderBy: [
+        { updatedAt: "desc" },
+        { createdAt: "desc" },
+      ],
+    });
+
+    const formattedSkills = skills.map((skill) => {
+      const ratingMap: Record<number, string> = {
+        1: "Beginner",
+        2: "Intermediate",
+        3: "Advanced",
+      };
+
+      return {
+        id: skill.id,
+        name: skill.Skills?.name || "Unknown Skill",
+        category: skill.category || skill.Skills?.category || "TECHNICAL",
+        rating: skill.rating,
+        level: ratingMap[skill.rating || 1] || "Beginner",
+      };
+    });
+
+    return res.json({ skills: formattedSkills });
+  } catch (e: any) {
+    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
+      return res.status(404).json({ error: "Candidate profile not found" });
+    }
+    console.error("Error fetching candidate skills:", e);
+    return res.status(500).json({ error: e?.message || "Failed to fetch candidate skills" });
+  }
 });
 
 // Get full candidate profile by ID (for companies to view)
@@ -1378,7 +1429,7 @@ candidatesRouter.post("/resumes", requireAuth, requireRole("CANDIDATE"), (req: A
   }
 });
 
-// Delete a resume
+// Delete a skill
 candidatesRouter.delete("/skills/:id", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
   const userId = req.user!.id;
   const userSkillId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
@@ -1425,6 +1476,10 @@ candidatesRouter.post("/skills", requireAuth, requireRole("CANDIDATE"), async (r
 
   try {
     const candidateId = await getCandidateIdForUser(userId);
+    const normalizedCategory =
+      typeof category === "string" && category.toUpperCase() === "BUSINESS"
+        ? "BUSINESS"
+        : "TECHNICAL";
 
     let skill = await prisma.skills.findFirst({
       where: {
@@ -1434,7 +1489,10 @@ candidatesRouter.post("/skills", requireAuth, requireRole("CANDIDATE"), async (r
 
     if (!skill) {
       skill = await prisma.skills.create({
-        data: { name: name },
+        data: {
+          name: name,
+          category: normalizedCategory,
+        },
       });
     }
 
@@ -1452,7 +1510,10 @@ candidatesRouter.post("/skills", requireAuth, requireRole("CANDIDATE"), async (r
     if (existingUserSkill) {
       const updatedSkill = await prisma.userSkill.update({
         where: { id: existingUserSkill.id },
-        data: { rating: rating }
+        data: {
+          rating: rating,
+          category: skill.category || normalizedCategory,
+        }
       });
       return res.status(200).json({ message: "Skill updated", skill: updatedSkill });
     }
@@ -1463,6 +1524,7 @@ candidatesRouter.post("/skills", requireAuth, requireRole("CANDIDATE"), async (r
         candidateId: candidateId,
         skillId: skill.id,
         rating: rating,
+        category: skill.category || normalizedCategory,
       },
     });
 
@@ -1487,6 +1549,10 @@ candidatesRouter.put("/skills/:id", requireAuth, requireRole("CANDIDATE"), async
 
   try {
     const candidateId = await getCandidateIdForUser(userId);
+    let resolvedCategory =
+      typeof category === "string" && category.toUpperCase() === "BUSINESS"
+        ? "BUSINESS"
+        : "TECHNICAL";
 
     const existingUserSkill = await prisma.userSkill.findUnique({
       where: { id: userSkillId },
@@ -1508,9 +1574,15 @@ candidatesRouter.put("/skills/:id", requireAuth, requireRole("CANDIDATE"), async
         where: { name: { equals: name, mode: 'insensitive' } },
       });
       if (!masterSkill) {
-        masterSkill = await prisma.skills.create({ data: { name: name } });
+        masterSkill = await prisma.skills.create({
+          data: {
+            name: name,
+            category: resolvedCategory,
+          },
+        });
       }
       finalSkillId = masterSkill.id;
+      resolvedCategory = masterSkill.category;
     }
 
     let rating = 1;
@@ -1522,7 +1594,7 @@ candidatesRouter.put("/skills/:id", requireAuth, requireRole("CANDIDATE"), async
       data: {
         skillId: finalSkillId, // 👈 อัปเดต skillId ด้วย เผื่อเปลี่ยนชื่อสกิล
         rating: rating,
-        category: category, // เอาคอมเมนต์ออก ถ้าตาราง UserSkill มีช่อง category
+        category: resolvedCategory,
       },
     });
 

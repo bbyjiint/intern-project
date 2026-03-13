@@ -53,6 +53,8 @@ jobPostsRouter.post("/job-posts", requireAuth, requireRole("COMPANY"), async (re
     locationProvince,
     locationDistrict,
     jobType,
+    positionsAvailable,
+    gpa,
     workplaceType, // 'on-site' | 'hybrid' | 'remote'
     allowance,
     allowancePeriod, // 'Month' | 'Week' | 'Day'
@@ -115,6 +117,11 @@ jobPostsRouter.post("/job-posts", requireAuth, requireRole("COMPANY"), async (re
         locationProvince: locationProvince || null,
         locationDistrict: locationDistrict || null,
         jobType: jobType || null,
+        positionsAvailable:
+          positionsAvailable !== undefined && positionsAvailable !== null && positionsAvailable !== ""
+            ? Number(positionsAvailable)
+            : null,
+        gpa: typeof gpa === "string" && gpa.trim() ? gpa.trim() : null,
         workplaceType: workplaceTypeMap[workplaceType] || "ON_SITE",
         allowance: noAllowance ? null : (allowance ? parseFloat(allowance) : null),
         allowancePeriod: noAllowance ? null : (allowancePeriod ? allowancePeriodMap[allowancePeriod] : null),
@@ -267,7 +274,7 @@ jobPostsRouter.get("/job-posts/public", async (req, res) => {
         jobType: post.jobType || "internship",
         seniorityLevel: "student", // Default, can be enhanced later
         field: "IT&Software", // Default, can be enhanced later
-        positions: 1, // Default, can be enhanced later
+        positions: post.positionsAvailable || 1,
         allowance: allowanceStr,
         skills: [], // Can be enhanced later if skills are stored
         postedDate,
@@ -346,10 +353,10 @@ jobPostsRouter.get("/job-posts/public/:id", async (req, res) => {
         companyLogo,
         workType: formatWorkplaceType(jobPost.workplaceType),
         roleType: jobPost.jobType ? jobPost.jobType.replace(/[-_]/g, " ").replace(/\b\w/g, (char) => char.toUpperCase()) : "Internship",
-        positionsAvailable: 1,
+        positionsAvailable: jobPost.positionsAvailable || 1,
         jobDescription: jobPost.jobDescription ? jobPost.jobDescription.split("\n").map((line) => line.trim()).filter(Boolean) : [],
         qualifications: jobPost.jobSpecification ? jobPost.jobSpecification.split("\n").map((line) => line.trim()).filter(Boolean) : [],
-        gpa: "Not specified",
+        gpa: jobPost.gpa || "Not specified",
         allowance: formatAllowance(jobPost.allowance, jobPost.allowancePeriod, jobPost.noAllowance),
         location,
         workingDaysHours: "Not specified",
@@ -488,6 +495,8 @@ jobPostsRouter.put("/job-posts/:id", requireAuth, requireRole("COMPANY"), async 
       locationProvince,
       locationDistrict,
       jobType,
+      positionsAvailable,
+      gpa,
       workplaceType,
       allowance,
       allowancePeriod,
@@ -534,6 +543,15 @@ jobPostsRouter.put("/job-posts/:id", requireAuth, requireRole("COMPANY"), async 
     if (locationProvince !== undefined) updateData.locationProvince = locationProvince;
     if (locationDistrict !== undefined) updateData.locationDistrict = locationDistrict;
     if (jobType !== undefined) updateData.jobType = jobType;
+    if (positionsAvailable !== undefined) {
+      updateData.positionsAvailable =
+        positionsAvailable !== null && positionsAvailable !== ""
+          ? Number(positionsAvailable)
+          : null;
+    }
+    if (gpa !== undefined) {
+      updateData.gpa = typeof gpa === "string" && gpa.trim() ? gpa.trim() : null;
+    }
     if (workplaceType !== undefined) updateData.workplaceType = workplaceTypeMap[workplaceType] || "ON_SITE";
     if (noAllowance !== undefined) {
       updateData.noAllowance = noAllowance;

@@ -12,6 +12,8 @@ interface JobPostDetail {
   locationProvince?: string | null
   locationDistrict?: string | null
   jobType?: string | null
+  positionsAvailable?: number | null
+  gpa?: string | null
   workplaceType?: string | null
   allowance?: number | null
   allowancePeriod?: 'MONTH' | 'WEEK' | 'DAY' | null
@@ -156,7 +158,7 @@ export default function EmployerViewPostPage() {
     )
   }
 
-  const positionsAvailable = Math.max(jobPost.ScreeningQuestions?.length || 0, 1)
+  const positionsAvailable = jobPost.positionsAvailable || 1
   const companyLogo = companyProfile?.companyLogo || companyProfile?.logoURL || companyProfile?.profileImage || jobPost.Company?.logoURL || ''
   const workType = formatWorkType(jobPost.workplaceType)
 
@@ -217,7 +219,7 @@ export default function EmployerViewPostPage() {
 
                   <div>
                     <h3 className="mb-[8px] text-[12px] font-bold text-[#111827]">GPA</h3>
-                    <p className="text-[12px] text-[#6B7280]">&gt; 3.50</p>
+                    <p className="text-[12px] text-[#6B7280]">{jobPost.gpa || 'Not specified'}</p>
                   </div>
 
                   <div>
