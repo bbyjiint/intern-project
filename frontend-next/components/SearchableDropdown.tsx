@@ -133,7 +133,7 @@ export default function SearchableDropdown({
                 )
               })
             ) : (
-              <div className="px-4 py-2 text-gray-500 text-sm">No universities found</div>
+              <div className="px-4 py-2 text-gray-500 text-sm">No results found</div>
             )}
           </div>
         </div>

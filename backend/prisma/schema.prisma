@@ -220,19 +220,16 @@ model CompanyProfile {
   id                String         @id @default(uuid()) @db.Uuid
   userId            String         @unique @db.Uuid
   companyName       String
+  businessType      String?        
   about             String?
-  addressDetails    String?        // Street address, building number, etc.
-  location          String?        // Legacy: concatenated address (kept for backward compatibility)
-  province          String?        // Legacy: province name (kept for backward compatibility)
+  addressDetails    String?
   provinceId        String?        @db.Uuid
   districtId        String?        @db.Uuid
   subdistrictId     String?        @db.Uuid
-  postcode          String?        // Postal code
+  postcode          String?
   companySize       String?
   logoURL           String?
   recruiterName     String?
-  recruiterPosition String?
-  registrationNum   String?
   websiteUrl        String?
   createdAt         DateTime       @default(now())
   updatedAt         DateTime
@@ -479,6 +476,7 @@ model District {
   provinceId String       @db.Uuid
   name       String
   thname     String?
+  code       String?
   postalCode String?
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt

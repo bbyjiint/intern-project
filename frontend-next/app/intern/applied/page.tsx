@@ -1,79 +1,39 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import InternNavbar from "@/components/InternNavbar";
 import Sidebar from "@/components/InternSidebar"; // หรือแก้เป็น "@/components/Sidebar" ตามที่โปรเจกต์คุณตั้งชื่อไว้
 import { apiFetch } from "@/lib/api";
 import JobCard, { JobPostData } from "@/components/profile/JobCard";
 
-// 2. Mock Data ให้ตรงกับในรูปภาพ 4 รายการ
-const mockApplications: JobPostData[] = [
-  {
-    id: "1",
-    jobTitle: "รับนักศึกษาฝึกงาน AI Engineer",
-    companyName: "Trinity Securities Co., Ltd.",
-    companyEmail: "info@trinitythai.com",
-    companyLogo: "TRINITY",
-    location: "Bangkok",
-    workType: "Hybrid",
-    roleType: "AI Developer",
-    applicants: 4,
-    allowance: "5,000 - 7,000 THB",
-    timeAgo: "1 hour ago",
-    status: "Accept",
-  },
-  {
-    id: "2",
-    jobTitle: "รับนักศึกษาฝึกงาน AI Engineer",
-    companyName: "Trinity Securities Co., Ltd.",
-    companyEmail: "info@trinitythai.com",
-    companyLogo: "TRINITY",
-    location: "Bangkok",
-    workType: "On-Site",
-    roleType: "AI Developer",
-    applicants: 4,
-    allowance: "5,000 - 7,000 THB",
-    timeAgo: "1 hour ago",
-    status: "Decline",
-  },
-  {
-    id: "3",
-    jobTitle: "รับนักศึกษาฝึกงาน AI Engineer",
-    companyName: "Trinity Securities Co., Ltd.",
-    companyEmail: "info@trinitythai.com",
-    companyLogo: "TRINITY",
-    location: "Bangkok",
-    workType: "Remote",
-    roleType: "AI Developer",
-    applicants: 4,
-    allowance: "5,000 - 7,000 THB",
-    timeAgo: "1 hour ago",
-    status: "Applied",
-  },
-  {
-    id: "4",
-    jobTitle: "รับนักศึกษาฝึกงาน AI Engineer",
-    companyName: "Trinity Securities Co., Ltd.",
-    companyEmail: "info@trinitythai.com",
-    companyLogo: "TRINITY",
-    location: "Bangkok",
-    workType: "Remote",
-    roleType: "AI Developer",
-    applicants: 4,
-    allowance: "5,000 - 7,000 THB",
-    timeAgo: "1 hour ago",
-    status: "Applied",
-  },
-];
-
 export default function InternAppliedPage() {
   const router = useRouter();
-  const pathname = usePathname();
-  const [applications, setApplications] =
-    useState<JobPostData[]>(mockApplications);
+  const [applications, setApplications] = useState<JobPostData[]>([]);
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadApplications = async () => {
+      setIsLoading(true);
+      setLoadError(null);
+
+      try {
+        const data = await apiFetch<{ applications: JobPostData[] }>("/api/intern/applications");
+        setApplications(data.applications || []);
+      } catch (error) {
+        console.error("Failed to load applied jobs:", error);
+        setLoadError(error instanceof Error ? error.message : "Failed to load applications");
+        setApplications([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void loadApplications();
+  }, []);
 
   const filteredApplications = useMemo(() => {
     return applications.filter((app) => {
@@ -89,85 +49,6 @@ export default function InternAppliedPage() {
     });
   }, [applications, statusFilter, searchQuery]);
 
-  // ฟังก์ชันแยกสีของ Tag แบบการทำงาน
-  const getWorkTypeStyle = (type: string) => {
-    switch (type.toLowerCase()) {
-      case "hybrid":
-        return "bg-[#3B82F6] text-white"; // สีฟ้า
-      case "on-site":
-        return "bg-[#F59E0B] text-white"; // สีส้ม
-      case "remote":
-        return "bg-[#EF4444] text-white"; // สีแดง
-      default:
-        return "bg-gray-400 text-white";
-    }
-  };
-
-  // ฟังก์ชัน Render ป้ายสถานะแบบ Outline
-  const renderStatusBadge = (status: string) => {
-    if (status === "Accept") {
-      return (
-        <span className="flex items-center gap-1.5 px-3 py-1 bg-[#F0FDF4] text-[#16A34A] border border-[#16A34A] text-xs font-bold rounded-full">
-          <svg
-            className="w-3.5 h-3.5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2.5"
-              d="M5 13l4 4L19 7"
-            ></path>
-          </svg>
-          Accept
-        </span>
-      );
-    }
-    if (status === "Decline") {
-      return (
-        <span className="flex items-center gap-1.5 px-3 py-1 bg-[#FEF2F2] text-[#EF4444] border border-[#EF4444] text-xs font-bold rounded-full">
-          <svg
-            className="w-3.5 h-3.5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2.5"
-              d="M6 18L18 6M6 6l12 12"
-            ></path>
-          </svg>
-          Decline
-        </span>
-      );
-    }
-    if (status === "Applied") {
-      return (
-        <span className="flex items-center gap-1.5 px-3 py-1 bg-[#F0F7FF] text-[#3B82F6] border border-[#3B82F6] text-xs font-bold rounded-full">
-          <svg
-            className="w-3.5 h-3.5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            ></path>
-          </svg>
-          Applied
-        </span>
-      );
-    }
-    return null;
-  };
-
   return (
     <div className="min-h-screen bg-[#F4F7FA] flex flex-col">
       <InternNavbar />
@@ -178,6 +59,12 @@ export default function InternAppliedPage() {
 
         {/* Main Content */}
         <div className="layout-container layout-page flex-1 overflow-y-auto">
+          {loadError && (
+            <div className="mb-6 rounded-xl border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">
+              {loadError}
+            </div>
+          )}
+
           {/* Header & Search */}
           <div className="flex flex-col md:flex-row md:items-start justify-between mb-6 gap-4">
             <div>
@@ -233,12 +120,16 @@ export default function InternAppliedPage() {
           </div>
 
           <h2 className="text-[17px] font-extrabold text-gray-900 mb-4">
-            {filteredApplications.length} Total Applied
+            {isLoading ? "Loading applications..." : `${filteredApplications.length} Total Applied`}
           </h2>
 
           {/* Job Application Cards Grid */}
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            {filteredApplications.length === 0 ? (
+            {isLoading ? (
+              <div className="text-center py-10 text-gray-500 col-span-full">
+                Loading your applications...
+              </div>
+            ) : filteredApplications.length === 0 ? (
               <div className="text-center py-10 text-gray-500 col-span-full">
                 No applications found matching your criteria.
               </div>

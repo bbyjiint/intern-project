@@ -1,3 +1,6 @@
+import multer from "multer"
+import fs from "fs"
+import { fileStorage } from "../utils/fileStorage"
 import { Router } from "express";
 import prisma from "../utils/prisma";
 import { requireAuth, requireRole, type AuthedRequest } from "../middleware/auth";
@@ -128,7 +131,7 @@ profilesRouter.get("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
         githubUrl: project.githubUrl || "",
         projectUrl: project.projectUrl || "",
         fileUrl: project.fileUrl || "",
-        fileName: project.fileName || "",   
+        fileName: project.fileName || "",
       })),
     };
 
@@ -508,19 +511,16 @@ profilesRouter.get("/companies/profile", requireAuth, requireRole("COMPANY"), as
     const addressDetails = companyProfile.addressDetails || "";
     const subDistrict = companyProfile.Subdistrict?.name || "";
     const district = companyProfile.District?.name || "";
-    const province = companyProfile.Province?.name || companyProfile.province || "";
+    const province = companyProfile.Province?.name || "";
     const postcode = companyProfile.postcode || companyProfile.District?.postalCode || "";
 
     // Transform database data to match frontend format
     const profileData = {
       companyName: companyProfile.companyName || "",
       companyDescription: companyProfile.about || "",
-      businessType: "", // Not stored in schema currently
+      businessType: companyProfile.businessType || "",
       companySize: companyProfile.companySize || "",
       addressDetails,
-      subDistrict,
-      district,
-      province,
       postcode,
       // Return the IDs - these are used by frontend to populate dropdowns
       provinceId: companyProfile.provinceId || "",
@@ -547,11 +547,9 @@ profilesRouter.put("/companies/profile", requireAuth, requireRole("COMPANY"), as
   const {
     companyName,
     companyDescription,
+    businessType, 
     companySize,
     addressDetails,
-    subDistrict,
-    district,
-    province,
     postcode,
     provinceId,
     districtId,
@@ -578,24 +576,14 @@ profilesRouter.put("/companies/profile", requireAuth, requireRole("COMPANY"), as
     const normalizedDistrictId = districtId !== undefined ? (districtId && districtId.trim() !== "" ? districtId.trim() : null) : undefined;
     const normalizedSubdistrictId = subdistrictId !== undefined ? (subdistrictId && subdistrictId.trim() !== "" ? subdistrictId.trim() : null) : undefined;
 
-    // Build location string from address components for backward compatibility
-    const locationParts = [];
-    if (addressDetails) locationParts.push(addressDetails);
-    if (subDistrict) locationParts.push(subDistrict);
-    if (district) locationParts.push(district);
-    if (province) locationParts.push(province);
-    if (postcode) locationParts.push(postcode);
-    const location = locationParts.length > 0 ? locationParts.join(", ") : null;
-
     if (companyProfile) {
       // Update existing profile
       const updateData: any = {
         companyName: companyName !== undefined ? companyName : companyProfile.companyName,
         about: companyDescription !== undefined ? companyDescription : companyProfile.about,
+        businessType: businessType !== undefined ? businessType : companyProfile.businessType,
         companySize: companySize !== undefined ? companySize : companyProfile.companySize,
         addressDetails: addressDetails !== undefined ? addressDetails : companyProfile.addressDetails,
-        location, // Keep for backward compatibility
-        province: province !== undefined ? province : companyProfile.province, // Keep for backward compatibility
         postcode: postcode !== undefined ? postcode : companyProfile.postcode,
         recruiterName: contactName !== undefined ? contactName : companyProfile.recruiterName,
         websiteUrl: websiteUrl !== undefined ? websiteUrl : companyProfile.websiteUrl,
@@ -646,10 +634,9 @@ profilesRouter.put("/companies/profile", requireAuth, requireRole("COMPANY"), as
           userId,
           companyName: companyName || "Company",
           about: companyDescription || undefined,
+          businessType: businessType || undefined,
           companySize: companySize || undefined,
           addressDetails: addressDetails || undefined,
-          location, // Keep for backward compatibility
-          province: province || undefined, // Keep for backward compatibility
           // Store the normalized IDs - these are the source of truth
           provinceId: normalizedProvinceId ?? null,
           districtId: normalizedDistrictId ?? null,
@@ -703,3 +690,57 @@ profilesRouter.put("/companies/profile", requireAuth, requireRole("COMPANY"), as
     return res.status(500).json({ error: error.message || "Failed to update profile" });
   }
 });
+
+const uploadCompanyLogo = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    const isImage = file.mimetype.startsWith("image/")
+    isImage ? cb(null, true) : cb(new Error("Only image files allowed"))
+  },
+})
+
+profilesRouter.post(
+  "/companies/profile/logo",
+  requireAuth, requireRole("COMPANY"),
+  (req: AuthedRequest, res, next) => {
+    uploadCompanyLogo.single("file")(req as any, res, (err: any) => {
+      if (err) return res.status(400).json({ error: err.message })
+      next()
+    })
+  },
+  async (req: AuthedRequest, res) => {
+    const userId = req.user!.id
+    try {
+      if (!req.file) return res.status(400).json({ error: "File is required" })
+
+      const existing = await prisma.companyProfile.findUnique({
+        where: { userId },
+        select: { logoURL: true },
+      })
+
+      const result = await fileStorage.uploadFile(req.file, "company-logos")
+
+      if (existing?.logoURL) {
+        try {
+          const oldKey = fileStorage.extractKeyFromUrl(existing.logoURL)
+          if (oldKey) await fileStorage.deleteFile(oldKey)
+        } catch (e) {
+          console.error("Error deleting old logo:", e)
+        }
+      }
+
+      // ถ้ามี profile อยู่แล้วให้ update logoURL ทันที
+      if (existing) {
+        await prisma.companyProfile.update({
+          where: { userId },
+          data: { logoURL: result.url, updatedAt: new Date() },
+        })
+      }
+
+      return res.json({ url: result.url })
+    } catch (e: any) {
+      return res.status(500).json({ error: e?.message || "Upload failed" })
+    }
+  }
+)

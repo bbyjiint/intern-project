@@ -21,6 +21,9 @@ export interface CreateJobPostModalValues {
 interface CreateJobPostModalProps {
   isOpen: boolean
   isSubmitting: boolean
+  title?: string
+  submitLabel?: string
+  initialValues?: CreateJobPostModalValues
   onClose: () => void
   onSubmit: (values: CreateJobPostModalValues) => Promise<void> | void
 }
@@ -66,6 +69,9 @@ const POSITION_OPTIONS = [
 export default function CreateJobPostModal({
   isOpen,
   isSubmitting,
+  title = 'Create Job Post',
+  submitLabel = 'Create Job Post',
+  initialValues: initialFormValues,
   onClose,
   onSubmit,
 }: CreateJobPostModalProps) {
@@ -77,10 +83,10 @@ export default function CreateJobPostModal({
 
   useEffect(() => {
     if (isOpen) {
-      setValues(initialValues)
+      setValues(initialFormValues ?? initialValues)
       loadProvinces()
     }
-  }, [isOpen])
+  }, [initialFormValues, isOpen])
 
   // Close positions dropdown when clicking outside
   useEffect(() => {
@@ -127,7 +133,7 @@ export default function CreateJobPostModal({
         onClick={(event) => event.stopPropagation()}
       >
         <div className="mb-3 flex items-start justify-between gap-4">
-          <h2 className="text-[20px] font-bold leading-none text-[#111827] sm:text-[22px]">Create Job Post</h2>
+          <h2 className="text-[20px] font-bold leading-none text-[#111827] sm:text-[22px]">{title}</h2>
           <button
             type="button"
             onClick={onClose}
@@ -375,7 +381,7 @@ export default function CreateJobPostModal({
               disabled={isSubmitting}
               className="flex h-[36px] items-center justify-center rounded-[10px] bg-[#2563EB] px-3.5 text-[12px] font-semibold text-white transition hover:bg-[#1D4ED8] disabled:opacity-60"
             >
-              {isSubmitting ? 'Creating...' : 'Create Job Post'}
+              {isSubmitting ? 'Saving...' : submitLabel}
             </button>
           </div>
         </form>

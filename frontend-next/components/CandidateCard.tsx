@@ -12,11 +12,28 @@ interface CandidateCardProps {
   email?: string
   location?: string | null
   skills: string[]
+  preferredPositions?: string[]
+  internshipPeriod?: string | null
+  yearOfStudy?: string | null
+  createdAt?: string | null
+  profileImage?: string | null
   initials: string
   variant?: string
   isBookmarked?: boolean
   onBookmark?: (e: React.MouseEvent) => void
   onClick?: () => void
+}
+
+function timeAgo(dateStr?: string | null): string {
+  if (!dateStr) return 'Recently'
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff / 60000)
+  const hours = Math.floor(mins / 60)
+  const days = Math.floor(hours / 24)
+  if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`
+  if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`
+  if (mins > 0) return `${mins} minute${mins > 1 ? 's' : ''} ago`
+  return 'Just now'
 }
 
 export default function CandidateCard({
@@ -29,6 +46,11 @@ export default function CandidateCard({
   email,
   location,
   skills,
+  preferredPositions = [],
+  internshipPeriod,
+  yearOfStudy,
+  createdAt,
+  profileImage,
   initials,
   isBookmarked = false,
   onBookmark,
@@ -58,6 +80,9 @@ export default function CandidateCard({
       setIsMessaging(false)
     }
   }
+
+  // แสดง preferredPositions ถ้ามี ถ้าไม่มีค่อย fallback ไป skills
+  const tags = preferredPositions.length > 0 ? preferredPositions : skills
 
   return (
     <div
@@ -89,8 +114,17 @@ export default function CandidateCard({
       </button>
 
       <div className="flex items-start gap-4">
-        <div className="flex h-[54px] w-[54px] shrink-0 items-center justify-center rounded-full bg-[#3B82F6] text-[24px] font-semibold text-white">
-          {initials}
+        {/* Profile Image หรือ Initials */}
+        <div className="flex h-[54px] w-[54px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#3B82F6] text-[24px] font-semibold text-white">
+          {profileImage ? (
+            <img
+              src={profileImage}
+              alt={name}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            initials
+          )}
         </div>
         <div className="min-w-0 pt-[2px]">
           <h3 className="truncate text-[18px] font-bold leading-tight text-[#111827]">{name}</h3>
@@ -101,14 +135,14 @@ export default function CandidateCard({
       </div>
 
       <div className="mt-[18px] grid grid-cols-[132px_1fr] gap-y-[10px] text-[12px]">
-        <p className="text-[#7C869A]">Position</p>
-        <p className="font-semibold text-[#111827]">{role || '-'}</p>
+        <p className="text-[#7C869A]">Intern Period</p>
+        <p className="font-semibold text-[#111827]">{internshipPeriod || '-'}</p>
 
         <p className="text-[#7C869A]">Institution</p>
         <p className="font-semibold text-[#111827]">{university || '-'}</p>
 
-        <p className="text-[#7C869A]">Graduation</p>
-        <p className="font-semibold text-[#111827]">{graduationDate || '-'}</p>
+        <p className="text-[#7C869A]">Academic Year</p>
+        <p className="font-semibold text-[#111827]">{yearOfStudy || '-'}</p>
 
         <p className="text-[#7C869A]">Field of Study</p>
         <p className="font-semibold text-[#111827]">{major || '-'}</p>
@@ -118,23 +152,23 @@ export default function CandidateCard({
       </div>
 
       <div className="mt-[18px] flex flex-wrap gap-[8px]">
-        {skills.slice(0, 3).map((skill, index) => (
+        {tags.slice(0, 3).map((tag, index) => (
           <span
             key={index}
             className="rounded-[8px] bg-[#E5E7EB] px-[14px] py-[6px] text-[12px] font-semibold text-[#374151]"
           >
-            {skill}
+            {tag}
           </span>
         ))}
-        {skills.length > 3 && (
+        {tags.length > 3 && (
           <span className="rounded-[8px] bg-[#E5E7EB] px-[14px] py-[6px] text-[12px] font-semibold text-[#374151]">
-            +{skills.length - 3} more
+            +{tags.length - 3} more
           </span>
         )}
       </div>
 
       <div className="mt-auto flex items-end justify-between pt-[18px]">
-        <p className="text-[11px] text-[#C2C8D3]">{graduationDate || 'Recently updated'}</p>
+        <p className="text-[11px] text-[#C2C8D3]">{timeAgo(createdAt)}</p>
 
         <div className="flex items-center gap-[12px]">
           <button
@@ -160,4 +194,3 @@ export default function CandidateCard({
     </div>
   )
 }
-
