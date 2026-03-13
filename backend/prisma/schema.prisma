@@ -61,12 +61,14 @@ model CompanyPhone {
 model Skills {
   id        String         @id @default(uuid()) @db.Uuid
   name      String         @unique
+  category  SkillCategory  @default(TECHNICAL)
 
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt
 
   UserSkill UserSkill[]
 
+  @@index([category])
 }
 
 
@@ -310,6 +312,8 @@ model JobPost {
   locationProvince  String?
   locationDistrict  String?
   jobType           String?
+  positionsAvailable Int?
+  gpa               String?
   workplaceType     WorkplaceType          @default(ON_SITE)
   allowance         Float?
   allowancePeriod   AllowancePeriod?

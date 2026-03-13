@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import InternNavbar from "@/components/InternNavbar";
 import InternSidebar from "@/components/InternSidebar";
 import SkillsModal, { SkillData } from "@/components/profile/SkillsModal";
 import { apiFetch } from "@/lib/api";
-import { useProfile } from "@/hooks/useProfile";
 
 // --- Types ---
 type ProficiencyLevel = "Beginner" | "Intermediate" | "Advanced";
@@ -85,7 +84,7 @@ const categoryToDB: Record<string, string> = {
 export default function SkillsPage() {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { profileData, refetch, isLoading: profileLoading } = useProfile();
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const [filterTab, setFilterTab] = useState<string>("All");
   const [categoryFilter, setCategoryFilter] = useState<string>("Select Category");
@@ -108,39 +107,46 @@ export default function SkillsPage() {
     document.body.style.overflow = shouldHideScroll ? "hidden" : "auto";
   }, [isModalOpen, deleteModal.isOpen]);
 
-  useEffect(() => {
-    if (profileLoading) {
+  const loadSkills = useCallback(async () => {
+    try {
       setIsLoading(true);
-      return;
-    }
+      setLoadError(null);
 
-    if (profileData && profileData.skills) {
-      const mappedSkills = profileData.skills.map((s: any): Skill => {
-        let levelStr: ProficiencyLevel = "Beginner";
-        if (s.level === "intermediate" || s.level === "Intermediate" || s.rating === 2)
-          levelStr = "Intermediate";
-        if (s.level === "advanced" || s.level === "Advanced" || s.rating === 3)
-          levelStr = "Advanced";
+      const response = await apiFetch<{ skills: Array<{ id: string; name: string; category: string; rating?: number; level?: string }> }>("/api/candidates/skills");
 
+      const mappedSkills = (response.skills || []).map((skill): Skill => {
         const categoryMap: Record<string, string> = {
           TECHNICAL: "Technical Skill",
           BUSINESS: "Business Skills",
         };
-        const categoryLabel = categoryMap[s.category?.toUpperCase()] || s.category || "Technical Skill";
 
         return {
-          id: s.id,
-          name: s.name || s.skill?.name || "Unknown Skill",
-          category: categoryLabel,
-          level: levelStr,
+          id: skill.id,
+          name: skill.name || "Unknown Skill",
+          category: categoryMap[skill.category?.toUpperCase()] || skill.category || "Technical Skill",
+          level:
+            skill.level === "Intermediate" || skill.rating === 2
+              ? "Intermediate"
+              : skill.level === "Advanced" || skill.rating === 3
+              ? "Advanced"
+              : "Beginner",
           status: "Not Verified",
         };
       });
 
       setSkills(mappedSkills);
+    } catch (error) {
+      console.error("Failed to load candidate skills:", error);
+      setLoadError(error instanceof Error ? error.message : "Failed to load skills");
+      setSkills([]);
+    } finally {
       setIsLoading(false);
     }
-  }, [profileData, profileLoading]);
+  }, []);
+
+  useEffect(() => {
+    void loadSkills();
+  }, [loadSkills]);
 
   const handleSaveSkill = async (savedSkill: SkillData) => {
     try {
@@ -157,7 +163,7 @@ export default function SkillsPage() {
         body: JSON.stringify(payload),
       });
 
-      await refetch();
+      await loadSkills();
       setIsModalOpen(false);
     } catch (error) {
       console.error("Failed to save skill:", error);
@@ -169,7 +175,7 @@ export default function SkillsPage() {
     try {
       setIsDeletingLoading(true);
       await apiFetch(`/api/candidates/skills/${deleteModal.id}`, { method: "DELETE" });
-      await refetch(); // Refetch data from server
+      await loadSkills();
       setDeleteModal({ isOpen: false, id: "", name: "" });
     } catch (error) {
       console.error("Failed to delete skill:", error);
@@ -204,6 +210,10 @@ export default function SkillsPage() {
           {isLoading ? (
             <div className="flex items-center justify-center min-h-[60vh]">
               <div className="w-12 h-12 border-4 border-gray-200 border-t-[#0273B1] rounded-full animate-spin"></div>
+            </div>
+          ) : loadError ? (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-700">
+              {loadError}
             </div>
           ) : (
             <>

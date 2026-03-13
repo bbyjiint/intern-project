@@ -410,6 +410,11 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
       for (const skill of skills) {
         // Only process if name is present
         if (skill.name) {
+          const normalizedCategory =
+            typeof skill.category === "string" && skill.category.toUpperCase() === "BUSINESS"
+              ? "BUSINESS"
+              : "TECHNICAL";
+
           // Find or create skill
           let skillRecord = await prisma.skills.findUnique({
             where: { name: skill.name },
@@ -420,6 +425,7 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
               data: {
                 id: randomUUID(),
                 name: skill.name,
+                category: normalizedCategory,
               },
             });
           }
@@ -437,7 +443,7 @@ profilesRouter.put("/candidates/profile", requireAuth, requireRole("CANDIDATE"),
               candidateId: candidateProfile.id,
               skillId: skillRecord.id,
               rating: ratingMap[skill.level] || null,
-              category: (skill.category || "TECHNICAL").toUpperCase(),
+              category: skillRecord.category || normalizedCategory,
             },
           });
         }

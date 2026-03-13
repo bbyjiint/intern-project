@@ -23,7 +23,13 @@ interface SkillsModalProps {
 interface MasterSkill {
   id: string;
   name: string;
+  category: string;
 }
+
+const categoryLabelMap: Record<string, string> = {
+  TECHNICAL: "Technical Skill",
+  BUSINESS: "Business Skills",
+};
 
 export default function SkillsModal({ isOpen, onClose, onSave, editingSkill }: SkillsModalProps) {
   const [formData, setFormData] = useState<SkillData>({ name: "", category: "", level: "" });
@@ -114,7 +120,12 @@ export default function SkillsModal({ isOpen, onClose, onSave, editingSkill }: S
               <select
                 value={formData.name}
                 onChange={(e) => {
-                  setFormData({ ...formData, name: e.target.value });
+                  const selectedSkill = availableSkills.find((skill) => skill.name === e.target.value);
+                  setFormData({
+                    ...formData,
+                    name: e.target.value,
+                    category: selectedSkill ? (categoryLabelMap[selectedSkill.category] || "Technical Skill") : formData.category,
+                  });
                   setErrorMsg(""); // ล้าง Error เมื่อเริ่มกรอก
                 }}
                 className="w-full appearance-none px-4 py-3 bg-white border border-gray-200 rounded-lg text-[15px] text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm cursor-pointer"
@@ -153,7 +164,6 @@ export default function SkillsModal({ isOpen, onClose, onSave, editingSkill }: S
                 <option value="" disabled>Select category</option>
                 <option value="Technical Skill">Technical Skill</option>
                 <option value="Business Skills">Business Skills</option>
-                <option value="Soft Skill">Soft Skill</option>
               </select>
               <svg className="w-5 h-5 text-gray-300 absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />

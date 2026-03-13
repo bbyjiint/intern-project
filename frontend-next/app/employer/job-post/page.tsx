@@ -17,6 +17,8 @@ interface EditJobPostDetails {
   id: string
   jobTitle?: string | null
   workplaceType?: string | null
+  positionsAvailable?: number | null
+  gpa?: string | null
   allowance?: number | null
   allowancePeriod?: string | null
   jobDescription?: string | null
@@ -339,10 +341,10 @@ export default function JobPostPage() {
       setEditingInitialValues({
         jobTitle: jobPost.jobTitle || '',
         workplaceType: toWorkplaceValue(jobPost.workplaceType),
-        positionsAvailable: '',
+        positionsAvailable: jobPost.positionsAvailable != null ? String(jobPost.positionsAvailable) : '',
         allowance: jobPost.allowance ? String(jobPost.allowance) : '',
         allowancePeriod: toAllowancePeriodValue(jobPost.allowancePeriod),
-        gpa: '',
+        gpa: jobPost.gpa || '',
         jobDescription: jobPost.jobDescription || '',
         jobSpecification: jobPost.jobSpecification || '',
       })
@@ -365,6 +367,7 @@ export default function JobPostPage() {
         jobTitle: values.jobTitle,
         workplaceType: values.workplaceType,
         jobType: 'Internship',
+        positionsAvailable: values.positionsAvailable.trim(),
         allowance: values.allowance.replace(/,/g, '').trim(),
         allowancePeriod: values.allowancePeriod,
         gpa: values.gpa.trim(),
