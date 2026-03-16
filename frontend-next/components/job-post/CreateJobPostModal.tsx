@@ -149,11 +149,11 @@ export default function CreateJobPostModal({
       onClick={onClose}
     >
       <div
-        className="w-full max-w-[620px] max-h-[75vh] rounded-[16px] bg-white px-4 pb-4 pt-4 shadow-[0_24px_60px_rgba(15,23,42,0.18)] sm:px-5 sm:pb-5 flex flex-col"
+        className="w-full max-w-[780px] max-h-[88vh] rounded-[16px] bg-white px-6 pb-6 pt-5 shadow-[0_24px_60px_rgba(15,23,42,0.18)] flex flex-col"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="mb-3 flex items-start justify-between gap-4">
-          <h2 className="text-[20px] font-bold leading-none text-[#111827] sm:text-[22px]">
+        <div className="mb-4 flex items-start justify-between gap-4">
+          <h2 className="text-[22px] font-bold leading-none text-[#111827]">
             {title}
           </h2>
           <button
@@ -183,7 +183,7 @@ export default function CreateJobPostModal({
             event.preventDefault();
             await onSubmit(values);
           }}
-          className="space-y-3 overflow-y-auto flex-1 pr-1"
+          className="space-y-4 overflow-y-auto flex-1 pr-1"
         >
           <div>
             <label className="mb-1.5 block text-[14px] font-semibold text-[#111827]">
@@ -196,7 +196,7 @@ export default function CreateJobPostModal({
                 setValues((prev) => ({ ...prev, jobTitle: event.target.value }))
               }
               placeholder="e.g. Frontend Developer Intern"
-              className="h-[38px] w-full rounded-[8px] border border-[#CBD5E1] px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
+              className="h-[42px] w-full rounded-[8px] border border-[#CBD5E1] px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
               required
             />
           </div>
@@ -222,7 +222,7 @@ export default function CreateJobPostModal({
                       workplaceType: value,
                     }))
                   }
-                  className={`h-[38px] border-r border-[#A3A3A3] text-[12px] font-medium transition last:border-r-0 ${
+                  className={`h-[42px] border-r border-[#A3A3A3] text-[13px] font-medium transition last:border-r-0 ${
                     values.workplaceType === value
                       ? "bg-[#EFF6FF] text-[#2563EB]"
                       : "bg-white text-[#404040]"
@@ -249,7 +249,7 @@ export default function CreateJobPostModal({
                 }))
               }
               placeholder="Enter number of available positions"
-              className="h-[38px] w-full rounded-[8px] border border-[#CBD5E1] px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
+              className="h-[42px] w-full rounded-[8px] border border-[#CBD5E1] px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
             />
           </div>
 
@@ -270,7 +270,7 @@ export default function CreateJobPostModal({
                     }))
                   }
                   placeholder="Example: 5,000"
-                  className="h-[38px] w-full rounded-[8px] border border-[#A3A3A3] px-3 pr-9 text-[13px] text-[#111827] outline-none placeholder:text-[#8A8A8A]"
+                  className="h-[42px] w-full rounded-[8px] border border-[#A3A3A3] px-3 pr-9 text-[13px] text-[#111827] outline-none placeholder:text-[#8A8A8A]"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[18px] text-[#404040]">
                   ฿
@@ -287,7 +287,7 @@ export default function CreateJobPostModal({
                         .value as CreateJobPostModalValues["allowancePeriod"],
                     }))
                   }
-                  className="h-[38px] w-full appearance-none rounded-[8px] border border-[#A3A3A3] bg-white px-3 text-[13px] text-[#404040] outline-none"
+                  className="h-[42px] w-full appearance-none rounded-[8px] border border-[#A3A3A3] bg-white px-3 text-[13px] text-[#404040] outline-none"
                 >
                   <option value="Month">Month</option>
                   <option value="Week">Week</option>
@@ -310,7 +310,7 @@ export default function CreateJobPostModal({
                 }))
               }
               placeholder="Describe responsibilities, tasks, and project scope"
-              className="min-h-[92px] w-full rounded-[8px] border border-[#CBD5E1] px-3 py-2.5 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
+              className="min-h-[160px] w-full rounded-[8px] border border-[#CBD5E1] px-3 py-2.5 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] resize-y"
               required
             />
           </div>
@@ -328,7 +328,7 @@ export default function CreateJobPostModal({
                 }))
               }
               placeholder="List required skills, education, or experience"
-              className="min-h-[92px] w-full rounded-[8px] border border-[#CBD5E1] px-3 py-2.5 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
+              className="min-h-[160px] w-full rounded-[8px] border border-[#CBD5E1] px-3 py-2.5 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] resize-y"
               required
             />
           </div>
@@ -345,7 +345,7 @@ export default function CreateJobPostModal({
                 setValues((prev) => ({ ...prev, gpa: event.target.value }))
               }
               placeholder="Enter minimum GPA (e.g. 2.75)"
-              className="h-[38px] w-full rounded-[8px] border border-[#CBD5E1] px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
+              className="h-[42px] w-full rounded-[8px] border border-[#CBD5E1] px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
             />
           </div>
 
@@ -357,7 +357,7 @@ export default function CreateJobPostModal({
               <button
                 type="button"
                 onClick={() => setShowPositionsDropdown(!showPositionsDropdown)}
-                className="h-[38px] w-full rounded-[8px] border border-[#CBD5E1] bg-white px-3 text-left text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] flex items-center justify-between"
+                className="h-[42px] w-full rounded-[8px] border border-[#CBD5E1] bg-white px-3 text-left text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] flex items-center justify-between"
               >
                 <span
                   className={
@@ -429,7 +429,7 @@ export default function CreateJobPostModal({
               Preferred Location
             </label>
             {provincesLoading ? (
-              <div className="h-[38px] w-full rounded-[8px] border border-[#CBD5E1] bg-gray-50 flex items-center justify-center">
+              <div className="h-[42px] w-full rounded-[8px] border border-[#CBD5E1] bg-gray-50 flex items-center justify-center">
                 <span className="text-[13px] text-[#9CA3AF]">
                   Loading locations...
                 </span>
@@ -467,7 +467,7 @@ export default function CreateJobPostModal({
                 }))
               }
               placeholder="e.g. Monday–Friday, 9:00 AM – 5:00 PM"
-              className="h-[38px] w-full rounded-[8px] border border-[#CBD5E1] px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
+              className="h-[42px] w-full rounded-[8px] border border-[#CBD5E1] px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
             />
           </div>
 
@@ -475,14 +475,14 @@ export default function CreateJobPostModal({
             <button
               type="button"
               onClick={onClose}
-              className="flex h-[36px] items-center justify-center rounded-[10px] border border-[#D1D5DB] bg-white px-3.5 text-[12px] font-semibold text-[#374151] transition hover:bg-[#F9FAFB]"
+              className="flex h-[38px] items-center justify-center rounded-[10px] border border-[#D1D5DB] bg-white px-5 text-[13px] font-semibold text-[#374151] transition hover:bg-[#F9FAFB]"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex h-[36px] items-center justify-center rounded-[10px] bg-[#2563EB] px-3.5 text-[12px] font-semibold text-white transition hover:bg-[#1D4ED8] disabled:opacity-60"
+              className="flex h-[38px] items-center justify-center rounded-[10px] bg-[#2563EB] px-5 text-[13px] font-semibold text-white transition hover:bg-[#1D4ED8] disabled:opacity-60"
             >
               {isSubmitting ? "Saving..." : submitLabel}
             </button>

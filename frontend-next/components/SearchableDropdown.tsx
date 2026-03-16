@@ -23,7 +23,6 @@ export default function SearchableDropdown({
   const [searchQuery, setSearchQuery] = useState('')
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // Close dropdown when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -31,20 +30,14 @@ export default function SearchableDropdown({
         setSearchQuery('')
       }
     }
-
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
   const filteredOptions = (() => {
     if (!searchQuery) return options
-    
     const searchLower = searchQuery.toLowerCase().trim()
-    
-    // Use contains logic for name matching
-    return options.filter((option) => {
-      return option.label.toLowerCase().includes(searchLower)
-    })
+    return options.filter((option) => option.label.toLowerCase().includes(searchLower))
   })()
 
   const selectedOption = options.find((opt) => opt.value === value)
@@ -61,13 +54,13 @@ export default function SearchableDropdown({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-left flex items-center justify-between bg-white"
+        className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-left flex items-center justify-between focus:outline-none focus:border-[#94A3B8]"
       >
-        <span className={value === '' ? 'text-gray-500' : 'text-gray-900'}>
+        <span className={`text-[13px] truncate ${value === '' ? 'text-[#9CA3AF]' : 'text-[#111827]'}`}>
           {displayValue}
         </span>
         <svg
-          className={`w-5 h-5 text-gray-400 transition-transform ${isOpen ? 'transform rotate-180' : ''}`}
+          className={`ml-2 h-4 w-4 shrink-0 text-[#6B7280] transition-transform ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -77,14 +70,14 @@ export default function SearchableDropdown({
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-hidden">
-          <div className="p-2 border-b border-gray-200">
+        <div className="absolute z-50 w-full mt-1 bg-white border border-[#D1D5DB] rounded-[8px] shadow-lg max-h-60 overflow-hidden">
+          <div className="p-2 border-b border-[#E5E7EB]">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={placeholder}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full rounded-[6px] border border-[#D1D5DB] px-3 py-2 text-[13px] outline-none focus:border-[#94A3B8]"
               autoFocus
             />
           </div>
@@ -93,8 +86,8 @@ export default function SearchableDropdown({
               <button
                 type="button"
                 onClick={() => handleSelect('')}
-                className={`w-full px-4 py-2 text-left hover:bg-gray-100 transition-colors ${
-                  value === '' ? 'bg-blue-50 text-blue-600 font-medium' : 'text-gray-900'
+                className={`w-full px-4 py-2 text-left text-[13px] hover:bg-[#F3F4F6] transition-colors ${
+                  value === '' ? 'bg-[#EFF6FF] text-[#2563EB] font-medium' : 'text-[#111827]'
                 }`}
               >
                 {allOptionLabel}
@@ -105,35 +98,33 @@ export default function SearchableDropdown({
                 const searchLower = searchQuery.toLowerCase()
                 const codeMatches = option.code?.toLowerCase().includes(searchLower) ?? false
                 const labelMatches = option.label.toLowerCase().includes(searchLower)
-                
+
                 return (
                   <button
                     key={option.value}
                     type="button"
                     onClick={() => handleSelect(option.value)}
-                    className={`w-full px-4 py-2 text-left hover:bg-gray-100 transition-colors ${
-                      value === option.value ? 'bg-blue-50 text-blue-600 font-medium' : 'text-gray-900'
+                    className={`w-full px-4 py-2 text-left text-[13px] hover:bg-[#F3F4F6] transition-colors ${
+                      value === option.value ? 'bg-[#EFF6FF] text-[#2563EB] font-medium' : 'text-[#111827]'
                     }`}
                   >
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-2">
-                        <span>{option.label}</span>
-                        {option.code && (
-                          <span className={`text-xs px-2 py-0.5 rounded ${
-                            codeMatches && !labelMatches 
-                              ? 'bg-blue-100 text-blue-700 font-medium' 
-                              : 'bg-gray-100 text-gray-600'
-                          }`}>
-                            {option.code}
-                          </span>
-                        )}
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <span>{option.label}</span>
+                      {option.code && (
+                        <span className={`text-xs px-2 py-0.5 rounded ${
+                          codeMatches && !labelMatches
+                            ? 'bg-blue-100 text-blue-700 font-medium'
+                            : 'bg-gray-100 text-gray-600'
+                        }`}>
+                          {option.code}
+                        </span>
+                      )}
                     </div>
                   </button>
                 )
               })
             ) : (
-              <div className="px-4 py-2 text-gray-500 text-sm">No results found</div>
+              <div className="px-4 py-2 text-[13px] text-[#9CA3AF]">No results found</div>
             )}
           </div>
         </div>

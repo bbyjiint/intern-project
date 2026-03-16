@@ -108,6 +108,11 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
         UserProjects: {
           orderBy: { createdAt: "desc" },
         },
+        CandidateResume: {
+          where: { isPrimary: true },
+          take: 1,
+          orderBy: { createdAt: "desc" },
+        },
 
         CandidatePreferredProvince: {
           include: {
@@ -179,7 +184,7 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
         fieldOfStudy: cu.fieldOfStudy,
         yearOfStudy: cu.yearOfStudy,
         gpa: cu.gpa ? cu.gpa.toString() : null,
-        isCurrent: cu.isCurrent,
+        isCurrent: cu.isCurrent
       })),
       experience: candidateProfile.WorkHistory.map((wh) => ({
         id: wh.id,
@@ -198,11 +203,10 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
           3: "advanced",
         };
         return {
-          id: us.id,
           name: us.Skills.name,
           level: ratingMap[us.rating || 1] || "beginner",
           rating: us.rating || 1,
-          category: us.category,
+          category: us.category || "TECHNICAL",
         };
       }),
       files: {
@@ -233,8 +237,8 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
         startDate: project.startDate || "",
         endDate: project.endDate || "",
         relatedSkills: project.relatedSkills || [],
-        githubUrl: project.githubUrl || "",   
-        projectUrl: project.projectUrl || "", 
+        githubUrl: project.githubUrl || "",
+        projectUrl: project.projectUrl || "",
         fileUrl: project.fileUrl || "",
         fileName: project.fileName || "",
       })),
@@ -328,6 +332,7 @@ candidatesRouter.get("/", requireAuth, requireRole("COMPANY"), async (req, res) 
       isCurrent: primaryEdu?.isCurrent ?? false,
       phoneNumber: c.phoneNumber ?? null,
       profileImage: c.profileImage ?? null,
+      createdAt: c.createdAt.toISOString(), 
     };
 
   });
@@ -430,6 +435,11 @@ candidatesRouter.get("/:id", requireAuth, requireRole("COMPANY"), async (req, re
         UserProjects: {
           orderBy: { createdAt: "desc" },
         },
+        CandidateResume: {
+          where: { isPrimary: true },
+          take: 1,
+          orderBy: { createdAt: "desc" },
+        },
         CandidatePreferredProvince: {
           include: {
             Province: {
@@ -467,7 +477,8 @@ candidatesRouter.get("/:id", requireAuth, requireRole("COMPANY"), async (req, re
         degree: cu.degreeName,
         fieldOfStudy: cu.fieldOfStudy,
         yearOfStudy: cu.yearOfStudy,
-        gpa: cu.gpa ? cu.gpa.toString() : null
+        gpa: cu.gpa ? cu.gpa.toString() : null,
+        isCurrent: cu.isCurrent,
       })),
       experience: candidateProfile.WorkHistory.map((wh) => ({
         id: wh.id,
@@ -489,6 +500,7 @@ candidatesRouter.get("/:id", requireAuth, requireRole("COMPANY"), async (req, re
           name: us.Skills.name,
           level: ratingMap[us.rating || 1] || "beginner",
           rating: us.rating || 1,
+          category: us.category || "TECHNICAL",
         };
       }),
       files: {
@@ -524,6 +536,14 @@ candidatesRouter.get("/:id", requireAuth, requireRole("COMPANY"), async (req, re
         fileUrl: project.fileUrl || "",
         fileName: project.fileName || "",
       })),
+      resume: candidateProfile.CandidateResume[0]
+        ? {
+          id: candidateProfile.CandidateResume[0].id,
+          name: candidateProfile.CandidateResume[0].name,
+          url: candidateProfile.CandidateResume[0].url,
+          createdAt: candidateProfile.CandidateResume[0].createdAt.toISOString(),
+        }
+        : null,
       createdAt: candidateProfile.createdAt.toISOString(),
       updatedAt: candidateProfile.updatedAt.toISOString(),
     };

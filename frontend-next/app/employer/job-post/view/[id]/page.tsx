@@ -11,10 +11,10 @@ interface JobPostDetail {
   jobTitle?: string;
   locationProvince?: string | null;
   locationDistrict?: string | null;
-  locationProvinceId?: string | null; // ✅ เพิ่ม
-  LocationProvince?: { name: string } | null; // ✅ เพิ่ม
-  positions?: string[]; // ✅ เพิ่ม
-  workingDaysHours?: string | null; // ✅ เพิ่ม
+  locationProvinceId?: string | null;
+  LocationProvince?: { name: string } | null;
+  positions?: string[];
+  workingDaysHours?: string | null;
   jobType?: string | null;
   positionsAvailable?: number | null;
   gpa?: string | null;
@@ -66,23 +66,20 @@ const formatWorkType = (value?: string | null) => {
   return value;
 };
 
-const formatJobType = (value?: string | null) => {
-  if (!value) return "AI Developer";
-  return value
-    .replace(/[-_]/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+const workTypeColors: Record<string, string> = {
+  Hybrid: "#3B82F6",
+  "On-Site": "#F4C14D",
+  Remote: "#F85454",
 };
 
 const formatAllowance = (jobPost: JobPostDetail) => {
   if (jobPost.noAllowance) return "No allowance";
   if (!jobPost.allowance) return "-";
-
   const periodMap: Record<string, string> = {
     MONTH: "Month",
     WEEK: "Week",
     DAY: "Day",
   };
-
   return `${Number(jobPost.allowance).toLocaleString()} THB${jobPost.allowancePeriod ? ` / ${periodMap[jobPost.allowancePeriod] || jobPost.allowancePeriod}` : ""}`;
 };
 
@@ -93,20 +90,18 @@ const renderLines = (text?: string | null) => {
     .filter(Boolean);
 
   if (lines.length === 0) {
-    return <p className="text-[13px] text-[#6B7280]">-</p>;
+    return <p className="text-gray-600 text-[15px]">-</p>;
   }
 
   return (
-    <div className="space-y-[6px]">
-      {lines.map((line, index) => (
-        <p
-          key={`${line}-${index}`}
-          className="text-[12px] leading-[1.65] text-[#6B7280]"
-        >
-          {line.startsWith("-") ? line : `- ${line}`}
-        </p>
+    <ul className="space-y-2">
+      {lines.map((line, i) => (
+        <li key={i} className="text-gray-600 text-[15px] leading-relaxed flex items-start">
+          <span className="mr-2">-</span>
+          <span>{line.startsWith("-") ? line.slice(1).trim() : line}</span>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 };
 
@@ -116,30 +111,23 @@ export default function EmployerViewPostPage() {
   const jobPostId = params?.id as string;
 
   const [jobPost, setJobPost] = useState<JobPostDetail | null>(null);
-  const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(
-    null,
-  );
+  const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const load = async () => {
       if (!jobPostId) return;
-
       try {
         const [jobResp, companyResp] = await Promise.all([
           apiFetch<{ jobPost: JobPostDetail }>(`/api/job-posts/${jobPostId}`),
           apiFetch<{ profile: CompanyProfile }>(`/api/companies/profile`),
         ]);
-
         setJobPost(jobResp.jobPost);
         setCompanyProfile(companyResp.profile || null);
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to load job post",
-        );
+        setError(err instanceof Error ? err.message : "Failed to load job post");
       }
     };
-
     load();
   }, [jobPostId]);
 
@@ -159,21 +147,18 @@ export default function EmployerViewPostPage() {
 
   if (!jobPost) {
     return (
-      <div className="min-h-screen bg-[#F6F7FB]">
+      <div className="min-h-screen bg-[#F4F7FA]">
         <EmployerNavbar />
         <div className="flex">
           <EmployerSidebar activeItem="applicants" />
-          <div className="flex flex-1 items-center justify-center bg-[#E6EBF4]">
-            <p className="text-sm text-[#6B7280]">
-              {error || "Loading job post..."}
-            </p>
+          <div className="flex flex-1 items-center justify-center">
+            <p className="text-sm text-[#6B7280]">{error || "Loading job post..."}</p>
           </div>
         </div>
       </div>
     );
   }
 
-  const positionsAvailable = jobPost.positionsAvailable || 1;
   const companyLogo =
     companyProfile?.companyLogo ||
     companyProfile?.logoURL ||
@@ -183,211 +168,175 @@ export default function EmployerViewPostPage() {
   const workType = formatWorkType(jobPost.workplaceType);
 
   return (
-    <div className="min-h-screen bg-[#F6F7FB]">
+    <div className="min-h-screen bg-[#F4F7FA]">
       <EmployerNavbar />
       <div className="flex">
         <EmployerSidebar activeItem="applicants" />
 
-        <div className="flex-1 bg-[#E6EBF4]">
+        <div className="flex-1">
           <div className="layout-container layout-page">
-            <h1 className="mb-[26px] text-[24px] font-bold tracking-[-0.02em] text-[#05060A]">
+            {/* Header */}
+            <h1 className="mb-[20px] text-[24px] font-bold text-[#05060A]">
               Applicants &gt; View Post
             </h1>
 
-            <div className="grid grid-cols-1 gap-[16px] lg:grid-cols-[minmax(0,1fr)_244px]">
-              <div className="rounded-[10px] bg-white px-[38px] py-[30px] shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
-                <div className="mb-[10px] flex items-center gap-2 text-[12px] text-[#9CA3AF]">
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                    />
+            <div className="flex flex-col lg:flex-row gap-6 items-start">
+              {/* LEFT COLUMN */}
+              <div className="flex-[2] bg-white rounded-2xl shadow-sm border border-gray-100 p-8 lg:p-10 w-full">
+                {/* Date */}
+                <div className="flex items-center text-gray-500 mb-4">
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
-                  <span>{formatPostedDate(jobPost.createdAt)}</span>
+                  <span className="text-sm font-medium">{formatPostedDate(jobPost.createdAt)}</span>
                 </div>
 
-                <h2 className="text-[18px] font-bold text-[#111827]">
+                {/* Title & Company */}
+                <h2 className="text-[28px] font-extrabold text-black mb-1">
                   {jobPost.jobTitle || "Untitled Job Post"}
                 </h2>
-                <p className="mt-[3px] text-[12px] text-[#8B94A7]">
-                  {companyProfile?.companyName ||
-                    jobPost.Company?.companyName ||
-                    "Company Name"}
+                <p className="text-gray-500 mb-6">
+                  {companyProfile?.companyName || jobPost.Company?.companyName || "Company Name"}
                 </p>
 
-                <div className="mt-[10px] flex gap-[6px]">
+                {/* Tags */}
+                <div className="flex flex-wrap gap-2 mb-8">
                   <span
-                    className="rounded-[5px] px-[12px] py-[3px] text-[10px] font-semibold text-white"
-                    style={{
-                      backgroundColor:
-                        workType === "Hybrid" ? "#3B82F6" : "#F4C14D",
-                    }}
+                    className="rounded-[5px] px-[14px] py-[5px] text-[12px] font-semibold text-white"
+                    style={{ backgroundColor: workTypeColors[workType] || "#94A3B8" }}
                   >
                     {workType}
                   </span>
-                  {Array.isArray(jobPost.positions) &&
-                  jobPost.positions.length > 0 ? (
-                    jobPost.positions.map((pos) => (
-                      <span
-                        key={pos}
-                        className="rounded-[5px] bg-[#E5E7EB] px-[12px] py-[3px] text-[10px] font-semibold text-[#4B5563]"
-                      >
-                        {pos}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="rounded-[5px] bg-[#E5E7EB] px-[12px] py-[3px] text-[10px] font-semibold text-[#4B5563]">
-                      Not specified
-                    </span>
-                  )}
+                  {Array.isArray(jobPost.positions) && jobPost.positions.length > 0
+                    ? jobPost.positions.map((pos) => (
+                        <span key={pos} className="rounded-[5px] bg-[#E5E7EB] px-[14px] py-[5px] text-[12px] font-semibold text-[#4B5563]">
+                          {pos}
+                        </span>
+                      ))
+                    : null}
                 </div>
 
-                <div className="mt-[14px] space-y-[18px]">
-                  <div>
-                    <h3 className="text-[12px] font-bold text-[#111827]">
-                      Number of positions available: {positionsAvailable}
-                    </h3>
-                  </div>
+                {/* Positions Available */}
+                <h3 className="text-lg font-bold text-black mb-8">
+                  Number of positions available: {jobPost.positionsAvailable ?? "-"}
+                </h3>
 
-                  <div>
-                    <h3 className="mb-[8px] text-[12px] font-bold text-[#111827]">
-                      Job description
-                    </h3>
-                    {renderLines(jobPost.jobDescription)}
-                  </div>
+                {/* Job Description */}
+                <div className="mb-8">
+                  <h3 className="text-[17px] font-bold text-black mb-3">Job description</h3>
+                  {renderLines(jobPost.jobDescription)}
+                </div>
 
-                  <div>
-                    <h3 className="mb-[8px] text-[12px] font-bold text-[#111827]">
-                      Applicant qualifications
-                    </h3>
-                    {renderLines(jobPost.jobSpecification)}
-                  </div>
+                {/* Qualifications */}
+                <div className="mb-8">
+                  <h3 className="text-[17px] font-bold text-black mb-3">Applicant qualifications</h3>
+                  {renderLines(jobPost.jobSpecification)}
+                </div>
 
+                {/* Other Details */}
+                <div className="space-y-6 mb-12">
                   <div>
-                    <h3 className="mb-[8px] text-[12px] font-bold text-[#111827]">
-                      GPA
-                    </h3>
-                    <p className="text-[12px] text-[#6B7280]">
-                      {jobPost.gpa || "Not specified"}
+                    <h3 className="text-[17px] font-bold text-black mb-1">GPA</h3>
+                    <p className="text-gray-600 text-[15px]">{jobPost.gpa || "Not specified"}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-[17px] font-bold text-black mb-1">Allowance</h3>
+                    <p className="text-gray-600 text-[15px]">{formatAllowance(jobPost)}</p>
+                  </div>
+                  <div>
+                    <h3 className="text-[17px] font-bold text-black mb-1">Preferred Location</h3>
+                    <p className="text-gray-600 text-[15px]">
+                      {jobPost.LocationProvince?.name || jobPost.locationProvince || "-"}
                     </p>
                   </div>
-
                   <div>
-                    <h3 className="mb-[8px] text-[12px] font-bold text-[#111827]">
-                      Allowance
-                    </h3>
-                    <p className="text-[12px] text-[#6B7280]">
-                      {formatAllowance(jobPost)}
-                    </p>
-                  </div>
-
-                  <div>
-                    <h3 className="mb-[8px] text-[12px] font-bold text-[#111827]">
-                      Preferred Location
-                    </h3>
-                    <p className="text-[12px] text-[#6B7280]">
-                      {jobPost.LocationProvince?.name ||
-                        jobPost.locationProvince ||
-                        "-"}
-                    </p>
-                  </div>
-
-                  <div>
-                    <h3 className="mb-[8px] text-[12px] font-bold text-[#111827]">
-                      Working Days &amp; Hours
-                    </h3>
-                    <p className="text-[12px] text-[#6B7280]">
-                      {jobPost.workingDaysHours || "-"}
-                    </p>
+                    <h3 className="text-[17px] font-bold text-black mb-1">Working Days &amp; Hours</h3>
+                    <p className="text-gray-600 text-[15px]">{jobPost.workingDaysHours || "Not specified"}</p>
                   </div>
                 </div>
 
-                <div className="mt-[22px] flex justify-end">
+                {/* Back Button */}
+                <div className="flex justify-end border-t pt-8">
                   <button
                     onClick={() => router.back()}
-                    className="rounded-[4px] border border-[#2563EB] bg-white px-[14px] py-[4px] text-[11px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8]"
+                    className="px-6 py-2 rounded-lg border-2 border-[#2563EB] text-[#2563EB] font-bold hover:bg-blue-50 transition-colors"
                   >
                     Back
                   </button>
                 </div>
               </div>
 
-              <div className="rounded-[10px] bg-white px-[24px] py-[22px] shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
-                <h2 className="text-center text-[16px] font-bold text-[#111827]">
-                  Job Poster
-                </h2>
+              {/* RIGHT COLUMN */}
+              <div className="flex-[1] bg-white rounded-2xl shadow-sm border border-gray-100 p-8 w-full lg:sticky lg:top-8">
+                <h2 className="text-xl font-extrabold text-black text-center mb-6">Job Poster</h2>
 
-                <div className="mt-[16px] flex flex-col items-center text-center">
-                  <div className="flex h-[72px] w-[72px] items-center justify-center rounded-full bg-[#F3F4F7]">
-                    {companyLogo ? (
-                      <img
-                        src={companyLogo}
-                        alt={companyProfile?.companyName || "Company"}
-                        className="h-[46px] w-[46px] rounded-[4px] object-contain"
-                      />
+                {/* Logo */}
+                <div className="flex justify-center mb-6">
+                  <div className="w-24 h-24 bg-[#F8F9FA] border border-gray-100 rounded-full flex items-center justify-center shadow-sm overflow-hidden">
+                    {companyLogo && companyLogo.startsWith("http") ? (
+                      <img src={companyLogo} alt={companyProfile?.companyName || "Company"} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="flex h-[46px] w-[46px] items-center justify-center rounded-[4px] bg-[#23356E] text-xs font-bold text-white">
-                        {(companyProfile?.companyName || "C")
-                          .slice(0, 2)
-                          .toUpperCase()}
+                      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#23356E] text-sm font-bold text-white">
+                        {(companyProfile?.companyName || jobPost.Company?.companyName || "C").slice(0, 2).toUpperCase()}
                       </div>
                     )}
                   </div>
-
-                  <h3 className="mt-[14px] text-[13px] font-bold text-[#111827]">
-                    {companyProfile?.companyName ||
-                      jobPost.Company?.companyName ||
-                      "Company Name"}
-                  </h3>
-                  <p className="mt-[4px] text-[11px] text-[#9CA3AF]">
-                    {companyProfile?.email || "-"}
-                  </p>
-
-                  <p className="mt-[16px] text-left text-[11px] leading-[1.7] text-[#6B7280]">
-                    {companyProfile?.companyDescription || "-"}
-                  </p>
                 </div>
 
-                <div className="mt-[18px] space-y-[16px]">
-                  <div>
-                    <h4 className="mb-[8px] text-[12px] font-bold text-[#111827]">
-                      Contact Information
-                    </h4>
-                    <div className="space-y-[6px] text-[11px] text-[#4B5563]">
-                      <p className="flex items-center gap-2">
-                        <span className="text-[#2563EB]">✆</span>
-                        <span>{companyProfile?.phoneNumber || "-"}</span>
-                      </p>
-                      <p className="flex items-center gap-2">
-                        <span className="text-[#2563EB]">⌁</span>
-                        <span>{companyProfile?.contactName || "-"}</span>
-                      </p>
+                {/* Company Name & Email */}
+                <div className="text-center mb-6">
+                  <h3 className="text-lg font-bold text-black">
+                    {companyProfile?.companyName || jobPost.Company?.companyName || "-"}
+                  </h3>
+                  <p className="text-sm text-gray-500">{companyProfile?.email || "-"}</p>
+                </div>
+
+                <p className="text-sm text-gray-600 leading-relaxed mb-8 text-left px-2">
+                  {companyProfile?.companyDescription || "-"}
+                </p>
+
+                {/* Contact Info */}
+                <div className="mb-8">
+                  <h4 className="text-[15px] font-bold text-black mb-4">Contact Information</h4>
+                  <div className="space-y-3">
+                    <div className="flex items-center text-gray-600 text-sm">
+                      <svg className="w-5 h-5 text-[#2563EB] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                          d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      </svg>
+                      {companyProfile?.phoneNumber || "-"}
+                    </div>
+                    <div className="flex items-center text-gray-600 text-sm">
+                      <svg className="w-5 h-5 text-[#2563EB] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      {companyProfile?.contactName || "-"}
                     </div>
                   </div>
+                </div>
 
-                  <div>
-                    <h4 className="mb-[8px] text-[12px] font-bold text-[#111827]">
-                      Address
-                    </h4>
-                    <p className="text-[11px] leading-[1.65] text-[#6B7280]">
-                      {fullAddress || "-"}
-                    </p>
-                    <div className="mt-[10px] overflow-hidden rounded-[4px] border border-[#E5E7EB]">
+                {/* Address & Map */}
+                <div>
+                  <h4 className="text-[15px] font-bold text-black mb-2">Address</h4>
+                  <p className="text-sm text-gray-600 leading-relaxed mb-4">{fullAddress || "-"}</p>
+                  <div className="w-full h-48 bg-gray-200 rounded-xl overflow-hidden border border-gray-200">
+                    {fullAddress ? (
                       <iframe
                         title="Company location"
-                        src={`https://www.google.com/maps?q=${encodeURIComponent(fullAddress || "Bangkok, Thailand")}&output=embed`}
-                        className="h-[144px] w-full"
+                        src={`https://www.google.com/maps?q=${encodeURIComponent(fullAddress)}&output=embed`}
+                        width="100%"
+                        height="100%"
+                        style={{ border: 0 }}
                         loading="lazy"
                         referrerPolicy="no-referrer-when-downgrade"
                       />
-                    </div>
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-sm text-gray-500">
+                        Map not available
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

@@ -75,7 +75,7 @@ export default function InternProfilePage() {
   }, [router])
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen bg-[#E6EBF4] flex flex-col">
       <InternNavbar />
       
       <div className="flex flex-1">

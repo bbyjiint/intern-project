@@ -145,7 +145,7 @@ export default function JobMatchPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-[#E6EBF4]">
         <InternNavbar />
         <div className="flex items-center justify-center min-h-screen">
           <p className="text-gray-600">Loading...</p>
@@ -155,7 +155,7 @@ export default function JobMatchPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#E6EBF4]">
       <InternNavbar />
       <div className="flex">
         {/* Sidebar Navigation */}

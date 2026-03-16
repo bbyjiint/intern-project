@@ -81,12 +81,11 @@ export default function CandidateCard({
     }
   }
 
-  // แสดง preferredPositions ถ้ามี ถ้าไม่มีค่อย fallback ไป skills
   const tags = preferredPositions.length > 0 ? preferredPositions : skills
 
   return (
     <div
-      className="relative flex h-full min-h-[348px] flex-col rounded-[16px] bg-white px-[22px] py-[20px] shadow-[0_10px_28px_rgba(15,23,42,0.08)] transition-shadow hover:shadow-[0_14px_36px_rgba(15,23,42,0.12)]"
+      className="relative flex h-full min-h-[274px] flex-col rounded-[12px] bg-white px-[20px] py-[18px] shadow-[0_2px_10px_rgba(15,23,42,0.05)]"
       onClick={onClick}
     >
       <button
@@ -114,7 +113,6 @@ export default function CandidateCard({
       </button>
 
       <div className="flex items-start gap-4">
-        {/* Profile Image หรือ Initials */}
         <div className="flex h-[54px] w-[54px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#3B82F6] text-[24px] font-semibold text-white">
           {profileImage ? (
             <img
@@ -151,31 +149,31 @@ export default function CandidateCard({
         <p className="font-semibold text-[#111827]">{location || '-'}</p>
       </div>
 
-      <div className="mt-[18px] flex flex-wrap gap-[8px]">
+      <div className="mt-[18px] flex min-h-[30px] flex-wrap gap-[8px]">
         {tags.slice(0, 3).map((tag, index) => (
           <span
             key={index}
-            className="rounded-[8px] bg-[#E5E7EB] px-[14px] py-[6px] text-[12px] font-semibold text-[#374151]"
+            className="rounded-[8px] bg-[#E5E7EB] px-[14px] py-[2px] text-[12px] font-semibold text-[#4B5563] inline-flex items-center"
           >
             {tag}
           </span>
         ))}
         {tags.length > 3 && (
-          <span className="rounded-[8px] bg-[#E5E7EB] px-[14px] py-[6px] text-[12px] font-semibold text-[#374151]">
+          <span className="rounded-[8px] bg-[#E5E7EB] px-[14px] py-[2px] text-[12px] font-semibold text-[#4B5563] inline-flex items-center">
             +{tags.length - 3} more
           </span>
         )}
       </div>
 
-      <div className="mt-auto flex items-end justify-between pt-[18px]">
-        <p className="text-[11px] text-[#C2C8D3]">{timeAgo(createdAt)}</p>
+      <div className="mt-auto flex items-center justify-between pt-[12px]">
+        <p className="text-[12px] text-[#C2C8D3]">{timeAgo(createdAt)}</p>
 
-        <div className="flex items-center gap-[12px]">
+        <div className="flex items-center gap-[6px]">
           <button
             type="button"
             onClick={handleMessage}
             disabled={!id || isMessaging}
-            className="flex h-[46px] items-center justify-center rounded-[10px] border border-[#2563EB] bg-white px-[22px] text-[14px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8] disabled:opacity-60"
+            className="flex h-[34px] items-center justify-center rounded-[8px] border border-[#2563EB] bg-white px-[18px] text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8] disabled:opacity-60"
           >
             {isMessaging ? 'Loading...' : 'Message'}
           </button>
@@ -185,7 +183,7 @@ export default function CandidateCard({
               event.stopPropagation()
               onClick?.()
             }}
-            className="flex h-[46px] items-center justify-center rounded-[10px] border border-[#2563EB] bg-white px-[22px] text-[14px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8]"
+            className="flex h-[34px] items-center justify-center rounded-[8px] border border-[#2563EB] bg-white px-[18px] text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8]"
           >
             View Profile
           </button>

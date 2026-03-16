@@ -662,7 +662,44 @@ jobPostsRouter.delete("/job-posts/:id", requireAuth, requireRole("COMPANY"), asy
   }
 });
 
-// Public endpoint moved to top of file (before /job-posts/:id) to avoid route conflicts
+// PATCH job post (partial update เช่น state)
+jobPostsRouter.patch("/job-posts/:id", requireAuth, requireRole("COMPANY"), async (req: AuthedRequest, res) => {
+  const userId = req.user!.id;
+  const id = typeof (req.params as any).id === "string" ? (req.params as any).id : (req.params as any).id?.[0];
+  if (!id) return res.status(400).json({ error: "id is required" });
+
+  try {
+    const companyProfile = await prisma.companyProfile.findUnique({
+      where: { userId },
+    });
+    if (!companyProfile) return res.status(404).json({ error: "Company profile not found" });
+
+    const existingJobPost = await prisma.jobPost.findFirst({
+      where: { id, companyId: companyProfile.id },
+    });
+    if (!existingJobPost) return res.status(404).json({ error: "Job post not found" });
+
+    const stateMap: Record<string, "DRAFT" | "PUBLISHED" | "CLOSED"> = {
+      DRAFT: "DRAFT", PUBLISHED: "PUBLISHED", CLOSED: "CLOSED",
+      draft: "DRAFT", published: "PUBLISHED", closed: "CLOSED",
+    };
+
+    const updateData: any = {};
+    if (req.body.state !== undefined) {
+      updateData.state = stateMap[req.body.state] || req.body.state;
+    }
+
+    const updated = await prisma.jobPost.update({
+      where: { id },
+      data: updateData,
+    });
+
+    return res.json({ success: true, jobPost: updated });
+  } catch (error: any) {
+    console.error("Error patching job post:", error);
+    return res.status(500).json({ error: error.message || "Failed to update job post" });
+  }
+});
 
 // Candidate applies to a job post
 jobPostsRouter.post("/job-posts/:id/apply", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
@@ -813,6 +850,7 @@ jobPostsRouter.get("/job-posts/:id/applicants", requireAuth, requireRole("COMPAN
         institution: primaryEducation?.University.name || null,
         academicYear: primaryEducation?.yearOfStudy || null,
         fieldOfStudy: primaryEducation?.fieldOfStudy || primaryEducation?.degreeName || null,
+        profileImage: a.Candidate.profileImage ?? null,
       };
     });
 
@@ -895,3 +933,4 @@ jobPostsRouter.patch(
     }
   }
 );
+

@@ -22,7 +22,7 @@ const mockCandidates = [
     skills: ['Python', 'TensorFlow', 'Deep Learning', 'SQL'],
     initials: 'AP',
     email: 'alex.patel@company.com',
-    about: 'Passionate data science intern with expertise in machine learning and deep learning. Experienced in building predictive models and analyzing large datasets.',
+    about: 'Passionate data science intern with expertise in machine learning and deep learning.',
   },
   {
     id: 'mock-2',
@@ -35,7 +35,7 @@ const mockCandidates = [
     skills: ['Adobe XD', 'UI Design', 'Wireframing', 'Figma'],
     initials: 'AW',
     email: 'amanda.wong@company.com',
-    about: 'Creative UX design intern focused on creating intuitive and user-friendly interfaces. Passionate about design thinking and user research.',
+    about: 'Creative UX design intern focused on creating intuitive and user-friendly interfaces.',
   },
   {
     id: 'mock-3',
@@ -48,7 +48,7 @@ const mockCandidates = [
     skills: ['Java', 'Spring Boot', 'AWS', 'Docker'],
     initials: 'DK',
     email: 'david.kim@company.com',
-    about: 'Software engineering intern specializing in backend development and cloud infrastructure. Experienced with microservices architecture.',
+    about: 'Software engineering intern specializing in backend development and cloud infrastructure.',
   },
   {
     id: 'mock-4',
@@ -61,7 +61,7 @@ const mockCandidates = [
     skills: ['Python', 'R', 'Machine Learning', 'Pandas'],
     initials: 'EC',
     email: 'emily.chen@company.com',
-    about: 'Data science intern with strong analytical skills and experience in statistical modeling. Passionate about turning data into actionable insights.',
+    about: 'Data science intern with strong analytical skills and experience in statistical modeling.',
   },
   {
     id: 'mock-5',
@@ -74,7 +74,7 @@ const mockCandidates = [
     skills: ['Content Marketing', 'SEO', 'Social Media', 'Analytics'],
     initials: 'JM',
     email: 'jessica.martinez@company.com',
-    about: 'Marketing intern with expertise in digital marketing and content strategy. Experienced in SEO optimization and social media management.',
+    about: 'Marketing intern with expertise in digital marketing and content strategy.',
   },
   {
     id: 'mock-6',
@@ -87,19 +87,44 @@ const mockCandidates = [
     skills: ['Python', 'JavaScript', 'React', 'Node.js'],
     initials: 'JS',
     email: 'john.smith@company.com',
-    about: 'Passionate software engineering intern focused on full-stack development. Eager to learn modern web technologies and contribute to impactful projects.',
+    about: 'Passionate software engineering intern focused on full-stack development.',
   },
 ]
+
+const ACADEMIC_YEAR_OPTIONS = ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year']
+
+// Parse internshipPeriod string like "1 March 2026 - 7 March 2026 (0 Month)"
+// Returns YYYY-MM-DD strings to avoid timezone issues when comparing with date input values
+function parseInternshipDates(period: string | null | undefined): { start: string; end: string } | null {
+  if (!period) return null
+  const match = period.match(
+    /(\d{1,2}\s+\w+\s+\d{4})\s*[-–]\s*(\d{1,2}\s+\w+\s+\d{4})/
+  )
+  if (!match) return null
+  const startD = new Date(match[1])
+  const endD = new Date(match[2])
+  if (isNaN(startD.getTime()) || isNaN(endD.getTime())) return null
+  // Convert to YYYY-MM-DD (local date string) for safe string comparison
+  const toYMD = (d: Date) => {
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+  }
+  return { start: toYMD(startD), end: toYMD(endD) }
+}
 
 export default function FindCandidatesPage() {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState('')
-  const [position, setPosition] = useState('All Positions')
+  const [position, setPosition] = useState('')
+  const [academicYear, setAcademicYear] = useState('')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [duration, setDuration] = useState('')
   const [university, setUniversity] = useState('')
-  const [department, setDepartment] = useState('All Departments')
-  const [bookmarkedCandidates, setBookmarkedCandidates] = useState<Set<string>>(new Set()) // Using candidate IDs
-  const [sortBy, setSortBy] = useState('Name')
-  const [viewMode, setViewMode] = useState<'all' | 'shortlist'>('all')
+  const [sortMode, setSortMode] = useState<'all' | 'latest'>('all')
+  const [bookmarkedCandidates, setBookmarkedCandidates] = useState<Set<string>>(new Set())
   const [selectedCandidate, setSelectedCandidate] = useState<typeof mockCandidates[0] | null>(null)
   const [apiCandidates, setApiCandidates] = useState<typeof mockCandidates | null>(null)
   const [apiError, setApiError] = useState<string | null>(null)
@@ -107,51 +132,36 @@ export default function FindCandidatesPage() {
   const [universities, setUniversities] = useState<Array<{ id: string; name: string; thname: string | null; code: string | null }>>([])
   const [universitiesLoading, setUniversitiesLoading] = useState(false)
 
-  // Check user role and redirect if necessary
   useEffect(() => {
     const checkRole = async () => {
       try {
         const userData = await apiFetch<{ user: { role: string | null } }>('/api/auth/me')
-        
-        // If user has CANDIDATE role, redirect to intern pages
         if (userData.user.role === 'CANDIDATE') {
           router.push('/intern/find-companies')
           return
         }
-        
-        // If user has no role, redirect to role selection
         if (!userData.user.role) {
           router.push('/role-selection')
           return
         }
       } catch (error) {
         console.error('Failed to check user role:', error)
-        // If auth fails, redirect to login
         router.push('/login')
       }
     }
-
     checkRole()
   }, [router])
 
-  // Load bookmarked candidates from API
   useEffect(() => {
     ;(async () => {
       try {
         const data = await apiFetch<{ candidates: Array<{ id: string }> }>(`/api/bookmarks`)
-        const bookmarkIds = new Set(data.candidates.map((c) => c.id))
-        setBookmarkedCandidates(bookmarkIds)
+        setBookmarkedCandidates(new Set(data.candidates.map((c) => c.id)))
       } catch (err) {
         console.error('Failed to load bookmarks:', err)
-        // Fallback to localStorage for backward compatibility
         const savedBookmarks = localStorage.getItem('bookmarkedCandidates')
         if (savedBookmarks) {
-          try {
-            const bookmarks = JSON.parse(savedBookmarks)
-            setBookmarkedCandidates(new Set(bookmarks))
-          } catch (e) {
-            console.error('Failed to parse bookmarked candidates:', e)
-          }
+          try { setBookmarkedCandidates(new Set(JSON.parse(savedBookmarks))) } catch {}
         }
       }
     })()
@@ -165,7 +175,6 @@ export default function FindCandidatesPage() {
         const data = await apiFetch<{ candidates: typeof mockCandidates }>(`/api/candidates`)
         setApiCandidates(data.candidates)
       } catch (err) {
-        // If not logged in / wrong role, keep mock list but show message.
         setApiError(err instanceof Error ? err.message : 'Failed to load candidates')
         setApiCandidates(null)
       } finally {
@@ -174,20 +183,16 @@ export default function FindCandidatesPage() {
     })()
   }, [])
 
-  // Load universities from API
   useEffect(() => {
     ;(async () => {
       setUniversitiesLoading(true)
       try {
-        // Load all universities (no search query for initial load)
         const data = await apiFetch<{ universities: Array<{ id: string; name: string; thname: string | null; code: string | null }> }>(
           `/api/universities`
         )
         setUniversities(data.universities || [])
-        console.log(`Loaded ${data.universities?.length || 0} universities`)
       } catch (err) {
         console.error('Failed to load universities:', err)
-        // If API fails, keep empty array - dropdown will just be empty
         setUniversities([])
       } finally {
         setUniversitiesLoading(false)
@@ -199,27 +204,21 @@ export default function FindCandidatesPage() {
     return apiCandidates && apiCandidates.length > 0 ? apiCandidates : mockCandidates
   }, [apiCandidates])
 
-  // Note: Bookmarks are now saved via API calls, not localStorage
-
   const handleBookmark = async (e: React.MouseEvent, candidateId: string) => {
     e.stopPropagation()
     const isCurrentlyBookmarked = bookmarkedCandidates.has(candidateId)
     const newBookmarks = new Set(bookmarkedCandidates)
-
     try {
       if (isCurrentlyBookmarked) {
-        // Remove bookmark
         await apiFetch(`/api/bookmarks/${candidateId}`, { method: 'DELETE' })
         newBookmarks.delete(candidateId)
       } else {
-        // Add bookmark
         await apiFetch(`/api/bookmarks/${candidateId}`, { method: 'POST' })
         newBookmarks.add(candidateId)
       }
       setBookmarkedCandidates(newBookmarks)
     } catch (err) {
       console.error('Failed to update bookmark:', err)
-      // Show error to user (you might want to add a toast notification here)
     }
   }
 
@@ -229,45 +228,74 @@ export default function FindCandidatesPage() {
 
   const handleClearFilters = () => {
     setSearchQuery('')
-    setPosition('All Positions')
+    setPosition('')
+    setAcademicYear('')
+    setStartDate('')
+    setEndDate('')
+    setDuration('')
     setUniversity('')
-    setDepartment('All Departments')
+    setSortMode('all')
   }
 
-  const filteredCandidates = candidates.filter((candidate) => {
-    if (viewMode === 'shortlist' && !bookmarkedCandidates.has(candidate.id)) {
-      return false
-    }
-
+  const filteredCandidates = candidates.filter((candidate: any) => {
+    // Search
     const matchesSearch =
+      !searchQuery ||
       candidate.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       candidate.role.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      candidate.skills.some((skill) => skill.toLowerCase().includes(searchQuery.toLowerCase()))
-    const matchesPosition = position === 'All Positions' || candidate.role.includes(position)
-    const matchesUniversity = university === '' || university === 'All Universities' || candidate.university === university
-    const matchesDepartment = department === 'All Departments' || candidate.major.includes(department)
+      candidate.skills.some((s: string) => s.toLowerCase().includes(searchQuery.toLowerCase()))
 
-    return matchesSearch && matchesPosition && matchesUniversity && matchesDepartment
+    // Position
+    const matchesPosition = !position ||
+      candidate.role.toLowerCase().includes(position.toLowerCase())
+
+    // Academic Year
+    const matchesAcademicYear = !academicYear ||
+      (candidate.yearOfStudy ?? '').toLowerCase().includes(academicYear.toLowerCase())
+
+    // Institution
+    const matchesUniversity = !university || university === 'All Universities' ||
+      candidate.university === university
+
+    // Duration
+    const matchesDuration = !duration || (() => {
+      const match = (candidate.internshipPeriod ?? '').match(/\((\d+)\s*Month/i)
+      if (!match) return true
+      return parseInt(match[1]) === parseInt(duration)
+    })()
+
+    // Internship Period — compare as YYYY-MM-DD strings (safe, no timezone issues)
+    const parsed = parseInternshipDates(candidate.internshipPeriod)
+
+    const matchesStartDate = !startDate || (() => {
+      if (!parsed) return true
+      // candidate start must be on or after the filter startDate
+      return parsed.start >= startDate
+    })()
+
+    const matchesEndDate = !endDate || (() => {
+      if (!parsed) return true
+      // candidate end must be on or before the filter endDate
+      return parsed.end <= endDate
+    })()
+
+    return matchesSearch && matchesPosition && matchesAcademicYear &&
+      matchesUniversity && matchesDuration && matchesStartDate && matchesEndDate
   })
 
-  const sortedCandidates = [...filteredCandidates].sort((a, b) => {
-    if (sortBy === 'Name') {
-      return a.name.localeCompare(b.name)
-    } else if (sortBy === 'University') {
-      return a.university.localeCompare(b.university)
-    } else if (sortBy === 'Position') {
-      return a.role.localeCompare(b.role)
+  const sortedCandidates = [...filteredCandidates].sort((a: any, b: any) => {
+    if (sortMode === 'latest') {
+      return new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
     }
     return 0
   })
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#E6EBF4]">
       <EmployerNavbar />
       <div className="flex">
         <EmployerSidebar />
 
-        {/* Main Content */}
         <div className="flex-1">
           <div className="layout-container layout-page">
             {apiError && (
@@ -275,122 +303,181 @@ export default function FindCandidatesPage() {
                 {apiError}
               </div>
             )}
+
             <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-6">Search Candidates</h1>
+              <h1 className="text-[32px] font-bold text-[#111827] mb-6">Find Candidates</h1>
 
-              <div className="relative mb-4">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by name, skills, or keywords..."
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-12"
-                />
-                <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
-                  <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
+              {/* Filter Card */}
+              <div className="rounded-[16px] bg-white px-6 py-5 shadow-[0_2px_10px_rgba(15,23,42,0.06)]">
+
+                {/* Row 1: Search | Position | Academic Year */}
+                <div className="grid grid-cols-3 gap-4 mb-4">
+                  {/* Search */}
+                  <div>
+                    <label className="mb-1.5 block text-[13px] font-semibold text-[#374151]">Search</label>
+                    <div className="relative">
+                      <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
+                        <svg className="h-4 w-4 text-[#9CA3AF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                      </div>
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search"
+                        className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white pl-9 pr-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Position */}
+                  <div>
+                    <label className="mb-1.5 block text-[13px] font-semibold text-[#374151]">Position</label>
+                    <input
+                      type="text"
+                      value={position}
+                      onChange={(e) => setPosition(e.target.value)}
+                      placeholder="Position"
+                      className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
+                    />
+                  </div>
+
+                  {/* Academic Year */}
+                  <div>
+                    <label className="mb-1.5 block text-[13px] font-semibold text-[#374151]">Academic Year</label>
+                    <div className="relative">
+                      <select
+                        value={academicYear}
+                        onChange={(e) => setAcademicYear(e.target.value)}
+                        className="h-[42px] w-full appearance-none rounded-[8px] border border-[#D1D5DB] bg-white px-3 pr-9 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8]"
+                      >
+                        <option value="">Year</option>
+                        {ACADEMIC_YEAR_OPTIONS.map((y) => (
+                          <option key={y} value={y}>{y}</option>
+                        ))}
+                      </select>
+                      <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
+                        <svg className="h-4 w-4 text-[#6B7280]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex flex-wrap gap-4 mb-4">
-                <select
-                  value={position}
-                  onChange={(e) => setPosition(e.target.value)}
-                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="All Positions">All Positions</option>
-                  <option value="Data Science">Data Science</option>
-                  <option value="UX Design">UX Design</option>
-                  <option value="Software Engineering">Software Engineering</option>
-                  <option value="Marketing">Marketing</option>
-                </select>
-                <SearchableDropdown
-                  options={universities.map((uni) => ({
-                    value: uni.name,
-                    label: uni.thname ? `${uni.name} (${uni.thname})` : uni.name,
-                    code: uni.code,
-                  }))}
-                  value={university}
-                  onChange={setUniversity}
-                  placeholder="Search by name or code..."
-                  className="min-w-[200px]"
-                  allOptionLabel="All Universities"
-                />
-                <select
-                  value={department}
-                  onChange={(e) => setDepartment(e.target.value)}
-                  className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                >
-                  <option value="All Departments">All Departments</option>
-                  <option value="Data Science">Data Science</option>
-                  <option value="Design">Design</option>
-                  <option value="Engineering">Engineering</option>
-                  <option value="Marketing">Marketing</option>
-                </select>
-              </div>
+                {/* Row 2: Internship Period | Duration | Institution */}
+                <div className="mb-4 grid grid-cols-[1fr_16px_1fr_1fr_2fr] items-end gap-3">
+                  {/* Start Date */}
+                  <div>
+                    <label className="mb-1.5 block text-[13px] font-semibold text-[#374151]">Internship Period</label>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8] [color-scheme:light]"
+                    />
+                  </div>
 
-              <div className="flex justify-end space-x-4">
-                <button
-                  onClick={handleClearFilters}
-                  className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
-                >
-                  Clear Filters
-                </button>
-                <button
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
-                >
-                  Search
-                </button>
+                  {/* Dash */}
+                  <div className="flex items-center justify-center pb-[2px] text-[#9CA3AF] text-[16px]">–</div>
+
+                  {/* End Date */}
+                  <div>
+                    <label className="mb-1.5 block text-[13px] font-semibold text-[#374151] invisible">End</label>
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8] [color-scheme:light]"
+                    />
+                  </div>
+
+                  {/* Duration */}
+                  <div>
+                    <label className="mb-1.5 block text-[13px] font-semibold text-[#374151]">Duration</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={duration}
+                      onChange={(e) => setDuration(e.target.value)}
+                      placeholder="Duration (Month)"
+                      className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
+                    />
+                  </div>
+
+                  {/* Institution */}
+                  <div>
+                    <label className="mb-1.5 block text-[13px] font-semibold text-[#374151]">Institution</label>
+                    {universitiesLoading ? (
+                      <div className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-gray-50 flex items-center px-3">
+                        <span className="text-[13px] text-[#9CA3AF]">Loading...</span>
+                      </div>
+                    ) : (
+                      <SearchableDropdown
+                        options={universities.map((uni) => ({
+                          value: uni.name,
+                          label: uni.thname ? `${uni.name} (${uni.thname})` : uni.name,
+                          code: uni.code,
+                        }))}
+                        value={university}
+                        onChange={setUniversity}
+                        placeholder="Select Institution Name"
+                        className="w-full"
+                        allOptionLabel="All Universities"
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {/* Clear Filter */}
+                <div className="flex justify-end">
+                  <button
+                    onClick={handleClearFilters}
+                    className="h-[38px] rounded-[8px] border border-[#D1D5DB] bg-white px-5 text-[13px] font-medium text-[#374151] transition hover:bg-[#F9FAFB]"
+                  >
+                    Clear Filter
+                  </button>
+                </div>
               </div>
             </div>
 
-            <div className="border-t border-blue-200 pt-6">
+            {/* All / Latest tabs + count */}
+            <div className="mb-6 flex items-center gap-2">
+              <button
+                onClick={() => setSortMode('all')}
+                className={`h-[36px] rounded-[8px] border px-5 text-[14px] font-semibold transition-colors ${
+                  sortMode === 'all'
+                    ? 'border-[#2563EB] bg-white text-[#2563EB]'
+                    : 'border-[#D1D5DB] bg-[#F3F4F6] text-[#111827]'
+                }`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setSortMode('latest')}
+                className={`h-[36px] rounded-[8px] border px-5 text-[14px] font-semibold transition-colors ${
+                  sortMode === 'latest'
+                    ? 'border-[#2563EB] bg-white text-[#2563EB]'
+                    : 'border-[#D1D5DB] bg-[#F3F4F6] text-[#111827]'
+                }`}
+              >
+                Latest
+              </button>
+            </div>
+
+            <p className="mb-2 text-[16px] font-semibold text-[#111827]">
+              {sortedCandidates.length} Total Candidate
+            </p>
+
+            {/* Results */}
+            <div className="pt-4">
               {candidatesLoading ? (
                 <div className="py-20">
                   <LoadingSpinner size="lg" text="Loading candidates..." />
                 </div>
               ) : (
                 <>
-                  <div className="mb-6 flex justify-between items-center">
-                    <p className="text-lg font-medium text-gray-700">
-                      {sortedCandidates.length} intern{sortedCandidates.length !== 1 ? 's' : ''} found
-                    </p>
-                    <div className="flex gap-4">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => setViewMode('all')}
-                          className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-                            viewMode === 'all'
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-white text-gray-700 border border-gray-300'
-                          }`}
-                        >
-                          Show All
-                        </button>
-                        <button
-                          onClick={() => setViewMode('shortlist')}
-                          className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors ${
-                            viewMode === 'shortlist'
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-white text-gray-700 border border-gray-300'
-                          }`}
-                        >
-                          Shortlist
-                        </button>
-                      </div>
-                      <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value)}
-                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      >
-                        <option value="Name">Sort by Name</option>
-                        <option value="University">Sort by University</option>
-                        <option value="Position">Sort by Position</option>
-                      </select>
-                    </div>
-                  </div>
-
                   {sortedCandidates.length === 0 && (
                     <div className="text-center py-10 text-gray-500">
                       No candidates found matching your criteria.

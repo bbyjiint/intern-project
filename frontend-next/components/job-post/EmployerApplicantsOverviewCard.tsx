@@ -20,6 +20,7 @@ export interface EmployerApplicantsOverviewCardData {
 
 interface EmployerApplicantsOverviewCardProps {
   post: EmployerApplicantsOverviewCardData;
+  onView?: () => void; // ✅ เพิ่ม prop
 }
 
 const workTypeStyles: Record<string, string> = {
@@ -30,6 +31,7 @@ const workTypeStyles: Record<string, string> = {
 
 export default function EmployerApplicantsOverviewCard({
   post,
+  onView, // ✅ รับ prop
 }: EmployerApplicantsOverviewCardProps) {
   return (
     <div className="relative flex h-full min-h-[274px] flex-col rounded-[12px] bg-white px-[20px] py-[18px] shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
@@ -122,8 +124,10 @@ export default function EmployerApplicantsOverviewCard({
           >
             View Post
           </Link>
+          {/* ✅ กด View Candidates → เรียก onView() ก่อน navigate */}
           <Link
             href={`/employer/job-post/applicants/${post.id}`}
+            onClick={() => onView?.()}
             className="flex h-[34px] items-center justify-center rounded-[8px] border border-[#2563EB] bg-white px-[18px] text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8]"
           >
             View Candidates

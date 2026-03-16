@@ -221,7 +221,7 @@ export default function ProjectPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F7FA] flex flex-col">
+    <div className="min-h-screen bg-[#E6EBF4] flex flex-col">
       <InternNavbar />
       <div className="flex flex-1">
         <Sidebar />

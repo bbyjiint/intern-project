@@ -12,6 +12,17 @@ function initialsFromName(name: string) {
   return (first + (second ?? "")).toUpperCase();
 }
 
+function formatInternshipPeriod(raw: string | null): string | null {
+  if (!raw) return null;
+  const match = raw.match(/(\d{4}-\d{2}-\d{2})\s*-\s*(\d{4}-\d{2}-\d{2})/);
+  if (!match) return raw;
+  const start = new Date(match[1]);
+  const end = new Date(match[2]);
+  const months = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24 * 30));
+  const fmt = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "long", year: "numeric" });
+  return `${fmt.format(start)} - ${fmt.format(end)} (${months} Month)`;
+}
+
 // Get all bookmarked candidates for the company
 bookmarksRouter.get("/", requireAuth, requireRole("COMPANY"), async (req: AuthedRequest, res) => {
   const userId = req.user!.id;
@@ -37,6 +48,10 @@ bookmarksRouter.get("/", requireAuth, requireRole("COMPANY"), async (req: Authed
               include: { University: { select: { name: true } } },
             },
             UserSkill: { include: { Skills: { select: { name: true } } } },
+            CandidatePreferredProvince: {
+              take: 1,
+              include: { Province: { select: { name: true } } },
+            },
           },
         },
       },
@@ -46,16 +61,18 @@ bookmarksRouter.get("/", requireAuth, requireRole("COMPANY"), async (req: Authed
     const candidates = bookmarks.map((bookmark) => {
       const c = bookmark.Candidate;
       const name = c.fullName ?? c.User.email;
-      
+
       // Get primary education record (current or latest)
       const primaryEdu = c.CandidateUniversity[0] ?? null;
-      
+
       const uni = primaryEdu?.University?.name ?? "Unknown University";
       const skills = c.UserSkill.map((us: { Skills: { name: string } }) => us.Skills.name);
 
       // Major: derive ONLY from CandidateUniversity.degreeName.
-      // CandidateProfile should not be used as a source of education details.
       const major = primaryEdu?.degreeName ?? null;
+
+      // Preferred location from first preferred province
+      const location = c.CandidatePreferredProvince[0]?.Province?.name ?? null;
 
       return {
         id: c.id,
@@ -68,6 +85,13 @@ bookmarksRouter.get("/", requireAuth, requireRole("COMPANY"), async (req: Authed
         initials: initialsFromName(name),
         email: c.User.email,
         about: c.bio ?? "",
+        // Additional fields for card display
+        internshipPeriod: formatInternshipPeriod(c.internshipPeriod ?? null),
+        yearOfStudy: primaryEdu?.yearOfStudy ?? null,
+        preferredPositions: c.preferredPositions ?? [],
+        location,
+        profileImage: c.profileImage ?? null,
+        createdAt: c.createdAt.toISOString(),
       };
     });
 

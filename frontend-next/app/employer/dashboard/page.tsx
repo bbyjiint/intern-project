@@ -13,41 +13,57 @@ interface JobPost extends EmployerApplicantsOverviewCardData {
   createdAt: string;
 }
 
+// ─── localStorage helpers ─────────────────────────────────────────────────────
+// เก็บ { [jobPostId]: timestamp } ของเวลาที่ employer กด View Candidates ล่าสุด
+const STORAGE_KEY = "viewedJobPostsAt";
+
+function getViewedAt(): Record<string, number> {
+  if (typeof window === "undefined") return {};
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
+  }
+}
+
+function setViewedAt(id: string) {
+  if (typeof window === "undefined") return;
+  try {
+    const current = getViewedAt();
+    current[id] = Date.now();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(current));
+  } catch {}
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+
 export default function EmployerDashboardPage() {
   const router = useRouter();
-  const [activeFilter, setActiveFilter] = useState<"all" | "new" | "latest">(
-    "all",
-  );
+  const [activeFilter, setActiveFilter] = useState<"all" | "new" | "latest">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [jobPosts, setJobPosts] = useState<JobPost[]>([]);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  // Check user role and redirect if necessary
+  // เก็บ viewedAt ใน state เพื่อให้ useMemo re-run เมื่อกด View Candidates
+  const [viewedAt, setViewedAtState] = useState<Record<string, number>>(getViewedAt);
+
+  const markAsViewed = (id: string) => {
+    setViewedAt(id);
+    setViewedAtState(getViewedAt()); // sync state → trigger re-render
+  };
+
+  // Check user role
   useEffect(() => {
     const checkRole = async () => {
       try {
-        const userData = await apiFetch<{ user: { role: string | null } }>(
-          "/api/auth/me",
-        );
-
-        // If user has CANDIDATE role, redirect to intern pages
-        if (userData.user.role === "CANDIDATE") {
-          router.push("/intern/dashboard");
-          return;
-        }
-
-        // If user has no role, redirect to role selection
-        if (!userData.user.role) {
-          router.push("/role-selection");
-          return;
-        }
-      } catch (error) {
-        console.error("Failed to check user role:", error);
-        // If auth fails, redirect to login
+        const userData = await apiFetch<{ user: { role: string | null } }>("/api/auth/me");
+        if (userData.user.role === "CANDIDATE") { router.push("/intern/dashboard"); return; }
+        if (!userData.user.role) { router.push("/role-selection"); return; }
+      } catch {
         router.push("/login");
       }
     };
-
     checkRole();
   }, [router]);
 
@@ -68,8 +84,7 @@ export default function EmployerDashboardPage() {
         ]);
 
         const companyName = companyResp?.profile?.companyName || "Company Name";
-        const companyEmail =
-          companyResp?.profile?.email || "info@companyhub.com";
+        const companyEmail = companyResp?.profile?.email || "info@companyhub.com";
         const companyLogoImage =
           companyResp?.profile?.companyLogo ||
           companyResp?.profile?.logoURL ||
@@ -78,32 +93,22 @@ export default function EmployerDashboardPage() {
 
         const normalized: JobPost[] = await Promise.all(
           (postsResp.jobPosts || []).map(async (post: any) => {
-            const createdAt =
-              post.createdAt || post.updatedAt || new Date().toISOString();
-            const diffMs = Math.max(
-              Date.now() - new Date(createdAt).getTime(),
-              0,
-            );
+            const createdAt = post.createdAt || post.updatedAt || new Date().toISOString();
+            const diffMs = Math.max(Date.now() - new Date(createdAt).getTime(), 0);
             const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
             const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
             const postedDate =
-              diffHours < 1
-                ? "just now"
-                : diffHours < 24
-                  ? `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`
-                  : diffDays === 1
-                    ? "1 day ago"
-                    : `${diffDays} days ago`;
+              diffHours < 1 ? "just now"
+              : diffHours < 24 ? `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`
+              : diffDays === 1 ? "1 day ago"
+              : `${diffDays} days ago`;
 
             const workType =
-              post.workplaceType === "ON_SITE"
-                ? "On-Site"
-                : post.workplaceType === "HYBRID"
-                  ? "Hybrid"
-                  : post.workplaceType === "REMOTE"
-                    ? "Remote"
-                    : "On-Site";
+              post.workplaceType === "ON_SITE" ? "On-Site"
+              : post.workplaceType === "HYBRID" ? "Hybrid"
+              : post.workplaceType === "REMOTE" ? "Remote"
+              : "On-Site";
 
             const allowance = post.noAllowance
               ? "No allowance"
@@ -111,12 +116,28 @@ export default function EmployerDashboardPage() {
                 ? `${Number(post.allowance).toLocaleString()} THB`
                 : "-";
 
+            // ✅ ดึง applicants และหา latestAppliedAt ของคนที่ status === "new"
             let applicantsCount = 0;
+            let hasNewApplicant = false;
+            let latestNewAppliedAt = 0;
+
             try {
               const applicantsResp = await apiFetch<{ applicants: any[] }>(
                 `/api/job-posts/${post.id}/applicants`,
               );
-              applicantsCount = applicantsResp.applicants?.length || 0;
+              const applicants = applicantsResp.applicants || [];
+              applicantsCount = applicants.length;
+
+              const newApplicants = applicants.filter((a) => a.status === "new");
+              if (newApplicants.length > 0) {
+                hasNewApplicant = true;
+                // หาเวลา apply ล่าสุดในกลุ่ม new
+                latestNewAppliedAt = Math.max(
+                  ...newApplicants.map((a) =>
+                    a.appliedAt ? new Date(a.appliedAt).getTime() : 0,
+                  ),
+                );
+              }
             } catch {
               applicantsCount = 0;
             }
@@ -137,17 +158,17 @@ export default function EmployerDashboardPage() {
               applicantsCount: post.positionsAvailable ?? applicantsCount,
               allowance,
               postedDate,
-              isNew: applicantsCount > 0,
+              // ✅ isNew = มี new applicant AND (belum pernah dilihat ATAU ada yang apply setelah terakhir dilihat)
+              isNew: hasNewApplicant,
+              _latestNewAppliedAt: latestNewAppliedAt, // ใช้ใน useMemo
               createdAt,
-            };
+            } as JobPost & { _latestNewAppliedAt: number };
           }),
         );
 
         setJobPosts(normalized);
       } catch (err) {
-        setApiError(
-          err instanceof Error ? err.message : "Failed to load candidates",
-        );
+        setApiError(err instanceof Error ? err.message : "Failed to load candidates");
         setJobPosts([]);
       }
     })();
@@ -157,24 +178,31 @@ export default function EmployerDashboardPage() {
     const query = searchQuery.toLowerCase();
 
     return [...jobPosts]
+      .map((post: any) => {
+        const lastViewedAt = viewedAt[post.id] || 0;
+        // ✅ New หายถ้า employer เคยดูแล้ว และไม่มี applicant ใหม่หลังจากนั้น
+        const isNew = post.isNew && post._latestNewAppliedAt > lastViewedAt;
+        return { ...post, isNew };
+      })
       .filter((post) => {
         const matchesSearch =
           post.title.toLowerCase().includes(query) ||
           post.companyName.toLowerCase().includes(query) ||
-          post.positions.some((p) => p.toLowerCase().includes(query));
+          post.positions.some((p: string) => p.toLowerCase().includes(query));
 
         if (activeFilter === "new") return matchesSearch && !!post.isNew;
         return matchesSearch;
       })
       .sort((a, b) => {
         if (activeFilter === "latest") {
-          return (
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         }
+        // New ขึ้นก่อนเสมอ
+        if (a.isNew && !b.isNew) return -1;
+        if (!a.isNew && b.isNew) return 1;
         return 0;
       });
-  }, [jobPosts, searchQuery, activeFilter]);
+  }, [jobPosts, searchQuery, activeFilter, viewedAt]);
 
   return (
     <div className="min-h-screen bg-[#F6F7FB]">
@@ -182,7 +210,6 @@ export default function EmployerDashboardPage() {
       <div className="flex">
         <EmployerSidebar activeItem="applicants" />
 
-        {/* Main Content */}
         <div className="flex-1 bg-[#E6EBF4]">
           <div className="layout-container layout-page">
             {apiError && (
@@ -190,33 +217,21 @@ export default function EmployerDashboardPage() {
                 {apiError}
               </div>
             )}
+
             <div className="mb-[18px] flex items-start justify-between gap-6">
               <div>
-                <div className="flex items-start gap-4">
-                  <h1 className="text-[32px] font-bold leading-none tracking-[-0.02em] text-[#05060A]">
-                    Applicants
-                  </h1>
-                </div>
+                <h1 className="text-[32px] font-bold leading-none tracking-[-0.02em] text-[#05060A]">
+                  Applicants
+                </h1>
                 <p className="mt-4 text-[14px] text-[#6B7280]">
-                  View and manage your job posts and track applicants for each
-                  position.
+                  View and manage your job posts and track applicants for each position.
                 </p>
               </div>
 
               <div className="relative pt-[2px]">
                 <div className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2">
-                  <svg
-                    className="h-5 w-5 text-[#6B7280]"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
+                  <svg className="h-5 w-5 text-[#6B7280]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
                 <input
@@ -224,7 +239,7 @@ export default function EmployerDashboardPage() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search"
-                  className="h-[30px] w-[282px] rounded-full border border-[#C9CED8] bg-white pl-[44px] pr-5 text-[12px] text-[#374151] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
+                  className="h-[38px] w-[356px] rounded-full border border-[#C9CED8] bg-white pl-[50px] pr-5 text-[14px] text-[#374151] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
                 />
               </div>
             </div>
@@ -240,11 +255,10 @@ export default function EmployerDashboardPage() {
                 <button
                   key={value}
                   onClick={() => setActiveFilter(value)}
-                  className="h-[30px] rounded-[6px] border px-5 text-[12px] font-semibold transition-colors"
+                  className="h-[36px] rounded-[7px] border px-6 text-[14px] font-semibold transition-colors"
                   style={{
                     borderColor: activeFilter === value ? "#2563EB" : "#D1D5DB",
-                    backgroundColor:
-                      activeFilter === value ? "#FFFFFF" : "#F3F4F6",
+                    backgroundColor: activeFilter === value ? "#FFFFFF" : "#F3F4F6",
                     color: activeFilter === value ? "#2563EB" : "#111827",
                   }}
                 >
@@ -253,7 +267,7 @@ export default function EmployerDashboardPage() {
               ))}
             </div>
 
-            <p className="mb-[16px] text-[14px] font-semibold text-[#111827]">
+            <p className="mb-[16px] text-[16px] font-semibold text-[#111827]">
               {filteredJobPosts.length} Total Job Post
             </p>
 
@@ -265,7 +279,11 @@ export default function EmployerDashboardPage() {
 
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-3">
               {filteredJobPosts.map((post) => (
-                <EmployerApplicantsOverviewCard key={post.id} post={post} />
+                <EmployerApplicantsOverviewCard
+                  key={post.id}
+                  post={post}
+                  onView={() => markAsViewed(post.id)}
+                />
               ))}
             </div>
           </div>

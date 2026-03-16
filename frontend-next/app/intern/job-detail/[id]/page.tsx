@@ -175,7 +175,7 @@ export default function JobDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#F4F7FA] flex flex-col">
+      <div className="min-h-screen bg-[#E6EBF4] flex flex-col">
         <InternNavbar />
         <div className="flex flex-1 items-center justify-center">
           <div className="w-12 h-12 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
