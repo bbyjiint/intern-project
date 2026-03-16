@@ -13,7 +13,6 @@ export default function ProfileHeader({ fullName, currentDate, completionPercent
         Welcome, {fullName || 'User'}
       </h1>
       <p className="text-gray-600 mb-4">{currentDate}</p>
-    
     </div>
   )
 }

@@ -26,6 +26,7 @@ const SKILL_OPTIONS = [
 
 export interface ProjectsSectionHandle {
   syncToDb: () => Promise<void>;
+  validateAll: () => { valid: boolean; incompleteProjects: string[] };
 }
 
 interface ProjectsSectionProps {
@@ -43,6 +44,22 @@ interface Project {
   endDate: string;
   relatedSkills: string[];
   _status: "saved" | "new" | "edited" | "deleted";
+  _aiTag?: boolean;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AIBadge
+// ─────────────────────────────────────────────────────────────────────────────
+
+function AIBadge() {
+  return (
+    <span
+      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium ml-2"
+      style={{ backgroundColor: "#EEF2FF", color: "#4338CA" }}
+    >
+      ✨ AI filled
+    </span>
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -84,6 +101,7 @@ function normaliseProject(p: any): Project {
     startDate: toDisplayDate(p.startDate || ""),
     endDate: toDisplayDate(p.endDate || ""),
     _status: p._status ?? (p.id && !String(p.id).startsWith("local-") ? "saved" : "new"),
+    _aiTag: p._aiTag ?? false,
   };
 }
 
@@ -212,8 +230,8 @@ const ProjectsSection = forwardRef<ProjectsSectionHandle, ProjectsSectionProps>(
     );
     const [showForm, setShowForm] = useState(false);
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
+    const [incompleteWarnings, setIncompleteWarnings] = useState<string[]>([]);
 
-    // Always keep ref in sync — prevents stale closure in syncToDb
     const projectsRef = useRef<Project[]>(projects);
     useEffect(() => {
       projectsRef.current = projects;
@@ -232,12 +250,26 @@ const ProjectsSection = forwardRef<ProjectsSectionHandle, ProjectsSectionProps>(
       setProjects(normalised);
       projectsRef.current = normalised;
       initializedRef.current = true;
-      // NOTE: do NOT call onUpdate here — this is a read-only sync, not a user edit
     }, [data.projects]);
 
-    // ── syncToDb: persist all pending changes ────────────────────────────────
+    // ── syncToDb ─────────────────────────────────────────────────────────────
 
     useImperativeHandle(ref, () => ({
+      validateAll: () => {
+        const visible = projectsRef.current.filter((p) => p._status !== "deleted");
+        const incomplete = visible.filter(
+          (p) =>
+            !p.name?.trim() ||
+            !p.role?.trim() ||
+            !p.startDate ||
+            !p.endDate ||
+            !p.description?.trim() ||
+            !p.relatedSkills || p.relatedSkills.length === 0
+        );
+        const names = incomplete.map((p) => p.name || "Untitled Project");
+        if (names.length > 0) setIncompleteWarnings(names);
+        return { valid: names.length === 0, incompleteProjects: names };
+      },
       syncToDb: async () => {
         const current = [...projectsRef.current];
         const next = [...current];
@@ -280,9 +312,8 @@ const ProjectsSection = forwardRef<ProjectsSectionHandle, ProjectsSectionProps>(
       },
     }));
 
-    // ── Local CRUD (optimistic, no API) ──────────────────────────────────────
+    // ── Local CRUD ────────────────────────────────────────────────────────────
 
-    // FIX: notifyParent is only called on explicit user actions, not on init
     const notifyParent = (updated: Project[]) => {
       const visible = updated.filter((p) => p._status !== "deleted");
       onUpdate({ projects: visible });
@@ -299,9 +330,11 @@ const ProjectsSection = forwardRef<ProjectsSectionHandle, ProjectsSectionProps>(
         ...project,
         id: `local-${Date.now()}`,
         _status: "new",
+        _aiTag: false, // manually added = no AI tag
       };
       applyProjects([newProject, ...projects]);
       setShowForm(false);
+      setIncompleteWarnings([]);
     };
 
     const handleEdit = (index: number, project: Partial<Project>) => {
@@ -311,13 +344,17 @@ const ProjectsSection = forwardRef<ProjectsSectionHandle, ProjectsSectionProps>(
         ...existing,
         ...project,
         _status: existing._status === "new" ? "new" : "edited",
+        _aiTag: false,
       };
       applyProjects(updated);
       setEditingIndex(null);
+      setIncompleteWarnings([]);
     };
 
     const handleDelete = (index: number) => {
       if (!confirm("Are you sure you want to delete this project?")) return;
+      setIncompleteWarnings([]);
+      setIncompleteWarnings([]);
       const existing = projects[index];
       let updated: Project[];
 
@@ -333,6 +370,9 @@ const ProjectsSection = forwardRef<ProjectsSectionHandle, ProjectsSectionProps>(
     const visibleProjects = projects
       .map((p, i) => ({ p, i }))
       .filter(({ p }) => p._status !== "deleted");
+
+    // Count AI-tagged projects
+    const aiProjectCount = visibleProjects.filter(({ p }) => p._aiTag).length;
 
     return (
       <div>
@@ -358,6 +398,44 @@ const ProjectsSection = forwardRef<ProjectsSectionHandle, ProjectsSectionProps>(
             </button>
           )}
         </div>
+
+        {/* Incomplete Projects Warning Banner */}
+        {incompleteWarnings.length > 0 && (
+          <div
+            className="flex items-start gap-3 px-4 py-3 rounded-lg mb-5 text-sm"
+            style={{ backgroundColor: "#FEF2F2", border: "1px solid #FECACA" }}
+          >
+            <span className="text-base mt-0.5">⚠️</span>
+            <div>
+              <p className="font-semibold" style={{ color: "#DC2626" }}>
+                กรุณาแก้ไขหรือลบ project ที่ข้อมูลไม่ครบ ก่อนบันทึก
+              </p>
+              <ul className="mt-1 list-disc list-inside" style={{ color: "#EF4444" }}>
+                {incompleteWarnings.map((name, i) => (
+                  <li key={i} className="text-xs">{name} — ต้องมี ชื่อ, role, วันที่, description, related skills</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {/* AI Autofill Banner */}
+        {data._aiFilled_projects && aiProjectCount > 0 && (
+          <div
+            className="flex items-start gap-3 px-4 py-3 rounded-lg mb-5 text-sm"
+            style={{ backgroundColor: "#EEF2FF", border: "1px solid #C7D2FE" }}
+          >
+            <span className="text-base mt-0.5">✨</span>
+            <div>
+              <p className="font-semibold" style={{ color: "#4338CA" }}>
+                AI autofilled {aiProjectCount} project{aiProjectCount > 1 ? "s" : ""} from your resume
+              </p>
+              <p className="mt-0.5" style={{ color: "#6366F1" }}>
+                Please review each project and edit if needed. Projects marked with ✨ AI filled were read from your resume.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Project list */}
         <div className="space-y-4">
@@ -427,9 +505,14 @@ function ProjectCard({
 
   return (
     <div className="border border-gray-200 rounded-lg p-5 bg-white">
-      <h4 className="font-bold text-base mb-1" style={{ color: "#1C2D4F" }}>
-        {project.name || "Project Name"} — {project.role || "Role"}
-      </h4>
+      {/* Title row with AI badge */}
+      <div className="flex items-center flex-wrap gap-1 mb-1">
+        <h4 className="font-bold text-base" style={{ color: "#1C2D4F" }}>
+          {project.name || "Project Name"} — {project.role || "Role"}
+        </h4>
+        {project._aiTag && <AIBadge />}
+      </div>
+
       <p className="text-sm mb-3" style={{ color: "#6B7280" }}>
         Role: {project.role || "—"}{dateRange ? ` | ${dateRange}` : ""}
       </p>
@@ -487,7 +570,7 @@ function ProjectForm({
     startDate: toDisplayDate(project?.startDate || ""),
     endDate: toDisplayDate(project?.endDate || ""),
     description: project?.description || "",
-    relatedSkills: (project?.relatedSkills ?? project?.relatedSkills ?? []) as string[],
+    relatedSkills: (project?.relatedSkills ?? []) as string[],
   });
   const [selectedSkill, setSelectedSkill] = useState("");
   const [errors, setErrors] = useState<Record<string, boolean>>({});
@@ -504,6 +587,7 @@ function ProjectForm({
     if (!fields.startDate) e.startDate = true;
     if (!fields.endDate) e.endDate = true;
     if (!fields.description.trim()) e.description = true;
+    if (!fields.relatedSkills || fields.relatedSkills.length === 0) e.relatedSkills = true;
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -530,6 +614,7 @@ function ProjectForm({
     <div className="border border-gray-200 rounded-lg p-6 bg-white">
       <h4 className="text-lg font-bold mb-4" style={{ color: "#1C2D4F" }}>
         {isEditing ? "Edit Project" : "Add Project"}
+        {isEditing && project?._aiTag && <AIBadge />}
       </h4>
 
       {Object.values(errors).some(Boolean) && (
@@ -591,7 +676,7 @@ function ProjectForm({
 
         {/* Skills */}
         <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: "#0273B1" }}>Related Skills</label>
+          <label className="block text-xs font-medium mb-2" style={{ color: errors.relatedSkills ? "#EF4444" : "#0273B1" }}>Related Skills{errors.relatedSkills && " *"}</label>
           <div className="flex gap-2">
             <div className="relative flex-1">
               <select value={selectedSkill} onChange={(e) => setSelectedSkill(e.target.value)}
@@ -612,6 +697,9 @@ function ProjectForm({
               onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#E3F5FF"; e.currentTarget.style.color = "#0273B1"; }}
             >Add</button>
           </div>
+          {errors.relatedSkills && (
+            <p className="text-xs mt-1" style={{ color: "#EF4444" }}>กรุณาเพิ่มอย่างน้อย 1 skill</p>
+          )}
           {fields.relatedSkills.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3">
               {fields.relatedSkills.map((skill, i) => (

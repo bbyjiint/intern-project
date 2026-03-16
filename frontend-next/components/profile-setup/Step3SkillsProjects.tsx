@@ -13,6 +13,7 @@ interface Skill {
   category: 'technical' | 'business' | string
   level: 'beginner' | 'intermediate' | 'advanced' | string
   usedIn?: { educationIds?: number[]; projectIds?: number[] }
+  _aiTag?: boolean
 }
 
 interface Step3Props {
@@ -28,6 +29,21 @@ const LEVEL_CONFIG = {
 } as const
 
 // ─────────────────────────────────────────────────────────────────────────────
+// AIBadge
+// ─────────────────────────────────────────────────────────────────────────────
+
+function AIBadge() {
+  return (
+    <span
+      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium ml-1"
+      style={{ backgroundColor: '#EEF2FF', color: '#4338CA' }}
+    >
+      ✨ AI filled
+    </span>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Step3SkillsProjects
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -36,7 +52,6 @@ export default function Step3SkillsProjects({ data, onUpdate, onSkip }: Step3Pro
   const [showForm, setShowForm] = useState(false)
   const [editingIndex, setEditingIndex] = useState<number | null>(null)
 
-  // FIX: sync from parent once when real DB data arrives (same pattern as ProjectsSection)
   const initializedRef = useRef(false)
   useEffect(() => {
     if (initializedRef.current) return
@@ -44,7 +59,6 @@ export default function Step3SkillsProjects({ data, onUpdate, onSkip }: Step3Pro
     if (incoming.length === 0) return
     setSkills(incoming)
     initializedRef.current = true
-    // NOTE: do NOT call onUpdate here — this is read-only sync, not a user edit
   }, [data.skills])
 
   const applySkills = (updated: Skill[]) => {
@@ -52,12 +66,15 @@ export default function Step3SkillsProjects({ data, onUpdate, onSkip }: Step3Pro
     onUpdate({ skills: updated })
   }
 
-  const handleAdd    = (skill: Skill)              => { applySkills([...skills, skill]);                           setShowForm(false)       }
-  const handleEdit   = (index: number, skill: Skill) => { const u = [...skills]; u[index] = skill; applySkills(u); setEditingIndex(null)    }
-  const handleDelete = (index: number)             => { applySkills(skills.filter((_, i) => i !== index))                                    }
+  const handleAdd    = (skill: Skill)               => { applySkills([...skills, skill]);                            setShowForm(false)    }
+  const handleEdit   = (index: number, skill: Skill) => { const u = [...skills]; u[index] = skill; applySkills(u);   setEditingIndex(null) }
+  const handleDelete = (index: number)               => { applySkills(skills.filter((_, i) => i !== index))                                }
 
   const technical = skills.filter(s => s.category === 'technical')
   const business  = skills.filter(s => s.category === 'business')
+
+  // Count how many AI-tagged skills still have no level set
+  const aiSkillsNeedingReview = skills.filter(s => s._aiTag && !s.level).length
 
   return (
     <div>
@@ -99,6 +116,30 @@ export default function Step3SkillsProjects({ data, onUpdate, onSkip }: Step3Pro
                 onMouseLeave={e => { e.currentTarget.style.backgroundColor = '#E3F5FF'; e.currentTarget.style.color = '#0273B1' }}
               >+ Add Skill</button>
             </div>
+
+            {/* AI Autofill Banner */}
+            {data._aiFilled_skills && skills.length > 0 && (
+              <div
+                className="flex items-start gap-3 px-4 py-3 rounded-lg mb-5 text-sm"
+                style={{ backgroundColor: '#EEF2FF', border: '1px solid #C7D2FE' }}
+              >
+                <span className="text-base mt-0.5">✨</span>
+                <div>
+                  <p className="font-semibold" style={{ color: '#4338CA' }}>
+                    AI autofilled {skills.length} skill{skills.length > 1 ? 's' : ''} from your resume
+                  </p>
+                  {aiSkillsNeedingReview > 0 ? (
+                    <p className="mt-0.5" style={{ color: '#6366F1' }}>
+                      {aiSkillsNeedingReview} skill{aiSkillsNeedingReview > 1 ? 's' : ''} still need{aiSkillsNeedingReview === 1 ? 's' : ''} a proficiency level — click <strong>Edit</strong> to set it.
+                    </p>
+                  ) : (
+                    <p className="mt-0.5" style={{ color: '#6366F1' }}>
+                      Please review and adjust proficiency levels as needed.
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
 
             <SkillGroup title="Technical Skills" skills={technical} allSkills={skills}
               education={data.education} projects={data.projects}
@@ -173,9 +214,15 @@ function SkillItem({ skill, education, projects, onEdit, onDelete }: {
     <div className="p-4 border border-gray-200 rounded-lg bg-white">
       <div className="flex justify-between items-start">
         <div className="flex-1">
-          <div className="font-semibold mb-1" style={{ color: '#1C2D4F' }}>{skill.name}</div>
+          {/* Skill name + AI badge */}
+          <div className="flex items-center gap-1 flex-wrap mb-1">
+            <span className="font-semibold" style={{ color: '#1C2D4F' }}>{skill.name}</span>
+            {skill._aiTag && <AIBadge />}
+          </div>
+
           {linkedToText && <div className="text-xs mb-2" style={{ color: '#A9B4CD' }}>Linked to: {linkedToText}</div>}
-          {cfg && (
+
+          {cfg ? (
             <>
               <div className="flex gap-1 mb-1">
                 {cfg.bars.map((filled, i) => (
@@ -185,8 +232,17 @@ function SkillItem({ skill, education, projects, onEdit, onDelete }: {
               </div>
               <div className="text-xs" style={{ color: '#A9B4CD' }}>{cfg.label} — {cfg.desc}</div>
             </>
+          ) : (
+            /* No level set yet — nudge user */
+            <div
+              className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium mt-1"
+              style={{ backgroundColor: '#FEF9C3', color: '#92400E' }}
+            >
+              ⚠ Proficiency level not set — click Edit to add
+            </div>
           )}
         </div>
+
         <div className="flex gap-2 ml-4">
           <button onClick={onEdit} className="px-3 py-1 rounded text-sm font-semibold"
             style={{ backgroundColor: 'white', border: '2px solid #0273B1', color: '#0273B1' }}>Edit</button>
@@ -213,6 +269,7 @@ function SkillForm({ skill, education, projects, onSave, onCancel }: {
     category: skill?.category || 'technical',
     level:    skill?.level    || '',
     usedIn:   skill?.usedIn   || { educationIds: [], projectIds: [] },
+    _aiTag:   skill?._aiTag   || false,
   })
   const [skillOptions, setSkillOptions] = useState<{ id: string; name: string }[]>([])
   const [loading, setLoading] = useState(false)
@@ -243,13 +300,22 @@ function SkillForm({ skill, education, projects, onSave, onCancel }: {
 
   const handleSubmit = () => {
     if (!fields.name || !fields.category || !fields.level) return
-    onSave(fields)
+    // When user saves a skill manually (or edits AI-filled), clear the _aiTag flag
+    onSave({ ...fields, _aiTag: isEditing ? false : fields._aiTag })
   }
 
   return (
     <div>
       <h4 className="text-lg font-bold mb-6" style={{ color: '#1C2D4F' }}>
         {isEditing ? 'Edit Skill' : 'Add Skill'}
+        {isEditing && skill?._aiTag && (
+          <span
+            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium ml-2 align-middle"
+            style={{ backgroundColor: '#EEF2FF', color: '#4338CA' }}
+          >
+            ✨ AI filled
+          </span>
+        )}
       </h4>
 
       <div className="space-y-6">

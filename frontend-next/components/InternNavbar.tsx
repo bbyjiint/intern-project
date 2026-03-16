@@ -27,10 +27,16 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
   const [isBugModalOpen, setIsBugModalOpen] = useState(false);
 
   const handleSendBugReport = async (description: string) => {
-    // ใส่ Logic ยิง API ไป Backend ตรงนี้
     console.log("Bug reported:", description);
     alert("Thank you! Your bug report has been submitted.");
   };
+
+  // ✅ แปลง profileImage path ให้เป็น URL เต็ม
+  const resolveImageUrl = (image?: string) => {
+    if (!image) return null
+    if (image.startsWith('http')) return image
+    return `http://localhost:5001${image}`
+  }
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -42,31 +48,53 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
       }
     }
 
-    const loadProfileData = () => {
-      const savedData = localStorage.getItem('internProfileData')
-      if (savedData) {
-        try {
-          setProfileData(JSON.parse(savedData))
-        } catch (e) {
-          console.error('Failed to parse profile data:', e)
+    // ✅ ใช้ endpoint เดียวกับ useProfile hook
+    const loadProfileData = async () => {
+      try {
+        const data = await apiFetch<{ profile: any }>('/api/candidates/profile')
+        if (data?.profile) {
+          const profile = data.profile
+          // ดึงเฉพาะที่ navbar ต้องใช้
+          const minimal = {
+            fullName: profile.fullName,
+            profileImage: profile.profileImage,
+          }
+          setProfileData(minimal)
+          // อัปเดต localStorage ด้วยข้อมูลล่าสุด
+          localStorage.setItem('internProfileData', JSON.stringify(minimal))
+        }
+      } catch (error) {
+        // fallback ไป localStorage ถ้า API ล้มเหลว
+        const savedData = localStorage.getItem('internProfileData')
+        if (savedData) {
+          try {
+            setProfileData(JSON.parse(savedData))
+          } catch (e) {
+            console.error('Failed to parse profile data:', e)
+          }
         }
       }
     }
-    
+
     loadUserData()
     loadProfileData()
-    
+
     const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === 'internProfileData') loadProfileData()
+      if (e.key === 'internProfileData') {
+        const savedData = localStorage.getItem('internProfileData')
+        if (savedData) {
+          try { setProfileData(JSON.parse(savedData)) } catch {}
+        }
+      }
     }
     window.addEventListener('storage', handleStorageChange)
-    
+
     const handleProfileUpdate = () => {
       loadProfileData()
       loadUserData()
     }
     window.addEventListener('profileImageUpdated', handleProfileUpdate)
-    
+
     return () => {
       window.removeEventListener('storage', handleStorageChange)
       window.removeEventListener('profileImageUpdated', handleProfileUpdate)
@@ -101,12 +129,16 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
 
   const getInitials = (name: string) => {
     if (!name) return 'I'
-    const parts = name.split(' ')
+    const parts = name.trim().split(' ').filter(Boolean)
     if (parts.length >= 2) {
       return (parts[0][0] + parts[1][0]).toUpperCase()
     }
     return name.charAt(0).toUpperCase()
   }
+
+  // ✅ ดึงชื่อจาก profileData ก่อน แล้ว fallback ไป userData
+  const displayName = profileData?.fullName || userData?.displayName || userData?.email || 'I'
+  const profileImageUrl = resolveImageUrl(profileData?.profileImage)
 
   useEffect(() => {
     if (searchQuery !== undefined) {
@@ -125,16 +157,12 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
 
   return (
     <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
-      {/* ใช้ Container เดียวกับ Sidebar/Content เพื่อให้เส้นขอบและตำแหน่งตรงกัน */}
       <div className="layout-container">
         <div className="flex justify-between items-center h-[76px]">
-          
-          {/* ================= LEFT SECTION: Logo & Menus ================= */}
-          <div className="flex items-center gap-12 xl:gap-20">
-            {/* Logo */}
-            <CompanyHubLogo href="/intern/profile" />
 
-            {/* Navigation Links */}
+          {/* LEFT SECTION */}
+          <div className="flex items-center gap-12 xl:gap-20">
+            <CompanyHubLogo href="/intern/profile" />
             <div className="hidden md:flex items-center gap-8">
               <Link
                 href="/intern/find-companies"
@@ -157,54 +185,56 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
                 onClick={() => setIsBugModalOpen(true)}
                 className="font-semibold text-[15px] transition-colors"
                 style={{ color: '#A9B4CD' }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#0273B1'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#A9B4CD'
-                }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = '#0273B1' }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = '#A9B4CD' }}
               >
                 Report bug
               </button>
             </div>
           </div>
 
-
-          {/* ================= RIGHT SECTION: Button & Profile ================= */}
+          {/* RIGHT SECTION */}
           <div className="flex items-center gap-6">
-
-            {/* Profile Dropdown Container */}
             <div className="relative" ref={dropdownRef}>
-              <div 
+              <div
                 className="relative cursor-pointer"
                 onClick={() => setShowDropdown(!showDropdown)}
               >
-                {/* Profile Image */}
+                {/* ✅ Profile Image หรือ Initials */}
                 <div className="w-11 h-11 rounded-full overflow-hidden border border-gray-200">
-                  {profileData?.profileImage ? (
+                  {profileImageUrl ? (
                     <img
-                      src={profileData.profileImage}
+                      src={profileImageUrl}
                       alt="Profile"
                       className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // ✅ ถ้าโหลดรูปไม่ได้ ให้ซ่อนรูปแล้วแสดง initials แทน
+                        e.currentTarget.style.display = 'none'
+                        const parent = e.currentTarget.parentElement
+                        if (parent) {
+                          parent.classList.add('bg-[#0273B1]', 'flex', 'items-center', 'justify-center')
+                          parent.innerHTML = `<span class="text-white font-semibold text-sm">${getInitials(displayName)}</span>`
+                        }
+                      }}
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-[#0273B1]">
                       <span className="text-white font-semibold text-sm">
-                        {getInitials(profileData?.fullName || userData?.displayName || userData?.email || 'I')}
+                        {getInitials(displayName)}
                       </span>
                     </div>
                   )}
                 </div>
-                
-                {/* Small Arrow Indicator (เหมือนในรูป) */}
+
+                {/* Arrow indicator */}
                 <div className="absolute bottom-0 right-0 w-4 h-4 bg-[#E2E8F0] border-2 border-white rounded-full flex items-center justify-center shadow-sm">
                   <svg className="w-2.5 h-2.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
                   </svg>
                 </div>
               </div>
-              
-              {/* Dropdown Menu Box */}
+
+              {/* Dropdown Menu */}
               {showDropdown && (
                 <div className="absolute right-0 mt-3 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
                   <Link
@@ -237,16 +267,15 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
                     </svg>
                     Bookmark
                   </Link>
-                  
+
                   <div className="h-px bg-gray-100 my-1"></div>
-                  
+
                   <button
                     onClick={() => {
                       ;(async () => {
                         try {
                           await apiFetch(`/api/auth/logout`, { method: 'POST' })
                         } catch {
-                          // ignore
                         } finally {
                           localStorage.removeItem('user')
                           localStorage.removeItem('internProfileData')
@@ -267,14 +296,13 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
                 </div>
               )}
             </div>
-
           </div>
         </div>
       </div>
-      <ReportBugModal 
-        isOpen={isBugModalOpen} 
-        onClose={() => setIsBugModalOpen(false)} 
-        onSubmit={handleSendBugReport} 
+      <ReportBugModal
+        isOpen={isBugModalOpen}
+        onClose={() => setIsBugModalOpen(false)}
+        onSubmit={handleSendBugReport}
       />
     </nav>
   )

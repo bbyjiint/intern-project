@@ -46,6 +46,21 @@ const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', '
 const DEFAULT_POSITIONS = ['HR', 'Accounting', 'Marketing', 'IT', 'Finance', 'Sales', 'Operations', 'Engineering']
 
 // ─────────────────────────────────────────────────────────────────────────────
+// AIBadge
+// ─────────────────────────────────────────────────────────────────────────────
+
+function AIBadge() {
+  return (
+    <span
+      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium ml-2"
+      style={{ backgroundColor: '#EEF2FF', color: '#4338CA' }}
+    >
+      ✨ AI filled
+    </span>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Date helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -86,7 +101,6 @@ function DayMonthYearPicker({
   const [calYear, setCalYear] = useState(parsed?.year ?? today.getFullYear())
   const [calMonth, setCalMonth] = useState(parsed?.month ?? today.getMonth() + 1)
 
-  // Sync calendar when value changes externally (e.g. on data load)
   useEffect(() => {
     const p = parseDate(value)
     if (p) {
@@ -95,7 +109,6 @@ function DayMonthYearPicker({
     }
   }, [value])
 
-  // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false)
@@ -155,7 +168,6 @@ function DayMonthYearPicker({
 
       {open && (
         <div className="absolute z-50 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4" style={{ minWidth: 280 }}>
-          {/* Nav header */}
           <div className="flex items-center justify-between mb-3">
             <button type="button" onClick={prevMonth} className="p-1 rounded hover:bg-gray-100">
               <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -185,7 +197,6 @@ function DayMonthYearPicker({
             </button>
           </div>
 
-          {/* Month picker */}
           {view === 'month' && (
             <div className="grid grid-cols-3 gap-1">
               {MONTHS.map((m, i) => (
@@ -200,7 +211,6 @@ function DayMonthYearPicker({
             </div>
           )}
 
-          {/* Year picker */}
           {view === 'year' && (
             <div className="grid grid-cols-3 gap-1 max-h-48 overflow-y-auto">
               {Array.from({ length: 100 }, (_, i) => today.getFullYear() - i).map(y => (
@@ -215,7 +225,6 @@ function DayMonthYearPicker({
             </div>
           )}
 
-          {/* Day picker */}
           {view === 'day' && (
             <>
               <div className="grid grid-cols-7 mb-1">
@@ -282,19 +291,15 @@ export default function Step1GeneralInfo({ data, onUpdate, onSkip }: Step1Props)
   const [provinces, setProvinces] = useState<Province[]>([])
   const [selectedProvinceIds, setSelectedProvinceIds] = useState<string[]>([])
 
-  // FIX: Sync form when parent data changes (e.g. after loadProfile on refresh)
   useEffect(() => {
     const built = buildFormFields(data)
     setFields(built)
-
-    // Sync province IDs — they come as UUID strings from backend
     const locs = data.preferredLocations || []
     if (locs.length > 0) {
       setSelectedProvinceIds(locs)
     }
   }, [data])
 
-  // Load provinces once — after load, sync selectedProvinceIds if needed
   useEffect(() => {
     let cancelled = false
     ;(async () => {
@@ -316,7 +321,6 @@ export default function Step1GeneralInfo({ data, onUpdate, onSkip }: Step1Props)
       ;(updated as any).fullName = `${updated.firstName} ${updated.lastName}`.trim()
     }
 
-    // Auto-combine internship period string
     if (field === 'internshipStart' || field === 'internshipEnd') {
       const start = field === 'internshipStart' ? value as string : updated.internshipStart
       const end = field === 'internshipEnd' ? value as string : updated.internshipEnd
@@ -370,13 +374,28 @@ export default function Step1GeneralInfo({ data, onUpdate, onSkip }: Step1Props)
         )}
       </div>
 
+      {/* AI Autofill Banner */}
+      {data._aiAutofilled && (
+        <div
+          className="flex items-center gap-2 px-4 py-3 rounded-lg mb-5 text-sm"
+          style={{ backgroundColor: '#EEF2FF', color: '#4338CA', border: '1px solid #C7D2FE' }}
+        >
+          <span className="text-base">✨</span>
+          <span className="font-semibold">AI autofilled your profile</span>
+          <span style={{ color: '#6366F1' }}>— Fields marked with ✨ AI filled were read from your resume. Please review and edit if needed.</span>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row gap-6">
         {/* Left column — form fields */}
         <div className="flex-1 space-y-5">
+
           {/* Name */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>First Name</label>
+              <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
+                First Name {data._aiFilled_firstName && <AIBadge />}
+              </label>
               <input
                 type="text"
                 value={fields.firstName}
@@ -386,7 +405,9 @@ export default function Step1GeneralInfo({ data, onUpdate, onSkip }: Step1Props)
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>Last Name</label>
+              <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
+                Last Name {data._aiFilled_lastName && <AIBadge />}
+              </label>
               <input
                 type="text"
                 value={fields.lastName}
@@ -442,7 +463,9 @@ export default function Step1GeneralInfo({ data, onUpdate, onSkip }: Step1Props)
 
           {/* Email */}
           <div>
-            <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>Email</label>
+            <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
+              Email {data._aiFilled_email && <AIBadge />}
+            </label>
             <input
               type="email"
               value={fields.email}
@@ -454,7 +477,9 @@ export default function Step1GeneralInfo({ data, onUpdate, onSkip }: Step1Props)
 
           {/* Phone */}
           <div>
-            <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>Phone Number</label>
+            <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
+              Phone Number {data._aiFilled_phoneNumber && <AIBadge />}
+            </label>
             <input
               type="tel"
               value={fields.phoneNumber}
@@ -498,7 +523,7 @@ export default function Step1GeneralInfo({ data, onUpdate, onSkip }: Step1Props)
 
       {/* About You */}
       <div className="mt-8">
-        <label className="block text-xs font-medium mb-1" style={{ color: '#0273B1' }}>About You</label>
+        <label className="block text-xs font-medium mb-1" style={{ color: '#0273B1' }}>About You {data._aiFilled_aboutYou && <AIBadge />}</label>
         <p className="text-xs mb-3" style={{ color: '#A9B4CD' }}>
           Add a short description highlighting your background, skills, or interests.
         </p>

@@ -14,24 +14,22 @@ export default function Step0UploadResume({
   onSkip,
 }: Step0UploadResumeProps) {
   const [resumeFile, setResumeFile] = useState<File | null>(null);
-  // resumeUrl ใช้แค่เพื่อแสดงว่ามีไฟล์อยู่ (อาจเป็น local blob URL หรือ URL จาก DB)
   const [resumeUrl, setResumeUrl] = useState<string | null>(
-    data.resumeUrl || null,
+    data.resumeUrl || null
   );
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [useAI, setUseAI] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [aiDone, setAiDone] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (data.resumeUrl) {
-      setResumeUrl(data.resumeUrl);
-    }
+    if (data.resumeUrl) setResumeUrl(data.resumeUrl);
   }, [data.resumeUrl]);
 
-  // ★ เพิ่มตรงนี้ — ดัก Leave without saving แล้วกลับมา
-useEffect(() => {
+  useEffect(() => {
     if (!data._pendingResumeFile && !data.resumeUrl) {
       setResumeFile(null);
       setResumeUrl(null);
@@ -54,32 +52,23 @@ useEffect(() => {
     ) {
       return "Invalid file type. Please upload a PDF or DOCX file.";
     }
-
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
+    if (file.size > 5 * 1024 * 1024) {
       return "File size exceeds 5 MB limit. Please choose a smaller file.";
     }
-
     return null;
   };
 
-  // ★ ไม่ call API ที่นี่อีกต่อไป — แค่เก็บไฟล์ไว้ใน state
-  // การ upload จริงจะเกิดใน handleSave ของ page.tsx
   const handleFileSelect = (file: File) => {
     const validationError = validateFile(file);
     if (validationError) {
       setError(validationError);
       return;
     }
-
     setError(null);
     setResumeFile(file);
-
-    // สร้าง local URL แค่เพื่อแสดง UI ว่าเลือกไฟล์แล้ว
+    setAiDone(false);
     const localUrl = URL.createObjectURL(file);
     setResumeUrl(localUrl);
-
-    // ★ ส่ง _pendingResumeFile ขึ้นไปให้ parent รู้ว่ามีไฟล์รอ upload
     onUpdate({
       resumeUrl: localUrl,
       resumeFile: file.name,
@@ -112,36 +101,111 @@ useEffect(() => {
     if (file) handleFileSelect(file);
   };
 
-  const handleSelectFileClick = () => {
-    fileInputRef.current?.click();
-  };
+  const handleSelectFileClick = () => fileInputRef.current?.click();
 
   const handleRemoveFile = () => {
-    if (resumeUrl?.startsWith("blob:")) {
-      URL.revokeObjectURL(resumeUrl);
-    }
-
+    if (resumeUrl?.startsWith("blob:")) URL.revokeObjectURL(resumeUrl);
     setResumeFile(null);
     setResumeUrl(null);
     setError(null);
-    // ★ ล้าง _pendingResumeFile ด้วย
+    setAiDone(false);
     onUpdate({ resumeUrl: null, resumeFile: null, _pendingResumeFile: null });
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  // ─── AI Autofill ──────────────────────────────────────────────────────────
+  const handleAnalyzeResume = async () => {
+    const file = data._pendingResumeFile as File | null;
+    if (!file) return;
+
+    setIsAnalyzing(true);
+    setError(null);
+
+    try {
+      const uploadForm = new FormData();
+      uploadForm.append("resume", file);
+
+      const res = await fetch("http://localhost:5001/api/ai/parse-resume", {
+        method: "POST",
+        body: uploadForm,
+        credentials: "include",
+      });
+
+      if (!res.ok) throw new Error("AI analysis failed");
+
+      const result = await res.json();
+      const parsed = result.parsedData;
+
+      if (!parsed) throw new Error("No data returned");
+
+      // Map AI result → formData fields
+      const nameParts = (parsed.fullName || "").trim().split(" ");
+      const firstName = nameParts[0] || "";
+      const lastName = nameParts.slice(1).join(" ") || "";
+
+      onUpdate({
+        // ── Profile ──────────────────────────────────────────────────────────
+        ...(firstName && { firstName, _aiFilled_firstName: true }),
+        ...(lastName  && { lastName,  _aiFilled_lastName:  true }),
+        ...(parsed.email && {
+          email: parsed.email,
+          _aiFilled_email: true,
+        }),
+        ...(parsed.phoneNumber && {
+          phoneNumber: parsed.phoneNumber,
+          _aiFilled_phoneNumber: true,
+        }),
+        // ── Bio (About You) ───────────────────────────────────────────────────
+        ...(parsed.bio && {
+          aboutYou: parsed.bio,
+          _aiFilled_aboutYou: true,
+        }),
+        // ── Education ─────────────────────────────────────────────────────────
+        ...(parsed.education?.length > 0 && {
+          education: parsed.education,
+          _aiFilled_education: true,
+        }),
+        // ── Projects ──────────────────────────────────────────────────────────
+        ...(parsed.projects?.length > 0 && {
+          projects: parsed.projects.map((p: any) => ({ ...p, _aiTag: true })),
+          _aiFilled_projects: true,
+        }),
+        // ── Skills ────────────────────────────────────────────────────────────
+        ...(parsed.skills?.length > 0 && {
+          skills: parsed.skills.map((s: any) =>
+            typeof s === "string"
+              ? { name: s, category: "technical", level: "beginner", _aiTag: true }
+              : { category: "technical", level: "beginner", ...s, _aiTag: true }
+          ),
+          _aiFilled_skills: true,
+        }),
+        _aiAutofilled: true,
+      });
+
+      setAiDone(true);
+    } catch (err) {
+      console.error("AI parse error:", err);
+      setError("AI could not analyze your resume. Please try again or fill in manually.");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const fileSelected = !!resumeUrl;
+
   return (
     <div>
-      {/* Header with Skip Button */}
-      <div className="flex justify-between items-start mb-4">
+      {/* Header */}
+      <div className="flex justify-between items-start mb-6">
         <div>
           <h2
-            className="text-2xl font-bold mb-2"
+            className="text-2xl font-bold mb-1"
             style={{ color: "#1C2D4F", fontWeight: 700 }}
           >
             Upload Your Resume
           </h2>
           <p className="text-sm" style={{ color: "#A9B4CD" }}>
-            Please upload your resume before saving this step.
+            Upload your resume to get started. You can autofill your profile using AI or fill in manually.
           </p>
         </div>
         {onSkip && (
@@ -171,10 +235,10 @@ useEffect(() => {
         </div>
       )}
 
-      {resumeUrl ? (
-        /* ── File selected state ─────────────────────────────────────────── */
+      {/* ── Drop Zone / File Selected ─────────────────────────────────────── */}
+      {fileSelected ? (
         <div
-          className="border-2 border-dashed rounded-lg p-8 text-center"
+          className="border-2 border-dashed rounded-xl p-8 text-center"
           style={{ borderColor: "#0273B1", backgroundColor: "#F0F8FF" }}
         >
           <div className="flex flex-col items-center">
@@ -192,7 +256,7 @@ useEffect(() => {
                 d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
               />
             </svg>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-1">
               <svg
                 className="w-5 h-5 text-green-500"
                 fill="none"
@@ -206,15 +270,14 @@ useEffect(() => {
                   d="M5 13l4 4L19 7"
                 />
               </svg>
-              <p className="text-sm font-medium" style={{ color: "#1C2D4F" }}>
+              <p className="text-sm font-semibold" style={{ color: "#1C2D4F" }}>
                 {resumeFile?.name || data.resumeFile || "Resume uploaded"}
               </p>
             </div>
             <p className="text-xs mb-3" style={{ color: "#6B7280" }}>
-              {/* ★ ถ้าเป็นไฟล์ใหม่ (pending) แสดงข้อความต่างกัน */}
               {data._pendingResumeFile
                 ? "File selected. Press Save to upload."
-                : "File uploaded successfully. You can now save this step."}
+                : "File uploaded successfully."}
             </p>
             <button
               onClick={handleRemoveFile}
@@ -232,13 +295,12 @@ useEffect(() => {
           </div>
         </div>
       ) : (
-        /* ── Drop zone ───────────────────────────────────────────────────── */
         <div
           ref={dropZoneRef}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors ${
+          className={`border-2 border-dashed rounded-xl p-12 text-center transition-colors ${
             isDragging
               ? "border-blue-400 bg-blue-50"
               : "border-gray-300 bg-white"
@@ -259,10 +321,7 @@ useEffect(() => {
                 d="M7 11l5-5m0 0l5 5m-5-5v12"
               />
             </svg>
-            <p
-              className="text-sm font-medium mb-4"
-              style={{ color: "#1C2D4F" }}
-            >
+            <p className="text-sm font-medium mb-4" style={{ color: "#1C2D4F" }}>
               Drag and drop your resume here, or
             </p>
             <button
@@ -285,24 +344,197 @@ useEffect(() => {
         </div>
       )}
 
-      {/* AI Analysis Checkbox */}
-      <div className="flex items-center mt-6">
-        <input
-          type="checkbox"
-          id="use-ai"
-          checked={useAI}
-          onChange={(e) => setUseAI(e.target.checked)}
-          className="w-4 h-4 rounded border-gray-300"
-          style={{ accentColor: "#0273B1" }}
-        />
+      {/* ── AI Autofill Options ───────────────────────────────────────────── */}
+      <div
+        className="mt-5 rounded-xl border p-4"
+        style={{
+          borderColor: useAI ? "#0273B1" : "#E5E7EB",
+          backgroundColor: useAI ? "#F0F8FF" : "#FAFAFA",
+          transition: "all 0.2s ease",
+        }}
+      >
+        {/* Checkbox row */}
         <label
           htmlFor="use-ai"
-          className="ml-2 text-sm"
-          style={{ color: "#1C2D4F" }}
+          className="flex items-center gap-3 cursor-pointer select-none"
         >
-          Use AI to analyze my resume and autofill my profile
+          <div className="relative flex items-center justify-center">
+            <input
+              type="checkbox"
+              id="use-ai"
+              checked={useAI}
+              onChange={(e) => setUseAI(e.target.checked)}
+              className="w-5 h-5 rounded border-gray-300"
+              style={{ accentColor: "#0273B1" }}
+            />
+          </div>
+          <div className="flex-1">
+            <span className="text-sm font-semibold" style={{ color: "#1C2D4F" }}>
+              ✨ Use AI to analyze and autofill my profile
+            </span>
+            <p className="text-xs mt-0.5" style={{ color: "#6B7280" }}>
+              AI will read your resume and fill in Profile, Education, Projects, and Skills automatically.
+            </p>
+          </div>
         </label>
+
+        {/* AI Action panel */}
+        {useAI && (
+          <div className="mt-4 pt-4 border-t" style={{ borderColor: "#DBEAFE" }}>
+            {!fileSelected ? (
+              <div
+                className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg"
+                style={{ backgroundColor: "#FEF9C3", color: "#92400E" }}
+              >
+                <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                    d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                </svg>
+                Please upload a resume file first to use AI autofill.
+              </div>
+            ) : aiDone ? (
+              /* ── Success state ── */
+              <div className="flex items-start gap-3">
+                <div
+                  className="flex items-center justify-center w-8 h-8 rounded-full shrink-0"
+                  style={{ backgroundColor: "#D1FAE5" }}
+                >
+                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-green-700">
+                    Profile autofilled successfully!
+                  </p>
+                  <p className="text-xs text-green-600 mt-0.5">
+                    AI has filled in your profile fields. Fields marked with{" "}
+                    <span
+                      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium"
+                      style={{ backgroundColor: "#EEF2FF", color: "#4338CA" }}
+                    >
+                      ✨ AI filled
+                    </span>{" "}
+                    were autofilled. You can edit them anytime.
+                  </p>
+                  <button
+                    onClick={handleAnalyzeResume}
+                    className="mt-2 text-xs underline"
+                    style={{ color: "#0273B1" }}
+                  >
+                    Re-analyze resume
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* ── Ready to analyze ── */
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-sm" style={{ color: "#374151" }}>
+                  Ready to analyze{" "}
+                  <span className="font-medium" style={{ color: "#0273B1" }}>
+                    {resumeFile?.name || data.resumeFile}
+                  </span>
+                </p>
+                <button
+                  onClick={handleAnalyzeResume}
+                  disabled={isAnalyzing}
+                  className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white transition-colors shrink-0"
+                  style={{
+                    backgroundColor: isAnalyzing ? "#93C5FD" : "#0273B1",
+                    cursor: isAnalyzing ? "not-allowed" : "pointer",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isAnalyzing)
+                      e.currentTarget.style.backgroundColor = "#025a8f";
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isAnalyzing)
+                      e.currentTarget.style.backgroundColor = "#0273B1";
+                  }}
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <svg
+                        className="w-4 h-4 animate-spin"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8v8H4z"
+                        />
+                      </svg>
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                          d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.347.347A3.6 3.6 0 0114 18.6V19a2 2 0 11-4 0v-.4a3.6 3.6 0 01-1.062-2.563l-.347-.347z" />
+                      </svg>
+                      Analyze &amp; Autofill
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+
+            {/* Loading animation */}
+            {isAnalyzing && (
+              <div className="mt-3">
+                <div className="flex gap-1.5 items-center mb-1.5">
+                  {["Reading resume...", "Extracting data...", "Filling profile..."].map(
+                    (label, i) => (
+                      <div key={i} className="flex items-center gap-1">
+                        <div
+                          className="w-2 h-2 rounded-full"
+                          style={{
+                            backgroundColor: "#0273B1",
+                            animation: `pulse 1.2s ease-in-out ${i * 0.3}s infinite`,
+                            opacity: 0.7,
+                          }}
+                        />
+                        <span className="text-xs" style={{ color: "#6B7280" }}>
+                          {label}
+                        </span>
+                      </div>
+                    )
+                  )}
+                </div>
+                <div
+                  className="h-1.5 rounded-full overflow-hidden"
+                  style={{ backgroundColor: "#DBEAFE" }}
+                >
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      backgroundColor: "#0273B1",
+                      width: "60%",
+                      animation: "shimmer 1.5s ease-in-out infinite",
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Keep file-only option note */}
+      {fileSelected && !useAI && (
+        <p className="mt-3 text-xs" style={{ color: "#9CA3AF" }}>
+          Resume will be saved to your profile. Tick the checkbox above to autofill fields with AI.
+        </p>
+      )}
 
       <input
         ref={fileInputRef}
@@ -311,6 +543,13 @@ useEffect(() => {
         onChange={handleFileInputChange}
         className="hidden"
       />
+
+      <style>{`
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(200%); }
+        }
+      `}</style>
     </div>
   );
 }

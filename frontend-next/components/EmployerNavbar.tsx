@@ -18,8 +18,14 @@ export default function EmployerNavbar() {
   const [unreadCount, setUnreadCount] = useState(0)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
+  // ✅ แปลง path รูปให้เป็น URL เต็ม
+  const resolveImageUrl = (image?: string) => {
+    if (!image) return null
+    if (image.startsWith('http')) return image
+    return `http://localhost:5001${image}`
+  }
+
   useEffect(() => {
-    // Load user data from API
     const loadUserData = async () => {
       try {
         const data = await apiFetch<{ user: { displayName?: string; email?: string } }>('/api/auth/me')
@@ -29,60 +35,65 @@ export default function EmployerNavbar() {
       }
     }
 
-    const loadProfileData = () => {
-      const savedData = localStorage.getItem('employerProfileData')
-      if (savedData) {
-        try {
-          setProfileData(JSON.parse(savedData))
-        } catch (e) {
-          console.error('Failed to parse profile data:', e)
+    // ✅ โหลดจาก API โดยตรง เหมือน intern
+    const loadProfileData = async () => {
+      try {
+        const data = await apiFetch<{ profile: any }>('/api/companies/profile')
+        if (data?.profile) {
+          const minimal = {
+            companyName: data.profile.companyName,
+            profileImage: data.profile.profileImage,
+          }
+          setProfileData(minimal)
+          localStorage.setItem('employerProfileData', JSON.stringify(minimal))
+        }
+      } catch (error) {
+        // fallback ไป localStorage ถ้า API ล้มเหลว
+        const savedData = localStorage.getItem('employerProfileData')
+        if (savedData) {
+          try {
+            setProfileData(JSON.parse(savedData))
+          } catch (e) {
+            console.error('Failed to parse profile data:', e)
+          }
         }
       }
     }
-    
+
     loadUserData()
     loadProfileData()
-    
-    // Listen for storage changes to sync profile image
+
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === 'employerProfileData') {
-        loadProfileData()
+        const savedData = localStorage.getItem('employerProfileData')
+        if (savedData) {
+          try { setProfileData(JSON.parse(savedData)) } catch {}
+        }
       }
     }
-    
     window.addEventListener('storage', handleStorageChange)
-    
-    // Also listen for custom event for same-window updates
+
     const handleProfileUpdate = () => {
       loadProfileData()
       loadUserData()
     }
-    
     window.addEventListener('profileImageUpdated', handleProfileUpdate)
-    
+
     return () => {
       window.removeEventListener('storage', handleStorageChange)
       window.removeEventListener('profileImageUpdated', handleProfileUpdate)
     }
   }, [])
 
-  // Poll for unread message count
   useEffect(() => {
     const fetchUnreadCount = async () => {
       try {
         const data = await apiFetch<{ unreadCount: number }>('/api/messages/unread-count')
         setUnreadCount(data.unreadCount)
-      } catch (error) {
-        // Silently fail - don't show errors for unread count
-      }
+      } catch (error) {}
     }
-
-    // Fetch immediately
     fetchUnreadCount()
-
-    // Poll every 5 seconds
     const interval = setInterval(fetchUnreadCount, 5000)
-
     return () => clearInterval(interval)
   }, [])
 
@@ -92,11 +103,9 @@ export default function EmployerNavbar() {
         setShowDropdown(false)
       }
     }
-
     if (showDropdown) {
       document.addEventListener('mousedown', handleClickOutside)
     }
-
     return () => {
       document.removeEventListener('mousedown', handleClickOutside)
     }
@@ -107,12 +116,14 @@ export default function EmployerNavbar() {
     return name.charAt(0).toUpperCase()
   }
 
+  const displayName = profileData?.companyName || userData?.displayName || userData?.email || 'C'
+  const profileImageUrl = resolveImageUrl(profileData?.profileImage)
+
   const handleOpenCreateJobPost = () => {
     if (typeof window !== 'undefined' && isJobPostPage) {
       window.dispatchEvent(new CustomEvent('openCreateJobPostModal'))
       return
     }
-
     router.push('/employer/job-post?create=1')
   }
 
@@ -127,16 +138,8 @@ export default function EmployerNavbar() {
                 href="/employer/find-candidates"
                 className="text-[16px] font-medium transition-colors"
                 style={{ color: isFindCandidatesPage ? '#1C2D4F' : '#A9B4CD' }}
-                onMouseEnter={(e) => {
-                  if (!isFindCandidatesPage) {
-                    e.currentTarget.style.color = '#1C2D4F'
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isFindCandidatesPage) {
-                    e.currentTarget.style.color = '#A9B4CD'
-                  }
-                }}
+                onMouseEnter={(e) => { if (!isFindCandidatesPage) e.currentTarget.style.color = '#1C2D4F' }}
+                onMouseLeave={(e) => { if (!isFindCandidatesPage) e.currentTarget.style.color = '#A9B4CD' }}
               >
                 Find Candidates
               </Link>
@@ -144,16 +147,8 @@ export default function EmployerNavbar() {
                 href="/employer/messages"
                 className="relative text-[16px] font-medium transition-colors"
                 style={{ color: isMessagesPage ? '#1C2D4F' : '#A9B4CD' }}
-                onMouseEnter={(e) => {
-                  if (!isMessagesPage) {
-                    e.currentTarget.style.color = '#1C2D4F'
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isMessagesPage) {
-                    e.currentTarget.style.color = '#A9B4CD'
-                  }
-                }}
+                onMouseEnter={(e) => { if (!isMessagesPage) e.currentTarget.style.color = '#1C2D4F' }}
+                onMouseLeave={(e) => { if (!isMessagesPage) e.currentTarget.style.color = '#A9B4CD' }}
               >
                 Message
                 {unreadCount > 0 && (
@@ -166,17 +161,14 @@ export default function EmployerNavbar() {
                 href="mailto:support@companyhub.local?subject=Bug%20Report"
                 className="text-[16px] font-medium transition-colors"
                 style={{ color: '#A9B4CD' }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#1C2D4F'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#A9B4CD'
-                }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = '#1C2D4F' }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = '#A9B4CD' }}
               >
                 Report bug
               </a>
             </div>
           </div>
+
           <div className="flex items-center gap-4">
             <button
               type="button"
@@ -197,11 +189,12 @@ export default function EmployerNavbar() {
               </svg>
               <span>Create Job Post</span>
             </button>
+
             <div className="relative" ref={dropdownRef}>
               <div className="flex items-center gap-3">
                 <div className="hidden text-right md:block">
                   <div className="text-sm font-semibold text-gray-900">
-                    {userData?.displayName || profileData?.companyName || 'Company Name'}
+                    {displayName}
                   </div>
                 </div>
                 <div className="relative h-12 w-12">
@@ -209,24 +202,35 @@ export default function EmployerNavbar() {
                     href="/employer/profile"
                     className="block h-12 w-12 overflow-hidden rounded-full bg-[#F4F4FA] cursor-pointer"
                   >
-                    {profileData?.profileImage ? (
+                    {/* ✅ รูปโปรไฟล์หรือ initials */}
+                    {profileImageUrl ? (
                       <img
-                        src={profileData.profileImage}
+                        src={profileImageUrl}
                         alt="Profile"
                         className="h-12 w-12 rounded-full object-cover"
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none'
+                          const parent = e.currentTarget.parentElement
+                          if (parent) {
+                            parent.classList.add('flex', 'items-center', 'justify-center')
+                            parent.style.backgroundColor = '#0273B1'
+                            parent.innerHTML = `<span class="text-white font-semibold text-sm">${getInitials(displayName)}</span>`
+                          }
+                        }}
                       />
                     ) : (
-                      <div 
+                      <div
                         className="flex h-12 w-12 items-center justify-center rounded-full"
                         style={{ backgroundColor: '#0273B1' }}
                       >
                         <span className="text-white font-semibold text-sm">
-                          {getInitials(userData?.displayName || profileData?.companyName || 'C')}
+                          {getInitials(displayName)}
                         </span>
                       </div>
                     )}
                   </Link>
-                  {/* Dropdown indicator - small gray circle with arrow */}
+
+                  {/* Dropdown indicator */}
                   <button
                     className="absolute bottom-0 right-0 z-10 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-[#E5E7EB] cursor-pointer transition-colors hover:bg-[#D1D5DB]"
                     onClick={(e) => {
@@ -241,7 +245,7 @@ export default function EmployerNavbar() {
                   </button>
                 </div>
               </div>
-              
+
               {/* Dropdown Menu */}
               {showDropdown && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
@@ -292,9 +296,7 @@ export default function EmployerNavbar() {
                         try {
                           await apiFetch(`/api/auth/logout`, { method: 'POST' })
                         } catch {
-                          // ignore
                         } finally {
-                          // Clear cached client data
                           localStorage.removeItem('user')
                           localStorage.removeItem('employerProfileData')
                           localStorage.removeItem('employerConversations')
@@ -321,4 +323,3 @@ export default function EmployerNavbar() {
     </nav>
   )
 }
-

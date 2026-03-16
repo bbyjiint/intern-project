@@ -72,9 +72,23 @@ export default function PersonalInfoCard({
     };
   }, [profile]);
 
+  // ✅ แสดงชื่อย่อจาก fullName เช่น "Natnicha Inkongngam" → "NI"
+  const getInitials = (name: string) => {
+    return name
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((n) => n[0].toUpperCase())
+      .join("");
+  };
+
+  const hasProfileImage = !!profile.profileImage;
+  const initials = getInitials(profile.fullName || "");
+
+  // ✅ เปลี่ยนจาก "Candidate" เป็น "Position of interest"
   const displayRoles = profile.preferredPositions?.length
     ? profile.preferredPositions
-    : ["Candidate"];
+    : ["+ Position of interest"];
 
   const prefix = profile.gender?.toLowerCase() === "female" ? "Ms." : "Mr.";
 
@@ -85,7 +99,6 @@ export default function PersonalInfoCard({
   };
   const badge = badgeStyles[stats.badgeStatus];
 
-  // ไอคอนติ๊กถูกในวงกลมสีเขียว
   const GreenCheck = () => (
     <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#B2CD6D] flex-shrink-0 ml-0.5">
       <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,7 +107,6 @@ export default function PersonalInfoCard({
     </span>
   );
 
-  // ไอคอนติ๊กถูกในวงกลมสีเหลือง
   const YellowCheck = () => (
     <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#FFC456] flex-shrink-0 ml-0.5">
       <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -103,7 +115,6 @@ export default function PersonalInfoCard({
     </span>
   );
 
-  // ไอคอน X วงกลมสีแดง
   const RedX = () => (
     <svg className="w-5 h-5 text-red-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
@@ -123,17 +134,23 @@ export default function PersonalInfoCard({
 
         {/* Profile Header Section */}
         <div className="flex items-start gap-6 mb-6">
-          <img
-            src={
-              profile.profileImage
-                ? profile.profileImage.startsWith("http")
-                  ? profile.profileImage
+          {/* ✅ แสดงชื่อย่อถ้าไม่มีรูปโปรไฟล์ */}
+          {hasProfileImage ? (
+            <img
+              src={
+                profile.profileImage!.startsWith("http")
+                  ? profile.profileImage!
                   : `http://localhost:5001${profile.profileImage}`
-                : "https://placehold.co/100x100"
-            }
-            alt="Profile"
-            className="w-24 h-24 rounded-full object-cover shadow-sm bg-slate-50"
-          />
+              }
+              alt="Profile"
+              className="w-24 h-24 rounded-full object-cover shadow-sm bg-slate-50 flex-shrink-0"
+            />
+          ) : (
+            <div className="w-24 h-24 rounded-full flex-shrink-0 flex items-center justify-center bg-blue-600 text-white text-2xl font-bold shadow-sm select-none">
+              {initials || "?"}
+            </div>
+          )}
+
           <div className="pt-1">
             <h2 className="text-2xl font-bold text-slate-900 mb-1">
               {profile.fullName
@@ -164,7 +181,7 @@ export default function PersonalInfoCard({
           {profile.bio || "No description provided."}
         </p>
 
-        {/* Positions Tags */}
+        {/* ✅ Position of interest Tags */}
         <div className="flex flex-wrap gap-2 mb-6">
           {displayRoles.map((role, idx) => (
             <span
@@ -193,13 +210,15 @@ export default function PersonalInfoCard({
             <span
               className={`flex items-center gap-1.5 px-3 py-1 ${badge.bg} ${badge.text} border ${badge.border} rounded-full text-xs font-bold`}
             >
-              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                  clipRule="evenodd"
-                />
-              </svg>
+              {stats.badgeStatus === "Not Verified" ? (
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              ) : (
+                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                </svg>
+              )}
               {stats.badgeStatus}
             </span>
           </div>

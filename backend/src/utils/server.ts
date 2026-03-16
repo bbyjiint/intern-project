@@ -15,12 +15,12 @@ import { bookmarksRouter } from "../routes/bookmarks";
 import messagesRouter from "../routes/messages";
 import { internRouter } from "../routes/intern";
 import uploadRouter from "../routes/upload";
+import aiRouter from "../routes/ai"; // ← เพิ่ม
 
 const app = express();
 
 loadDotEnv();
 
-// If deploying behind a proxy (common in production), this allows secure cookies to work correctly.
 app.set("trust proxy", 1);
 
 app.use(
@@ -33,8 +33,6 @@ app.use(express.json({ limit: "5mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());
 
-// Serve static files from uploads directory only if using local storage
-// For S3, files are served directly from S3/CDN
 if (process.env.FILE_STORAGE_PROVIDER !== "s3") {
   app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 }
@@ -43,7 +41,6 @@ app.get("/api/health", (req, res) => {
   res.json({ ok: true });
 });
 
-// DB connectivity test (hits Neon via Prisma)
 app.get("/api/db-check", async (req, res) => {
   const userCount = await prisma.user.count();
   res.json({ ok: true, userCount });
@@ -60,20 +57,17 @@ app.use("/api/bookmarks", bookmarksRouter);
 app.use("/api/messages", messagesRouter);
 app.use("/api/intern", internRouter);
 app.use("/api/upload", uploadRouter);
+app.use("/api/ai", aiRouter); // ← เพิ่ม
 
-// Serve uploaded files
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
-// 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
 });
 
-// Error handling middleware (must be last)
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   console.error("Error:", err);
-  
-  // Prisma errors
+
   if (err.code === "P2002") {
     return res.status(409).json({ error: "A record with this value already exists" });
   }
@@ -83,11 +77,10 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   if (err.code?.startsWith("P")) {
     return res.status(500).json({ error: "Database error", details: err.message });
   }
-  
-  // Default error
-  res.status(err.status || 500).json({ 
+
+  res.status(err.status || 500).json({
     error: err.message || "Internal server error",
-    ...(process.env.NODE_ENV === "development" && { stack: err.stack })
+    ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
   });
 });
 

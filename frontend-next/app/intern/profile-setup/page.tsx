@@ -40,8 +40,8 @@ export default function ProfileSetupPage() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [pendingStep, setPendingStep] = useState<number | null>(null);
 
-  // loadKey increments after profile loads — used as key on steps to force re-mount with correct data
-  const [loadKey, setLoadKey] = useState(0);
+  const [loadKey, setLoadKey] = useState(0)
+  const [skillsKey, setSkillsKey] = useState(0);
 
   const [formData, setFormData] = useState({
     resumeUrl: null as string | null,
@@ -120,7 +120,6 @@ export default function ProfileSetupPage() {
         skills: profile.skills || [],
         positionsOfInterest: profile.positionsOfInterest || [],
         preferredLocations: profile.preferredLocations || [],
-        // FIX: use empty string fallback (not null) so form fields display correctly
         gender: profile.gender || "",
         nationality: profile.nationality || "Thai",
         dateOfBirth: profile.dateOfBirth || "",
@@ -131,7 +130,6 @@ export default function ProfileSetupPage() {
     } catch (err) {
       console.error("Load profile failed:", err);
     } finally {
-      // Always unlock the page after the initial fetch, even for new/empty profiles.
       setLoadKey((prev) => (prev === 0 ? 1 : prev));
     }
   };
@@ -158,20 +156,162 @@ export default function ProfileSetupPage() {
     return data.url;
   };
 
-  // ─── Save Profile ─────────────────────────────────────────────────────────
+  // ─── Clear AI Flags (เฉพาะ step ที่ Save) ────────────────────────────────
+
+  const clearAIFlags = (step: number) => {
+    setFormData((prev) => {
+      const cleared: any = { ...prev };
+
+      if (step === 2) {
+        // General Info
+        delete cleared._aiAutofilled;
+        delete cleared._aiFilled_firstName;
+        delete cleared._aiFilled_lastName;
+        delete cleared._aiFilled_email;
+        delete cleared._aiFilled_phoneNumber;
+        delete cleared._aiFilled_aboutYou;
+      }
+
+      if (step === 3) {
+        // Education
+        delete cleared._aiFilled_education;
+      }
+
+      if (step === 4) {
+        // Projects
+        delete cleared._aiFilled_projects;
+        cleared.projects = prev.projects.map((p: any) => ({ ...p, _aiTag: false }));
+      }
+
+      if (step === 5) {
+        // Skills
+        delete cleared._aiFilled_skills;
+        cleared.skills = prev.skills.map((s: any) => ({ ...s, _aiTag: false }));
+      }
+
+      return cleared;
+    });
+  };
+
+  // ─── Save Profile (แยกตาม step) ──────────────────────────────────────────
 
   const saveProfile = async () => {
-    if (currentStep === 3 && educationValidatorRef.current) {
-      const valid = await educationValidatorRef.current();
-      if (!valid) return;
-    }
-
     setIsSubmitting(true);
+    setError(null);
+
+    try {
+      // ── Step 1: Upload Resume ─────────────────────────────────────────────
+      if (currentStep === 1) {
+        const resumeUrl = await uploadResume();
+        await apiFetch("/api/candidates/profile", {
+          method: "PUT",
+          body: JSON.stringify({ resumeUrl }),
+        });
+      }
+
+      // ── Step 2: General Info ──────────────────────────────────────────────
+      if (currentStep === 2) {
+        const internshipPeriod =
+          formData.internshipPeriod ||
+          (formData.internshipStart && formData.internshipEnd
+            ? `${formData.internshipStart} - ${formData.internshipEnd}`
+            : formData.internshipStart || formData.internshipEnd || "");
+
+        let dateOfBirth: string | null = null;
+        if (formData.dateOfBirth) {
+          const raw = formData.dateOfBirth.split("T")[0];
+          dateOfBirth = `${raw}T12:00:00.000Z`;
+        }
+
+        await apiFetch("/api/candidates/profile", {
+          method: "PUT",
+          body: JSON.stringify({
+            fullName: `${formData.firstName} ${formData.lastName}`.trim(),
+            email: formData.email,
+            phoneNumber: formData.phoneNumber,
+            aboutYou: formData.aboutYou,
+            profileImage: formData.photo || null,
+            gender: formData.gender,
+            nationality: formData.nationality,
+            dateOfBirth,
+            internshipPeriod,
+            positionsOfInterest: formData.positionsOfInterest,
+            preferredLocations: formData.preferredLocations,
+          }),
+        });
+      }
+
+      // ── Step 3: Education ─────────────────────────────────────────────────
+      if (currentStep === 3) {
+        if (educationValidatorRef.current) {
+          const valid = await educationValidatorRef.current();
+          if (!valid) { setIsSubmitting(false); return; }
+        }
+        await apiFetch("/api/candidates/profile", {
+          method: "PUT",
+          body: JSON.stringify({ education: formData.education }),
+        });
+      }
+
+      // ── Step 4: Projects ──────────────────────────────────────────────────
+      if (currentStep === 4) {
+        if (projectsSectionRef.current) {
+          const { valid, incompleteProjects } = projectsSectionRef.current.validateAll();
+          if (!valid) {
+            setError(`กรุณากรอกข้อมูลให้ครบก่อนบันทึก: ${incompleteProjects.join(", ")} — ต้องมี ชื่อ, role, วันที่, description, related skills`);
+            setIsSubmitting(false);
+            return;
+          }
+          await projectsSectionRef.current.syncToDb();
+        }
+      }
+
+      // ── Step 5: Skills ────────────────────────────────────────────────────
+      if (currentStep === 5) {
+        const incompleteSkills = (formData.skills as any[]).filter(
+          (s: any) => !s.name?.trim() || !s.category?.trim() || !s.level?.trim()
+        );
+        if (incompleteSkills.length > 0) {
+          setError(
+            `กรุณากรอกข้อมูลให้ครบก่อนบันทึก: ${incompleteSkills.map((s: any) => s.name || "Untitled Skill").join(", ")} — ต้องมี ชื่อ, category, proficiency level`
+          );
+          setIsSubmitting(false);
+          return;
+        }
+        await apiFetch("/api/candidates/profile", {
+          method: "PUT",
+          body: JSON.stringify({ skills: formData.skills }),
+        });
+      }
+
+      // ── Clear AI flags เฉพาะ step ที่ Save ───────────────────────────────
+      clearAIFlags(currentStep);
+      if (currentStep === 5) setSkillsKey((k) => k + 1);
+
+      setHasUnsavedChanges(false);
+      setShowSaveModal(true);
+    } catch (err) {
+      setError("Failed to save profile");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // ─── Create Profile ───────────────────────────────────────────────────────
+
+  const handleCreateProfile = () => {
+    setShowConfirmModal(true);
+  };
+
+  const confirmCreateProfile = async () => {
+    setShowConfirmModal(false);
+    setIsSubmitting(true);
+    setError(null);
 
     try {
       const resumeUrl = await uploadResume();
 
-      if (currentStep === 4 && projectsSectionRef.current) {
+      if (projectsSectionRef.current) {
         await projectsSectionRef.current.syncToDb();
       }
 
@@ -181,13 +321,13 @@ export default function ProfileSetupPage() {
           ? `${formData.internshipStart} - ${formData.internshipEnd}`
           : formData.internshipStart || formData.internshipEnd || "");
 
-      // FIX: send midday UTC to prevent timezone day-shift in backend
       let dateOfBirth: string | null = null;
       if (formData.dateOfBirth) {
         const raw = formData.dateOfBirth.split("T")[0];
         dateOfBirth = `${raw}T12:00:00.000Z`;
       }
 
+      // Save ทุกอย่างพร้อมกันตอน Create Profile
       await apiFetch("/api/candidates/profile", {
         method: "PUT",
         body: JSON.stringify({
@@ -209,30 +349,16 @@ export default function ProfileSetupPage() {
         }),
       });
 
-      setHasUnsavedChanges(false);
-      setShowSaveModal(true);
+      router.push("/intern/profile");
     } catch (err) {
-      setError("Failed to save profile");
+      setError("Failed to create profile");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // ─── Create Profile ──────────────────────────────────────────────────────
-
-  const handleCreateProfile = () => {
-    setShowConfirmModal(true);
-  };
-
-  const confirmCreateProfile = async () => {
-    setShowConfirmModal(false);
-    await saveProfile();
-    router.push("/intern/profile");
-  };
-
   // ─── Navigation ───────────────────────────────────────────────────────────
 
-  // Reset dirty flag whenever step actually changes
   useEffect(() => {
     setHasUnsavedChanges(false);
   }, [currentStep]);
@@ -242,7 +368,7 @@ export default function ProfileSetupPage() {
       setPendingStep(targetStep);
       setShowUnsavedModal(true);
     } else {
-      setHasUnsavedChanges(false); // ensure clean state when navigating
+      setHasUnsavedChanges(false);
       setCurrentStep(targetStep);
     }
   };
@@ -253,9 +379,8 @@ export default function ProfileSetupPage() {
 
   const handlePrevious = () => {
     if (currentStep === 1) {
-      // Step 1 goes back to profile page — check unsaved changes first
       if (hasUnsavedChanges) {
-        setPendingStep(0); // 0 = special flag meaning "go to /intern/profile"
+        setPendingStep(0);
         setShowUnsavedModal(true);
       } else {
         router.push("/intern/profile");
@@ -265,13 +390,10 @@ export default function ProfileSetupPage() {
     }
   };
 
-  // Called when user actively edits a field — marks unsaved changes
   const updateFormData = (data: any) => {
     setFormData((prev) => ({ ...prev, ...data }));
     setHasUnsavedChanges(true);
   };
-
-
 
   const handleLeaveWithoutSaving = async () => {
     setShowUnsavedModal(false);
@@ -279,7 +401,6 @@ export default function ProfileSetupPage() {
     await loadProfile();
     setHasUnsavedChanges(false);
     if (pendingStep === 0) {
-      // Special case: navigate away from setup entirely
       setPendingStep(null);
       router.push("/intern/profile");
     } else if (pendingStep !== null) {
@@ -290,8 +411,6 @@ export default function ProfileSetupPage() {
 
   // ─── Render ───────────────────────────────────────────────────────────────
 
-  // Show loading spinner until profile data is ready
-  // Show spinner on first load only
   if (loadKey === 0) {
     return (
       <div className="min-h-screen bg-[#F0F4F8] flex items-center justify-center">
@@ -318,96 +437,93 @@ export default function ProfileSetupPage() {
           <div className="bg-white p-10 rounded-lg shadow">
             {error && <div className="text-red-500 mb-4">{error}</div>}
 
-          {/* FIX: key={profileLoaded ? "loaded" : "loading"} forces re-mount
-              so each step initialises its local state with the correct data */}
+            {currentStep === 1 && (
+              <Step0UploadResume
+                key={`step0-${loadKey}`}
+                data={formData}
+                onUpdate={updateFormData}
+                onSkip={() => tryNavigateTo(2)}
+              />
+            )}
 
-          {currentStep === 1 && (
-            <Step0UploadResume
-              key={`step0-${loadKey}`}
-              data={formData}
-              onUpdate={updateFormData}
-              onSkip={() => tryNavigateTo(2)}
-            />
-          )}
+            {currentStep === 2 && (
+              <Step1GeneralInfo
+                key={`step1-${loadKey}`}
+                data={formData}
+                onUpdate={updateFormData}
+                onSkip={() => tryNavigateTo(3)}
+              />
+            )}
 
-          {currentStep === 2 && (
-            <Step1GeneralInfo
-              key={`step1-${loadKey}`}
-              data={formData}
-              onUpdate={updateFormData}
-              onSkip={() => tryNavigateTo(3)}
-            />
-          )}
+            {currentStep === 3 && (
+              <Step2BackgroundExperience
+                key={`step2-${loadKey}`}
+                data={formData}
+                onUpdate={updateFormData}
+                onSkip={() => tryNavigateTo(4)}
+                onValidate={(fn) => (educationValidatorRef.current = fn)}
+              />
+            )}
 
-          {currentStep === 3 && (
-            <Step2BackgroundExperience
-              key={`step2-${loadKey}`}
-              data={formData}
-              onUpdate={updateFormData}
-              onSkip={() => tryNavigateTo(4)}
-              onValidate={(fn) => (educationValidatorRef.current = fn)}
-            />
-          )}
+            {currentStep === 4 && (
+              <ProjectsSection
+                key={`step3-${loadKey}`}
+                ref={projectsSectionRef}
+                data={formData}
+                onUpdate={updateFormData}
+                onSkip={() => tryNavigateTo(5)}
+              />
+            )}
 
-          {currentStep === 4 && (
-            <ProjectsSection
-              key={`step3-${loadKey}`}
-              ref={projectsSectionRef}
-              data={formData}
-              onUpdate={updateFormData}
-              onSkip={() => tryNavigateTo(5)}
-            />
-          )}
-
-          {currentStep === 5 && (
-            <Step3SkillsProjects
-              key={`step4-${loadKey}`}
-              data={formData}
-              onUpdate={updateFormData}
-              onSkip={() => router.push("/intern/profile")}
-            />
-          )}
+            {currentStep === 5 && (
+              <Step3SkillsProjects
+                key={`step4-${loadKey}-${skillsKey}`}
+                data={formData}
+                onUpdate={updateFormData}
+                onSkip={() => router.push("/intern/profile")}
+              />
+            )}
 
             <div className="flex justify-between mt-10 pt-6 border-t">
-            <button
-              onClick={handlePrevious}
-              className="flex items-center px-6 py-3 rounded-lg font-semibold"
-              style={{ backgroundColor: "white", border: "2px solid #0273B1", color: "#0273B1" }}
-            >
-              Previous
-            </button>
-
-            <div className="flex gap-3">
               <button
-                onClick={saveProfile}
-                disabled={isSubmitting}
-                className="px-6 py-3 rounded-lg text-white font-semibold"
-                style={{ backgroundColor: "#0273B1" }}
+                onClick={handlePrevious}
+                className="flex items-center px-6 py-3 rounded-lg font-semibold"
+                style={{ backgroundColor: "white", border: "2px solid #0273B1", color: "#0273B1" }}
               >
-                {isSubmitting ? "Saving..." : "Save"}
+                Previous
               </button>
 
-              {currentStep < 5 ? (
+              <div className="flex gap-3">
                 <button
-                  onClick={handleNext}
-                  className="px-6 py-3 rounded-lg border font-semibold"
-                  style={{ border: "2px solid #0273B1", color: "#0273B1" }}
-                >
-                  Next
-                </button>
-              ) : (
-                <button
-                  onClick={handleCreateProfile}
+                  onClick={saveProfile}
                   disabled={isSubmitting}
                   className="px-6 py-3 rounded-lg text-white font-semibold"
-                  style={{ backgroundColor: "#16A34A" }}
-                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#15803D" }}
-                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#16A34A" }}
+                  style={{ backgroundColor: "#0273B1" }}
                 >
-                  Create Profile
+                  {isSubmitting ? "Saving..." : "Save"}
                 </button>
-              )}
-            </div>
+
+                {currentStep < 5 ? (
+                  <button
+                    onClick={handleNext}
+                    className="px-6 py-3 rounded-lg border font-semibold"
+                    style={{ border: "2px solid #0273B1", color: "#0273B1" }}
+                  >
+                    Next
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleCreateProfile}
+                    disabled={isSubmitting}
+                    className="px-6 py-3 rounded-lg text-white font-semibold"
+                    style={{ backgroundColor: "#16A34A" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#15803D" }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#16A34A" }}
+                  >
+                    Create Profile
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

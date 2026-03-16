@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "argon2": "^0.44.0",
+    "lucide-react": "^0.577.0",
     "uuid": "^13.0.0"
   }
 }
