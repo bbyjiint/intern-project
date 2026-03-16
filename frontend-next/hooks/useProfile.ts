@@ -101,9 +101,10 @@ export interface ResumeFile {
 export interface Skill {
   id: string
   name: string
-  category: string  // เปลี่ยนจาก 'technical' | 'business' เป็น string
+  category: string  
   rating?: number
-  level?: string    // เพิ่ม level ด้วย
+  level?: string   
+  status?: string
 }
 
 export interface InternshipDetails {
@@ -180,7 +181,8 @@ export function useProfile() {
           name: s.name,
           category: s.category,
           rating,
-          level: s.level
+          level: s.level,
+          status: s.status
         }
       })
 

@@ -29,7 +29,7 @@ export default function SkillsSection({
       (p) => (p as any).relatedSkills || (p as any).skills || [],
     ),
   );
-
+  // จัดกลุ่มตาม Category ใหม่ที่ตั้งไว้ใน DB
   const technicalSkills = skills.filter(
     (s) =>
       s.category?.toUpperCase() === "TECHNICAL" ||
@@ -61,6 +61,7 @@ export default function SkillsSection({
   );
 
   const SkillItem = ({ skill }: { skill: Skill }) => {
+    // ปรับการคำนวณ % ตาม Rating (1, 2, 3) หรือ Level ("Beginner", "Intermediate", "Advanced")
     let percentage = 33.33;
     let color = "#68B383";
 
@@ -72,9 +73,9 @@ export default function SkillsSection({
       color = "#8B5CF6";
     }
 
-    const isVerified = false;
     const hasCertEvidence = certSkillNames.has(skill.name);
     const hasProjectEvidence = projectSkillNames.has(skill.name);
+    const isVerified = skill.status?.toUpperCase() === "VERIFIED";
 
     return (
       <div className="mb-6 last:mb-0">

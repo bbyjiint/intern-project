@@ -71,6 +71,23 @@ model Skills {
   @@index([category])
 }
 
+model SkillTest {
+  id        String   @id @default(uuid()) @db.Uuid
+  skillName String   @unique 
+  questions Json     
+  createdAt DateTime @default(now())
+}
+
+model SkillTestAttempt {
+  id          String   @id @default(uuid()) @db.Uuid
+  candidateId String   @db.Uuid
+  skillName   String
+  scoreResult Json     
+  finalLevel  String   
+  createdAt   DateTime @default(now())
+
+  @@index([candidateId, skillName])
+}
 
 model University {
   id                  String                @id @default(uuid()) @db.Uuid
@@ -112,12 +129,19 @@ model User {
   CompanyProfile   CompanyProfile?
 }
 
+enum VerificationStatus {
+  NOT_VERIFIED
+  VERIFIED
+  // EXPIRED (เผื่ออนาคต มีระบบโควต้า 1 เดือน อาจจะต้องมีสถานะหมดอายุ)
+}
+
 model UserSkill {
   id          String           @id @default(uuid()) @db.Uuid
   candidateId String           @db.Uuid
   skillId     String           @db.Uuid
   rating      Int?
   category    SkillCategory    @default(TECHNICAL)
+  status      VerificationStatus  @default(NOT_VERIFIED)         
 
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
@@ -181,8 +205,29 @@ model CandidateUniversity {
   CandidateProfile CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
   University       University       @relation(fields: [universityId], references: [id])
 
+  transcripts EducationTranscript[]
+
   @@index([candidateId])
   @@index([universityId])
+}
+
+model EducationTranscript {
+  id           String   @id @default(uuid())
+  educationId  String
+  candidateId  String
+
+  name         String
+  url          String
+  fileSize     Int?
+  fileType     String?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  Education    CandidateUniversity @relation(fields: [educationId], references: [id], onDelete: Cascade)
+
+  @@index([educationId])
+  @@index([candidateId])
 }
 
 model CandidateProfile {

@@ -96,6 +96,9 @@ export default function ProjectUploadModal({
         uploadedFileName = file.name;
       }
 
+      const safeProjectName = project.name || (file ? file.name.split('.')[0] : "Untitled Project");
+      const safeProjectRole = project.role || "Developer";
+
       // ✅ แก้บัค: ส่งข้อมูลทั้งหมดของ project ไปด้วย ไม่ใช่แค่ URL
       // เพื่อป้องกันข้อมูลอื่นๆ (เช่น วันที่) หายไป
       await apiFetch(`/api/candidates/projects/${project.id}`, {
@@ -104,8 +107,8 @@ export default function ProjectUploadModal({
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name: project.name || project.title || "",
-          role: project.role || "",
+          name: safeProjectName,
+          role: safeProjectRole,
           description: project.description || "",
           // ✅ แก้บัค: ส่ง startDate/endDate ที่ได้รับมาจาก project prop ตรงๆ
           startDate: project.startDate || null,

@@ -137,7 +137,7 @@ export default function CertificatesPage() {
       const formData = new FormData();
       formData.append("name", savedData.name);
       if (savedData.description) formData.append("description", savedData.description);
-      if (savedData.issuedBy) formData.append("issuedBy", savedData.issuedBy);
+      if (savedData.issuedBy) formData.append("issuedBy", savedData.issuedBy || "");
       if (savedData.date) formData.append("issueDate", new Date(savedData.date).toISOString());
       if (savedData.tags) {
         savedData.tags.forEach((tag) => formData.append("relatedSkills", tag));

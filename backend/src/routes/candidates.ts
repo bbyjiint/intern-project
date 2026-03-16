@@ -6,6 +6,8 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { fileStorage } from "../utils/fileStorage";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { SkillCategory } from "@prisma/client";
 
 export const candidatesRouter = Router();
 
@@ -81,19 +83,21 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
           }
         },
 
+        WorkHistory: {
+          orderBy: { startDate: "desc" },
+        },
+
         CandidateUniversity: {
           include: { University: { select: { name: true, province: true } } },
           orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
           // ไม่ต้องแก้ — gpa มีอยู่แล้วใน CandidateUniversity model
-        },
-        WorkHistory: {
-          orderBy: { startDate: "desc" },
         },
         UserSkill: {
           include: {
             Skills: {
               select: {
                 name: true,
+                category: true,
               }
             }
           },
@@ -123,12 +127,6 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
             },
           },
           orderBy: { createdAt: "asc" },
-        },
-
-        CandidateResume: {
-          where: { isPrimary: true },
-          take: 1,
-          orderBy: { createdAt: "desc" },
         },
       },
     });
@@ -206,7 +204,8 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
           name: us.Skills.name,
           level: ratingMap[us.rating || 1] || "beginner",
           rating: us.rating || 1,
-          category: us.category || "TECHNICAL",
+          category: us.Skills.category,
+          status: us.status
         };
       }),
       files: {
@@ -254,6 +253,75 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
     });
   }
 });
+
+candidatesRouter.get("/skills", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
+  const userId = req.user!.id;
+
+  try {
+    const candidateId = await getCandidateIdForUser(userId);
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+
+    const skills = await prisma.userSkill.findMany({
+      where: { candidateId },
+      include: {
+        Skills: {
+          select: {
+            name: true,
+            category: true,
+          },
+        },
+      },
+      orderBy: [
+        { updatedAt: "desc" },
+        { createdAt: "desc" },
+      ],
+    });
+
+    const formattedSkills = await Promise.all(skills.map(async (skill) => {
+      // นับจำนวนครั้งที่สอบไปแล้วใน 1 เดือนล่าสุดสำหรับสกิลนี้
+      const attempts = await prisma.skillTestAttempt.findMany({
+        where: {
+          candidateId,
+          skillName: skill.Skills.name.toLowerCase(),
+          createdAt: { gte: oneMonthAgo }
+        },
+        orderBy: { createdAt: 'asc' } // เอาอันเก่าสุดขึ้นก่อน
+      });
+
+      const ratingMap: Record<number, string> = { 1: "Beginner", 2: "Intermediate", 3: "Advanced" };
+      
+      // คำนวณวันที่โควต้าจะคืน (30 วันหลังจากสอบครั้งแรกในชุดนั้น)
+      let nextAvailableDate = null;
+      if (attempts.length >= 3) {
+        const firstAttemptDate = new Date(attempts[0].createdAt);
+        firstAttemptDate.setMonth(firstAttemptDate.getMonth() + 1);
+        nextAvailableDate = firstAttemptDate.toISOString();
+      }
+
+      return {
+        id: skill.id,
+        name: skill.Skills?.name || "Unknown Skill",
+        category: skill.category || skill.Skills?.category || "TECHNICAL",
+        rating: skill.rating,
+        level: ratingMap[skill.rating || 1] || "Beginner",
+        status: skill.status,
+        // เพิ่มข้อมูลโควต้าส่งไปให้หน้าบ้าน
+        attemptsUsed: attempts.length,
+        nextAvailableDate: nextAvailableDate 
+      };
+    }));
+
+    return res.json({ skills: formattedSkills });
+  } catch (e: any) {
+    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
+      return res.status(404).json({ error: "Candidate profile not found" });
+    }
+    console.error("Error fetching candidate skills:", e);
+    return res.status(500).json({ error: e?.message || "Failed to fetch candidate skills" });
+  }
+});
+
 
 // Employer dashboard list
 candidatesRouter.get("/", requireAuth, requireRole("COMPANY"), async (req, res) => {
@@ -327,8 +395,8 @@ candidatesRouter.get("/", requireAuth, requireRole("COMPANY"), async (req, res) 
       preferredLocations: c.CandidatePreferredProvince.map((p) => p.Province.name),
       internshipPeriod: formatInternshipPeriod(c.internshipPeriod ?? null),
       yearOfStudy: primaryEdu?.yearOfStudy ?? null,
-      gpa: primaryEdu?.gpa ? primaryEdu.gpa.toString() : null,
-      degreeName: primaryEdu?.degreeName ?? null,
+      gpa: primaryEdu?.gpa ? primaryEdu.gpa.toString() : null,           
+      degreeName: primaryEdu?.degreeName ?? null,                         
       isCurrent: primaryEdu?.isCurrent ?? false,
       phoneNumber: c.phoneNumber ?? null,
       profileImage: c.profileImage ?? null,
@@ -338,54 +406,6 @@ candidatesRouter.get("/", requireAuth, requireRole("COMPANY"), async (req, res) 
   });
 
   return res.json({ candidates: items });
-});
-
-candidatesRouter.get("/skills", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
-  const userId = req.user!.id;
-
-  try {
-    const candidateId = await getCandidateIdForUser(userId);
-
-    const skills = await prisma.userSkill.findMany({
-      where: { candidateId },
-      include: {
-        Skills: {
-          select: {
-            name: true,
-            category: true,
-          },
-        },
-      },
-      orderBy: [
-        { updatedAt: "desc" },
-        { createdAt: "desc" },
-      ],
-    });
-
-    const formattedSkills = skills.map((skill) => {
-      const ratingMap: Record<number, string> = {
-        1: "Beginner",
-        2: "Intermediate",
-        3: "Advanced",
-      };
-
-      return {
-        id: skill.id,
-        name: skill.Skills?.name || "Unknown Skill",
-        category: skill.category || skill.Skills?.category || "TECHNICAL",
-        rating: skill.rating,
-        level: ratingMap[skill.rating || 1] || "Beginner",
-      };
-    });
-
-    return res.json({ skills: formattedSkills });
-  } catch (e: any) {
-    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
-      return res.status(404).json({ error: "Candidate profile not found" });
-    }
-    console.error("Error fetching candidate skills:", e);
-    return res.status(500).json({ error: e?.message || "Failed to fetch candidate skills" });
-  }
 });
 
 // Get full candidate profile by ID (for companies to view)
@@ -1438,7 +1458,6 @@ candidatesRouter.post("/resumes", requireAuth, requireRole("CANDIDATE"), (req: A
 
     return res.status(201).json({ resume });
   } catch (e: any) {
-    // Clean up uploaded file if database operation fails
     cleanupLocalFile(req.file as Express.Multer.File);
 
     if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
@@ -1449,7 +1468,6 @@ candidatesRouter.post("/resumes", requireAuth, requireRole("CANDIDATE"), (req: A
   }
 });
 
-// Delete a skill
 candidatesRouter.delete("/skills/:id", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
   const userId = req.user!.id;
   const userSkillId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
@@ -1457,7 +1475,6 @@ candidatesRouter.delete("/skills/:id", requireAuth, requireRole("CANDIDATE"), as
   try {
     const candidateId = await getCandidateIdForUser(userId);
 
-    // 1. ตรวจสอบว่ามี Skill นี้อยู่จริงและเป็นของ Candidate คนนี้
     const existingSkill = await prisma.userSkill.findUnique({
       where: { id: userSkillId },
       select: { candidateId: true },
@@ -1471,7 +1488,6 @@ candidatesRouter.delete("/skills/:id", requireAuth, requireRole("CANDIDATE"), as
       return res.status(403).json({ error: "You don't have permission to delete this skill" });
     }
 
-    // 2. สั่งลบ
     await prisma.userSkill.delete({
       where: { id: userSkillId },
     });
@@ -1509,9 +1525,9 @@ candidatesRouter.post("/skills", requireAuth, requireRole("CANDIDATE"), async (r
 
     if (!skill) {
       skill = await prisma.skills.create({
-        data: {
+        data: { 
           name: name,
-          category: normalizedCategory,
+          category: normalizedCategory as SkillCategory
         },
       });
     }
@@ -1587,7 +1603,6 @@ candidatesRouter.put("/skills/:id", requireAuth, requireRole("CANDIDATE"), async
       return res.status(403).json({ error: "You don't have permission to update this skill" });
     }
 
-    // 💡 ถ้ามีการแก้ชื่อ Skill ต้องไปหาใน Master Skill หรือสร้างใหม่
     let finalSkillId = existingUserSkill.skillId;
     if (name) {
       let masterSkill = await prisma.skills.findFirst({
@@ -1597,7 +1612,7 @@ candidatesRouter.put("/skills/:id", requireAuth, requireRole("CANDIDATE"), async
         masterSkill = await prisma.skills.create({
           data: {
             name: name,
-            category: resolvedCategory,
+            category: resolvedCategory as SkillCategory,
           },
         });
       }
@@ -1612,9 +1627,8 @@ candidatesRouter.put("/skills/:id", requireAuth, requireRole("CANDIDATE"), async
     const updatedSkill = await prisma.userSkill.update({
       where: { id: userSkillId },
       data: {
-        skillId: finalSkillId, // 👈 อัปเดต skillId ด้วย เผื่อเปลี่ยนชื่อสกิล
+        skillId: finalSkillId,
         rating: rating,
-        category: resolvedCategory,
       },
     });
 
@@ -1625,5 +1639,298 @@ candidatesRouter.put("/skills/:id", requireAuth, requireRole("CANDIDATE"), async
     }
     console.error("Error updating skill:", e);
     return res.status(500).json({ error: e?.message || "Failed to update skill" });
+  }
+});
+
+candidatesRouter.post(
+  "/education/:educationId/transcript",
+  requireAuth,
+  requireRole("CANDIDATE"),
+  uploadResume.single("file"),
+  async (req: AuthedRequest, res) => {
+    const userId = req.user!.id;
+    const educationId =
+      typeof req.params.educationId === "string"
+      ? req.params.educationId
+      : req.params.educationId[0];
+
+    try {
+      const candidateId = await getCandidateIdForUser(userId);
+
+      const file = (req as any).file;
+      if (!file) {
+        return res.status(400).json({ error: "File is required" });
+      }
+
+      const fileBuffer =
+        req.file?.buffer ||
+        (req.file?.path ? fs.readFileSync(req.file.path) : Buffer.from([]));
+
+      const uploadResult = await fileStorage.uploadFile(
+        { ...req.file, buffer: fileBuffer } as Express.Multer.File,
+        "transcripts"
+      );
+
+      cleanupLocalFile(req.file as Express.Multer.File);
+
+      // 1. ค้นหาว่ามี Transcript ของ Education นี้อยู่แล้วหรือยัง
+      const existingTranscript = await prisma.educationTranscript.findFirst({
+        where: {
+          educationId: educationId,
+          candidateId: candidateId,
+        },
+      });
+
+      let transcript;
+
+      // 2. ถ้ามีอยู่แล้ว -> ให้อัปเดต URL และชื่อไฟล์ทับอันเดิม
+      if (existingTranscript) {
+        transcript = await prisma.educationTranscript.update({
+          where: { id: existingTranscript.id },
+          data: {
+            name: file.originalname,
+            url: uploadResult.url,
+            fileSize: file.size || null,
+            fileType: file.mimetype || null,
+          },
+        });
+      } 
+      // 3. ถ้ายังไม่มี -> ให้สร้างใหม่ตามปกติ
+      else {
+        const { randomUUID } = require("crypto"); // อย่าลืม import ถ้ายังไม่มี
+        transcript = await prisma.educationTranscript.create({
+          data: {
+            id: randomUUID(),
+            educationId,
+            candidateId,
+            name: file.originalname,
+            url: uploadResult.url,
+            fileSize: file.size || null,
+            fileType: file.mimetype || null,
+          },
+        });
+      }
+
+      return res.status(201).json({ transcript });
+    } catch (e: any) {
+      cleanupLocalFile(req.file as Express.Multer.File);
+      console.error("Error uploading transcript:", e);
+      return res.status(500).json({ error: "Failed to upload transcript" });
+    }
+  }
+);
+
+candidatesRouter.get(
+  "/education/:educationId/transcript",
+  requireAuth,
+  requireRole("CANDIDATE"),
+  async (req: AuthedRequest, res) => {
+
+    const userId = req.user!.id;
+    const educationId =
+      typeof req.params.educationId === "string"
+      ? req.params.educationId
+      : req.params.educationId[0]
+
+    try {
+      const candidateId = await getCandidateIdForUser(userId);
+
+      const transcripts = await prisma.educationTranscript.findMany({
+        where: {
+          candidateId,
+          educationId,
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      return res.json({ transcripts });
+
+    } catch (e) {
+      console.error("Error fetching transcripts:", e);
+      return res.status(500).json({ error: "Failed to fetch transcripts" });
+    }
+  }
+);
+
+candidatesRouter.post("/skills/generate-test", requireAuth, async (req: AuthedRequest, res) => {
+  const { skillName } = req.body;
+  const userId = req.user!.id;
+
+  try {
+    const candidateId = await getCandidateIdForUser(userId);
+    const normalizedSkillName = skillName.trim().toLowerCase();
+
+    // 1. ตรวจสอบโควต้าการสอบ (เหมือนเดิม)
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    const recentAttempts = await prisma.skillTestAttempt.count({
+      where: {
+        candidateId,
+        skillName: normalizedSkillName,
+        createdAt: { gte: oneMonthAgo }
+      }
+    });
+
+    if (recentAttempts >= 3) {
+      return res.status(403).json({ error: "Quota exceeded. Max 3 attempts per month." });
+    }
+
+    // 2. ดึงข้อมูลชุดคำถามจาก DB
+    let testRecord = await prisma.skillTest.findUnique({
+      where: { skillName: normalizedSkillName }
+    });
+
+    // 3. ถ้าไม่มีคำถามใน DB หรือมีไม่ครบ 30 ข้อ ให้ AI สร้างใหม่
+    if (!testRecord) {
+      console.log(`Cache MISS: กำลังให้ AI สร้าง Pool คำถาม 15 ข้อสำหรับ ${skillName}...`);
+      
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+      const model = genAI.getGenerativeModel({ 
+        model: "gemini-2.5-flash", // หรือรุ่นที่คุณใช้งาน
+        generationConfig: { responseMimeType: "application/json" } 
+      });
+
+      const prompt = `
+        You are an expert technical examiner. Generate exactly 15 multiple-choice questions for "${skillName}".
+        The questions must be categorized strictly:
+        - 5 "Beginner" questions
+        - 5 "Intermediate" questions
+        - 5 "Advanced" questions
+        
+        Return ONLY a JSON array of objects:
+        [{ "id": 1, "difficulty": "Beginner", "question": "...", "options": ["A", "B", "C", "D"], "correctAnswer": "A" }]
+      `;
+
+      const result = await model.generateContent(prompt);
+      const questions = JSON.parse(result.response.text());
+
+      // บันทึกลง Database (Upsert เพื่อป้องกัน Race Condition)
+      testRecord = await prisma.skillTest.upsert({
+        where: { skillName: normalizedSkillName },
+        update: { questions: questions },
+        create: { skillName: normalizedSkillName, questions: questions }
+      });
+    }
+
+    // 4. Logic การสุ่มคำถาม (Random Selection)
+    // ดึง Pool ทั้งหมด 15 ข้อออกมา
+    const allQuestions = testRecord.questions as any[];
+
+    // แยกกลุ่มตามความยาก
+    const beginnerPool = allQuestions.filter(q => q.difficulty === "Beginner");
+    const intermediatePool = allQuestions.filter(q => q.difficulty === "Intermediate");
+    const advancedPool = allQuestions.filter(q => q.difficulty === "Advanced");
+
+    // ฟังก์ชันช่วยสุ่มอาเรย์
+    const getRandom = (arr: any[], n: number) => {
+      return arr.sort(() => 0.5 - Math.random()).slice(0, n);
+    };
+
+    // สุ่มมาอย่างละ 3 ข้อ (รวมเป็น 9 ข้อตาม Logic เดิมของคุณ)
+    const selectedQuestions = [
+      ...getRandom(beginnerPool, 3),
+      ...getRandom(intermediatePool, 3),
+      ...getRandom(advancedPool, 3)
+    ];
+
+    // 5. ส่งเฉพาะคำถามไปให้หน้าบ้าน (ห้ามส่ง correctAnswer)
+    const safeQuestions = selectedQuestions.map(q => ({
+      id: q.id,
+      difficulty: q.difficulty,
+      question: q.question,
+      options: q.options
+    }));
+
+    return res.json({ questions: safeQuestions });
+
+  } catch (error: any) {
+    console.error("Test generation error:", error);
+    return res.status(500).json({ error: "Failed to load test" });
+  }
+});
+
+candidatesRouter.post("/skills/submit-test", requireAuth, async (req: AuthedRequest, res) => {
+  const { skillName, answers, userSkillId } = req.body; 
+  // answers หน้าตาประมาณ: { "1": "Choice A", "2": "Choice C", ... }
+  
+  const candidateId = await getCandidateIdForUser(req.user!.id);
+  const normalizedSkillName = skillName.trim().toLowerCase();
+
+  try {
+    // 1. ดึงเฉลยจาก Database (ที่เราให้ AI เจนเก็บไว้)
+    const testRecord = await prisma.skillTest.findUnique({
+      where: { skillName: normalizedSkillName }
+    });
+
+    if (!testRecord) return res.status(404).json({ error: "Test not found" });
+
+    const originalQuestions = testRecord.questions as any[];
+
+    // 2. ตรวจคำตอบและนับคะแนนแบ่งตามระดับ
+    let scores = { Beginner: 0, Intermediate: 0, Advanced: 0 };
+
+    originalQuestions.forEach(q => {
+      const userAnswer = answers[q.id];
+      if (userAnswer === q.correctAnswer) {
+        scores[q.difficulty as keyof typeof scores]++;
+      }
+    });
+
+    // 3. คำนวณ Level ตาม Logic ที่กำหนด 
+    let finalLevel = "Beginner"; // ค่าต่ำสุด
+    let isPassed = false;
+
+    // ขั้นที่ 1: ตรวจ Beginner
+    if (scores.Beginner >= 2) {
+      isPassed = true;
+      finalLevel = "Beginner"; // ผ่านเบื้องต้น
+      
+      // ขั้นที่ 2: ตรวจ Intermediate
+      if (scores.Intermediate >= 2) {
+        finalLevel = "Intermediate";
+        
+        // ขั้นที่ 3: ตรวจ Advanced
+        if (scores.Advanced >= 2) {
+          finalLevel = "Advanced";
+        }
+      }
+    }
+
+    // 4. บันทึกประวัติการสอบ (ตัดโควต้า)
+    await prisma.skillTestAttempt.create({
+      data: {
+        candidateId,
+        skillName: normalizedSkillName,
+        scoreResult: scores,
+        finalLevel: finalLevel
+      }
+    });
+
+    // 5. อัปเดตตาราง Skill ของ User ให้เป็น Verified
+    if (isPassed && userSkillId) {
+      // แปลง Level จากข้อสอบ ให้เป็นตัวเลข Rating ตาม Schema ของคุณ
+      let newRating = 1; // ถือว่า Beginner = 1
+      if (finalLevel === "Intermediate") newRating = 2;
+      if (finalLevel === "Advanced") newRating = 3;
+
+      await prisma.userSkill.update({
+        where: { id: userSkillId },
+        data: {
+          status: "VERIFIED", // ใช้ค่า Enum (ตัวพิมพ์ใหญ่ตามที่คุณตั้งใน Schema)
+          rating: newRating   // อัปเดตฟิลด์ rating แทน level
+        }
+      });
+    }
+
+    return res.json({ 
+      success: true, 
+      isPassed, 
+      scores, 
+      finalLevel 
+    });
+
+  } catch (error) {
+    console.error("Submit test error:", error);
+    return res.status(500).json({ error: "Failed to submit test" });
   }
 });

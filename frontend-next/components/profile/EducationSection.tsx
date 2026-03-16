@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Education } from "@/hooks/useProfile";
 import EducationModal from "./EducationModal";
+import TranscriptUploadModal from "./TranscriptModal";
 
 interface EducationSectionProps {
   education: Education[];
@@ -21,28 +22,46 @@ export default function EducationSection({
   const [editingEducation, setEditingEducation] = useState<Education | null>(
     null,
   );
-      // 💡 เพิ่มส่วนนี้เข้าไปครับ
-    useEffect(() => {
-      if (isModalOpen) {
-        document.body.style.overflow = "hidden";
-      } else {
-        document.body.style.overflow = "auto";
-      }
-  
-      // คืนค่าเดิมเมื่อปิดหรือเปลี่ยนหน้า
-      return () => {
-        document.body.style.overflow = "auto";
-      };
-    }, [isModalOpen]);
-  
+  const [uploadEduId, setUploadEduId] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    id: string; // เก็บ ID ที่กำลังจะถูกลบ
+  }>({
+    isOpen: false,
+    id: "",
+  });
+
+  const confirmDelete = async () => {
+    if (!deleteModal.id) return;
+    setIsDeleting(true);
+    try {
+      await handleDelete(deleteModal.id); // เรียกฟังก์ชันลบจริงของคุณ
+      setDeleteModal({ isOpen: false, id: "" }); // ลบเสร็จก็ปิด Modal
+    } catch (error) {
+      console.error("Failed to delete:", error);
+      alert("เกิดข้อผิดพลาดในการลบข้อมูล");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // เพิ่มส่วนนี้เข้าไปครับ
+  useEffect(() => {
+    if (isModalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+
+    // คืนค่าเดิมเมื่อปิดหรือเปลี่ยนหน้า
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [isModalOpen]);
 
   const handleDelete = async (id: string) => {
     console.log("Delete id:", id);
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this education entry?",
-    );
-    if (!confirmed) return;
-
     try {
       const { apiFetch } = await import("@/lib/api");
       await apiFetch(`/api/candidates/education/${id}`, { method: "DELETE" });
@@ -117,8 +136,6 @@ export default function EducationSection({
 
               {/* Education Info */}
               <div className="pr-32">
-                {" "}
-                {/* Space for badge */}
                 <h3 className="text-lg font-bold text-gray-900 mb-1">
                   {edu.universityName || "University Name"}
                 </h3>
@@ -143,7 +160,7 @@ export default function EducationSection({
               {/* Action Buttons (Bottom Right) */}
               <div className="flex items-center justify-end gap-3 mt-4 pt-2">
                 <button
-                  onClick={() => handleDelete(edu.id)}
+                  onClick={() => setDeleteModal({ isOpen: true, id: edu.id })}
                   className="p-2 text-gray-400 hover:text-red-500 transition-colors"
                   title="Delete"
                 >
@@ -164,9 +181,7 @@ export default function EducationSection({
 
                 <button
                   className="px-4 py-1.5 border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-bold transition-colors"
-                  onClick={() => {
-                    /* Logic for upload */
-                  }}
+                  onClick={() => setUploadEduId(edu.id)}
                 >
                   Upload Transcript
                 </button>
@@ -196,6 +211,75 @@ export default function EducationSection({
         }}
         onSave={() => onRefresh?.()}
       />
+
+      {/* เติมวงเล็บปิดของ uploadEduId ตรงนี้ให้สมบูรณ์ */}
+      {uploadEduId && (
+        <TranscriptUploadModal
+          isOpen={!!uploadEduId}
+          educationId={uploadEduId}
+          onClose={() => setUploadEduId(null)}
+          onUploaded={() => {
+            setUploadEduId(null);
+            onRefresh?.();
+          }}
+        />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteModal.isOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => !isDeleting && setDeleteModal({ isOpen: false, id: "" })}
+          ></div>
+
+          {/* Modal Content */}
+          <div className="relative bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 text-center animate-in fade-in zoom-in duration-200">
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg
+                className="w-8 h-8 text-red-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+            </div>
+
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Delete This Education?</h3>
+            <p className="text-gray-500 mb-6">
+              Are you sure you want to delete this Education? This action cannot be undone.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                disabled={isDeleting}
+                onClick={() => setDeleteModal({ isOpen: false, id: "" })}
+                className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={isDeleting}
+                onClick={confirmDelete}
+                className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center"
+              >
+                {isDeleting ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                ) : (
+                  "Delete"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
