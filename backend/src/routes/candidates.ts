@@ -1802,7 +1802,19 @@ candidatesRouter.post("/skills/generate-test", requireAuth, async (req: AuthedRe
       `;
 
       const result = await model.generateContent(prompt);
-      const questions = JSON.parse(result.response.text());
+      let rawText = result.response.text();
+
+      // 1. ทำความสะอาดข้อความ ลบ Markdown block (```json และ ```) ออกให้หมด
+      rawText = rawText.replace(/```json\n?/g, "").replace(/```\n?/g, "").trim();
+
+      let questions;
+      try {
+        // 2. ลอง Parse JSON ดู
+        questions = JSON.parse(rawText);
+      } catch (parseError) {
+        console.error("Failed to parse AI JSON:", rawText);
+        throw new Error("AI returned invalid JSON format.");
+      }
 
       // บันทึกลง Database (Upsert เพื่อป้องกัน Race Condition)
       testRecord = await prisma.skillTest.upsert({
