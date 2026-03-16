@@ -8,6 +8,8 @@ import { apiFetch } from "@/lib/api";
 import ProjectsModal, { ProjectData } from "@/components/profile/ProjectsModal";
 import ProjectUploadModal from "@/components/profile/ProjectUploadModal";
 import { useProfile } from "@/hooks/useProfile";
+import { Github, Globe, FileText, ExternalLink } from 'lucide-react'
+
 
 interface UIProject {
   id: string;
@@ -302,22 +304,25 @@ export default function ProjectPage() {
                 {/* Links Section */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   <ProjectLink
-                    label="Github Linked"
+                    label="Github"
                     active={project.githubLinked}
                     url={project.githubUrl}
                     type="github"
+                    icon={<Github size={18} />}
                   />
                   <ProjectLink
-                    label="Project Linked"
+                    label="Project Link"
                     active={project.projectLinked}
                     url={project.projectUrl}
                     type="web"
+                    icon={<Globe size={18} />}
                   />
                   <ProjectLink
-                    label="File Uploaded"
+                    label="File Attachment"
                     active={project.fileUploaded}
                     url={project.fileUrl}
                     type="file"
+                    icon={<FileText size={18} />}
                   />
                 </div>
 
@@ -490,26 +495,48 @@ function ProjectLink({
   active,
   url,
   type,
+  icon,
 }: {
   label: string;
   active: boolean;
   url?: string;
   type: "github" | "web" | "file";
+  icon: React.ReactNode; // รับ icon เข้ามา
 }) {
   return (
     <a
       href={active ? url : undefined}
       target="_blank"
       rel="noopener noreferrer"
-      className={`flex items-center justify-between px-4 py-3 border rounded-lg transition-all ${active ? "border-blue-100 bg-white hover:bg-blue-50 cursor-pointer" : "border-gray-100 bg-gray-50/50 cursor-default opacity-80"}`}
+      className={`flex items-center gap-3 px-4 py-3 border rounded-xl transition-all ${
+        active 
+          ? "border-blue-200 bg-white hover:shadow-md hover:border-blue-400 cursor-pointer text-gray-900" 
+          : "border-gray-100 bg-gray-50/50 cursor-default opacity-60 text-gray-400"
+      }`}
       onClick={(e) => !active && e.preventDefault()}
     >
-      <span
-        className={`text-sm font-medium ${active ? "text-gray-900" : "text-gray-400"}`}
-      >
-        {label}
-      </span>
-      <StatusIcon active={active} />
+      {/* Icon หลักตามประเภท */}
+      <div className={`${active ? "text-blue-600" : "text-gray-400"}`}>
+        {icon}
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <p className="text-[11px] font-bold uppercase tracking-wider opacity-60">
+          {label}
+        </p>
+        <p className={`text-sm font-semibold truncate ${active ? "text-blue-700" : ""}`}>
+          {active ? (url?.replace(/^https?:\/\/(www\.)?/, '') || "Link Active") : "Not Linked"}
+        </p>
+      </div>
+
+      {/* สัญลักษณ์สถานะ */}
+      <div className="flex items-center">
+        {active ? (
+          <ExternalLink size={14} className="text-blue-400" />
+        ) : (
+          <div className="h-2 w-2 rounded-full bg-gray-300" />
+        )}
+      </div>
     </a>
   );
 }
