@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { apiFetch } from "@/lib/api"; // นำเข้า apiFetch
+import { apiFetch } from "@/lib/api";
 
 export type ProficiencyLevel = "Beginner" | "Intermediate" | "Advanced" | "";
 
@@ -26,11 +26,6 @@ interface MasterSkill {
   category: string;
 }
 
-const categoryLabelMap: Record<string, string> = {
-  TECHNICAL: "Technical Skill",
-  BUSINESS: "Business Skills",
-};
-
 export default function SkillsModal({ isOpen, onClose, onSave, editingSkill }: SkillsModalProps) {
   const [formData, setFormData] = useState<SkillData>({ name: "", category: "", level: "" });
   const [errorMsg, setErrorMsg] = useState("");
@@ -45,7 +40,6 @@ export default function SkillsModal({ isOpen, onClose, onSave, editingSkill }: S
       const fetchMasterSkills = async () => {
         try {
           setIsLoadingSkills(true);
-          // TODO: เปลี่ยน URL ไปที่ Endpoint ดึง Master Skills ของคุณ
           const data = await apiFetch<{ skills: MasterSkill[] }>('/api/skills'); 
           setAvailableSkills(data.skills || []);
         } catch (error) {
@@ -77,7 +71,6 @@ export default function SkillsModal({ isOpen, onClose, onSave, editingSkill }: S
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-[1px] p-4">
-      {/* Modal Container */}
       <div 
         className="bg-white rounded-2xl shadow-2xl w-full max-w-[700px] flex flex-col"
         onClick={(e) => e.stopPropagation()}
@@ -100,7 +93,6 @@ export default function SkillsModal({ isOpen, onClose, onSave, editingSkill }: S
         {/* Body */}
         <div className="p-6 space-y-6">
           
-          {/* แสดงข้อความ Error สีแดง ถ้ามี */}
           {errorMsg && (
             <div className="p-3 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm font-medium flex items-center gap-2">
               <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -111,63 +103,67 @@ export default function SkillsModal({ isOpen, onClose, onSave, editingSkill }: S
             </div>
           )}
 
-          {/* Skill Name */}
-          <div>
-            <label className="block text-[15px] font-bold text-[#1C2D4F] mb-2">
-              Skill Name <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <select
-                value={formData.name}
-                onChange={(e) => {
-                  const selectedSkill = availableSkills.find((skill) => skill.name === e.target.value);
-                  setFormData({
-                    ...formData,
-                    name: e.target.value,
-                    category: selectedSkill ? (categoryLabelMap[selectedSkill.category] || "Technical Skill") : formData.category,
-                  });
-                  setErrorMsg(""); // ล้าง Error เมื่อเริ่มกรอก
-                }}
-                className="w-full appearance-none px-4 py-3 bg-white border border-gray-200 rounded-lg text-[15px] text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm cursor-pointer"
-                disabled={isLoadingSkills}
-              >
-                <option value="" disabled>
-                  {isLoadingSkills ? "Loading skills..." : "Select skill"}
-                </option>
-                {/* Loop ดึงข้อมูลจาก DB มาแสดง แทนการ Hardcode */}
-                {availableSkills.map((skill) => (
-                  <option key={skill.id} value={skill.name}>
-                    {skill.name}
-                  </option>
-                ))}
-              </select>
-              <svg className="w-5 h-5 text-gray-300 absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
-          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Skill Name */}
+            <div>
+              <label className="block text-[15px] font-bold text-[#1C2D4F] mb-2">
+                Skill Name <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  value={formData.name}
+                  onChange={(e) => {
+                    const selectedSkillName = e.target.value;
+                    const selectedSkill = availableSkills.find((skill) => skill.name === selectedSkillName);
+                    
+                    // 💡 Logic แปลงชื่อ Category จาก DB (เช่น TECHNICAL, BUSINESS) ให้ออกมาสวยงามตรงกับหน้าเว็บ
+                    let newCategory = "";
+                    if (selectedSkill) {
+                      const dbCat = (selectedSkill.category || "").toUpperCase();
+                      if (dbCat.includes("TECH")) newCategory = "Technical Skill";
+                      else if (dbCat.includes("BUSI") || dbCat.includes("SOFT")) newCategory = "Business Skills";
+                      else newCategory = "Technical Skill"; // Default
+                    }
 
-          {/* Category */}
-          <div>
-            <label className="block text-[15px] font-bold text-[#1C2D4F] mb-2">
-              Category <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-              <select
-                value={formData.category}
-                onChange={(e) => {
-                  setFormData({ ...formData, category: e.target.value });
-                  setErrorMsg("");
-                }}
-                className="w-full appearance-none px-4 py-3 bg-white border border-gray-200 rounded-lg text-[15px] text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm cursor-pointer"
-              >
-                <option value="" disabled>Select category</option>
-                <option value="Technical Skill">Technical Skill</option>
-                <option value="Business Skills">Business Skills</option>
-              </select>
-              <svg className="w-5 h-5 text-gray-300 absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
+                    setFormData({
+                      ...formData,
+                      name: selectedSkillName,
+                      category: newCategory || formData.category,
+                    });
+                    setErrorMsg("");
+                  }}
+                  className="w-full appearance-none px-4 py-3 bg-white border border-gray-200 rounded-lg text-[15px] text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm cursor-pointer"
+                  disabled={isLoadingSkills}
+                >
+                  <option value="" disabled>
+                    {isLoadingSkills ? "Loading skills..." : "Select skill"}
+                  </option>
+                  {availableSkills.map((skill) => (
+                    <option key={skill.id} value={skill.name}>
+                      {skill.name}
+                    </option>
+                  ))}
+                </select>
+                <svg className="w-5 h-5 text-gray-300 absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Category (Auto-filled and Disabled) */}
+            <div>
+              <label className="block text-[15px] font-bold text-[#1C2D4F] mb-2">
+                Category <span className="text-gray-400 font-normal text-xs ml-1">(Auto-detected)</span>
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={formData.category || "Select a skill first"}
+                  readOnly
+                  disabled
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-[15px] text-gray-500 font-medium cursor-not-allowed"
+                />
+              </div>
             </div>
           </div>
 
@@ -180,20 +176,13 @@ export default function SkillsModal({ isOpen, onClose, onSave, editingSkill }: S
               
               {/* Beginner Card */}
               <div
-                onClick={() => {
-                  setFormData({ ...formData, level: "Beginner" });
-                  setErrorMsg("");
-                }}
+                onClick={() => { setFormData({ ...formData, level: "Beginner" }); setErrorMsg(""); }}
                 className={`border rounded-xl p-5 cursor-pointer transition-all duration-200 ${
-                  formData.level === "Beginner"
-                    ? "border-[#68B383] border-[2px] shadow-sm bg-[#F0FDF4]/30"
-                    : "border-gray-200 hover:border-gray-300 bg-white"
+                  formData.level === "Beginner" ? "border-[#68B383] border-[2px] shadow-sm bg-[#F0FDF4]/30" : "border-gray-200 hover:border-gray-300 bg-white"
                 }`}
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-9 h-9 rounded-full bg-[#68B383] flex items-center justify-center text-white font-bold">
-                    1
-                  </div>
+                  <div className="w-9 h-9 rounded-full bg-[#68B383] flex items-center justify-center text-white font-bold">1</div>
                   <span className="font-bold text-gray-900 text-[15px]">Beginner</span>
                 </div>
                 <div className="flex gap-1.5 mb-3">
@@ -206,20 +195,13 @@ export default function SkillsModal({ isOpen, onClose, onSave, editingSkill }: S
 
               {/* Intermediate Card */}
               <div
-                onClick={() => {
-                  setFormData({ ...formData, level: "Intermediate" });
-                  setErrorMsg("");
-                }}
+                onClick={() => { setFormData({ ...formData, level: "Intermediate" }); setErrorMsg(""); }}
                 className={`border rounded-xl p-5 cursor-pointer transition-all duration-200 ${
-                  formData.level === "Intermediate"
-                    ? "border-[#3B82F6] border-[2px] shadow-sm bg-[#EFF6FF]/30"
-                    : "border-gray-200 hover:border-gray-300 bg-white"
+                  formData.level === "Intermediate" ? "border-[#3B82F6] border-[2px] shadow-sm bg-[#EFF6FF]/30" : "border-gray-200 hover:border-gray-300 bg-white"
                 }`}
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-9 h-9 rounded-full bg-[#3B82F6] flex items-center justify-center text-white font-bold">
-                    2
-                  </div>
+                  <div className="w-9 h-9 rounded-full bg-[#3B82F6] flex items-center justify-center text-white font-bold">2</div>
                   <span className="font-bold text-gray-900 text-[15px]">Intermediate</span>
                 </div>
                 <div className="flex gap-1.5 mb-3">
@@ -232,20 +214,13 @@ export default function SkillsModal({ isOpen, onClose, onSave, editingSkill }: S
 
               {/* Advanced Card */}
               <div
-                onClick={() => {
-                  setFormData({ ...formData, level: "Advanced" });
-                  setErrorMsg("");
-                }}
+                onClick={() => { setFormData({ ...formData, level: "Advanced" }); setErrorMsg(""); }}
                 className={`border rounded-xl p-5 cursor-pointer transition-all duration-200 ${
-                  formData.level === "Advanced"
-                    ? "border-[#8B5CF6] border-[2px] shadow-sm bg-[#F5F3FF]/30"
-                    : "border-gray-200 hover:border-gray-300 bg-white"
+                  formData.level === "Advanced" ? "border-[#8B5CF6] border-[2px] shadow-sm bg-[#F5F3FF]/30" : "border-gray-200 hover:border-gray-300 bg-white"
                 }`}
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-9 h-9 rounded-full bg-[#8B5CF6] flex items-center justify-center text-white font-bold">
-                    3
-                  </div>
+                  <div className="w-9 h-9 rounded-full bg-[#8B5CF6] flex items-center justify-center text-white font-bold">3</div>
                   <span className="font-bold text-gray-900 text-[15px]">Advanced</span>
                 </div>
                 <div className="flex gap-1.5 mb-3">

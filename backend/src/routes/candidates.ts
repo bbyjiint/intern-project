@@ -1870,9 +1870,20 @@ candidatesRouter.post("/skills/submit-test", requireAuth, async (req: AuthedRequ
     let scores = { Beginner: 0, Intermediate: 0, Advanced: 0 };
 
     originalQuestions.forEach(q => {
-      const userAnswer = answers[q.id];
-      if (userAnswer === q.correctAnswer) {
-        scores[q.difficulty as keyof typeof scores]++;
+      const userAnswer = answers[q.id]; // ข้อความที่เด็กตอบ เช่น "C) Packaging..."
+      
+      if (userAnswer) {
+        // ตรวจสอบว่าคำตอบที่เด็กเลือก "ขึ้นต้นด้วย" ตัวอักษรเฉลยหรือไม่ (เช่น ขึ้นต้นด้วย "C)", "C.", หรือ "C ") 
+        // หรือถ้ามันตอบมาแค่ "C" ตรงๆ ก็ให้ถูกเหมือนกัน
+        const isMatch = 
+          userAnswer === q.correctAnswer || 
+          userAnswer.startsWith(`${q.correctAnswer})`) || 
+          userAnswer.startsWith(`${q.correctAnswer}.`) ||
+          userAnswer.startsWith(`${q.correctAnswer} `);
+
+        if (isMatch) {
+          scores[q.difficulty as keyof typeof scores]++;
+        }
       }
     });
 

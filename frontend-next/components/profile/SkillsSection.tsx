@@ -29,17 +29,25 @@ export default function SkillsSection({
       (p) => (p as any).relatedSkills || (p as any).skills || [],
     ),
   );
-  // จัดกลุ่มตาม Category ใหม่ที่ตั้งไว้ใน DB
-  const technicalSkills = skills.filter(
-    (s) =>
-      s.category?.toUpperCase() === "TECHNICAL" ||
-      s.category === "Technical Skill",
-  );
-  const businessSkills = skills.filter(
-    (s) =>
-      s.category?.toUpperCase() === "BUSINESS" ||
-      s.category === "Business Skills",
-  );
+
+  // 1. ปรับ Logic การแยก Category ให้ยืดหยุ่นขึ้น ป้องกันข้อมูลหาย
+  const technicalSkills = skills.filter((s) => {
+    const cat = (s.category || "").toUpperCase();
+    // ดักจับคำว่า TECH (เช่น Technical, TECHNICAL, Tech Skill) หรือถ้าไม่มีหมวดหมู่ให้ปัดมาที่นี่
+    return cat.includes("TECH") || cat === "";
+  });
+
+  const businessSkills = skills.filter((s) => {
+    const cat = (s.category || "").toUpperCase();
+    // ดักจับคำว่า BUSI หรือ SOFT (เช่น Business, Soft Skill)
+    return cat.includes("BUSI") || cat.includes("SOFT");
+  });
+
+  // กันเหนียว: ถ้ามีหมวดหมู่ชื่อแปลกๆ ที่ไม่ใช่ Tech หรือ Business จะได้มีที่ลง
+  const otherSkills = skills.filter((s) => {
+    const cat = (s.category || "").toUpperCase();
+    return !cat.includes("TECH") && cat !== "" && !cat.includes("BUSI") && !cat.includes("SOFT");
+  });
 
   // ไอคอนวงกลมติ๊กถูกสีเหลือง
   const YellowCheck = () => (
@@ -184,32 +192,37 @@ export default function SkillsSection({
         </button>
       </div>
 
+      {/* 2. Render แยกตามหมวดหมู่ */}
       <div className="space-y-4">
+        
+        {/* Technical Skills */}
         <div className="bg-gray-50/50 border border-gray-100 rounded-xl p-6">
-          <h3 className="text-lg font-bold text-gray-800 mb-6">
-            Technical Skills
-          </h3>
+          <h3 className="text-lg font-bold text-gray-800 mb-6">Technical Skills</h3>
           {technicalSkills.length > 0 ? (
             technicalSkills.map((s) => <SkillItem key={s.id} skill={s} />)
           ) : (
-            <p className="text-gray-400 italic text-sm text-center">
-              No technical skills added
-            </p>
+            <p className="text-gray-400 italic text-sm text-center">No technical skills added</p>
           )}
         </div>
 
+        {/* Business Skills */}
         <div className="bg-gray-50/50 border border-gray-100 rounded-xl p-6">
-          <h3 className="text-lg font-bold text-gray-800 mb-6">
-            Business Skills
-          </h3>
+          <h3 className="text-lg font-bold text-gray-800 mb-6">Business / Soft Skills</h3>
           {businessSkills.length > 0 ? (
             businessSkills.map((s) => <SkillItem key={s.id} skill={s} />)
           ) : (
-            <p className="text-gray-400 italic text-sm text-center">
-              No business skills added
-            </p>
+            <p className="text-gray-400 italic text-sm text-center">No business skills added</p>
           )}
         </div>
+
+        {/* Other Skills (เผื่อมีหลุดมาจะได้ไม่หาย) */}
+        {otherSkills.length > 0 && (
+          <div className="bg-gray-50/50 border border-gray-100 rounded-xl p-6">
+            <h3 className="text-lg font-bold text-gray-800 mb-6">Other Skills</h3>
+            {otherSkills.map((s) => <SkillItem key={s.id} skill={s} />)}
+          </div>
+        )}
+
       </div>
 
       <div className="mt-6 border-t border-gray-50 pt-4">
