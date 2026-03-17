@@ -82,6 +82,7 @@ export default function InternProfilePage() {
                 <PersonalInfoCard
                   profile={profileData}
                   onRefresh={refetch}
+                  completionPercentage={completionPercentage}
                 />
 
                 <ResumeSection

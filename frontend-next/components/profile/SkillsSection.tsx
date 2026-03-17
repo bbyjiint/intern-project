@@ -30,28 +30,29 @@ export default function SkillsSection({
     ),
   );
 
-  // 1. ปรับ Logic การแยก Category ให้ยืดหยุ่นขึ้น ป้องกันข้อมูลหาย
   const technicalSkills = skills.filter((s) => {
     const cat = (s.category || "").toUpperCase();
-    // ดักจับคำว่า TECH (เช่น Technical, TECHNICAL, Tech Skill) หรือถ้าไม่มีหมวดหมู่ให้ปัดมาที่นี่
     return cat.includes("TECH") || cat === "";
   });
 
   const businessSkills = skills.filter((s) => {
     const cat = (s.category || "").toUpperCase();
-    // ดักจับคำว่า BUSI หรือ SOFT (เช่น Business, Soft Skill)
     return cat.includes("BUSI") || cat.includes("SOFT");
   });
 
-  // กันเหนียว: ถ้ามีหมวดหมู่ชื่อแปลกๆ ที่ไม่ใช่ Tech หรือ Business จะได้มีที่ลง
   const otherSkills = skills.filter((s) => {
     const cat = (s.category || "").toUpperCase();
-    return !cat.includes("TECH") && cat !== "" && !cat.includes("BUSI") && !cat.includes("SOFT");
+    return (
+      !cat.includes("TECH") &&
+      cat !== "" &&
+      !cat.includes("BUSI") &&
+      !cat.includes("SOFT")
+    );
   });
 
-  // ไอคอนวงกลมติ๊กถูกสีเหลือง
+  // ── ไอคอนวงกลมสีเหลือง (w-4 h-4) ──
   const YellowCheck = () => (
-    <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-[#FFC456] flex-shrink-0">
+    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#FFC456] flex-shrink-0">
       <svg
         className="w-2.5 h-2.5 text-white"
         fill="none"
@@ -68,8 +69,45 @@ export default function SkillsSection({
     </span>
   );
 
+  // ── ไอคอนวงกลมสีเขียว (w-4 h-4) ──
+  const GreenCheck = () => (
+    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#B2CD6D] flex-shrink-0">
+      <svg
+        className="w-2.5 h-2.5 text-white"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={3}
+          d="M5 13l4 4L19 7"
+        />
+      </svg>
+    </span>
+  );
+
+  // ── ไอคอนวงกลมสีแดง (w-4 h-4) ──
+  const RedX = () => (
+    <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-400 flex-shrink-0">
+      <svg
+        className="w-2.5 h-2.5 text-white"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={3}
+          d="M6 18L18 6M6 6l12 12"
+        />
+      </svg>
+    </span>
+  );
+
   const SkillItem = ({ skill }: { skill: Skill }) => {
-    // ปรับการคำนวณ % ตาม Rating (1, 2, 3) หรือ Level ("Beginner", "Intermediate", "Advanced")
     let percentage = 33.33;
     let color = "#68B383";
 
@@ -115,34 +153,14 @@ export default function SkillsSection({
                   </span>
                 ) : (
                   <span className="flex items-center gap-1 text-[#6B7280] font-medium">
-                    <svg
-                      className="w-4 h-4 text-red-400"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                        clipRule="evenodd"
-                      />
-                    </svg>
+                    <RedX />
                     Not Verified
                   </span>
                 )}
               </>
             ) : (
-              <span className="flex items-center gap-1 text-green-600 font-bold">
-                <svg
-                  className="w-4 h-4"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+              <span className="flex items-center gap-1 text-[#6B7280] font-medium">
+                <GreenCheck />
                 Verified By Skill Test
               </span>
             )}
@@ -192,37 +210,46 @@ export default function SkillsSection({
         </button>
       </div>
 
-      {/* 2. Render แยกตามหมวดหมู่ */}
       <div className="space-y-4">
-        
         {/* Technical Skills */}
         <div className="bg-gray-50/50 border border-gray-100 rounded-xl p-6">
-          <h3 className="text-lg font-bold text-gray-800 mb-6">Technical Skills</h3>
+          <h3 className="text-lg font-bold text-gray-800 mb-6">
+            Technical Skills
+          </h3>
           {technicalSkills.length > 0 ? (
             technicalSkills.map((s) => <SkillItem key={s.id} skill={s} />)
           ) : (
-            <p className="text-gray-400 italic text-sm text-center">No technical skills added</p>
+            <p className="text-gray-400 italic text-sm text-center">
+              No technical skills added
+            </p>
           )}
         </div>
 
         {/* Business Skills */}
         <div className="bg-gray-50/50 border border-gray-100 rounded-xl p-6">
-          <h3 className="text-lg font-bold text-gray-800 mb-6">Business / Soft Skills</h3>
+          <h3 className="text-lg font-bold text-gray-800 mb-6">
+            Business / Soft Skills
+          </h3>
           {businessSkills.length > 0 ? (
             businessSkills.map((s) => <SkillItem key={s.id} skill={s} />)
           ) : (
-            <p className="text-gray-400 italic text-sm text-center">No business skills added</p>
+            <p className="text-gray-400 italic text-sm text-center">
+              No business skills added
+            </p>
           )}
         </div>
 
-        {/* Other Skills (เผื่อมีหลุดมาจะได้ไม่หาย) */}
+        {/* Other Skills */}
         {otherSkills.length > 0 && (
           <div className="bg-gray-50/50 border border-gray-100 rounded-xl p-6">
-            <h3 className="text-lg font-bold text-gray-800 mb-6">Other Skills</h3>
-            {otherSkills.map((s) => <SkillItem key={s.id} skill={s} />)}
+            <h3 className="text-lg font-bold text-gray-800 mb-6">
+              Other Skills
+            </h3>
+            {otherSkills.map((s) => (
+              <SkillItem key={s.id} skill={s} />
+            ))}
           </div>
         )}
-
       </div>
 
       <div className="mt-6 border-t border-gray-50 pt-4">

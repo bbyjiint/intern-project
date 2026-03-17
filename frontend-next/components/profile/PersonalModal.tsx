@@ -64,9 +64,21 @@ export default function PersonalModal({
 
     const names = (profile.fullName || "").split(" ");
 
-    const [start, end] = profile.internshipPeriod?.includes(" - ")
-      ? profile.internshipPeriod.split(" - ")
-      : ["", ""];
+    // ✅ แก้: ดึง startDate/endDate จากหลายแหล่ง
+    let start = "";
+    let end = "";
+
+    if (profile.internshipPeriod?.includes(" - ")) {
+      // มี internshipPeriod เป็น string "YYYY-MM-DD - YYYY-MM-DD"
+      [start, end] = profile.internshipPeriod.split(" - ");
+    } else if (
+      profile.internshipDetails?.availableStartDate &&
+      profile.internshipDetails?.availableEndDate
+    ) {
+      // fallback จาก internshipDetails
+      start = profile.internshipDetails.availableStartDate.split("T")[0];
+      end = profile.internshipDetails.availableEndDate.split("T")[0];
+    }
 
     const dob = profile.dateOfBirth
       ? new Date(profile.dateOfBirth).toISOString().split("T")[0]
@@ -77,7 +89,13 @@ export default function PersonalModal({
       lastName: names.slice(1).join(" ") || "",
       gender: profile.gender?.trim().toLowerCase() || "",
       dateOfBirth: dob,
-      nationality: profile.nationality || "",
+      nationality: (() => {
+        const n = (profile.nationality || "").trim();
+        if (!n) return "Thai";
+        const lower = n.toLowerCase();
+        if (lower === "thai" || lower === "ไทย") return "Thai";
+        return "Other";
+      })(),
       phoneNumber: (() => {
         const digits = (profile.phoneNumber || "")
           .replace(/\D/g, "")
@@ -93,8 +111,8 @@ export default function PersonalModal({
       photo: profile.profileImage || "",
       positionsOfInterest: profile.preferredPositions ?? [],
       preferredLocations: profile.preferredLocations || [],
-      startDate: start || "",
-      endDate: end || "",
+      startDate: start,
+      endDate: end,
     });
 
     setImagePreview(
@@ -149,6 +167,7 @@ export default function PersonalModal({
       alert("Failed to upload image");
     }
   };
+
   // ---------- Save ----------
   const handleSave = async () => {
     if (isSaving) return;
@@ -168,12 +187,13 @@ export default function PersonalModal({
         positionsOfInterest: formData.positionsOfInterest,
         preferredPositions: formData.positionsOfInterest,
         preferredLocations: formData.preferredLocations,
+        // ✅ แก้: ส่งทั้ง internshipPeriod และ availableStartDate/EndDate แยกกัน
         internshipPeriod:
           formData.startDate && formData.endDate
             ? `${formData.startDate} - ${formData.endDate}`
-            : formData.startDate || "",
-        startDate: formData.startDate,
-        endDate: formData.endDate,
+            : undefined,
+        availableStartDate: formData.startDate || undefined,
+        availableEndDate: formData.endDate || undefined,
       };
 
       const response = await apiFetch("/api/candidates/profile", {
@@ -344,7 +364,7 @@ export default function PersonalModal({
                 Nationality<span className="text-red-500">*</span>
               </label>
               <select
-                value={formData.nationality}
+                value={formData.nationality || "Thai"}
                 onChange={(e) =>
                   setFormData({ ...formData, nationality: e.target.value })
                 }
