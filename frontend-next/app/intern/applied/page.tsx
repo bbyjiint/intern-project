@@ -37,14 +37,28 @@ export default function InternAppliedPage() {
 
   const filteredApplications = useMemo(() => {
     return applications.filter((app) => {
-      // ให้ Lastest กับ All โชว์ทั้งหมดไปก่อนสำหรับการทำ Mockup
-      const matchesStatus =
-        statusFilter === "All" ||
-        statusFilter === "Lastest" ||
-        app.status === statusFilter;
+      // Map backend status to frontend filter
+      // Backend: NEW, SHORTLISTED, REVIEWED, REJECTED
+      // Frontend: Applied, Accept, Decline
+      let matchesStatus = true;
+      if (statusFilter === "All") {
+        matchesStatus = true;
+      } else if (statusFilter === "Lastest") {
+        // Show most recent applications (sorted by createdAt desc, so first items)
+        matchesStatus = true; // All are shown, but we could add date-based filtering if needed
+      } else if (statusFilter === "Applied") {
+        matchesStatus = app.status === "Applied";
+      } else if (statusFilter === "Accept") {
+        matchesStatus = app.status === "Accept";
+      } else if (statusFilter === "Decline") {
+        matchesStatus = app.status === "Decline";
+      }
+      
       const matchesSearch =
+        searchQuery === "" ||
         app.jobTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
         app.companyName.toLowerCase().includes(searchQuery.toLowerCase());
+      
       return matchesStatus && matchesSearch;
     });
   }, [applications, statusFilter, searchQuery]);

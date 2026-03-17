@@ -21,21 +21,25 @@ export default function InternBookmarkPage() {
   const [jobs, setJobs] = useState<JobPostData[]>([]);
   const [bookmarkedJobs, setBookmarkedJobs] = useState<Set<string>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
+  // Load bookmarked jobs from API
   useEffect(() => {
     const loadBookmarks = async () => {
       setIsLoading(true);
+      setLoadError(null);
       try {
-        const resp = await apiFetch<{ jobs: any[] }>(
+        const resp = await apiFetch<{ jobs: JobPostData[] }>(
           "/api/intern/job-bookmarks/jobs",
         );
         const bookmarkedIds = new Set<string>(
-          (resp.jobs || []).map((j: any) => j.id),
+          (resp.jobs || []).map((j) => j.id),
         );
         setBookmarkedJobs(bookmarkedIds);
         setJobs(resp.jobs || []);
       } catch (error) {
         console.error("Failed to load bookmarks:", error);
+        setLoadError(error instanceof Error ? error.message : "Failed to load bookmarked jobs");
         setJobs([]);
       } finally {
         setIsLoading(false);
@@ -60,6 +64,7 @@ export default function InternBookmarkPage() {
       if (newBookmarks.has(id)) {
         newBookmarks.delete(id);
         await apiFetch(`/api/intern/job-bookmarks/${id}`, { method: "DELETE" });
+        // Remove from jobs list
         setJobs((prev) => prev.filter((j) => j.id !== id));
       } else {
         newBookmarks.add(id);
@@ -73,10 +78,19 @@ export default function InternBookmarkPage() {
 
   const filteredJobs = jobs.filter((job) => {
     const matchesSearch =
+      !searchQuery ||
       job.jobTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
       job.companyName.toLowerCase().includes(searchQuery.toLowerCase());
+    
     const matchesPosition =
-      !position || job.jobTitle.toLowerCase().includes(position.toLowerCase());
+      !position ||
+      job.jobTitle.toLowerCase().includes(position.toLowerCase()) ||
+      job.roleType?.toLowerCase().includes(position.toLowerCase());
+
+    // Note: academicYear, startDate, endDate, duration, institution filters
+    // are not available in JobPostData structure, so they're not applied here.
+    // These would need to be added to the job post data structure or fetched separately.
+
     return matchesSearch && matchesPosition;
   });
 
@@ -255,6 +269,12 @@ export default function InternBookmarkPage() {
             </div>
           </div>
 
+          {loadError && (
+            <div className="mb-6 rounded-xl border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-sm text-[#B91C1C]">
+              {loadError}
+            </div>
+          )}
+
           <h2 className="text-[17px] font-extrabold text-gray-900 mb-4">
             {isLoading ? "Loading..." : `${filteredJobs.length} Total Job Post`}
           </h2>
@@ -265,7 +285,9 @@ export default function InternBookmarkPage() {
             </div>
           ) : filteredJobs.length === 0 ? (
             <div className="text-center py-10 text-gray-500 bg-white rounded-2xl shadow-sm border border-gray-100">
-              No bookmarked jobs matching your criteria.
+              {jobs.length === 0 
+                ? "No bookmarked jobs yet. Start bookmarking jobs to see them here."
+                : "No bookmarked jobs matching your criteria."}
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-3">
