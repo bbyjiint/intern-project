@@ -26,7 +26,7 @@ export default function EducationSection({
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
-    id: string; // เก็บ ID ที่กำลังจะถูกลบ
+    id: string;
   }>({
     isOpen: false,
     id: "",
@@ -36,8 +36,8 @@ export default function EducationSection({
     if (!deleteModal.id) return;
     setIsDeleting(true);
     try {
-      await handleDelete(deleteModal.id); // เรียกฟังก์ชันลบจริงของคุณ
-      setDeleteModal({ isOpen: false, id: "" }); // ลบเสร็จก็ปิด Modal
+      await handleDelete(deleteModal.id);
+      setDeleteModal({ isOpen: false, id: "" });
     } catch (error) {
       console.error("Failed to delete:", error);
       alert("เกิดข้อผิดพลาดในการลบข้อมูล");
@@ -46,22 +46,14 @@ export default function EducationSection({
     }
   };
 
-  // เพิ่มส่วนนี้เข้าไปครับ
   useEffect(() => {
-    if (isModalOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "auto";
-    }
-
-    // คืนค่าเดิมเมื่อปิดหรือเปลี่ยนหน้า
+    document.body.style.overflow = isModalOpen ? "hidden" : "auto";
     return () => {
       document.body.style.overflow = "auto";
     };
   }, [isModalOpen]);
 
   const handleDelete = async (id: string) => {
-    console.log("Delete id:", id);
     try {
       const { apiFetch } = await import("@/lib/api");
       await apiFetch(`/api/candidates/education/${id}`, { method: "DELETE" });
@@ -69,6 +61,13 @@ export default function EducationSection({
     } catch (e: any) {
       alert(e.message || "Failed to delete education");
     }
+  };
+
+  // เปิด edit modal สำหรับ education id นั้น (เรียกจาก TranscriptModal เมื่อ mismatch)
+  const handleNeedEdit = (eduId: string) => {
+    const edu = education.find((e) => e.id === eduId) || null;
+    setEditingEducation(edu);
+    setIsModalOpen(true);
   };
 
   return (
@@ -109,99 +108,140 @@ export default function EducationSection({
         </div>
       ) : (
         <div className="space-y-4">
-          {education.map((edu) => (
-            <div
-              key={edu.id}
-              className="relative border border-gray-100 rounded-xl p-5 hover:border-blue-100 transition-all bg-white"
-            >
-              {/* Status Badge (Top Right) */}
-              <div className="absolute top-5 right-5">
-                <div className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-600 border border-blue-100 rounded-full text-xs font-medium">
-                  <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+          {education.map((edu) => {
+            const isVerified = (edu as any).isVerified === true;
+
+            return (
+              <div
+                key={edu.id}
+                className="relative border border-gray-100 rounded-xl p-5 hover:border-blue-100 transition-all bg-white"
+              >
+                {/* ── Verification Badge (Top Right) ── */}
+                <div className="absolute top-5 right-5">
+                  {isVerified ? (
+                    <div className="flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-600 border border-green-200 rounded-full text-xs font-medium">
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      Verified by Transcript
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-600 border border-blue-100 rounded-full text-xs font-medium">
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                      Not Verified
+                    </div>
+                  )}
+                </div>
+
+                {/* ── Education Info ── */}
+                <div className="pr-48">
+                  <h3 className="text-lg font-bold text-gray-900 mb-1">
+                    {edu.universityName || "University Name"}
+                  </h3>
+                  <div className="text-gray-600 text-sm space-y-1">
+                    <p className="font-medium">
+                      {`${edu.degreeName || "Bachelor of Engineering"}${edu.fieldOfStudy ? ` in ${edu.fieldOfStudy}` : ""}`}
+                      {edu.gpa && (
+                        <span className="text-gray-400 font-normal">
+                          {" "}
+                          | GPA: {edu.gpa}
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-gray-500">
+                      {edu.isCurrent
+                        ? `${edu.yearOfStudy || "Currently studying"}${edu.yearOfStudy ? " (Currently studying)" : ""}`
+                        : "Graduated"}
+                    </p>
+                  </div>
+                </div>
+
+                {/* ── Action Buttons (Bottom Right) ── */}
+                <div className="flex items-center justify-end gap-3 mt-4 pt-2">
+                  {!isVerified && (
+                    <button
+                      onClick={() =>
+                        setDeleteModal({ isOpen: true, id: edu.id })
+                      }
+                      className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                      title="Delete"
+                    >
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
+                      </svg>
+                    </button>
+                  )}
+
+                  {/* ✅ แยก verified / not verified */}
+                  {isVerified ? (
+                    <button
+                      className="px-4 py-1.5 border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-bold transition-colors"
+                      onClick={() => {
+                        const url = (edu as any).transcriptUrl;
+                        if (url)
+                          window.open(url, "_blank", "noopener,noreferrer");
+                      }}
+                    >
+                      View Transcript
+                    </button>
+                  ) : (
+                    <button
+                      className="px-4 py-1.5 border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-bold transition-colors"
+                      onClick={() => setUploadEduId(edu.id)}
+                    >
+                      Upload Transcript
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => {
+                      setEditingEducation(edu);
+                      setIsModalOpen(true);
+                    }}
+                    className="px-6 py-1.5 border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-bold transition-colors"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  Not Verified
+                    Edit
+                  </button>
                 </div>
               </div>
-
-              {/* Education Info */}
-              <div className="pr-32">
-                <h3 className="text-lg font-bold text-gray-900 mb-1">
-                  {edu.universityName || "University Name"}
-                </h3>
-                <div className="text-gray-600 text-sm space-y-1">
-                  <p className="font-medium">
-                    {`${edu.degreeName || "Bachelor of Engineering"}${edu.fieldOfStudy ? ` in ${edu.fieldOfStudy}` : ""}`}
-                    {edu.gpa && (
-                      <span className="text-gray-400 font-normal">
-                        {" "}
-                        | GPA: {edu.gpa}
-                      </span>
-                    )}
-                  </p>
-                  <p className="text-gray-500">
-                    {edu.isCurrent
-                      ? `${edu.yearOfStudy || "Currently studying"}${edu.yearOfStudy ? " (Currently studying)" : ""}`
-                      : "Graduated"}
-                  </p>
-                </div>
-              </div>
-
-              {/* Action Buttons (Bottom Right) */}
-              <div className="flex items-center justify-end gap-3 mt-4 pt-2">
-                <button
-                  onClick={() => setDeleteModal({ isOpen: true, id: edu.id })}
-                  className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                  title="Delete"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                    />
-                  </svg>
-                </button>
-
-                <button
-                  className="px-4 py-1.5 border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-bold transition-colors"
-                  onClick={() => setUploadEduId(edu.id)}
-                >
-                  Upload Transcript
-                </button>
-
-                <button
-                  onClick={() => {
-                    setEditingEducation(edu);
-                    setIsModalOpen(true);
-                  }}
-                  className="px-6 py-1.5 border border-blue-600 text-blue-600 hover:bg-blue-50 rounded-lg text-sm font-bold transition-colors"
-                >
-                  Edit
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
-      {/* Modal */}
+      {/* Education Modal */}
       <EducationModal
         isOpen={isModalOpen}
         education={editingEducation}
@@ -212,7 +252,7 @@ export default function EducationSection({
         onSave={() => onRefresh?.()}
       />
 
-      {/* เติมวงเล็บปิดของ uploadEduId ตรงนี้ให้สมบูรณ์ */}
+      {/* Transcript Upload Modal */}
       {uploadEduId && (
         <TranscriptUploadModal
           isOpen={!!uploadEduId}
@@ -222,19 +262,22 @@ export default function EducationSection({
             setUploadEduId(null);
             onRefresh?.();
           }}
+          onNeedEdit={() => {
+            // ปิด transcript modal แล้วเปิด edit modal ของ education นั้น
+            handleNeedEdit(uploadEduId!);
+          }}
         />
       )}
 
       {/* Delete Confirmation Modal */}
       {deleteModal.isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={() => !isDeleting && setDeleteModal({ isOpen: false, id: "" })}
-          ></div>
-
-          {/* Modal Content */}
+            onClick={() =>
+              !isDeleting && setDeleteModal({ isOpen: false, id: "" })
+            }
+          />
           <div className="relative bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 text-center animate-in fade-in zoom-in duration-200">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg
@@ -251,12 +294,13 @@ export default function EducationSection({
                 />
               </svg>
             </div>
-
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Delete This Education?</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">
+              Delete This Education?
+            </h3>
             <p className="text-gray-500 mb-6">
-              Are you sure you want to delete this Education? This action cannot be undone.
+              Are you sure you want to delete this Education? This action cannot
+              be undone.
             </p>
-
             <div className="flex gap-3">
               <button
                 disabled={isDeleting}
@@ -271,7 +315,7 @@ export default function EducationSection({
                 className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center"
               >
                 {isDeleting ? (
-                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
                   "Delete"
                 )}

@@ -50,6 +50,8 @@ export interface Education {
   startDate?: string
   endDate?: string
   isCurrent?: boolean
+  isVerified?: boolean      
+  transcriptUrl?: string | null  
 }
 
 export interface Experience {
@@ -101,9 +103,9 @@ export interface ResumeFile {
 export interface Skill {
   id: string
   name: string
-  category: string  
+  category: string
   rating?: number
-  level?: string   
+  level?: string
   status?: string
 }
 
@@ -139,10 +141,10 @@ export function useProfile() {
       // ---------- Education ----------
       const education: Education[] = (profile.education || []).map((edu: any, i: number) => ({
         id: edu.id || `edu-${i}`,
-        university: edu.university,
-        universityName: edu.university,
-        degree: edu.degree,
-        degreeName: edu.degree,
+        university: edu.universityName || edu.university,       
+        universityName: edu.universityName || edu.university,   
+        degree: edu.degreeName || edu.degree,                   
+        degreeName: edu.degreeName || edu.degree,              
         fieldOfStudy: edu.fieldOfStudy,
         educationLevel: edu.educationLevel || 'BACHELOR',
         gpa: edu.gpa ? parseFloat(edu.gpa) : undefined,
@@ -151,7 +153,9 @@ export function useProfile() {
         yearOfStudy: edu.yearOfStudy,
         startDate: edu.startDate,
         endDate: edu.endDate,
-        isCurrent: edu.isCurrent ?? !edu.endDate
+        isCurrent: edu.isCurrent ?? !edu.endDate,
+        isVerified: edu.isVerified ?? false,      
+        transcriptUrl: edu.transcriptUrl ?? null, 
       }))
 
       // ---------- Experience ----------

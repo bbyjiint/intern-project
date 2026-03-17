@@ -200,6 +200,10 @@ model CandidateUniversity {
   gpa            Float? 
   isCurrent      Boolean     @default(false)  
 
+  isVerified     Boolean  @default(false)
+  verifiedBy     String?  // จะเก็บค่า "TRANSCRIPT"
+  transcriptUrl  String?  // URL ไฟล์ที่อัปโหลด
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

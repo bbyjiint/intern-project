@@ -176,13 +176,15 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
         : null,
       education: candidateProfile.CandidateUniversity.map((cu) => ({
         id: cu.id,
-        university: cu.University.name,
+        universityName: cu.University.name,
         educationLevel: cu.educationLevel,
         degree: cu.degreeName,
         fieldOfStudy: cu.fieldOfStudy,
         yearOfStudy: cu.yearOfStudy,
         gpa: cu.gpa ? cu.gpa.toString() : null,
-        isCurrent: cu.isCurrent
+        isCurrent: cu.isCurrent,
+        isVerified: cu.isVerified,
+        transcriptUrl: cu.transcriptUrl ?? null,
       })),
       experience: candidateProfile.WorkHistory.map((wh) => ({
         id: wh.id,
@@ -291,7 +293,7 @@ candidatesRouter.get("/skills", requireAuth, requireRole("CANDIDATE"), async (re
       });
 
       const ratingMap: Record<number, string> = { 1: "Beginner", 2: "Intermediate", 3: "Advanced" };
-      
+
       // คำนวณวันที่โควต้าจะคืน (30 วันหลังจากสอบครั้งแรกในชุดนั้น)
       let nextAvailableDate = null;
       if (attempts.length >= 3) {
@@ -309,7 +311,7 @@ candidatesRouter.get("/skills", requireAuth, requireRole("CANDIDATE"), async (re
         status: skill.status,
         // เพิ่มข้อมูลโควต้าส่งไปให้หน้าบ้าน
         attemptsUsed: attempts.length,
-        nextAvailableDate: nextAvailableDate 
+        nextAvailableDate: nextAvailableDate
       };
     }));
 
@@ -396,12 +398,12 @@ candidatesRouter.get("/", requireAuth, requireRole("COMPANY"), async (req, res) 
       preferredLocations: c.CandidatePreferredProvince.map((p) => p.Province.name),
       internshipPeriod: formatInternshipPeriod(c.internshipPeriod ?? null),
       yearOfStudy: primaryEdu?.yearOfStudy ?? null,
-      gpa: primaryEdu?.gpa ? primaryEdu.gpa.toString() : null,           
-      degreeName: primaryEdu?.degreeName ?? null,                         
+      gpa: primaryEdu?.gpa ? primaryEdu.gpa.toString() : null,
+      degreeName: primaryEdu?.degreeName ?? null,
       isCurrent: primaryEdu?.isCurrent ?? false,
       phoneNumber: c.phoneNumber ?? null,
       profileImage: c.profileImage ?? null,
-      createdAt: c.createdAt.toISOString(), 
+      createdAt: c.createdAt.toISOString(),
     };
 
   });
@@ -493,13 +495,15 @@ candidatesRouter.get("/:id", requireAuth, requireRole("COMPANY"), async (req, re
       preferredLocations: candidateProfile.CandidatePreferredProvince.map((entry: { Province: { name: string } }) => entry.Province.name),
       education: candidateProfile.CandidateUniversity.map((cu) => ({
         id: cu.id,
-        university: cu.University.name,
+        universityName: cu.University.name,
         educationLevel: cu.educationLevel,
         degree: cu.degreeName,
         fieldOfStudy: cu.fieldOfStudy,
         yearOfStudy: cu.yearOfStudy,
         gpa: cu.gpa ? cu.gpa.toString() : null,
         isCurrent: cu.isCurrent,
+        isVerified: cu.isVerified,
+        transcriptUrl: cu.transcriptUrl ?? null,
       })),
       experience: candidateProfile.WorkHistory.map((wh) => ({
         id: wh.id,
@@ -879,16 +883,31 @@ candidatesRouter.put("/education/:id", requireAuth, requireRole("CANDIDATE"), as
       additionalData.achievements = achievements;
     }
 
+    const oldTranscript = await prisma.educationTranscript.findFirst({
+      where: { educationId },
+    });
+    if (oldTranscript) {
+      try {
+        const key = fileStorage.extractKeyFromUrl(oldTranscript.url);
+        if (key) await fileStorage.deleteFile(key);
+      } catch { }
+      await prisma.educationTranscript.delete({ where: { id: oldTranscript.id } });
+    }
+
     const education = await prisma.candidateUniversity.update({
       where: { id: educationId },
       data: {
         universityId: university.id,
         educationLevel: normalizeEducationLevel(educationLevel),
-        degreeName: degreeName,
+        degreeName,
         fieldOfStudy: fieldOfStudy || degreeName,
         yearOfStudy: yearOfStudy || "",
         gpa: gpa ? parseFloat(gpa.toString()) : null,
         isCurrent: isCurrent || false,
+        // ✅ reset เมื่อ edit
+        isVerified: false,
+        verifiedBy: null,
+        transcriptUrl: null,
       },
     });
 
@@ -1526,7 +1545,7 @@ candidatesRouter.post("/skills", requireAuth, requireRole("CANDIDATE"), async (r
 
     if (!skill) {
       skill = await prisma.skills.create({
-        data: { 
+        data: {
           name: name,
           category: normalizedCategory as SkillCategory
         },
@@ -1652,71 +1671,170 @@ candidatesRouter.post(
     const userId = req.user!.id;
     const educationId =
       typeof req.params.educationId === "string"
-      ? req.params.educationId
-      : req.params.educationId[0];
+        ? req.params.educationId
+        : req.params.educationId[0];
 
     try {
       const candidateId = await getCandidateIdForUser(userId);
 
-      const file = (req as any).file;
-      if (!file) {
-        return res.status(400).json({ error: "File is required" });
-      }
+      const file = req.file;
+      if (!file) return res.status(400).json({ error: "File is required" });
 
-      const fileBuffer =
-        req.file?.buffer ||
-        (req.file?.path ? fs.readFileSync(req.file.path) : Buffer.from([]));
-
-      const uploadResult = await fileStorage.uploadFile(
-        { ...req.file, buffer: fileBuffer } as Express.Multer.File,
-        "transcripts"
-      );
-
-      cleanupLocalFile(req.file as Express.Multer.File);
-
-      // 1. ค้นหาว่ามี Transcript ของ Education นี้อยู่แล้วหรือยัง
-      const existingTranscript = await prisma.educationTranscript.findFirst({
-        where: {
-          educationId: educationId,
-          candidateId: candidateId,
-        },
+      // ── 1. โหลด education record จาก DB ──────────────────────────────
+      const edu = await prisma.candidateUniversity.findFirst({
+        where: { id: educationId, candidateId },
+        include: { University: { select: { name: true } } },
       });
 
-      let transcript;
+      if (!edu) return res.status(404).json({ error: "Education record not found" });
 
-      // 2. ถ้ามีอยู่แล้ว -> ให้อัปเดต URL และชื่อไฟล์ทับอันเดิม
-      if (existingTranscript) {
-        transcript = await prisma.educationTranscript.update({
-          where: { id: existingTranscript.id },
+      // ── 2. แปลงไฟล์เป็น base64 ───────────────────────────────────────
+      const fileBuffer =
+        file.buffer || (file.path ? fs.readFileSync(file.path) : Buffer.from([]));
+      const base64File = fileBuffer.toString("base64");
+
+      // ── 3. เรียก Gemini ──────────────────────────────────────────────
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+      const levelMap: Record<string, string> = {
+        BELOW_HIGH_SCHOOL: "Below High School",
+        HIGH_SCHOOL: "High School / Vocational Certificate",
+        HIGHER_VOCATIONAL: "Higher Vocational Diploma",
+        BACHELOR: "Bachelor's Degree",
+        MASTERS: "Master's Degree",
+        PHD: "Doctoral Degree (PhD)",
+      };
+
+      const prompt = `
+You are an education transcript verifier.
+
+Applicant's profile:
+- University: ${edu.University?.name ?? "N/A"}
+- Degree: ${edu.degreeName}
+- Field of Study: ${edu.fieldOfStudy}
+- Education Level: ${levelMap[edu.educationLevel] ?? edu.educationLevel}
+- GPA: ${edu.gpa ?? "N/A"}
+
+Read the uploaded transcript and compare each field.
+Rules:
+- GPA: allow ±0.05 tolerance
+- Text fields: minor abbreviations are OK (e.g. "B.Eng" = "Bachelor of Engineering")
+
+Return ONLY valid JSON (no markdown):
+{
+  "verified": true,
+  "extractedData": {
+    "universityName": "...",
+    "degreeName": "...",
+    "fieldOfStudy": "...",
+    "educationLevel": "BACHELOR",
+    "gpa": "3.50"
+  },
+  "mismatches": []
+}
+
+If fields don't match set verified: false and list mismatches:
+{
+  "verified": false,
+  "extractedData": { ... },
+  "mismatches": [{ "field": "GPA", "profile": "3.50", "transcript": "3.80" }]
+}
+
+If cannot read the document:
+{ "verified": false, "extractedData": {}, "mismatches": [], "error": "Cannot read document" }
+`;
+
+      const aiResult = await model.generateContent([
+        { inlineData: { mimeType: file.mimetype, data: base64File } },
+        { text: prompt },
+      ]);
+
+      const rawText = aiResult.response.text().trim();
+
+      let verifyResult: {
+        verified: boolean;
+        extractedData: Record<string, string>;
+        mismatches: Array<{ field: string; profile: string; transcript: string }>;
+        error?: string;
+      };
+
+      try {
+        const clean = rawText.replace(/```json|```/g, "").trim();
+        verifyResult = JSON.parse(clean);
+      } catch {
+        cleanupLocalFile(file);
+        return res.status(422).json({ message: "AI could not analyze the transcript. Please try again." });
+      }
+
+      // ── 4. ถ้า verified → upload ไฟล์ + อัปเดต DB ──────────────────
+      if (verifyResult.verified) {
+        const uploadResult = await fileStorage.uploadFile(
+          { ...file, buffer: fileBuffer } as Express.Multer.File,
+          "transcripts"
+        );
+        cleanupLocalFile(file);
+
+        // upsert transcript record
+        const existingTranscript = await prisma.educationTranscript.findFirst({
+          where: { educationId, candidateId },
+        });
+
+        if (existingTranscript) {
+          await prisma.educationTranscript.update({
+            where: { id: existingTranscript.id },
+            data: {
+              name: file.originalname,
+              url: uploadResult.url,
+              fileSize: file.size || null,
+              fileType: file.mimetype || null,
+            },
+          });
+        } else {
+          await prisma.educationTranscript.create({
+            data: {
+              id: randomUUID(),
+              educationId,
+              candidateId,
+              name: file.originalname,
+              url: uploadResult.url,
+              fileSize: file.size || null,
+              fileType: file.mimetype || null,
+            },
+          });
+        }
+
+        // อัปเดต isVerified ใน CandidateUniversity
+        await prisma.candidateUniversity.update({
+          where: { id: educationId },
           data: {
-            name: file.originalname,
-            url: uploadResult.url,
-            fileSize: file.size || null,
-            fileType: file.mimetype || null,
+            isVerified: true,
+            verifiedBy: "TRANSCRIPT",
+            transcriptUrl: uploadResult.url,
           },
         });
-      } 
-      // 3. ถ้ายังไม่มี -> ให้สร้างใหม่ตามปกติ
-      else {
-        const { randomUUID } = require("crypto"); // อย่าลืม import ถ้ายังไม่มี
-        transcript = await prisma.educationTranscript.create({
-          data: {
-            id: randomUUID(),
-            educationId,
-            candidateId,
-            name: file.originalname,
-            url: uploadResult.url,
-            fileSize: file.size || null,
-            fileType: file.mimetype || null,
-          },
+
+        return res.json({
+          verified: true,
+          extractedData: verifyResult.extractedData,
+          mismatches: [],
         });
       }
 
-      return res.status(201).json({ transcript });
+      // ── 5. ถ้าไม่ verified → ไม่บันทึกอะไร คืน mismatch ──────────
+      cleanupLocalFile(file);
+
+      return res.json({
+        verified: false,
+        extractedData: verifyResult.extractedData,
+        mismatches: verifyResult.mismatches,
+        error: verifyResult.error,
+      });
+
     } catch (e: any) {
-      cleanupLocalFile(req.file as Express.Multer.File);
-      console.error("Error uploading transcript:", e);
-      return res.status(500).json({ error: "Failed to upload transcript" });
+      cleanupLocalFile(req.file);
+      console.error("Transcript verify error:", e);
+      return res.status(500).json({ message: e.message || "Internal server error" });
     }
   }
 );
@@ -1730,8 +1848,8 @@ candidatesRouter.get(
     const userId = req.user!.id;
     const educationId =
       typeof req.params.educationId === "string"
-      ? req.params.educationId
-      : req.params.educationId[0]
+        ? req.params.educationId
+        : req.params.educationId[0]
 
     try {
       const candidateId = await getCandidateIdForUser(userId);
@@ -1784,11 +1902,11 @@ candidatesRouter.post("/skills/generate-test", requireAuth, async (req: AuthedRe
     // 3. ถ้าไม่มีคำถามใน DB หรือมีไม่ครบ 30 ข้อ ให้ AI สร้างใหม่
     if (!testRecord) {
       console.log(`Cache MISS: กำลังให้ AI สร้าง Pool คำถาม 15 ข้อสำหรับ ${skillName}...`);
-      
+
       const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-      const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.5-flash-lite", // หรือรุ่นที่คุณใช้งาน
-        generationConfig: { responseMimeType: "application/json" } 
+      const model = genAI.getGenerativeModel({
+        model: "gemini-2.5-flash", // หรือรุ่นที่คุณใช้งาน
+        generationConfig: { responseMimeType: "application/json" }
       });
 
       const prompt = `
@@ -1863,9 +1981,9 @@ candidatesRouter.post("/skills/generate-test", requireAuth, async (req: AuthedRe
 });
 
 candidatesRouter.post("/skills/submit-test", requireAuth, async (req: AuthedRequest, res) => {
-  const { skillName, answers, userSkillId } = req.body; 
+  const { skillName, answers, userSkillId } = req.body;
   // answers หน้าตาประมาณ: { "1": "Choice A", "2": "Choice C", ... }
-  
+
   const candidateId = await getCandidateIdForUser(req.user!.id);
   const normalizedSkillName = skillName.trim().toLowerCase();
 
@@ -1884,13 +2002,13 @@ candidatesRouter.post("/skills/submit-test", requireAuth, async (req: AuthedRequ
 
     originalQuestions.forEach(q => {
       const userAnswer = answers[q.id]; // ข้อความที่เด็กตอบ เช่น "C) Packaging..."
-      
+
       if (userAnswer) {
         // ตรวจสอบว่าคำตอบที่เด็กเลือก "ขึ้นต้นด้วย" ตัวอักษรเฉลยหรือไม่ (เช่น ขึ้นต้นด้วย "C)", "C.", หรือ "C ") 
         // หรือถ้ามันตอบมาแค่ "C" ตรงๆ ก็ให้ถูกเหมือนกัน
-        const isMatch = 
-          userAnswer === q.correctAnswer || 
-          userAnswer.startsWith(`${q.correctAnswer})`) || 
+        const isMatch =
+          userAnswer === q.correctAnswer ||
+          userAnswer.startsWith(`${q.correctAnswer})`) ||
           userAnswer.startsWith(`${q.correctAnswer}.`) ||
           userAnswer.startsWith(`${q.correctAnswer} `);
 
@@ -1908,11 +2026,11 @@ candidatesRouter.post("/skills/submit-test", requireAuth, async (req: AuthedRequ
     if (scores.Beginner >= 2) {
       isPassed = true;
       finalLevel = "Beginner"; // ผ่านเบื้องต้น
-      
+
       // ขั้นที่ 2: ตรวจ Intermediate
       if (scores.Intermediate >= 2) {
         finalLevel = "Intermediate";
-        
+
         // ขั้นที่ 3: ตรวจ Advanced
         if (scores.Advanced >= 2) {
           finalLevel = "Advanced";
@@ -1946,11 +2064,11 @@ candidatesRouter.post("/skills/submit-test", requireAuth, async (req: AuthedRequ
       });
     }
 
-    return res.json({ 
-      success: true, 
-      isPassed, 
-      scores, 
-      finalLevel 
+    return res.json({
+      success: true,
+      isPassed,
+      scores,
+      finalLevel
     });
 
   } catch (error) {

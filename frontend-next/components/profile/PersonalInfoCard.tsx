@@ -31,11 +31,15 @@ export default function PersonalInfoCard({
     const projects = profile.projects || [];
     const certificates = profile.certificates || [];
 
-    const educationVerified = false;
+    const educationVerified = (profile.education || []).some(
+      (edu: any) => edu.isVerified === true,
+    );
 
     const certSkillNames = new Set(certificates.flatMap((c) => c.tags || []));
     const projectSkillNames = new Set(
-      projects.flatMap((p) => (p as any).relatedSkills || (p as any).skills || []),
+      projects.flatMap(
+        (p) => (p as any).relatedSkills || (p as any).skills || [],
+      ),
     );
 
     // 1. คำนวณจำนวน Skill ที่สอบผ่านแล้ว
@@ -101,32 +105,75 @@ export default function PersonalInfoCard({
 
   const prefix = profile.gender?.toLowerCase() === "female" ? "Ms." : "Mr.";
 
-  const badgeStyles: Record<string, { bg: string; text: string; border: string }> = {
-    Verified: { bg: "bg-[#F0FDF4]", text: "text-[#16A34A]", border: "border-[#DCFCE7]" },
-    "Partially Verified": { bg: "bg-[#FFFBEB]", text: "text-[#D97706]", border: "border-[#FEF3C7]" },
-    "Not Verified": { bg: "bg-[#FEF2F2]", text: "text-[#DC2626]", border: "border-[#FEE2E2]" },
+  const badgeStyles: Record<
+    string,
+    { bg: string; text: string; border: string }
+  > = {
+    Verified: {
+      bg: "bg-[#F0FDF4]",
+      text: "text-[#16A34A]",
+      border: "border-[#DCFCE7]",
+    },
+    "Partially Verified": {
+      bg: "bg-[#FFFBEB]",
+      text: "text-[#D97706]",
+      border: "border-[#FEF3C7]",
+    },
+    "Not Verified": {
+      bg: "bg-[#FEF2F2]",
+      text: "text-[#DC2626]",
+      border: "border-[#FEE2E2]",
+    },
   };
   const badge = badgeStyles[stats.badgeStatus];
 
   const GreenCheck = () => (
     <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#B2CD6D] flex-shrink-0 ml-0.5">
-      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+      <svg
+        className="w-3 h-3 text-white"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={3}
+          d="M5 13l4 4L19 7"
+        />
       </svg>
     </span>
   );
 
   const YellowCheck = () => (
     <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#FFC456] flex-shrink-0 ml-0.5">
-      <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+      <svg
+        className="w-3 h-3 text-white"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={3}
+          d="M5 13l4 4L19 7"
+        />
       </svg>
     </span>
   );
 
   const RedX = () => (
-    <svg className="w-5 h-5 text-red-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+    <svg
+      className="w-5 h-5 text-red-400 flex-shrink-0"
+      fill="currentColor"
+      viewBox="0 0 20 20"
+    >
+      <path
+        fillRule="evenodd"
+        d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+        clipRule="evenodd"
+      />
     </svg>
   );
 
@@ -220,12 +267,28 @@ export default function PersonalInfoCard({
               className={`flex items-center gap-1.5 px-3 py-1 ${badge.bg} ${badge.text} border ${badge.border} rounded-full text-xs font-bold`}
             >
               {stats.badgeStatus === "Not Verified" ? (
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                <svg
+                  className="w-4 h-4"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               ) : (
-                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                <svg
+                  className="w-4 h-4"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               )}
               {stats.badgeStatus}
@@ -240,9 +303,13 @@ export default function PersonalInfoCard({
               </span>
               <div className="flex items-center gap-2 text-sm text-slate-600">
                 {stats.educationVerified ? (
-                  <><GreenCheck /> Verified</>
+                  <>
+                    <GreenCheck /> Verified
+                  </>
                 ) : (
-                  <><RedX /> Not Verified</>
+                  <>
+                    <RedX /> Not Verified
+                  </>
                 )}
               </div>
             </div>
