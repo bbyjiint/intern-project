@@ -28,9 +28,15 @@ export default function RootLayout({
             __html: `
               (function() {
                 try {
-                  // Force dark mode - always apply dark class
-                  document.documentElement.classList.add('dark');
-                  localStorage.setItem('theme', 'dark');
+                  const theme = localStorage.getItem('theme');
+                  if (theme === 'dark') {
+                    document.documentElement.classList.add('dark');
+                  } else {
+                    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    if (prefersDark) {
+                      document.documentElement.classList.add('dark');
+                    }
+                  }
                 } catch (e) {}
               })();
             `,

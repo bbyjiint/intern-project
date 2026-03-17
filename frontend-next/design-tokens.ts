@@ -1,5 +1,5 @@
 /**
- * Design Tokens - Global Dark Mode Color System (Figma)
+ * Design Tokens - Global Color System
  * 
  * These colors are the official design system for CompanyHub.
  * Use these values consistently across all pages and components.
@@ -8,26 +8,15 @@
  */
 
 export const colors = {
-  // Background colors
-  bgPrimary: '#121316',      // Primary background
-  bgSecondary: '#121212',    // Secondary (navbar / sections)
-  bgInput: '#1A1C22',        // Input fields
-  bgCard: '#1A1C22',         // Cards / containers
+  // Primary button color - Use for ALL buttons (CTA, submit, login, etc.)
+  primary: '#0273B1',
+  primaryHover: '#025a8f',
   
-  // Text colors
-  textPrimary: '#FFFFFF',    // Primary (headings, titles, logo)
-  textSecondary: '#A9B4CD',  // Secondary (labels, nav links)
-  textParagraph: '#8CA2C0',  // Paragraph text
-  textPlaceholder: '#6B7C93', // Placeholder text
+  // Primary font color - Use for main text throughout the website
+  primaryText: '#1C2D4F',
   
-  // Accent colors
-  accentMain: '#0273B1',     // Main blue
-  accentHover: '#0284CC',    // Hover blue
-  accentLogo: '#3276FA',     // Logo dot
-  
-  // Border colors
-  borderDefault: '#486284',  // Default border
-  borderSubtle: 'rgba(239, 243, 250, 0.2)', // Subtle border
+  // Font hover / secondary text color - Use for hover states, secondary text, muted text
+  secondaryText: '#A9B4CD',
 } as const
 
 /**

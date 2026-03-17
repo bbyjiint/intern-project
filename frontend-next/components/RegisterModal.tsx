@@ -67,7 +67,7 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
       className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
       onClick={handleBackdropClick}
     >
-      <div className="rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto relative" style={{ backgroundColor: '#121212' }}>
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto relative">
         <div className="p-8">
           {/* Logo */}
           <div className="mb-6">
@@ -75,14 +75,14 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
           </div>
 
           {/* Heading */}
-          <h2 className="text-3xl font-bold mb-8" style={{ color: '#FFFFFF' }}>
+          <h2 className="text-3xl font-bold mb-8" style={{ color: '#1C2D4F' }}>
             Join Us
           </h2>
 
           {/* Register Form */}
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
-              <div className="rounded-lg border px-4 py-3 text-sm" style={{ borderColor: '#486284', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
+              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                 {error}
               </div>
             )}
@@ -91,8 +91,7 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <svg
-                  className="h-5 w-5"
-                  style={{ color: '#6B7C93' }}
+                  className="h-5 w-5 text-gray-400"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -111,12 +110,7 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter Your Email"
                 required
-                className="block w-full pl-12 pr-4 py-3 rounded-lg"
-                style={{
-                  backgroundColor: '#1A1C22',
-                  border: '1px solid #486284',
-                  color: '#FFFFFF'
-                }}
+                className="block w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg bg-gray-50"
               />
             </div>
 
@@ -124,8 +118,7 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <svg
-                  className="h-5 w-5"
-                  style={{ color: '#6B7C93' }}
+                  className="h-5 w-5 text-gray-400"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -144,12 +137,7 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter Your Password"
                 required
-                className="block w-full pl-12 pr-12 py-3 rounded-lg"
-                style={{
-                  backgroundColor: '#1A1C22',
-                  border: '1px solid #486284',
-                  color: '#FFFFFF'
-                }}
+                className="block w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg bg-gray-50"
               />
               <button
                 type="button"
@@ -157,10 +145,7 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
                 className="absolute inset-y-0 right-0 pr-4 flex items-center"
               >
                 <svg
-                  className="h-5 w-5"
-                  style={{ color: '#6B7C93' }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = '#A9B4CD'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = '#6B7C93'}
+                  className="h-5 w-5 text-gray-400 hover:text-gray-600"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -188,8 +173,7 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <svg
-                  className="h-5 w-5"
-                  style={{ color: '#6B7C93' }}
+                  className="h-5 w-5 text-gray-400"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -208,12 +192,7 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Comfirm Your Password"
                 required
-                className="block w-full pl-12 pr-12 py-3 rounded-lg"
-                style={{
-                  backgroundColor: '#1A1C22',
-                  border: '1px solid #486284',
-                  color: '#FFFFFF'
-                }}
+                className="block w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg bg-gray-50"
               />
               <button
                 type="button"
@@ -221,10 +200,7 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
                 className="absolute inset-y-0 right-0 pr-4 flex items-center"
               >
                 <svg
-                  className="h-5 w-5"
-                  style={{ color: '#6B7C93' }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = '#A9B4CD'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = '#6B7C93'}
+                  className="h-5 w-5 text-gray-400 hover:text-gray-600"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -253,20 +229,15 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
               type="submit"
               disabled={isSubmitting}
               className="w-full text-white py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              style={{ 
-                backgroundColor: '#0273B1',
-                border: '1px solid #486284'
-              }}
+              style={{ backgroundColor: '#0273B1' }}
               onMouseEnter={(e) => {
                 if (!isSubmitting) {
-                  e.currentTarget.style.backgroundColor = '#0284CC';
-                  e.currentTarget.style.borderColor = '#0284CC';
+                  e.currentTarget.style.backgroundColor = '#025a8f'
                 }
               }}
               onMouseLeave={(e) => {
                 if (!isSubmitting) {
-                  e.currentTarget.style.backgroundColor = '#0273B1';
-                  e.currentTarget.style.borderColor = '#486284';
+                  e.currentTarget.style.backgroundColor = '#0273B1'
                 }
               }}
             >
@@ -275,14 +246,14 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
 
             {/* Link */}
             <div className="text-center">
-              <p className="text-sm" style={{ color: '#A9B4CD' }}>
+              <p className="text-sm text-gray-700">
                 Already have an account?{' '}
                 <button
                   type="button"
                   onClick={handleLoginClick}
                   className="underline transition-colors"
                   style={{ color: '#0273B1' }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = '#0284CC'}
+                  onMouseEnter={(e) => e.currentTarget.style.color = '#025a8f'}
                   onMouseLeave={(e) => e.currentTarget.style.color = '#0273B1'}
                 >
                   Login
@@ -293,10 +264,10 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
             {/* Divider */}
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t" style={{ borderColor: 'rgba(239, 243, 250, 0.2)' }}></div>
+                <div className="w-full border-t border-gray-300"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2" style={{ backgroundColor: '#121212', color: '#8CA2C0' }}>Or</span>
+                <span className="px-2 bg-white text-gray-500">Or</span>
               </div>
             </div>
 
@@ -304,20 +275,7 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
             <div className="space-y-3">
               <button
                 type="button"
-                className="w-full py-3 rounded-lg font-medium transition-colors flex items-center justify-center space-x-3"
-                style={{
-                  backgroundColor: 'transparent',
-                  border: '1px solid #486284',
-                  color: '#A9B4CD'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#FFFFFF';
-                  e.currentTarget.style.borderColor = '#0273B1';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#A9B4CD';
-                  e.currentTarget.style.borderColor = '#486284';
-                }}
+                className="w-full bg-white border border-gray-300 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center justify-center space-x-3"
                 onClick={() => startOAuth('line')}
               >
                 <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
@@ -328,20 +286,7 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
 
               <button
                 type="button"
-                className="w-full py-3 rounded-lg font-medium transition-colors flex items-center justify-center space-x-3"
-                style={{
-                  backgroundColor: 'transparent',
-                  border: '1px solid #486284',
-                  color: '#A9B4CD'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = '#FFFFFF';
-                  e.currentTarget.style.borderColor = '#0273B1';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = '#A9B4CD';
-                  e.currentTarget.style.borderColor = '#486284';
-                }}
+                className="w-full bg-white border border-gray-300 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center justify-center space-x-3"
                 onClick={() => startOAuth('google')}
               >
                 <svg className="w-6 h-6" viewBox="0 0 24 24">
@@ -370,10 +315,7 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
           {/* Close Button */}
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 transition-colors"
-            style={{ color: '#A9B4CD' }}
-            onMouseEnter={(e) => e.currentTarget.style.color = '#FFFFFF'}
-            onMouseLeave={(e) => e.currentTarget.style.color = '#A9B4CD'}
+            className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
           >
             <svg
               className="w-6 h-6"
