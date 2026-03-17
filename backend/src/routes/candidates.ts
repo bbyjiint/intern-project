@@ -237,6 +237,7 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
         endDate: project.endDate || "",
         relatedSkills: project.relatedSkills || [],
         githubUrl: project.githubUrl || "",
+        githubVerified: project.githubVerified || false,
         projectUrl: project.projectUrl || "",
         fileUrl: project.fileUrl || "",
         fileName: project.fileName || "",
@@ -1786,7 +1787,7 @@ candidatesRouter.post("/skills/generate-test", requireAuth, async (req: AuthedRe
       
       const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
       const model = genAI.getGenerativeModel({ 
-        model: "gemini-2.5-flash", // หรือรุ่นที่คุณใช้งาน
+        model: "gemini-2.5-flash-lite", // หรือรุ่นที่คุณใช้งาน
         generationConfig: { responseMimeType: "application/json" } 
       });
 

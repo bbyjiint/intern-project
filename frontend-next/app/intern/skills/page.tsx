@@ -360,7 +360,6 @@ export default function SkillsPage() {
                       <option value="Select Category">Select Category</option>
                       <option value="Technical Skill">Technical Skill</option>
                       <option value="Business Skills">Business Skills</option>
-                      <option value="Soft Skill">Soft Skill</option>
                     </select>
                     <svg
                       className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
