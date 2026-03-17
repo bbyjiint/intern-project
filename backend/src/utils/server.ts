@@ -86,10 +86,7 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   });
 });
 
-// Default backend port:
-// - Use 5000 locally so it lines up with Docker / frontend expectations.
-// - Allow override via PORT environment variable.
-const PORT = process.env.PORT ? Number(process.env.PORT) : 5000;
+const PORT = process.env.PORT ? Number(process.env.PORT) : 5001;
 app.listen(PORT, () => {
   console.log(`API running on http://localhost:${PORT}`);
 });
