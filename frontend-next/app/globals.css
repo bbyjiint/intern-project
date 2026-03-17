@@ -3,18 +3,54 @@
 @tailwind utilities;
 
 /**
- * Design Tokens - Global Color System
+ * Design Tokens - Global Dark Mode Color System (Figma)
  * 
- * Primary button color: #0273B1 (use for ALL buttons)
- * Primary font color: #1C2D4F (use for main text)
- * Secondary text / hover color: #A9B4CD (use for hover states, secondary text, muted text)
+ * BACKGROUND:
+ * - Primary: #121316
+ * - Secondary (navbar / sections): #121212
+ * 
+ * TEXT:
+ * - Primary (headings, titles, logo): #FFFFFF
+ * - Secondary (labels, nav links): #A9B4CD
+ * - Paragraph: #8CA2C0
+ * - Placeholder text: #6B7C93
+ * 
+ * ACCENT:
+ * - Main blue: #0273B1
+ * - Hover blue: #0284CC
+ * - Logo dot: #3276FA
+ * 
+ * BORDERS:
+ * - Default: #486284
+ * - Subtle: rgba(239, 243, 250, 0.2)
+ * 
+ * INPUT FIELDS:
+ * - Background: #1A1C22
+ * - Border: #486284
+ * - Text: #FFFFFF
+ * - Placeholder: #6B7C93
+ * - Focus border: #0273B1
  */
 
 :root {
-  --color-primary: #0273B1;
-  --color-primary-hover: #025a8f;
-  --color-primary-text: #1C2D4F;
-  --color-secondary-text: #A9B4CD;
+  /* Dark mode colors - Figma design system */
+  --color-bg-primary: #121316;
+  --color-bg-secondary: #121212;
+  --color-bg-input: #1A1C22;
+  --color-bg-card: #1A1C22;
+  
+  --color-text-primary: #FFFFFF;
+  --color-text-secondary: #A9B4CD;
+  --color-text-paragraph: #8CA2C0;
+  --color-text-placeholder: #6B7C93;
+  
+  --color-accent-main: #0273B1;
+  --color-accent-hover: #0284CC;
+  --color-accent-logo: #3276FA;
+  
+  --color-border-default: #486284;
+  --color-border-subtle: rgba(239, 243, 250, 0.2);
+  
   --layout-max-width: 1200px;
   --layout-gutter: 24px;
   --space-1: 4px;
@@ -28,10 +64,15 @@
 }
 
 @layer base {
+  /* Force dark mode - remove light mode */
   body {
-    @apply bg-gray-50;
-    color: var(--color-primary-text);
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
     overflow-x: hidden;
+  }
+  
+  html {
+    background-color: var(--color-bg-primary);
   }
 }
 
@@ -71,23 +112,25 @@
 
   /* Primary Button - Use for ALL buttons (CTA, submit, login, etc.) */
   .btn-primary {
-    background-color: var(--color-primary);
-    color: white;
+    background-color: var(--color-accent-main);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border-default);
     padding: 0.5rem 1.5rem;
     border-radius: 0.375rem;
-    transition: background-color 0.2s;
+    transition: all 0.2s;
     font-weight: 500;
   }
 
   .btn-primary:hover {
-    background-color: var(--color-primary-hover);
+    background-color: var(--color-accent-hover);
+    border-color: var(--color-accent-hover);
   }
   
   /* Secondary Button - For less prominent actions */
   .btn-secondary {
     background-color: transparent;
-    color: var(--color-primary-text);
-    border: 1px solid var(--color-secondary-text);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border-default);
     padding: 0.5rem 1.5rem;
     border-radius: 0.375rem;
     transition: all 0.2s;
@@ -95,70 +138,82 @@
   }
 
   .btn-secondary:hover {
-    border-color: var(--color-primary-text);
-    color: var(--color-primary-text);
+    border-color: var(--color-accent-main);
+    color: var(--color-text-primary);
   }
   
   .card {
-    @apply bg-white rounded-lg shadow-md p-6;
+    background-color: var(--color-bg-card);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border-default);
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  }
+
+  .card:hover {
+    border-color: var(--color-accent-main);
   }
 
   /* Navigation Links */
   .nav-link {
-    color: var(--color-secondary-text);
+    color: var(--color-text-secondary);
     transition: color 0.2s;
   }
 
   .nav-link:hover {
-    color: var(--color-primary-text);
+    color: var(--color-accent-main);
   }
 
   .nav-link-active {
-    color: var(--color-primary-text);
-  }
-
-  /* Dark mode for navigation links */
-  .dark .nav-link {
-    color: rgb(156 163 175); /* gray-400 */
-  }
-
-  .dark .nav-link:hover {
-    color: white;
-  }
-
-  .dark .nav-link-active {
-    color: white;
+    color: var(--color-accent-main);
   }
 
   /* Navigation Button */
   .nav-button {
-    background-color: var(--color-primary);
-    color: white;
+    background-color: var(--color-accent-main);
+    color: var(--color-text-primary);
+    border: 1px solid var(--color-border-default);
     padding: 0.5rem 1.5rem;
     border-radius: 0.375rem;
-    transition: background-color 0.2s;
+    transition: all 0.2s;
     font-weight: 500;
   }
 
-  .dark .nav-button {
-    background-color: rgb(96 165 250); /* blue-400 */
-  }
-
-  .dark .nav-button:hover {
-    background-color: rgb(59 130 246); /* blue-500 */
-  }
-
   .nav-button:hover {
-    background-color: var(--color-primary-hover);
+    background-color: var(--color-accent-hover);
+    border-color: var(--color-accent-hover);
   }
 
   /* Text Utilities */
   .text-primary {
-    color: var(--color-primary-text);
+    color: var(--color-text-primary);
   }
 
   .text-secondary {
-    color: var(--color-secondary-text);
+    color: var(--color-text-secondary);
+  }
+
+  .text-paragraph {
+    color: var(--color-text-paragraph);
+  }
+
+  /* Input Fields - Dark Mode */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  textarea,
+  select {
+    background-color: var(--color-bg-input);
+    border: 1px solid var(--color-border-default);
+    color: var(--color-text-primary);
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-text-placeholder);
   }
 
   /* Input Focus Ring */
@@ -166,8 +221,8 @@
   textarea:focus,
   select:focus {
     outline: none;
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 2px var(--color-primary);
+    border-color: var(--color-accent-main);
+    box-shadow: 0 0 0 2px rgba(2, 115, 177, 0.2);
   }
 }
 

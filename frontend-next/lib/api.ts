@@ -1,5 +1,7 @@
+// Frontend talks to backend on port 5000 by default.
+// You can override this with NEXT_PUBLIC_API_BASE_URL in .env.local if needed.
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5001";
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 
 export type AuthUser = {
   id: string;

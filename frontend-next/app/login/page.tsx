@@ -48,23 +48,23 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="layout-container flex min-h-screen items-center justify-center py-8">
+    <div className="layout-container flex min-h-screen items-center justify-center py-8" style={{ backgroundColor: '#121316' }}>
       <div className="max-w-md w-full">
-        <div className="bg-white rounded-lg shadow-xl p-8">
+        <div className="rounded-lg shadow-xl p-8" style={{ backgroundColor: '#121212' }}>
           {/* Logo */}
           <div className="mb-6">
           <CompanyHubLogo href="/" />
           </div>
 
           {/* Heading */}
-          <h2 className="text-3xl font-bold mb-8" style={{ color: '#1C2D4F' }}>
+          <h2 className="text-3xl font-bold mb-8" style={{ color: '#FFFFFF' }}>
             Log in Welcome Back!
           </h2>
 
           {/* Login Form */}
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div className="rounded-lg border px-4 py-3 text-sm" style={{ borderColor: '#486284', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
                 {error}
               </div>
             )}
@@ -73,7 +73,8 @@ export default function LoginPage() {
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <svg
-                  className="h-5 w-5 text-gray-400"
+                  className="h-5 w-5"
+                  style={{ color: '#6B7C93' }}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -91,7 +92,12 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter Your Email"
-                className="block w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg bg-gray-50"
+                className="block w-full pl-12 pr-4 py-3 rounded-lg"
+                style={{
+                  backgroundColor: '#1A1C22',
+                  border: '1px solid #486284',
+                  color: '#FFFFFF'
+                }}
                 required
               />
             </div>
@@ -100,7 +106,8 @@ export default function LoginPage() {
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <svg
-                  className="h-5 w-5 text-gray-400"
+                  className="h-5 w-5"
+                  style={{ color: '#6B7C93' }}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -118,7 +125,12 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter Your Password"
-                className="block w-full pl-12 pr-12 py-3 border border-gray-300 rounded-lg bg-gray-50"
+                className="block w-full pl-12 pr-12 py-3 rounded-lg"
+                style={{
+                  backgroundColor: '#1A1C22',
+                  border: '1px solid #486284',
+                  color: '#FFFFFF'
+                }}
                 required
               />
               <button
@@ -127,7 +139,8 @@ export default function LoginPage() {
                 className="absolute inset-y-0 right-0 pr-4 flex items-center"
               >
                 <svg
-                  className="h-5 w-5 text-gray-400 hover:text-gray-600"
+                  className="h-5 w-5"
+                  style={{ color: '#6B7C93' }}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -152,12 +165,17 @@ export default function LoginPage() {
             </div>
 
             <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 text-sm text-gray-700">
+              <label className="flex items-center gap-2 text-sm" style={{ color: '#A9B4CD' }}>
                 <input
                   type="checkbox"
                   checked={rememberMe}
                   onChange={(e) => setRememberMe(e.target.checked)}
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  className="h-4 w-4 rounded"
+                  style={{
+                    borderColor: '#486284',
+                    backgroundColor: '#1A1C22',
+                    accentColor: '#0273B1'
+                  }}
                 />
                 Remember me
               </label>
@@ -168,9 +186,22 @@ export default function LoginPage() {
               type="submit"
               disabled={isSubmitting}
               className="w-full text-white py-3 rounded-lg font-semibold transition-colors"
-              style={{ backgroundColor: '#0273B1' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#025a8f'}
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0273B1'}
+              style={{ 
+                backgroundColor: '#0273B1',
+                border: '1px solid #486284'
+              }}
+              onMouseEnter={(e) => {
+                if (!isSubmitting) {
+                  e.currentTarget.style.backgroundColor = '#0284CC';
+                  e.currentTarget.style.borderColor = '#0284CC';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isSubmitting) {
+                  e.currentTarget.style.backgroundColor = '#0273B1';
+                  e.currentTarget.style.borderColor = '#486284';
+                }
+              }}
             >
               {isSubmitting ? 'Logging in...' : 'Login'}
             </button>
@@ -179,17 +210,20 @@ export default function LoginPage() {
             <div className="flex flex-col space-y-2 text-center">
               <Link
                 href="/forgot-password"
-                className="text-gray-700 hover:text-gray-900 text-sm"
+                className="text-sm transition-colors"
+                style={{ color: '#A9B4CD' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = '#FFFFFF'}
+                onMouseLeave={(e) => e.currentTarget.style.color = '#A9B4CD'}
               >
                 Forgot Password?
               </Link>
-              <p className="text-sm text-gray-700">
+              <p className="text-sm" style={{ color: '#A9B4CD' }}>
                 Don't have an account?{' '}
                 <Link
                   href="/register"
                   className="underline transition-colors"
                   style={{ color: '#0273B1' }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = '#025a8f'}
+                  onMouseEnter={(e) => e.currentTarget.style.color = '#0284CC'}
                   onMouseLeave={(e) => e.currentTarget.style.color = '#0273B1'}
                 >
                   Sign up
@@ -200,10 +234,10 @@ export default function LoginPage() {
             {/* Divider */}
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300"></div>
+                <div className="w-full border-t" style={{ borderColor: 'rgba(239, 243, 250, 0.2)' }}></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Or</span>
+                <span className="px-2" style={{ backgroundColor: '#121212', color: '#8CA2C0' }}>Or</span>
               </div>
             </div>
 
@@ -211,7 +245,20 @@ export default function LoginPage() {
             <div className="space-y-3">
               <button
                 type="button"
-                className="w-full bg-white border border-gray-300 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center justify-center space-x-3"
+                className="w-full py-3 rounded-lg font-medium transition-colors flex items-center justify-center space-x-3"
+                style={{
+                  backgroundColor: 'transparent',
+                  border: '1px solid #486284',
+                  color: '#A9B4CD'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#FFFFFF';
+                  e.currentTarget.style.borderColor = '#0273B1';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#A9B4CD';
+                  e.currentTarget.style.borderColor = '#486284';
+                }}
                 onClick={() => startOAuth('line')}
               >
                 <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
@@ -222,7 +269,20 @@ export default function LoginPage() {
 
               <button
                 type="button"
-                className="w-full bg-white border border-gray-300 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors flex items-center justify-center space-x-3"
+                className="w-full py-3 rounded-lg font-medium transition-colors flex items-center justify-center space-x-3"
+                style={{
+                  backgroundColor: 'transparent',
+                  border: '1px solid #486284',
+                  color: '#A9B4CD'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#FFFFFF';
+                  e.currentTarget.style.borderColor = '#0273B1';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#A9B4CD';
+                  e.currentTarget.style.borderColor = '#486284';
+                }}
                 onClick={() => startOAuth('google')}
               >
                 <svg className="w-6 h-6" viewBox="0 0 24 24">

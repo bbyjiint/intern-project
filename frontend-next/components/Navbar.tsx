@@ -20,7 +20,7 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
   }
 
   return (
-    <nav className="bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 transition-colors">
+    <nav className="border-b transition-colors" style={{ backgroundColor: '#121212', borderColor: 'rgba(239, 243, 250, 0.2)' }}>
       <div className="layout-container">
         <div className="flex justify-between items-center h-20">
           <CompanyHubLogo href="/" />
