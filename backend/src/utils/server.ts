@@ -14,6 +14,7 @@ import { addressesRouter } from "../routes/addresses";
 import { bookmarksRouter } from "../routes/bookmarks";
 import messagesRouter from "../routes/messages";
 import { internRouter } from "../routes/intern";
+import { githubRouter } from "../routes/githubCheck";
 import uploadRouter from "../routes/upload";
 import aiRouter from "../routes/ai"; // ← เพิ่ม
 
@@ -52,6 +53,7 @@ app.use("/api", profilesRouter);
 app.use("/api", jobPostsRouter);
 app.use("/api/universities", universitiesRouter);
 app.use("/api/skills", skillsRouter);
+app.use('/api/github', githubRouter);
 app.use("/api/addresses", addressesRouter);
 app.use("/api/bookmarks", bookmarksRouter);
 app.use("/api/messages", messagesRouter);

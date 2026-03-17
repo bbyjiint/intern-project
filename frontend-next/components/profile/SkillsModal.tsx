@@ -26,10 +26,26 @@ interface MasterSkill {
   category: string;
 }
 
-export default function SkillsModal({ isOpen, onClose, onSave, editingSkill }: SkillsModalProps) {
-  const [formData, setFormData] = useState<SkillData>({ name: "", category: "", level: "" });
+const getMappedCategory = (rawCategory: string) => {
+  const cat = (rawCategory || "").toUpperCase();
+  if (cat.includes("TECH")) return "Technical Skill";
+  if (cat.includes("BUSI") || cat.includes("SOFT")) return "Business Skills";
+  return "Other Skills";
+};
+
+export default function SkillsModal({
+  isOpen,
+  onClose,
+  onSave,
+  editingSkill,
+}: SkillsModalProps) {
+  const [formData, setFormData] = useState<SkillData>({
+    name: "",
+    category: "",
+    level: "",
+  });
   const [errorMsg, setErrorMsg] = useState("");
-  
+
   // State เก็บรายชื่อ Skill ทั้งหมดจาก DB
   const [availableSkills, setAvailableSkills] = useState<MasterSkill[]>([]);
   const [isLoadingSkills, setIsLoadingSkills] = useState(false);
@@ -40,7 +56,7 @@ export default function SkillsModal({ isOpen, onClose, onSave, editingSkill }: S
       const fetchMasterSkills = async () => {
         try {
           setIsLoadingSkills(true);
-          const data = await apiFetch<{ skills: MasterSkill[] }>('/api/skills'); 
+          const data = await apiFetch<{ skills: MasterSkill[] }>("/api/skills");
           setAvailableSkills(data.skills || []);
         } catch (error) {
           console.error("Failed to fetch master skills:", error);
@@ -55,23 +71,29 @@ export default function SkillsModal({ isOpen, onClose, onSave, editingSkill }: S
   useEffect(() => {
     if (editingSkill) setFormData(editingSkill);
     else setFormData({ name: "", category: "", level: "" });
-    setErrorMsg(""); 
+    setErrorMsg("");
   }, [editingSkill, isOpen]);
 
   if (!isOpen) return null;
 
   const handleSubmit = () => {
     if (!formData.name || !formData.category || !formData.level) {
-      setErrorMsg("Please fill in all required fields and select a proficiency level.");
+      setErrorMsg(
+        "Please fill in all required fields and select a proficiency level.",
+      );
       return;
     }
-    setErrorMsg(""); 
+    setErrorMsg("");
     onSave(formData);
   };
 
+  const filteredSkills = availableSkills.filter((skill) => {
+    return getMappedCategory(skill.category) === formData.category;
+  });
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-[1px] p-4">
-      <div 
+      <div
         className="bg-white rounded-2xl shadow-2xl w-full max-w-[700px] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
@@ -84,20 +106,39 @@ export default function SkillsModal({ isOpen, onClose, onSave, editingSkill }: S
             onClick={onClose}
             className="text-gray-400 hover:text-gray-700 transition-colors p-1"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
 
         {/* Body */}
         <div className="p-6 space-y-6">
-          
           {errorMsg && (
             <div className="p-3 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm font-medium flex items-center gap-2">
-              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg
+                className="w-5 h-5 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
                 <circle cx="12" cy="12" r="10" strokeWidth="2"></circle>
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01"></path>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 8v4m0 4h.01"
+                ></path>
               </svg>
               {errorMsg}
             </div>
@@ -113,39 +154,37 @@ export default function SkillsModal({ isOpen, onClose, onSave, editingSkill }: S
                 <select
                   value={formData.name}
                   onChange={(e) => {
-                    const selectedSkillName = e.target.value;
-                    const selectedSkill = availableSkills.find((skill) => skill.name === selectedSkillName);
-                    
-                    // 💡 Logic แปลงชื่อ Category จาก DB (เช่น TECHNICAL, BUSINESS) ให้ออกมาสวยงามตรงกับหน้าเว็บ
-                    let newCategory = "";
-                    if (selectedSkill) {
-                      const dbCat = (selectedSkill.category || "").toUpperCase();
-                      if (dbCat.includes("TECH")) newCategory = "Technical Skill";
-                      else if (dbCat.includes("BUSI") || dbCat.includes("SOFT")) newCategory = "Business Skills";
-                      else newCategory = "Technical Skill"; // Default
-                    }
-
-                    setFormData({
-                      ...formData,
-                      name: selectedSkillName,
-                      category: newCategory || formData.category,
-                    });
+                    setFormData({ ...formData, name: e.target.value });
                     setErrorMsg("");
                   }}
-                  className="w-full appearance-none px-4 py-3 bg-white border border-gray-200 rounded-lg text-[15px] text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm cursor-pointer"
-                  disabled={isLoadingSkills}
+                  className="w-full appearance-none px-4 py-3 bg-white border border-gray-200 rounded-lg text-[15px] text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
+                  disabled={isLoadingSkills || !formData.category} // ล็อกไว้ถ้ายังไม่เลือก Category
                 >
                   <option value="" disabled>
-                    {isLoadingSkills ? "Loading skills..." : "Select skill"}
+                    {!formData.category
+                      ? "Select a category first"
+                      : isLoadingSkills
+                        ? "Loading skills..."
+                        : "Select skill"}
                   </option>
-                  {availableSkills.map((skill) => (
+                  {filteredSkills.map((skill) => (
                     <option key={skill.id} value={skill.name}>
                       {skill.name}
                     </option>
                   ))}
                 </select>
-                <svg className="w-5 h-5 text-gray-300 absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                <svg
+                  className="w-5 h-5 text-gray-300 absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </div>
             </div>
@@ -153,16 +192,41 @@ export default function SkillsModal({ isOpen, onClose, onSave, editingSkill }: S
             {/* Category (Auto-filled and Disabled) */}
             <div>
               <label className="block text-[15px] font-bold text-[#1C2D4F] mb-2">
-                Category <span className="text-gray-400 font-normal text-xs ml-1">(Auto-detected)</span>
+                Category <span className="text-red-500">*</span>
               </label>
               <div className="relative">
-                <input
-                  type="text"
-                  value={formData.category || "Select a skill first"}
-                  readOnly
-                  disabled
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-[15px] text-gray-500 font-medium cursor-not-allowed"
-                />
+                <select
+                  value={formData.category}
+                  onChange={(e) => {
+                    // เมื่อเปลี่ยน Category ให้ล้างค่า Skill Name ทิ้ง เพื่อบังคับให้เลือกใหม่
+                    setFormData({
+                      ...formData,
+                      category: e.target.value,
+                      name: "",
+                    });
+                    setErrorMsg("");
+                  }}
+                  className="w-full appearance-none px-4 py-3 bg-white border border-gray-200 rounded-lg text-[15px] text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm cursor-pointer"
+                >
+                  <option value="" disabled>
+                    Select category
+                  </option>
+                  <option value="Technical Skill">Technical Skill</option>
+                  <option value="Business Skills">Business Skills</option>
+                </select>
+                <svg
+                  className="w-5 h-5 text-gray-300 absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
               </div>
             </div>
           </div>
@@ -173,64 +237,107 @@ export default function SkillsModal({ isOpen, onClose, onSave, editingSkill }: S
               Proficiency Level <span className="text-red-500">*</span>
             </label>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              
               {/* Beginner Card */}
               <div
-                onClick={() => { setFormData({ ...formData, level: "Beginner" }); setErrorMsg(""); }}
+                onClick={() => {
+                  setFormData({ ...formData, level: "Beginner" });
+                  setErrorMsg("");
+                }}
                 className={`border rounded-xl p-5 cursor-pointer transition-all duration-200 ${
-                  formData.level === "Beginner" ? "border-[#68B383] border-[2px] shadow-sm bg-[#F0FDF4]/30" : "border-gray-200 hover:border-gray-300 bg-white"
+                  formData.level === "Beginner"
+                    ? "border-[#68B383] border-[2px] shadow-sm bg-[#F0FDF4]/30"
+                    : "border-gray-200 hover:border-gray-300 bg-white"
                 }`}
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-9 h-9 rounded-full bg-[#68B383] flex items-center justify-center text-white font-bold">1</div>
-                  <span className="font-bold text-gray-900 text-[15px]">Beginner</span>
+                  <div className="w-9 h-9 rounded-full bg-[#68B383] flex items-center justify-center text-white font-bold">
+                    1
+                  </div>
+                  <span className="font-bold text-gray-900 text-[15px]">
+                    Beginner
+                  </span>
                 </div>
                 <div className="flex gap-1.5 mb-3">
-                  <div className={`h-1.5 flex-1 rounded-full ${formData.level === "Beginner" ? "bg-[#68B383]" : "bg-[#68B383]"}`}></div>
+                  <div
+                    className={`h-1.5 flex-1 rounded-full ${formData.level === "Beginner" ? "bg-[#68B383]" : "bg-[#68B383]"}`}
+                  ></div>
                   <div className="h-1.5 flex-1 rounded-full bg-[#E2E8F0]"></div>
                   <div className="h-1.5 flex-1 rounded-full bg-[#E2E8F0]"></div>
                 </div>
-                <p className="text-[13px] text-gray-500 font-medium mt-3">Learning basics, needs guidance</p>
+                <p className="text-[13px] text-gray-500 font-medium mt-3">
+                  Learning basics, needs guidance
+                </p>
               </div>
 
               {/* Intermediate Card */}
               <div
-                onClick={() => { setFormData({ ...formData, level: "Intermediate" }); setErrorMsg(""); }}
+                onClick={() => {
+                  setFormData({ ...formData, level: "Intermediate" });
+                  setErrorMsg("");
+                }}
                 className={`border rounded-xl p-5 cursor-pointer transition-all duration-200 ${
-                  formData.level === "Intermediate" ? "border-[#3B82F6] border-[2px] shadow-sm bg-[#EFF6FF]/30" : "border-gray-200 hover:border-gray-300 bg-white"
+                  formData.level === "Intermediate"
+                    ? "border-[#3B82F6] border-[2px] shadow-sm bg-[#EFF6FF]/30"
+                    : "border-gray-200 hover:border-gray-300 bg-white"
                 }`}
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-9 h-9 rounded-full bg-[#3B82F6] flex items-center justify-center text-white font-bold">2</div>
-                  <span className="font-bold text-gray-900 text-[15px]">Intermediate</span>
+                  <div className="w-9 h-9 rounded-full bg-[#3B82F6] flex items-center justify-center text-white font-bold">
+                    2
+                  </div>
+                  <span className="font-bold text-gray-900 text-[15px]">
+                    Intermediate
+                  </span>
                 </div>
                 <div className="flex gap-1.5 mb-3">
-                  <div className={`h-1.5 flex-1 rounded-full ${formData.level === "Intermediate" ? "bg-[#3B82F6]" : "bg-[#3B82F6]"}`}></div>
-                  <div className={`h-1.5 flex-1 rounded-full ${formData.level === "Intermediate" ? "bg-[#3B82F6]" : "bg-[#3B82F6]"}`}></div>
+                  <div
+                    className={`h-1.5 flex-1 rounded-full ${formData.level === "Intermediate" ? "bg-[#3B82F6]" : "bg-[#3B82F6]"}`}
+                  ></div>
+                  <div
+                    className={`h-1.5 flex-1 rounded-full ${formData.level === "Intermediate" ? "bg-[#3B82F6]" : "bg-[#3B82F6]"}`}
+                  ></div>
                   <div className="h-1.5 flex-1 rounded-full bg-[#E2E8F0]"></div>
                 </div>
-                <p className="text-[13px] text-gray-500 font-medium mt-3">Can work independently</p>
+                <p className="text-[13px] text-gray-500 font-medium mt-3">
+                  Can work independently
+                </p>
               </div>
 
               {/* Advanced Card */}
               <div
-                onClick={() => { setFormData({ ...formData, level: "Advanced" }); setErrorMsg(""); }}
+                onClick={() => {
+                  setFormData({ ...formData, level: "Advanced" });
+                  setErrorMsg("");
+                }}
                 className={`border rounded-xl p-5 cursor-pointer transition-all duration-200 ${
-                  formData.level === "Advanced" ? "border-[#8B5CF6] border-[2px] shadow-sm bg-[#F5F3FF]/30" : "border-gray-200 hover:border-gray-300 bg-white"
+                  formData.level === "Advanced"
+                    ? "border-[#8B5CF6] border-[2px] shadow-sm bg-[#F5F3FF]/30"
+                    : "border-gray-200 hover:border-gray-300 bg-white"
                 }`}
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-9 h-9 rounded-full bg-[#8B5CF6] flex items-center justify-center text-white font-bold">3</div>
-                  <span className="font-bold text-gray-900 text-[15px]">Advanced</span>
+                  <div className="w-9 h-9 rounded-full bg-[#8B5CF6] flex items-center justify-center text-white font-bold">
+                    3
+                  </div>
+                  <span className="font-bold text-gray-900 text-[15px]">
+                    Advanced
+                  </span>
                 </div>
                 <div className="flex gap-1.5 mb-3">
-                  <div className={`h-1.5 flex-1 rounded-full ${formData.level === "Advanced" ? "bg-[#8B5CF6]" : "bg-[#8B5CF6]"}`}></div>
-                  <div className={`h-1.5 flex-1 rounded-full ${formData.level === "Advanced" ? "bg-[#8B5CF6]" : "bg-[#8B5CF6]"}`}></div>
-                  <div className={`h-1.5 flex-1 rounded-full ${formData.level === "Advanced" ? "bg-[#8B5CF6]" : "bg-[#8B5CF6]"}`}></div>
+                  <div
+                    className={`h-1.5 flex-1 rounded-full ${formData.level === "Advanced" ? "bg-[#8B5CF6]" : "bg-[#8B5CF6]"}`}
+                  ></div>
+                  <div
+                    className={`h-1.5 flex-1 rounded-full ${formData.level === "Advanced" ? "bg-[#8B5CF6]" : "bg-[#8B5CF6]"}`}
+                  ></div>
+                  <div
+                    className={`h-1.5 flex-1 rounded-full ${formData.level === "Advanced" ? "bg-[#8B5CF6]" : "bg-[#8B5CF6]"}`}
+                  ></div>
                 </div>
-                <p className="text-[13px] text-gray-500 font-medium mt-3">Can mentor others</p>
+                <p className="text-[13px] text-gray-500 font-medium mt-3">
+                  Can mentor others
+                </p>
               </div>
-
             </div>
           </div>
         </div>

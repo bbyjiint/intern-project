@@ -561,6 +561,7 @@ model UserProjects {
   endDate       String?          // "Apr 2024" format
   relatedSkills String[]         @default([])
   githubUrl     String?          
+  githubVerified Boolean         @default(false)
   projectUrl    String?          
   fileUrl       String? 
   fileName      String?          

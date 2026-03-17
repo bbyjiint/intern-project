@@ -38,6 +38,11 @@ export default function PersonalInfoCard({
       projects.flatMap((p) => (p as any).relatedSkills || (p as any).skills || []),
     );
 
+    // 1. คำนวณจำนวน Skill ที่สอบผ่านแล้ว
+    const verifiedSkillTest = skills.filter(
+      (s) => s.status?.toUpperCase() === "VERIFIED"
+    ).length;
+
     const verifiedCertificate = skills.filter((s) =>
       certSkillNames.has(s.name),
     ).length;
@@ -46,22 +51,26 @@ export default function PersonalInfoCard({
       projectSkillNames.has(s.name),
     ).length;
 
+    // 2. อัปเดตเงื่อนไข Not Verified (ต้องไม่มีทั้ง ใบเซอร์, โปรเจกต์ และไม่ได้สอบผ่าน)
     const notVerifiedSkills = skills.filter(
-      (s) => !certSkillNames.has(s.name) && !projectSkillNames.has(s.name),
+      (s) => 
+        !certSkillNames.has(s.name) && 
+        !projectSkillNames.has(s.name) && 
+        s.status?.toUpperCase() !== "VERIFIED"
     ).length;
 
-    const projectUploaded = projects.filter((p) => !!(p as any).fileUrl).length;
+    const projectUploaded = projects.filter((p) => !!(p as any).fileUrl || !!(p as any).githubUrl || !!(p as any).projectUrl).length; // อัปเดตนับรวม github/link ด้วย
     const projectNoFile = projects.length - projectUploaded;
 
     const badgeStatus =
       educationVerified && verifiedCertificate > 0 && projectUploaded > 0
         ? "Verified"
-        : educationVerified || verifiedCertificate > 0 || projectUploaded > 0
+        : educationVerified || verifiedCertificate > 0 || projectUploaded > 0 || verifiedSkillTest > 0
           ? "Partially Verified"
           : "Not Verified";
 
     return {
-      verifiedSkillTest: 0,
+      verifiedSkillTest,
       verifiedCertificate,
       verifiedProject,
       notVerifiedSkills,
@@ -72,7 +81,7 @@ export default function PersonalInfoCard({
     };
   }, [profile]);
 
-  // ✅ แสดงชื่อย่อจาก fullName เช่น "Natnicha Inkongngam" → "NI"
+  // แสดงชื่อย่อจาก fullName เช่น "Natnicha Inkongngam" → "NI"
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -85,7 +94,7 @@ export default function PersonalInfoCard({
   const hasProfileImage = !!profile.profileImage;
   const initials = getInitials(profile.fullName || "");
 
-  // ✅ เปลี่ยนจาก "Candidate" เป็น "Position of interest"
+  // เปลี่ยนจาก "Candidate" เป็น "Position of interest"
   const displayRoles = profile.preferredPositions?.length
     ? profile.preferredPositions
     : ["+ Position of interest"];
@@ -134,7 +143,7 @@ export default function PersonalInfoCard({
 
         {/* Profile Header Section */}
         <div className="flex items-start gap-6 mb-6">
-          {/* ✅ แสดงชื่อย่อถ้าไม่มีรูปโปรไฟล์ */}
+          {/* แสดงชื่อย่อถ้าไม่มีรูปโปรไฟล์ */}
           {hasProfileImage ? (
             <img
               src={
@@ -181,7 +190,7 @@ export default function PersonalInfoCard({
           {profile.bio || "No description provided."}
         </p>
 
-        {/* ✅ Position of interest Tags */}
+        {/* Position of interest Tags */}
         <div className="flex flex-wrap gap-2 mb-6">
           {displayRoles.map((role, idx) => (
             <span

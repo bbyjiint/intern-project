@@ -8,7 +8,7 @@ import { apiFetch } from "@/lib/api";
 import ProjectsModal, { ProjectData } from "@/components/profile/ProjectsModal";
 import ProjectUploadModal from "@/components/profile/ProjectUploadModal";
 import { useProfile } from "@/hooks/useProfile";
-import { Github, Globe, FileText } from 'lucide-react'
+import { Github, Globe, FileText } from "lucide-react";
 
 interface UIProject {
   id: string;
@@ -32,20 +32,38 @@ interface UIProject {
   endDate?: string | null;
 }
 
-const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const MONTH_NAMES = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 
 function parseToISODate(displayDate: string) {
   if (!displayDate) return undefined;
   const [monthStr, year] = displayDate.split(" ");
-  const mIndex = MONTH_NAMES.findIndex((m) => m.toLowerCase() === monthStr.toLowerCase());
-  if (mIndex !== -1 && year) return new Date(parseInt(year), mIndex, 1).toISOString();
+  const mIndex = MONTH_NAMES.findIndex(
+    (m) => m.toLowerCase() === monthStr.toLowerCase(),
+  );
+  if (mIndex !== -1 && year)
+    return new Date(parseInt(year), mIndex, 1).toISOString();
   return undefined;
 }
 
 function formatDisplayDate(isoString?: string | null) {
   if (!isoString) return "";
   const d = new Date(isoString);
-  return isNaN(d.getTime()) ? "" : `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
+  return isNaN(d.getTime())
+    ? ""
+    : `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 export default function ProjectPage() {
@@ -54,18 +72,28 @@ export default function ProjectPage() {
 
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [projects, setProjects] = useState<UIProject[]>([]);
-  const [filterTab, setFilterTab] = useState<"All" | "No File Uploaded" | "File Uploaded">("All");
+  const [filterTab, setFilterTab] = useState<
+    "All" | "No File Uploaded" | "File Uploaded"
+  >("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentProject, setCurrentProject] = useState<ProjectData | null>(null);
+  const [currentProject, setCurrentProject] = useState<ProjectData | null>(
+    null,
+  );
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [projectToUpload, setProjectToUpload] = useState<UIProject | null>(null);
+  const [projectToUpload, setProjectToUpload] = useState<UIProject | null>(
+    null,
+  );
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [projectToDelete, setProjectToDelete] = useState<{ id: string; title: string } | null>(null);
+  const [projectToDelete, setProjectToDelete] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    const isAnyModalOpen = isModalOpen || isUploadModalOpen || isDeleteModalOpen;
+    const isAnyModalOpen =
+      isModalOpen || isUploadModalOpen || isDeleteModalOpen;
     if (isAnyModalOpen) {
       const scrollY = window.scrollY;
       document.body.style.cssText = `position: fixed; top: -${scrollY}px; width: 100%; overflow: hidden;`;
@@ -88,7 +116,9 @@ export default function ProjectPage() {
           period: sd && ed ? `${sd} - ${ed}` : sd || ed || "No date",
           description: p.description || "",
           skills: p.relatedSkills || p.skills || [],
-          uploadStatus: (p.fileUrl ? "File Uploaded" : "No File Uploaded") as "No File Uploaded" | "File Uploaded",
+          uploadStatus: (p.fileUrl ? "File Uploaded" : "No File Uploaded") as
+            | "No File Uploaded"
+            | "File Uploaded",
           githubLinked: !!p.githubUrl,
           projectLinked: !!p.projectUrl,
           fileUploaded: !!p.fileUrl,
@@ -107,7 +137,9 @@ export default function ProjectPage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const userData = await apiFetch<{ user: { role: string | null } }>("/api/auth/me");
+        const userData = await apiFetch<{ user: { role: string | null } }>(
+          "/api/auth/me",
+        );
         if (userData.user.role === "COMPANY") router.push("/employer/profile");
         else if (!userData.user.role) router.push("/role-selection");
         else setIsAuthLoading(false);
@@ -137,13 +169,18 @@ export default function ProjectPage() {
         relatedSkills: formData.relatedSkills,
         startDate: parseToISODate(formData.startDate || ""),
         endDate: parseToISODate(formData.endDate || ""),
-        githubUrl: "",
-        projectUrl: "",
+        githubUrl: formData.githubUrl || "",
+        projectUrl: formData.projectUrl || "",
         fileUrl: "",
         fileName: "",
       };
-      const url = currentProject?.id ? `/api/candidates/projects/${currentProject.id}` : `/api/candidates/projects`;
-      await apiFetch(url, { method: currentProject?.id ? "PUT" : "POST", body: JSON.stringify(payload) });
+      const url = currentProject?.id
+        ? `/api/candidates/projects/${currentProject.id}`
+        : `/api/candidates/projects`;
+      await apiFetch(url, {
+        method: currentProject?.id ? "PUT" : "POST",
+        body: JSON.stringify(payload),
+      });
       await refetch();
       setIsModalOpen(false);
     } catch (error) {
@@ -155,7 +192,9 @@ export default function ProjectPage() {
     if (!projectToDelete) return;
     setIsDeleting(true);
     try {
-      await apiFetch(`/api/candidates/projects/${projectToDelete.id}`, { method: "DELETE" });
+      await apiFetch(`/api/candidates/projects/${projectToDelete.id}`, {
+        method: "DELETE",
+      });
       await refetch();
       setIsDeleteModalOpen(false);
       setProjectToDelete(null);
@@ -180,12 +219,15 @@ export default function ProjectPage() {
       <div className="flex flex-1">
         <Sidebar />
         <div className="layout-container layout-page flex-1 overflow-y-auto">
-
           {/* Header */}
           <div className="flex flex-col lg:flex-row lg:items-start justify-between mb-8 gap-4">
             <div>
-              <h1 className="text-[32px] font-extrabold text-gray-900 tracking-tight">Projects</h1>
-              <p className="text-sm text-gray-500 mt-1">A collection of projects you have created.</p>
+              <h1 className="text-[32px] font-extrabold text-gray-900 tracking-tight">
+                Projects
+              </h1>
+              <p className="text-sm text-gray-500 mt-1">
+                A collection of projects you have created.
+              </p>
             </div>
             <div className="flex items-center gap-4">
               <div className="relative w-full lg:w-72">
@@ -199,7 +241,10 @@ export default function ProjectPage() {
               </div>
               <button
                 className="px-5 py-2.5 bg-white border border-[#3B82F6] text-[#3B82F6] font-bold rounded-full hover:bg-blue-50 transition-colors"
-                onClick={() => { setCurrentProject(null); setIsModalOpen(true); }}
+                onClick={() => {
+                  setCurrentProject(null);
+                  setIsModalOpen(true);
+                }}
               >
                 + Add Project
               </button>
@@ -230,15 +275,24 @@ export default function ProjectPage() {
           {/* Project List */}
           <div className="space-y-6">
             {filteredProjects.map((project) => (
-              <div key={project.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <div
+                key={project.id}
+                className="bg-white rounded-xl shadow-sm border border-gray-100 p-6"
+              >
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-[17px] font-bold text-gray-900">{project.title}</h3>
+                  <h3 className="text-[17px] font-bold text-gray-900">
+                    {project.title}
+                  </h3>
                   <Badge status={project.uploadStatus} />
                 </div>
-                <p className="text-sm text-gray-500 mb-4">Role: {project.role} | {project.period}</p>
-                <p className="text-[14px] text-gray-700 leading-relaxed mb-4 whitespace-pre-wrap">{project.description}</p>
+                <p className="text-sm text-gray-500 mb-4">
+                  Role: {project.role} | {project.period}
+                </p>
+                <p className="text-[14px] text-gray-700 leading-relaxed mb-4 whitespace-pre-wrap">
+                  {project.description}
+                </p>
 
-                {/* ✅ Links Section — แบบรูปที่สอง */}
+                {/* ✅ Links Section */}
                 <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">
                   Upload Files for Credibility
                 </p>
@@ -267,7 +321,10 @@ export default function ProjectPage() {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-t pt-4">
                   <div className="flex flex-wrap gap-2">
                     {project.skills.map((skill, idx) => (
-                      <span key={idx} className="px-3 py-1 bg-blue-50 text-blue-600 text-[11px] font-bold rounded">
+                      <span
+                        key={idx}
+                        className="px-3 py-1 bg-blue-50 text-blue-600 text-[11px] font-bold rounded"
+                      >
                         {skill}
                       </span>
                     ))}
@@ -275,25 +332,49 @@ export default function ProjectPage() {
                   <div className="flex items-center gap-3">
                     <button
                       className="text-gray-400 hover:text-red-500 transition-colors"
-                      onClick={() => { setProjectToDelete({ id: project.id, title: project.title }); setIsDeleteModalOpen(true); }}
+                      onClick={() => {
+                        setProjectToDelete({
+                          id: project.id,
+                          title: project.title,
+                        });
+                        setIsDeleteModalOpen(true);
+                      }}
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                        />
                       </svg>
                     </button>
                     <button
                       className="btn-secondary"
                       onClick={() => {
-                        setProjectToUpload({ ...project, name: project.title, startDate: project.rawStartDate ?? null, endDate: project.rawEndDate ?? null });
+                        setProjectToUpload({
+                          ...project,
+                          name: project.title,
+                          startDate: project.rawStartDate ?? null,
+                          endDate: project.rawEndDate ?? null,
+                        });
                         setIsUploadModalOpen(true);
                       }}
                     >
-                      {project.uploadStatus === "No File Uploaded" ? "Upload Files" : "Edit Files"}
+                      {project.uploadStatus === "No File Uploaded"
+                        ? "Upload Files"
+                        : "Edit Files"}
                     </button>
                     <button
                       className="btn-secondary"
                       onClick={() => {
-                        const [startDate = "", endDate = ""] = project.period.split(" - ");
+                        const [startDate = "", endDate = ""] =
+                          project.period.split(" - ");
                         setCurrentProject({
                           id: project.id,
                           name: project.title,
@@ -319,7 +400,12 @@ export default function ProjectPage() {
       </div>
 
       {/* Modals */}
-      <ProjectsModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={handleSave} editingProject={currentProject} />
+      <ProjectsModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={handleSave}
+        editingProject={currentProject}
+      />
       <ProjectUploadModal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
@@ -331,21 +417,49 @@ export default function ProjectPage() {
       {/* Delete Confirmation */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => !isDeleting && setIsDeleteModalOpen(false)} />
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => !isDeleting && setIsDeleteModalOpen(false)}
+          />
           <div className="relative bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 text-center">
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              <svg
+                className="w-8 h-8 text-red-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
               </svg>
             </div>
             <h3 className="text-xl font-bold mb-2">Delete Project?</h3>
             <p className="text-gray-500 mb-6">
-              Are you sure you want to delete <b>{projectToDelete?.title}</b>? This action cannot be undone.
+              Are you sure you want to delete <b>{projectToDelete?.title}</b>?
+              This action cannot be undone.
             </p>
             <div className="flex gap-3">
-              <button disabled={isDeleting} onClick={() => setIsDeleteModalOpen(false)} className="flex-1 py-2.5 bg-gray-100 rounded-xl font-bold">Cancel</button>
-              <button disabled={isDeleting} onClick={handleDeleteExecute} className="flex-1 py-2.5 bg-red-600 text-white rounded-xl font-bold flex justify-center">
-                {isDeleting ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : "Delete"}
+              <button
+                disabled={isDeleting}
+                onClick={() => setIsDeleteModalOpen(false)}
+                className="flex-1 py-2.5 bg-gray-100 rounded-xl font-bold"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={isDeleting}
+                onClick={handleDeleteExecute}
+                className="flex-1 py-2.5 bg-red-600 text-white rounded-xl font-bold flex justify-center"
+              >
+                {isDeleting ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  "Delete"
+                )}
               </button>
             </div>
           </div>
@@ -360,7 +474,13 @@ export default function ProjectPage() {
 function Badge({ status }: { status: string }) {
   const isUploaded = status === "File Uploaded";
   return (
-    <span className={`flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full border ${isUploaded ? "bg-green-50 text-green-600 border-green-100" : "bg-blue-50 text-blue-600 border-blue-100"}`}>
+    <span
+      className={`flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-full border ${
+        isUploaded
+          ? "bg-green-50 text-green-600 border-green-100"
+          : "bg-blue-50 text-blue-600 border-blue-100"
+      }`}
+    >
       {isUploaded ? "✓ File Uploaded" : "ℹ No File Uploaded"}
     </span>
   );
