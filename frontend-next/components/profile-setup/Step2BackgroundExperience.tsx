@@ -42,10 +42,7 @@ interface EducationFormHandle {
 
 function AIBadge() {
   return (
-    <span
-      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium ml-2"
-      style={{ backgroundColor: "#EEF2FF", color: "#4338CA" }}
-    >
+    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold ml-2 bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 uppercase tracking-tight">
       ✨ AI filled
     </span>
   );
@@ -105,17 +102,14 @@ export default function Step2BackgroundExperience({
   };
 
   return (
-    <div>
+    <div className="max-w-4xl mx-auto">
       {/* Header */}
-      <div className="flex justify-between items-start mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start gap-4 mb-8">
         <div>
-          <h2
-            className="text-2xl font-bold mb-1"
-            style={{ color: "#1C2D4F", fontWeight: 700 }}
-          >
+          <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             Education
           </h2>
-          <p className="text-sm" style={{ color: "#A9B4CD" }}>
+          <p className="text-slate-500 dark:text-slate-400 mt-1 font-medium">
             This step is optional — you can add education information at any time.
           </p>
         </div>
@@ -123,12 +117,7 @@ export default function Step2BackgroundExperience({
         {onSkip && (
           <button
             onClick={onSkip}
-            className="flex items-center px-4 py-2 rounded-lg font-medium text-sm"
-            style={{
-              border: "2px solid #0273B1",
-              color: "#0273B1",
-              backgroundColor: "white",
-            }}
+            className="px-5 py-2.5 rounded-xl font-bold text-sm border-2 border-sky-600 text-sky-600 hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-all active:scale-95 bg-white dark:bg-transparent"
           >
             Skip &gt;
           </button>
@@ -137,18 +126,17 @@ export default function Step2BackgroundExperience({
 
       {/* AI Autofill Banner */}
       {data._aiFilled_education && (
-        <div
-          className="flex items-center gap-2 px-4 py-3 rounded-lg mb-5 text-sm"
-          style={{ backgroundColor: "#EEF2FF", color: "#4338CA", border: "1px solid #C7D2FE" }}
-        >
-          <span className="text-base">✨</span>
-          <span className="font-semibold">AI autofilled your education</span>
-          <span style={{ color: "#6366F1" }}>— Fields marked with ✨ AI filled were read from your resume. Please review and edit if needed.</span>
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl mb-8 bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-200 dark:border-indigo-800 text-sm animate-in fade-in slide-in-from-top-2">
+          <span className="text-xl">✨</span>
+          <div>
+            <span className="font-bold text-indigo-900 dark:text-indigo-200">AI autofilled your education</span>
+            <p className="text-indigo-700 dark:text-indigo-300/80">Fields marked with AI badge were read from your resume.</p>
+          </div>
         </div>
       )}
 
-      {/* Form */}
-      <div className="border border-gray-200 rounded-lg p-6">
+      {/* Form Container */}
+      <div className="bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
         <EducationForm
           ref={educationFormRef}
           education={education[0] || null}
@@ -271,34 +259,41 @@ const EducationForm = forwardRef<
     },
   }));
 
-  const borderClass = (key: string) =>
-    errors[key]
-      ? "border-red-500 ring-1 ring-red-400"
-      : "border-gray-300";
+  const inputClasses = (key: string) => `
+    w-full px-4 py-3 border rounded-xl bg-white dark:bg-slate-900 
+    text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500
+    focus:outline-none focus:ring-2 focus:ring-sky-500 transition-all
+    ${errors[key] 
+      ? "border-red-500 ring-1 ring-red-400 dark:ring-red-900/50" 
+      : "border-slate-300 dark:border-slate-700"}
+  `;
+
+  const labelClasses = "block text-sm font-bold mb-2 text-sky-700 dark:text-sky-400 uppercase tracking-wide";
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Error banner */}
       {Object.values(errors).some(Boolean) && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          Please fill in all required fields highlighted in red.
+        <div className="rounded-xl border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm font-bold text-red-700 dark:text-red-400 flex items-center gap-2">
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+          Please fill in all required fields.
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Education Level */}
         <div>
-          <label className="block text-xs font-medium mb-2 text-gray-700">
+          <label className={labelClasses}>
             Education Level
           </label>
           <select
             value={fields.educationLevel}
             onChange={(e) => updateField("educationLevel", e.target.value)}
-            className={`w-full px-4 py-3 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 ${borderClass("educationLevel")}`}
+            className={inputClasses("educationLevel")}
           >
-            <option value="">Select education level</option>
+            <option value="">Select level</option>
             {EDUCATION_LEVELS.map((level) => (
-              <option key={level} value={level}>
+              <option key={level} value={level} className="dark:bg-slate-900">
                 {level}
               </option>
             ))}
@@ -307,15 +302,15 @@ const EducationForm = forwardRef<
 
         {/* Institution Name */}
         <div>
-          <label className="block text-xs font-medium mb-2 text-gray-700">
+          <label className={labelClasses}>
             Institution Name {isAiFilled && <AIBadge />}
           </label>
           {universitiesLoading ? (
-            <div className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm text-gray-400">
-              Loading...
+            <div className="w-full px-4 py-3 border border-slate-300 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm text-slate-400 animate-pulse">
+              Loading Universities...
             </div>
           ) : (
-            <div className={errors.institution ? "rounded-lg ring-1 ring-red-500" : ""}>
+            <div className="relative">
               <SearchableDropdown
                 options={universities.map((uni) => ({
                   value: uni.name,
@@ -323,8 +318,8 @@ const EducationForm = forwardRef<
                 }))}
                 value={fields.institution}
                 onChange={(value) => updateField("institution", value)}
-                placeholder="Select Institution"
-                className="w-full"
+                placeholder="Search university..."
+                className={errors.institution ? "ring-2 ring-red-500 rounded-xl" : ""}
               />
             </div>
           )}
@@ -332,43 +327,43 @@ const EducationForm = forwardRef<
 
         {/* Degree */}
         <div>
-          <label className="block text-xs font-medium mb-2 text-gray-700">
+          <label className={labelClasses}>
             Degree {isAiFilled && <AIBadge />}
           </label>
           <input
             value={fields.degree}
             onChange={(e) => updateField("degree", e.target.value)}
             placeholder="e.g. Bachelor of Science"
-            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${borderClass("degree")}`}
+            className={inputClasses("degree")}
           />
         </div>
 
         {/* Field of Study */}
         <div>
-          <label className="block text-xs font-medium mb-2 text-gray-700">
+          <label className={labelClasses}>
             Field of Study {isAiFilled && <AIBadge />}
           </label>
           <input
             value={fields.fieldOfStudy}
             onChange={(e) => updateField("fieldOfStudy", e.target.value)}
             placeholder="e.g. Computer Science"
-            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${borderClass("fieldOfStudy")}`}
+            className={inputClasses("fieldOfStudy")}
           />
         </div>
 
         {/* Year of Study */}
         <div>
-          <label className="block text-xs font-medium mb-2 text-gray-700">
+          <label className={labelClasses}>
             Year of Study
           </label>
           <select
             value={fields.yearOfStudy}
             onChange={(e) => updateField("yearOfStudy", e.target.value)}
-            className={`w-full px-4 py-3 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 ${borderClass("yearOfStudy")}`}
+            className={inputClasses("yearOfStudy")}
           >
-            <option value="">Select year of study</option>
+            <option value="">Select year</option>
             {YEAR_OF_STUDY_OPTIONS.map((year) => (
-              <option key={year} value={year}>
+              <option key={year} value={year} className="dark:bg-slate-900">
                 {year}
               </option>
             ))}
@@ -377,14 +372,14 @@ const EducationForm = forwardRef<
 
         {/* GPA */}
         <div>
-          <label className="block text-xs font-medium mb-2 text-gray-700">
+          <label className={labelClasses}>
             GPA (Current) {isAiFilled && <AIBadge />}
           </label>
           <input
             value={fields.gpa}
             onChange={(e) => updateField("gpa", e.target.value)}
             placeholder="e.g. 3.50"
-            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${borderClass("gpa")}`}
+            className={inputClasses("gpa")}
           />
         </div>
       </div>

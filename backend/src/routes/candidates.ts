@@ -264,6 +264,8 @@ candidatesRouter.get("/skills", requireAuth, requireRole("CANDIDATE"), async (re
     const candidateId = await getCandidateIdForUser(userId);
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    // const oneMinuteAgo = new Date();
+    // oneMinuteAgo.setMinutes(oneMinuteAgo.getMinutes() - 1);
 
     const skills = await prisma.userSkill.findMany({
       where: { candidateId },
@@ -282,12 +284,13 @@ candidatesRouter.get("/skills", requireAuth, requireRole("CANDIDATE"), async (re
     });
 
     const formattedSkills = await Promise.all(skills.map(async (skill) => {
-      // นับจำนวนครั้งที่สอบไปแล้วใน 1 เดือนล่าสุดสำหรับสกิลนี้
+      const skillNameForSearch = (skill.Skills?.name || "").trim().toLowerCase();
       const attempts = await prisma.skillTestAttempt.findMany({
         where: {
           candidateId,
-          skillName: skill.Skills.name.toLowerCase(),
+          skillName: skillNameForSearch,
           createdAt: { gte: oneMonthAgo }
+          // createdAt: { gte: oneMinuteAgo }
         },
         orderBy: { createdAt: 'asc' } // เอาอันเก่าสุดขึ้นก่อน
       });
@@ -298,7 +301,8 @@ candidatesRouter.get("/skills", requireAuth, requireRole("CANDIDATE"), async (re
       let nextAvailableDate = null;
       if (attempts.length >= 3) {
         const firstAttemptDate = new Date(attempts[0].createdAt);
-        firstAttemptDate.setMonth(firstAttemptDate.getMonth() + 1);
+        // firstAttemptDate.setMonth(firstAttemptDate.getMonth() + 1);
+        firstAttemptDate.setMinutes(firstAttemptDate.getMinutes() + 1);
         nextAvailableDate = firstAttemptDate.toISOString();
       }
 
@@ -1822,7 +1826,7 @@ candidatesRouter.post("/skills", requireAuth, requireRole("CANDIDATE"), async (r
 candidatesRouter.put("/skills/:id", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
   const userId = req.user!.id;
   const userSkillId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
-  const { name, category, level } = req.body ?? {}; // 👈 เพิ่มการรับ name เข้ามา
+  const { name, category, level } = req.body ?? {}; 
 
   if (!level) {
     return res.status(400).json({ error: "Proficiency level is required" });
@@ -2107,10 +2111,13 @@ candidatesRouter.post("/skills/generate-test", requireAuth, async (req: AuthedRe
     // 1. ตรวจสอบโควต้าการสอบ (เหมือนเดิม)
     const oneMonthAgo = new Date();
     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    // const oneMinuteAgo = new Date();
+    // oneMinuteAgo.setMinutes(oneMinuteAgo.getMinutes() - 1);
     const recentAttempts = await prisma.skillTestAttempt.count({
       where: {
         candidateId,
         skillName: normalizedSkillName,
+        // createdAt: { gte: oneMinuteAgo }
         createdAt: { gte: oneMonthAgo }
       }
     });
@@ -2124,13 +2131,13 @@ candidatesRouter.post("/skills/generate-test", requireAuth, async (req: AuthedRe
       where: { skillName: normalizedSkillName }
     });
 
-    // 3. ถ้าไม่มีคำถามใน DB หรือมีไม่ครบ 30 ข้อ ให้ AI สร้างใหม่
+    // 3. ถ้าไม่มีคำถามใน DB หรือมีไม่ครบ 15 ข้อ ให้ AI สร้างใหม่
     if (!testRecord) {
       console.log(`Cache MISS: กำลังให้ AI สร้าง Pool คำถาม 15 ข้อสำหรับ ${skillName}...`);
 
       const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
       const model = genAI.getGenerativeModel({
-        model: "gemini-2.5-flash", // หรือรุ่นที่คุณใช้งาน
+        model: "gemini-2.5-flash", 
         generationConfig: { responseMimeType: "application/json" }
       });
 
@@ -2226,18 +2233,46 @@ candidatesRouter.post("/skills/submit-test", requireAuth, async (req: AuthedRequ
     let scores = { Beginner: 0, Intermediate: 0, Advanced: 0 };
 
     originalQuestions.forEach(q => {
-      const userAnswer = answers[q.id]; // ข้อความที่เด็กตอบ เช่น "C) Packaging..."
+      // ดึงคำตอบของ user (รองรับทั้ง key ที่เป็นตัวเลขและ string)
+      const userAnswer = answers[q.id] || answers[String(q.id)]; 
 
       if (userAnswer) {
-        // ตรวจสอบว่าคำตอบที่เด็กเลือก "ขึ้นต้นด้วย" ตัวอักษรเฉลยหรือไม่ (เช่น ขึ้นต้นด้วย "C)", "C.", หรือ "C ") 
-        // หรือถ้ามันตอบมาแค่ "C" ตรงๆ ก็ให้ถูกเหมือนกัน
-        const isMatch =
-          userAnswer === q.correctAnswer ||
-          userAnswer.startsWith(`${q.correctAnswer})`) ||
-          userAnswer.startsWith(`${q.correctAnswer}.`) ||
-          userAnswer.startsWith(`${q.correctAnswer} `);
+        const correctAns = String(q.correctAnswer).trim();
+        const userAnsStr = String(userAnswer).trim();
 
-        if (isMatch) {
+        let isMatch = false;
+
+        // กรณีที่ 1: ตรงกันเป๊ะๆ (เช่น "Python" === "Python" หรือ "A) Python" === "A) Python")
+        if (userAnsStr === correctAns) {
+          isMatch = true;
+        } 
+        // กรณีที่ 2: AI ให้คำตอบมาแค่ "A", "B", "C", "D"
+        else if (correctAns.length === 1) {
+          const letter = correctAns.toUpperCase();
+          
+          // เช็คว่า User ตอบแบบมี Prefix ไหม (เช่น "A) Python", "A. Python")
+          if (userAnsStr.startsWith(`${letter})`) || 
+              userAnsStr.startsWith(`${letter}.`) || 
+              userAnsStr.startsWith(`${letter} `)) {
+            isMatch = true;
+          } 
+          // เช็คแบบ Index: A = 0, B = 1, C = 2, D = 3 (เช่น ตอบ "Python" ซึ่งอยู่ index 0 ตรงกับ A พอดี)
+          else if (Array.isArray(q.options)) {
+            const expectedIndex = letter.charCodeAt(0) - 65; // แปลงตัวอักษรเป็น Index
+            if (expectedIndex >= 0 && expectedIndex < q.options.length) {
+              if (q.options[expectedIndex].trim() === userAnsStr) {
+                isMatch = true;
+              }
+            }
+          }
+        }
+        // กรณีที่ 3: User ตอบมี Prefix แต่เฉลยไม่มี (เช่น User: "A) Python" / เฉลย: "Python")
+        else if (userAnsStr.includes(correctAns)) {
+          isMatch = true;
+        }
+
+        // ถ้าตอบถูกบวกคะแนน
+        if (isMatch && scores[q.difficulty as keyof typeof scores] !== undefined) {
           scores[q.difficulty as keyof typeof scores]++;
         }
       }
@@ -2261,6 +2296,26 @@ candidatesRouter.post("/skills/submit-test", requireAuth, async (req: AuthedRequ
           finalLevel = "Advanced";
         }
       }
+    }
+
+    const fiveSecondsAgo = new Date();
+    fiveSecondsAgo.setSeconds(fiveSecondsAgo.getSeconds() - 5);
+
+    const duplicateCheck = await prisma.skillTestAttempt.findFirst({
+      where: {
+        candidateId,
+        skillName: normalizedSkillName,
+        createdAt: { gte: fiveSecondsAgo } // เช็คว่าเพิ่งสร้างไปใน 5 วิที่ผ่านมาไหม
+      }
+    });
+
+    if (duplicateCheck) {
+      console.log("ดักจับการยิง API เบิ้ลสำเร็จ! ไม่ตัดโควต้าซ้ำ");
+      return res.json({ 
+        success: true, 
+        isPassed: false, 
+        message: "Duplicate submission prevented" 
+      });
     }
 
     // 4. บันทึกประวัติการสอบ (ตัดโควต้า)
