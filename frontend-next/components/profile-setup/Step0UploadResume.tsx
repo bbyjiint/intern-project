@@ -113,7 +113,6 @@ export default function Step0UploadResume({
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // ─── AI Autofill ──────────────────────────────────────────────────────────
   const handleAnalyzeResume = async () => {
     const file = data._pendingResumeFile as File | null;
     if (!file) return;
@@ -138,39 +137,27 @@ export default function Step0UploadResume({
 
       if (!parsed) throw new Error("No data returned");
 
-      // Map AI result → formData fields
       const nameParts = (parsed.fullName || "").trim().split(" ");
       const firstName = nameParts[0] || "";
       const lastName = nameParts.slice(1).join(" ") || "";
 
       onUpdate({
-        // ── Profile ──────────────────────────────────────────────────────────
         ...(firstName && { firstName, _aiFilled_firstName: true }),
-        ...(lastName  && { lastName,  _aiFilled_lastName:  true }),
-        ...(parsed.email && {
-          email: parsed.email,
-          _aiFilled_email: true,
-        }),
+        ...(lastName && { lastName, _aiFilled_lastName: true }),
+        ...(parsed.email && { email: parsed.email, _aiFilled_email: true }),
         ...(parsed.phoneNumber && {
           phoneNumber: parsed.phoneNumber,
           _aiFilled_phoneNumber: true,
         }),
-        // ── Bio (About You) ───────────────────────────────────────────────────
-        ...(parsed.bio && {
-          aboutYou: parsed.bio,
-          _aiFilled_aboutYou: true,
-        }),
-        // ── Education ─────────────────────────────────────────────────────────
+        ...(parsed.bio && { aboutYou: parsed.bio, _aiFilled_aboutYou: true }),
         ...(parsed.education?.length > 0 && {
           education: parsed.education,
           _aiFilled_education: true,
         }),
-        // ── Projects ──────────────────────────────────────────────────────────
         ...(parsed.projects?.length > 0 && {
           projects: parsed.projects.map((p: any) => ({ ...p, _aiTag: true })),
           _aiFilled_projects: true,
         }),
-        // ── Skills ────────────────────────────────────────────────────────────
         ...(parsed.skills?.length > 0 && {
           skills: parsed.skills.map((s: any) =>
             typeof s === "string"
@@ -185,7 +172,7 @@ export default function Step0UploadResume({
       setAiDone(true);
     } catch (err) {
       console.error("AI parse error:", err);
-      setError("AI could not analyze your resume. Please try again or fill in manually.");
+      setError("AI could not analyze your resume. Please try manually.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -194,35 +181,24 @@ export default function Step0UploadResume({
   const fileSelected = !!resumeUrl;
 
   return (
-    <div>
+    <div className="w-full transition-colors duration-300">
       {/* Header */}
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h2
-            className="text-2xl font-bold mb-1"
-            style={{ color: "#1C2D4F", fontWeight: 700 }}
-          >
+          <h2 className="text-2xl font-bold mb-2 text-slate-900 dark:text-white">
             Upload Your Resume
           </h2>
-          <p className="text-sm" style={{ color: "#A9B4CD" }}>
+          <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
             Upload your resume to get started. You can autofill your profile using AI or fill in manually.
           </p>
         </div>
         {onSkip && (
           <button
             onClick={onSkip}
-            className="flex items-center px-4 py-2 rounded-lg font-medium text-sm transition-colors"
-            style={{
-              border: "2px solid #0273B1",
-              color: "#0273B1",
-              backgroundColor: "white",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#F0F4F8";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "white";
-            }}
+            className="flex items-center px-4 py-2 rounded-lg font-semibold text-sm transition-all
+                     border-2 border-sky-600 text-sky-600 bg-white
+                     dark:border-sky-500 dark:text-sky-400 dark:bg-transparent
+                     hover:bg-sky-50 dark:hover:bg-sky-900/30"
           >
             Skip &gt;
           </button>
@@ -230,65 +206,38 @@ export default function Step0UploadResume({
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-400">
           {error}
         </div>
       )}
 
       {/* ── Drop Zone / File Selected ─────────────────────────────────────── */}
       {fileSelected ? (
-        <div
-          className="border-2 border-dashed rounded-xl p-8 text-center"
-          style={{ borderColor: "#0273B1", backgroundColor: "#F0F8FF" }}
-        >
+        <div className="border-2 border-dashed rounded-xl p-8 text-center transition-all
+                      border-sky-500 bg-sky-50 dark:bg-sky-900/10 dark:border-sky-400">
           <div className="flex flex-col items-center">
             <svg
-              className="w-12 h-12 mb-3"
-              style={{ color: "#0273B1" }}
+              className="w-12 h-12 mb-3 text-sky-600 dark:text-sky-400"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
             </svg>
             <div className="flex items-center gap-2 mb-1">
-              <svg
-                className="w-5 h-5 text-green-500"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2.5}
-                  d="M5 13l4 4L19 7"
-                />
+              <svg className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
               </svg>
-              <p className="text-sm font-semibold" style={{ color: "#1C2D4F" }}>
+              <p className="text-base font-bold text-slate-900 dark:text-white">
                 {resumeFile?.name || data.resumeFile || "Resume uploaded"}
               </p>
             </div>
-            <p className="text-xs mb-3" style={{ color: "#6B7280" }}>
-              {data._pendingResumeFile
-                ? "File selected. Press Save to upload."
-                : "File uploaded successfully."}
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+              {data._pendingResumeFile ? "Ready to save" : "File successfully attached"}
             </p>
             <button
               onClick={handleRemoveFile}
-              className="text-sm px-4 py-2 rounded-lg font-medium transition-colors"
-              style={{ color: "#EF4444", backgroundColor: "transparent" }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.textDecoration = "underline";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.textDecoration = "none";
-              }}
+              className="text-sm font-semibold text-red-600 dark:text-red-400 hover:underline transition-all"
             >
               Remove and upload another
             </button>
@@ -300,45 +249,30 @@ export default function Step0UploadResume({
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
-          className={`border-2 border-dashed rounded-xl p-12 text-center transition-colors ${
+          className={`border-2 border-dashed rounded-xl p-12 text-center transition-all cursor-pointer ${
             isDragging
-              ? "border-blue-400 bg-blue-50"
-              : "border-gray-300 bg-white"
+              ? "border-sky-500 bg-sky-50 dark:bg-sky-900/20"
+              : "border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800/50 hover:border-sky-400"
           }`}
+          onClick={handleSelectFileClick}
         >
           <div className="flex flex-col items-center">
-            <svg
-              className="w-12 h-12 mb-4"
-              style={{ color: "#0273B1" }}
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M7 11l5-5m0 0l5 5m-5-5v12"
-              />
-            </svg>
-            <p className="text-sm font-medium mb-4" style={{ color: "#1C2D4F" }}>
-              Drag and drop your resume here, or
+            <div className="p-4 rounded-full bg-sky-100 dark:bg-sky-900/30 mb-4">
+              <svg className="w-8 h-8 text-sky-600 dark:text-sky-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
+              </svg>
+            </div>
+            <p className="text-base font-semibold text-slate-900 dark:text-white mb-2">
+              Drag and drop your resume here
             </p>
-            <button
-              onClick={handleSelectFileClick}
-              className="px-6 py-3 rounded-lg font-semibold text-sm text-white transition-colors"
-              style={{ backgroundColor: "#0273B1", minWidth: "140px" }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "#025a8f";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "#0273B1";
-              }}
-            >
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
+              or click to browse from your computer
+            </p>
+            <div className="px-6 py-2.5 rounded-lg font-bold text-sm text-white bg-sky-600 hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-600 shadow-md transition-all">
               Select File
-            </button>
-            <p className="text-xs mt-2" style={{ color: "#A9B4CD" }}>
-              PDF or DOCX format. Max size: 5 MB
+            </div>
+            <p className="text-xs mt-4 text-slate-400 dark:text-slate-500 font-medium">
+              PDF or DOCX (Max 5 MB)
             </p>
           </div>
         </div>
@@ -346,195 +280,99 @@ export default function Step0UploadResume({
 
       {/* ── AI Autofill Options ───────────────────────────────────────────── */}
       <div
-        className="mt-5 rounded-xl border p-4"
-        style={{
-          borderColor: useAI ? "#0273B1" : "#E5E7EB",
-          backgroundColor: useAI ? "#F0F8FF" : "#FAFAFA",
-          transition: "all 0.2s ease",
-        }}
+        className={`mt-6 rounded-xl border transition-all duration-300 ${
+          useAI 
+            ? "border-sky-500 bg-sky-50/50 dark:bg-sky-900/10 shadow-sm" 
+            : "border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30"
+        } p-5`}
       >
-        {/* Checkbox row */}
-        <label
-          htmlFor="use-ai"
-          className="flex items-center gap-3 cursor-pointer select-none"
-        >
-          <div className="relative flex items-center justify-center">
-            <input
-              type="checkbox"
-              id="use-ai"
-              checked={useAI}
-              onChange={(e) => setUseAI(e.target.checked)}
-              className="w-5 h-5 rounded border-gray-300"
-              style={{ accentColor: "#0273B1" }}
-            />
-          </div>
+        <label htmlFor="use-ai" className="flex items-center gap-4 cursor-pointer group">
+          <input
+            type="checkbox"
+            id="use-ai"
+            checked={useAI}
+            onChange={(e) => setUseAI(e.target.checked)}
+            className="w-5 h-5 rounded border-slate-300 text-sky-600 focus:ring-sky-500 dark:bg-slate-700 dark:border-slate-600"
+          />
           <div className="flex-1">
-            <span className="text-sm font-semibold" style={{ color: "#1C2D4F" }}>
+            <span className="text-sm font-bold text-slate-900 dark:text-white group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors">
               ✨ Use AI to analyze and autofill my profile
             </span>
-            <p className="text-xs mt-0.5" style={{ color: "#6B7280" }}>
-              AI will read your resume and fill in Profile, Education, Projects, and Skills automatically.
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              AI will automatically populate your profile, education, projects, and skills.
             </p>
           </div>
         </label>
 
-        {/* AI Action panel */}
         {useAI && (
-          <div className="mt-4 pt-4 border-t" style={{ borderColor: "#DBEAFE" }}>
+          <div className="mt-5 pt-5 border-t border-sky-100 dark:border-sky-900/30">
             {!fileSelected ? (
-              <div
-                className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg"
-                style={{ backgroundColor: "#FEF9C3", color: "#92400E" }}
-              >
-                <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+              <div className="flex items-center gap-3 text-sm px-4 py-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30 font-medium">
+                <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
                 </svg>
-                Please upload a resume file first to use AI autofill.
+                Please upload a resume first to use AI features.
               </div>
             ) : aiDone ? (
-              /* ── Success state ── */
-              <div className="flex items-start gap-3">
-                <div
-                  className="flex items-center justify-center w-8 h-8 rounded-full shrink-0"
-                  style={{ backgroundColor: "#D1FAE5" }}
-                >
-                  <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="flex items-start gap-4 animate-in fade-in duration-500">
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 shrink-0">
+                  <svg className="w-6 h-6 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-green-700">
+                  <p className="text-sm font-bold text-emerald-700 dark:text-emerald-400">
                     Profile autofilled successfully!
                   </p>
-                  <p className="text-xs text-green-600 mt-0.5">
-                    AI has filled in your profile fields. Fields marked with{" "}
-                    <span
-                      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium"
-                      style={{ backgroundColor: "#EEF2FF", color: "#4338CA" }}
-                    >
-                      ✨ AI filled
-                    </span>{" "}
-                    were autofilled. You can edit them anytime.
+                  <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 leading-relaxed">
+                    Check the fields marked with <span className="inline-block px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 font-bold">✨ AI filled</span>. You can review and edit them.
                   </p>
                   <button
                     onClick={handleAnalyzeResume}
-                    className="mt-2 text-xs underline"
-                    style={{ color: "#0273B1" }}
+                    className="mt-3 text-xs font-bold text-sky-600 dark:text-sky-400 hover:underline"
                   >
                     Re-analyze resume
                   </button>
                 </div>
               </div>
             ) : (
-              /* ── Ready to analyze ── */
               <div className="flex items-center justify-between gap-4">
-                <p className="text-sm" style={{ color: "#374151" }}>
-                  Ready to analyze{" "}
-                  <span className="font-medium" style={{ color: "#0273B1" }}>
-                    {resumeFile?.name || data.resumeFile}
-                  </span>
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Ready to process: <span className="text-sky-600 dark:text-sky-400 font-bold">{resumeFile?.name || data.resumeFile}</span>
                 </p>
                 <button
                   onClick={handleAnalyzeResume}
                   disabled={isAnalyzing}
-                  className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold text-white transition-colors shrink-0"
-                  style={{
-                    backgroundColor: isAnalyzing ? "#93C5FD" : "#0273B1",
-                    cursor: isAnalyzing ? "not-allowed" : "pointer",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isAnalyzing)
-                      e.currentTarget.style.backgroundColor = "#025a8f";
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isAnalyzing)
-                      e.currentTarget.style.backgroundColor = "#0273B1";
-                  }}
+                  className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-bold text-white transition-all shadow-lg
+                    ${isAnalyzing ? "bg-slate-400 cursor-not-allowed" : "bg-sky-600 hover:bg-sky-700 dark:bg-sky-500 dark:hover:bg-sky-600"}`}
                 >
                   {isAnalyzing ? (
-                    <>
-                      <svg
-                        className="w-4 h-4 animate-spin"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8v8H4z"
-                        />
-                      </svg>
-                      Analyzing...
-                    </>
+                    <><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/></svg> Analyzing...</>
                   ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                          d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.347.347A3.6 3.6 0 0114 18.6V19a2 2 0 11-4 0v-.4a3.6 3.6 0 01-1.062-2.563l-.347-.347z" />
-                      </svg>
-                      Analyze &amp; Autofill
-                    </>
+                    <><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" /></svg> Analyze & Autofill</>
                   )}
                 </button>
               </div>
             )}
 
-            {/* Loading animation */}
             {isAnalyzing && (
-              <div className="mt-3">
-                <div className="flex gap-1.5 items-center mb-1.5">
-                  {["Reading resume...", "Extracting data...", "Filling profile..."].map(
-                    (label, i) => (
-                      <div key={i} className="flex items-center gap-1">
-                        <div
-                          className="w-2 h-2 rounded-full"
-                          style={{
-                            backgroundColor: "#0273B1",
-                            animation: `pulse 1.2s ease-in-out ${i * 0.3}s infinite`,
-                            opacity: 0.7,
-                          }}
-                        />
-                        <span className="text-xs" style={{ color: "#6B7280" }}>
-                          {label}
-                        </span>
-                      </div>
-                    )
-                  )}
+              <div className="mt-4">
+                <div className="flex gap-4 items-center mb-3">
+                  {["Reading...", "Extracting...", "Mapping..."].map((label, i) => (
+                    <div key={i} className="flex items-center gap-1.5">
+                      <div className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse" style={{ animationDelay: `${i * 0.2}s` }} />
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">{label}</span>
+                    </div>
+                  ))}
                 </div>
-                <div
-                  className="h-1.5 rounded-full overflow-hidden"
-                  style={{ backgroundColor: "#DBEAFE" }}
-                >
-                  <div
-                    className="h-full rounded-full"
-                    style={{
-                      backgroundColor: "#0273B1",
-                      width: "60%",
-                      animation: "shimmer 1.5s ease-in-out infinite",
-                    }}
-                  />
+                <div className="h-2 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden relative">
+                  <div className="absolute top-0 left-0 h-full bg-sky-500 w-1/2 rounded-full animate-shimmer" />
                 </div>
               </div>
             )}
           </div>
         )}
       </div>
-
-      {/* Keep file-only option note */}
-      {fileSelected && !useAI && (
-        <p className="mt-3 text-xs" style={{ color: "#9CA3AF" }}>
-          Resume will be saved to your profile. Tick the checkbox above to autofill fields with AI.
-        </p>
-      )}
 
       <input
         ref={fileInputRef}
@@ -544,10 +382,14 @@ export default function Step0UploadResume({
         className="hidden"
       />
 
-      <style>{`
+      <style jsx>{`
         @keyframes shimmer {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(200%); }
+          0% { left: -100%; }
+          100% { left: 100%; }
+        }
+        .animate-shimmer {
+          animation: shimmer 1.5s infinite linear;
+          width: 40%;
         }
       `}</style>
     </div>

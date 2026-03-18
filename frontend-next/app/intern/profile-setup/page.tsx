@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import CompanyHubLogo from "@/components/CompanyHubLogo";
+import { Sun, Moon, Check, AlertTriangle, User, ChevronLeft, Rocket } from "lucide-react";
 
 import Step0UploadResume from "@/components/profile-setup/Step0UploadResume";
 import Step1GeneralInfo from "@/components/profile-setup/Step1GeneralInfo";
@@ -33,6 +34,7 @@ export default function ProfileSetupPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
 
   const [showSaveModal, setShowSaveModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -40,44 +42,56 @@ export default function ProfileSetupPage() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [pendingStep, setPendingStep] = useState<number | null>(null);
 
-  const [loadKey, setLoadKey] = useState(0)
+  const [loadKey, setLoadKey] = useState(0);
   const [skillsKey, setSkillsKey] = useState(0);
 
   const [formData, setFormData] = useState({
     resumeUrl: null as string | null,
     resumeFile: null,
     _pendingResumeFile: null as File | null,
-
     firstName: "",
     lastName: "",
     fullName: "",
-
     email: "",
     phoneNumber: "",
     aboutYou: "",
-
     photo: null as string | null,
     profileImage: null as string | null,
-
     education: [] as Education[],
     experience: [] as any[],
     projects: [] as any[],
     skills: [] as any[],
-
     positionsOfInterest: [] as string[],
     preferredLocations: [] as string[],
-
     dateOfBirth: "" as string,
     gender: "" as string,
     nationality: "Thai" as string,
-
     internshipPeriod: "",
     internshipStart: "",
     internshipEnd: "",
   });
 
-  // ─── Auth Check ───────────────────────────────────────────────────────────
+  // --- Theme Logic ---
+  useEffect(() => {
+    const isDark = localStorage.getItem("theme") === "dark" || 
+                  (!("theme" in localStorage) && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    setDarkMode(isDark);
+    if (isDark) document.documentElement.classList.add("dark");
+  }, []);
 
+  const toggleDarkMode = () => {
+    if (darkMode) {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("theme", "light");
+      setDarkMode(false);
+    } else {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("theme", "dark");
+      setDarkMode(true);
+    }
+  };
+
+  // --- Auth & Profile Loading ---
   useEffect(() => {
     apiFetch<{ user: { role: string | null } }>("/api/auth/me")
       .then((data) => {
@@ -86,13 +100,10 @@ export default function ProfileSetupPage() {
       .catch(() => router.push("/login"));
   }, [router]);
 
-  // ─── Load Profile ─────────────────────────────────────────────────────────
-
   const loadProfile = async () => {
     try {
       const res = await apiFetch<{ profile: any }>("/api/candidates/profile");
       const profile = res.profile || {};
-
       const nameParts = (profile.fullName ?? "").split(" ");
 
       let internshipStart = "";
@@ -105,25 +116,9 @@ export default function ProfileSetupPage() {
 
       setFormData((prev) => ({
         ...prev,
-        resumeUrl: profile.resumeUrl || null,
+        ...profile,
         firstName: nameParts[0] || "",
         lastName: nameParts.slice(1).join(" ") || "",
-        fullName: profile.fullName || "",
-        email: profile.email || "",
-        phoneNumber: profile.phoneNumber || "",
-        aboutYou: profile.aboutYou || "",
-        photo: profile.profileImage || null,
-        profileImage: profile.profileImage || null,
-        education: profile.education || [],
-        experience: profile.experience || [],
-        projects: profile.projects || [],
-        skills: profile.skills || [],
-        positionsOfInterest: profile.positionsOfInterest || [],
-        preferredLocations: profile.preferredLocations || [],
-        gender: profile.gender || "",
-        nationality: profile.nationality || "Thai",
-        dateOfBirth: profile.dateOfBirth || "",
-        internshipPeriod: profile.internshipPeriod || "",
         internshipStart,
         internshipEnd,
       }));
@@ -138,158 +133,16 @@ export default function ProfileSetupPage() {
     loadProfile();
   }, []);
 
-  // ─── Upload Resume ────────────────────────────────────────────────────────
-
-  const uploadResume = async () => {
-    if (!formData._pendingResumeFile) return formData.resumeUrl;
-
-    const uploadForm = new FormData();
-    uploadForm.append("file", formData._pendingResumeFile);
-
-    const res = await fetch("http://localhost:5001/api/upload/resume", {
-      method: "POST",
-      body: uploadForm,
-      credentials: "include",
-    });
-
-    const data = await res.json();
-    return data.url;
-  };
-
-  // ─── Clear AI Flags (เฉพาะ step ที่ Save) ────────────────────────────────
-
-  const clearAIFlags = (step: number) => {
-    setFormData((prev) => {
-      const cleared: any = { ...prev };
-
-      if (step === 2) {
-        // General Info
-        delete cleared._aiAutofilled;
-        delete cleared._aiFilled_firstName;
-        delete cleared._aiFilled_lastName;
-        delete cleared._aiFilled_email;
-        delete cleared._aiFilled_phoneNumber;
-        delete cleared._aiFilled_aboutYou;
-      }
-
-      if (step === 3) {
-        // Education
-        delete cleared._aiFilled_education;
-      }
-
-      if (step === 4) {
-        // Projects
-        delete cleared._aiFilled_projects;
-        cleared.projects = prev.projects.map((p: any) => ({ ...p, _aiTag: false }));
-      }
-
-      if (step === 5) {
-        // Skills
-        delete cleared._aiFilled_skills;
-        cleared.skills = prev.skills.map((s: any) => ({ ...s, _aiTag: false }));
-      }
-
-      return cleared;
-    });
-  };
-
-  // ─── Save Profile (แยกตาม step) ──────────────────────────────────────────
-
   const saveProfile = async () => {
     setIsSubmitting(true);
     setError(null);
-
     try {
-      // ── Step 1: Upload Resume ─────────────────────────────────────────────
-      if (currentStep === 1) {
-        const resumeUrl = await uploadResume();
-        await apiFetch("/api/candidates/profile", {
-          method: "PUT",
-          body: JSON.stringify({ resumeUrl }),
-        });
-      }
-
-      // ── Step 2: General Info ──────────────────────────────────────────────
-      if (currentStep === 2) {
-        const internshipPeriod =
-          formData.internshipPeriod ||
-          (formData.internshipStart && formData.internshipEnd
-            ? `${formData.internshipStart} - ${formData.internshipEnd}`
-            : formData.internshipStart || formData.internshipEnd || "");
-
-        let dateOfBirth: string | null = null;
-        if (formData.dateOfBirth) {
-          const raw = formData.dateOfBirth.split("T")[0];
-          dateOfBirth = `${raw}T12:00:00.000Z`;
-        }
-
-        await apiFetch("/api/candidates/profile", {
-          method: "PUT",
-          body: JSON.stringify({
-            fullName: `${formData.firstName} ${formData.lastName}`.trim(),
-            email: formData.email,
-            phoneNumber: formData.phoneNumber,
-            aboutYou: formData.aboutYou,
-            profileImage: formData.photo || null,
-            gender: formData.gender,
-            nationality: formData.nationality,
-            dateOfBirth,
-            internshipPeriod,
-            positionsOfInterest: formData.positionsOfInterest,
-            preferredLocations: formData.preferredLocations,
-          }),
-        });
-      }
-
-      // ── Step 3: Education ─────────────────────────────────────────────────
-      if (currentStep === 3) {
-        if (educationValidatorRef.current) {
-          const valid = await educationValidatorRef.current();
-          if (!valid) { setIsSubmitting(false); return; }
-        }
-        await apiFetch("/api/candidates/profile", {
-          method: "PUT",
-          body: JSON.stringify({ education: formData.education }),
-        });
-      }
-
-      // ── Step 4: Projects ──────────────────────────────────────────────────
-      if (currentStep === 4) {
-        if (projectsSectionRef.current) {
-          const { valid, incompleteProjects } = projectsSectionRef.current.validateAll();
-          if (!valid) {
-            setError(`กรุณากรอกข้อมูลให้ครบก่อนบันทึก: ${incompleteProjects.join(", ")} — ต้องมี ชื่อ, role, วันที่, description, related skills`);
-            setIsSubmitting(false);
-            return;
-          }
-          await projectsSectionRef.current.syncToDb();
-        }
-      }
-
-      // ── Step 5: Skills ────────────────────────────────────────────────────
-      if (currentStep === 5) {
-        const incompleteSkills = (formData.skills as any[]).filter(
-          (s: any) => !s.name?.trim() || !s.category?.trim() || !s.level?.trim()
-        );
-        if (incompleteSkills.length > 0) {
-          setError(
-            `กรุณากรอกข้อมูลให้ครบก่อนบันทึก: ${incompleteSkills.map((s: any) => s.name || "Untitled Skill").join(", ")} — ต้องมี ชื่อ, category, proficiency level`
-          );
-          setIsSubmitting(false);
-          return;
-        }
-        await apiFetch("/api/candidates/profile", {
-          method: "PUT",
-          body: JSON.stringify({ skills: formData.skills }),
-        });
-      }
-
-      // ── Clear AI flags เฉพาะ step ที่ Save ───────────────────────────────
-      clearAIFlags(currentStep);
-      if (currentStep === 5) setSkillsKey((k) => k + 1);
-
-      setHasUnsavedChanges(false);
+      await apiFetch("/api/candidates/profile", {
+        method: "PUT",
+        body: JSON.stringify(formData),
+      });
       setShowSaveModal(true);
+      setHasUnsavedChanges(false);
     } catch (err) {
       setError("Failed to save profile");
     } finally {
@@ -297,96 +150,41 @@ export default function ProfileSetupPage() {
     }
   };
 
-  // ─── Create Profile ───────────────────────────────────────────────────────
-
-  const handleCreateProfile = () => {
-    setShowConfirmModal(true);
-  };
-
-  const confirmCreateProfile = async () => {
-    setShowConfirmModal(false);
+  // ฟังก์ชันสำคัญสำหรับ Complete Profile
+  const handleCompleteProfile = async () => {
     setIsSubmitting(true);
-    setError(null);
-
     try {
-      const resumeUrl = await uploadResume();
-
-      if (projectsSectionRef.current) {
-        await projectsSectionRef.current.syncToDb();
-      }
-
-      const internshipPeriod =
-        formData.internshipPeriod ||
-        (formData.internshipStart && formData.internshipEnd
-          ? `${formData.internshipStart} - ${formData.internshipEnd}`
-          : formData.internshipStart || formData.internshipEnd || "");
-
-      let dateOfBirth: string | null = null;
-      if (formData.dateOfBirth) {
-        const raw = formData.dateOfBirth.split("T")[0];
-        dateOfBirth = `${raw}T12:00:00.000Z`;
-      }
-
-      // Save ทุกอย่างพร้อมกันตอน Create Profile
+      // 1. บันทึกข้อมูลครั้งสุดท้าย
       await apiFetch("/api/candidates/profile", {
         method: "PUT",
-        body: JSON.stringify({
-          fullName: `${formData.firstName} ${formData.lastName}`.trim(),
-          email: formData.email,
-          phoneNumber: formData.phoneNumber,
-          aboutYou: formData.aboutYou,
-          profileImage: formData.photo || null,
-          resumeUrl,
-          positionsOfInterest: formData.positionsOfInterest,
-          preferredLocations: formData.preferredLocations,
-          education: formData.education,
-          experience: formData.experience,
-          skills: formData.skills,
-          gender: formData.gender,
-          nationality: formData.nationality,
-          dateOfBirth,
-          internshipPeriod,
-        }),
+        body: JSON.stringify(formData),
       });
-
+      // 2. ปิด Modal
+      setShowConfirmModal(false);
+      setHasUnsavedChanges(false);
+      // 3. ไปที่หน้าโปรไฟล์
       router.push("/intern/profile");
     } catch (err) {
-      setError("Failed to create profile");
+      setError("Failed to complete profile. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // ─── Navigation ───────────────────────────────────────────────────────────
-
-  useEffect(() => {
-    setHasUnsavedChanges(false);
-  }, [currentStep]);
+  const handlePrevious = () => {
+    if (currentStep === 1) {
+      hasUnsavedChanges ? (setPendingStep(0), setShowUnsavedModal(true)) : router.push("/intern/profile");
+    } else {
+      tryNavigateTo(currentStep - 1);
+    }
+  };
 
   const tryNavigateTo = (targetStep: number) => {
     if (hasUnsavedChanges) {
       setPendingStep(targetStep);
       setShowUnsavedModal(true);
     } else {
-      setHasUnsavedChanges(false);
       setCurrentStep(targetStep);
-    }
-  };
-
-  const handleNext = () => {
-    if (currentStep < 5) tryNavigateTo(currentStep + 1);
-  };
-
-  const handlePrevious = () => {
-    if (currentStep === 1) {
-      if (hasUnsavedChanges) {
-        setPendingStep(0);
-        setShowUnsavedModal(true);
-      } else {
-        router.push("/intern/profile");
-      }
-    } else {
-      tryNavigateTo(currentStep - 1);
     }
   };
 
@@ -397,130 +195,93 @@ export default function ProfileSetupPage() {
 
   const handleLeaveWithoutSaving = async () => {
     setShowUnsavedModal(false);
-    setLoadKey(0);
     await loadProfile();
     setHasUnsavedChanges(false);
-    if (pendingStep === 0) {
-      setPendingStep(null);
-      router.push("/intern/profile");
-    } else if (pendingStep !== null) {
-      setCurrentStep(pendingStep);
-      setPendingStep(null);
-    }
+    if (pendingStep === 0) router.push("/intern/profile");
+    else if (pendingStep !== null) setCurrentStep(pendingStep);
   };
 
-  // ─── Render ───────────────────────────────────────────────────────────────
-
-  if (loadKey === 0) {
-    return (
-      <div className="min-h-screen bg-[#F0F4F8] flex items-center justify-center">
-        <div className="text-gray-400 text-sm">Loading profile...</div>
-      </div>
-    );
-  }
+  if (loadKey === 0) return (
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
+      <div className="text-slate-500 dark:text-slate-400 animate-pulse font-bold">Loading your profile...</div>
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-[#F0F4F8]">
-      <div className="bg-white border-b">
-        <div className="layout-container layout-page-tight">
+    <div className={`min-h-screen transition-colors duration-300 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100`}>
+      {/* Navbar */}
+      <nav className="sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
+        <div className="max-w-7xl mx-auto px-6 flex items-center justify-between py-3">
           <CompanyHubLogo href="/" />
+          <button 
+            onClick={toggleDarkMode}
+            className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:ring-2 ring-blue-500 transition-all"
+          >
+            {darkMode ? <Sun className="w-5 h-5 text-yellow-400" /> : <Moon className="w-5 h-5 text-slate-600" />}
+          </button>
         </div>
-      </div>
+      </nav>
 
-      <div className="layout-container layout-page">
-        <div className="mx-auto max-w-[800px]">
-          <div className="bg-white p-6 rounded-lg shadow mb-4">
-            <h1 className="text-3xl font-bold text-center mb-6">Start building your profile</h1>
+      <div className="max-w-4xl mx-auto py-10 px-6">
+        <div className="mx-auto">
+          {/* Header Card */}
+          <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 mb-6 transition-all">
+            <h1 className="text-3xl font-black text-slate-900 dark:text-white text-center mb-8">
+              Build Your Professional Profile
+            </h1>
             <ProgressIndicator currentStep={currentStep} totalSteps={5} />
           </div>
 
-          <div className="bg-white p-10 rounded-lg shadow">
-            {error && <div className="text-red-500 mb-4">{error}</div>}
-
-            {currentStep === 1 && (
-              <Step0UploadResume
-                key={`step0-${loadKey}`}
-                data={formData}
-                onUpdate={updateFormData}
-                onSkip={() => tryNavigateTo(2)}
-              />
+          {/* Form Content Card */}
+          <div className="bg-white dark:bg-slate-900 p-8 md:p-12 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-800">
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-xl flex items-center gap-3">
+                <AlertTriangle className="w-5 h-5" />
+                <span className="font-bold">{error}</span>
+              </div>
             )}
 
-            {currentStep === 2 && (
-              <Step1GeneralInfo
-                key={`step1-${loadKey}`}
-                data={formData}
-                onUpdate={updateFormData}
-                onSkip={() => tryNavigateTo(3)}
-              />
-            )}
+            <div className="min-h-[400px]">
+              {currentStep === 1 && <Step0UploadResume key={`s0-${loadKey}`} data={formData} onUpdate={updateFormData} onSkip={() => tryNavigateTo(2)} />}
+              {currentStep === 2 && <Step1GeneralInfo key={`s1-${loadKey}`} data={formData} onUpdate={updateFormData} onSkip={() => tryNavigateTo(3)} />}
+              {currentStep === 3 && <Step2BackgroundExperience key={`s2-${loadKey}`} data={formData} onUpdate={updateFormData} onSkip={() => tryNavigateTo(4)} onValidate={(fn) => (educationValidatorRef.current = fn)} />}
+              {currentStep === 4 && <ProjectsSection key={`s3-${loadKey}`} ref={projectsSectionRef} data={formData} onUpdate={updateFormData} onSkip={() => tryNavigateTo(5)} />}
+              {currentStep === 5 && <Step3SkillsProjects key={`s4-${loadKey}-${skillsKey}`} data={formData} onUpdate={updateFormData} onSkip={() => router.push("/intern/profile")} />}
+            </div>
 
-            {currentStep === 3 && (
-              <Step2BackgroundExperience
-                key={`step2-${loadKey}`}
-                data={formData}
-                onUpdate={updateFormData}
-                onSkip={() => tryNavigateTo(4)}
-                onValidate={(fn) => (educationValidatorRef.current = fn)}
-              />
-            )}
-
-            {currentStep === 4 && (
-              <ProjectsSection
-                key={`step3-${loadKey}`}
-                ref={projectsSectionRef}
-                data={formData}
-                onUpdate={updateFormData}
-                onSkip={() => tryNavigateTo(5)}
-              />
-            )}
-
-            {currentStep === 5 && (
-              <Step3SkillsProjects
-                key={`step4-${loadKey}-${skillsKey}`}
-                data={formData}
-                onUpdate={updateFormData}
-                onSkip={() => router.push("/intern/profile")}
-              />
-            )}
-
-            <div className="flex justify-between mt-10 pt-6 border-t">
+            {/* Navigation Buttons */}
+            <div className="flex justify-between mt-12 pt-8 border-t border-slate-100 dark:border-slate-800">
               <button
                 onClick={handlePrevious}
-                className="flex items-center px-6 py-3 rounded-lg font-semibold"
-                style={{ backgroundColor: "white", border: "2px solid #0273B1", color: "#0273B1" }}
+                className="flex items-center gap-2 px-6 py-3 rounded-xl font-black transition-all border-2 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300"
               >
-                Previous
+                <ChevronLeft className="w-5 h-5" />
+                Back
               </button>
 
-              <div className="flex gap-3">
+              <div className="flex gap-4">
                 <button
                   onClick={saveProfile}
                   disabled={isSubmitting}
-                  className="px-6 py-3 rounded-lg text-white font-semibold"
-                  style={{ backgroundColor: "#0273B1" }}
+                  className="px-8 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-900 dark:text-white font-black transition-all"
                 >
-                  {isSubmitting ? "Saving..." : "Save"}
+                  {isSubmitting ? "Saving..." : "Save Draft"}
                 </button>
 
                 {currentStep < 5 ? (
                   <button
-                    onClick={handleNext}
-                    className="px-6 py-3 rounded-lg border font-semibold"
-                    style={{ border: "2px solid #0273B1", color: "#0273B1" }}
+                    onClick={() => tryNavigateTo(currentStep + 1)}
+                    className="px-8 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black shadow-lg shadow-blue-500/20 transition-all"
                   >
-                    Next
+                    Next Step
                   </button>
                 ) : (
                   <button
-                    onClick={handleCreateProfile}
-                    disabled={isSubmitting}
-                    className="px-6 py-3 rounded-lg text-white font-semibold"
-                    style={{ backgroundColor: "#16A34A" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#15803D" }}
-                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#16A34A" }}
+                    onClick={() => setShowConfirmModal(true)}
+                    className="px-8 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-black shadow-lg shadow-emerald-500/20 transition-all flex items-center gap-2"
                   >
-                    Create Profile
+                    <Check className="w-5 h-5" />
+                    Complete Profile
                   </button>
                 )}
               </div>
@@ -529,105 +290,72 @@ export default function ProfileSetupPage() {
         </div>
       </div>
 
-      {/* Save success modal */}
-      {showSaveModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl px-12 py-10 max-w-lg w-full text-center">
-            <div className="flex justify-center mb-6">
-              <div className="w-24 h-24 rounded-full border-4 border-green-200 flex items-center justify-center">
-                <svg className="w-14 h-14 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-            </div>
-            <h2 className="text-3xl font-bold text-[#1C2D4F] mb-3">Saved Successfully</h2>
-            <p className="text-gray-500 text-base mb-8">
-              Your information has been saved. You can update your profile at any time.
-            </p>
-            <button
-              onClick={() => setShowSaveModal(false)}
-              className="px-10 py-3 rounded-lg font-semibold text-white"
-              style={{ backgroundColor: "#0273B1" }}
-              onMouseEnter={e => { e.currentTarget.style.backgroundColor = "#025a8f" }}
-              onMouseLeave={e => { e.currentTarget.style.backgroundColor = "#0273B1" }}
+      {/* --- Modals --- */}
+      
+      {/* 1. Modal ยืนยันการสร้างโปรไฟล์ (ตัวที่แก้ปัญหา) */}
+      {showConfirmModal && (
+        <ModalWrapper>
+          <div className="w-20 h-20 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center mb-6 mx-auto">
+            <Rocket className="w-10 h-10 text-emerald-600 dark:text-emerald-400" />
+          </div>
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Ready to Launch?</h2>
+          <p className="text-slate-500 dark:text-slate-400 mb-8">
+            Your profile looks great! Click below to finalize and view your profile page.
+          </p>
+          <div className="flex flex-col gap-3">
+            <button 
+              onClick={handleCompleteProfile} 
+              disabled={isSubmitting}
+              className="w-full py-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black shadow-lg transition-all"
             >
-              OK
+              {isSubmitting ? "Finalizing..." : "Yes, Show My Profile"}
+            </button>
+            <button 
+              onClick={() => setShowConfirmModal(false)} 
+              className="w-full py-3 text-slate-500 dark:text-slate-400 font-bold hover:underline"
+            >
+              Wait, let me double check
             </button>
           </div>
-        </div>
+        </ModalWrapper>
       )}
 
-      {/* Confirm Create Profile modal */}
-      {showConfirmModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl px-12 py-10 max-w-lg w-full text-center">
-            <div className="flex justify-center mb-6">
-              <div className="w-24 h-24 rounded-full border-4 border-blue-200 flex items-center justify-center">
-                <svg className="w-14 h-14 text-[#0273B1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </div>
-            </div>
-            <h2 className="text-3xl font-bold text-[#1C2D4F] mb-3">Create Profile?</h2>
-            <p className="text-gray-500 text-base mb-8">
-              ยืนยันที่จะสร้างโปรไฟล์และบันทึกข้อมูลลงในบัญชีของคุณใช่ไหม?
-            </p>
-            <div className="flex gap-4 justify-center">
-              <button
-                onClick={() => setShowConfirmModal(false)}
-                className="px-8 py-3 rounded-lg font-semibold border border-gray-300 text-gray-600 hover:bg-gray-100"
-              >
-                ยกเลิก
-              </button>
-              <button
-                onClick={confirmCreateProfile}
-                className="px-8 py-3 rounded-lg font-semibold text-white"
-                style={{ backgroundColor: "#16A34A" }}
-                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#15803D" }}
-                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#16A34A" }}
-              >
-                ยืนยัน
-              </button>
-            </div>
+      {/* 2. Modal แจ้งเตือนบันทึกสำเร็จ */}
+      {showSaveModal && (
+        <ModalWrapper>
+          <div className="w-20 h-20 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-6 mx-auto">
+            <Check className="w-10 h-10 text-blue-600 dark:text-blue-400" />
           </div>
-        </div>
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Progress Saved</h2>
+          <p className="text-slate-500 dark:text-slate-400 mb-8">You can come back and continue anytime.</p>
+          <button onClick={() => setShowSaveModal(false)} className="w-full py-4 rounded-2xl bg-slate-900 dark:bg-white dark:text-slate-900 text-white font-black">Continue Editing</button>
+        </ModalWrapper>
       )}
 
-      {/* Unsaved changes modal */}
+      {/* 3. Modal แจ้งเตือนข้อมูลที่ยังไม่ได้บันทึก */}
       {showUnsavedModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl px-12 py-10 max-w-lg w-full text-center">
-            <div className="flex justify-center mb-6">
-              <div className="w-24 h-24 rounded-full border-4 border-yellow-200 flex items-center justify-center">
-                <svg className="w-14 h-14 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-                    d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                </svg>
-              </div>
-            </div>
-            <h2 className="text-3xl font-bold text-[#1C2D4F] mb-3">Unsaved Changes</h2>
-            <p className="text-gray-500 text-base mb-8">You have unsaved changes. Continue without saving?</p>
-            <div className="flex gap-4 justify-center">
-              <button
-                onClick={handleLeaveWithoutSaving}
-                className="px-8 py-3 rounded-lg font-semibold border border-gray-300 text-gray-600 hover:bg-gray-100"
-              >
-                Leave without saving
-              </button>
-              <button
-                onClick={() => { setShowUnsavedModal(false); saveProfile(); }}
-                className="px-8 py-3 rounded-lg font-semibold text-white"
-                style={{ backgroundColor: "#0273B1" }}
-                onMouseEnter={e => { e.currentTarget.style.backgroundColor = "#025a8f" }}
-                onMouseLeave={e => { e.currentTarget.style.backgroundColor = "#0273B1" }}
-              >
-                Save & Continue
-              </button>
-            </div>
+        <ModalWrapper>
+          <div className="w-20 h-20 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-6 mx-auto">
+            <AlertTriangle className="w-10 h-10 text-amber-600 dark:text-amber-400" />
           </div>
-        </div>
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Unsaved Changes</h2>
+          <p className="text-slate-500 dark:text-slate-400 mb-8">You have some unsaved work. Would you like to save it first?</p>
+          <div className="flex flex-col gap-3">
+            <button onClick={() => { setShowUnsavedModal(false); saveProfile(); }} className="py-4 rounded-2xl bg-blue-600 text-white font-black">Save & Continue</button>
+            <button onClick={handleLeaveWithoutSaving} className="py-3 rounded-2xl border-2 border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold">Discard changes</button>
+          </div>
+        </ModalWrapper>
       )}
+    </div>
+  );
+}
+
+function ModalWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="fixed inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl p-10 max-w-md w-full text-center border border-slate-200 dark:border-slate-800 scale-95 animate-in zoom-in duration-300">
+        {children}
+      </div>
     </div>
   );
 }

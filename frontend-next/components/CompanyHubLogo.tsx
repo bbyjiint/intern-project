@@ -12,16 +12,20 @@ export default function CompanyHubLogo({
   className = '',
 }: CompanyHubLogoProps) {
   return (
-    <Link href={href} className={`relative flex items-center group ${className}`.trim()}>
+    <Link 
+      href={href} 
+      className={`relative flex items-center group transition-all duration-300 ${className}`.trim()}
+    >
+      {/* Decorative Circle Behind - ปรับสีให้สดขึ้นใน Dark Mode */}
       <span
-        className="absolute rounded-full z-0 transition-transform group-hover:scale-110 w-5 h-5 -left-1 top-1"
-        style={{ backgroundColor: '#3B82F6' }}
+        className="absolute rounded-full z-0 transition-transform duration-300 group-hover:scale-125 w-6 h-6 -left-1.5 top-0.5 bg-blue-500 dark:bg-blue-600 opacity-90 dark:opacity-100 shadow-sm dark:shadow-blue-500/20"
       />
+      
+      {/* Logo Text - ใช้ Font Black (900) เพื่อความชัดเจนสูงสุด */}
       <span
-        className="relative z-10 pl-2 text-2xl font-semibold tracking-tight"
-        style={{ color: '#1C2D4F' }}
+        className="relative z-10 pl-3 text-2xl font-black tracking-tighter text-[#1C2D4F] dark:text-white transition-colors duration-300"
       >
-        CompanyHub.
+        CompanyHub<span className="text-blue-600 dark:text-blue-400">.</span>
       </span>
     </Link>
   )
