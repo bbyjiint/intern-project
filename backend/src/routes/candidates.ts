@@ -411,6 +411,227 @@ candidatesRouter.get("/", requireAuth, requireRole("COMPANY"), async (req, res) 
   return res.json({ candidates: items });
 });
 
+// ============================================================
+// แทนที่ route /job-matches เดิมใน candidates.ts
+// ============================================================
+
+candidatesRouter.get("/job-matches", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
+  const userId = req.user!.id;
+  const forceRefresh = req.query.refresh === "true";
+
+  try {
+    const candidateId = await getCandidateIdForUser(userId);
+
+    // 1. ดึง JobPost ทั้งหมดที่ PUBLISHED
+    const jobPosts = await prisma.jobPost.findMany({
+      where: { state: "PUBLISHED" },
+      include: {
+        Company: {
+          select: {
+            id: true,
+            companyName: true,
+            logoURL: true,
+            CompanyEmails: { select: { email: true }, take: 1 },
+          },
+        },
+        LocationProvince: { select: { name: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    // 2. ดึง bookmarks
+    const bookmarks = await prisma.jobBookmark.findMany({
+      where: { candidateId },
+      select: { jobPostId: true },
+    });
+    const bookmarkedIds = new Set(bookmarks.map((b) => b.jobPostId));
+
+    // 3. เช็ค cache
+    const cache = await (prisma as any).jobMatchCache.findUnique({
+      where: { candidateId },
+    });
+
+    let aiScores: Record<string, number> = {};
+    let usedCache = false;
+
+    if (cache && !forceRefresh) {
+      // ใช้ cache ที่มีอยู่
+      aiScores = cache.scores as Record<string, number>;
+      usedCache = true;
+      console.log(`[JobMatch] Using cached scores for candidate ${candidateId}`);
+    } else {
+      // ไม่มี cache หรือ force refresh — เรียก Gemini
+      console.log(`[JobMatch] Calculating new scores for candidate ${candidateId}`);
+
+      const candidate = await prisma.candidateProfile.findUnique({
+        where: { id: candidateId },
+        include: {
+          UserSkill: { include: { Skills: { select: { name: true, category: true } } } },
+          CandidateUniversity: {
+            orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
+            take: 1,
+          },
+          CandidatePreferredProvince: {
+            include: { Province: { select: { name: true } } },
+          },
+          UserProjects: { select: { name: true, role: true, relatedSkills: true, description: true } },
+          WorkHistory: { select: { position: true, companyName: true, description: true }, take: 3 },
+        },
+      });
+
+      if (!candidate) return res.status(404).json({ error: "Candidate not found" });
+
+      const candidateProfile = {
+        skills: candidate.UserSkill.map((us) => ({ name: us.Skills.name, category: us.Skills.category })),
+        preferredPositions: candidate.preferredPositions,
+        preferredProvinces: candidate.CandidatePreferredProvince.map((p) => p.Province.name),
+        gpa: candidate.CandidateUniversity[0]?.gpa ?? null,
+        bio: candidate.bio ?? "",
+        projects: candidate.UserProjects.map((p) => ({
+          name: p.name, role: p.role, skills: p.relatedSkills, description: p.description,
+        })),
+        workHistory: candidate.WorkHistory.map((w) => ({
+          position: w.position, company: w.companyName, description: w.description,
+        })),
+      };
+
+      const jobList = jobPosts.map((job) => ({
+        id: job.id,
+        title: job.jobTitle,
+        positions: job.positions,
+        workplaceType: job.workplaceType,
+        province: (job as any).LocationProvince?.name ?? job.locationProvince ?? "",
+        description: job.jobDescription ?? "",
+        specification: job.jobSpecification ?? "",
+        minimumGpa: job.gpa ?? null,  // minimum GPA required
+      }));
+
+      try {
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+        const model = genAI.getGenerativeModel({
+          model: "gemini-2.5-flash",
+          generationConfig: { responseMimeType: "application/json" },
+        });
+
+        const prompt = `
+You are a job matching expert for internship positions in Thailand.
+
+Analyze how well this candidate matches each job posting and return a match score (0-100) for each job.
+
+CANDIDATE PROFILE:
+- Skills: ${JSON.stringify(candidateProfile.skills)}
+- Preferred Positions: ${candidateProfile.preferredPositions.join(", ") || "Not specified"}
+- Preferred Locations: ${candidateProfile.preferredProvinces.join(", ") || "Not specified"}
+- GPA: ${candidateProfile.gpa ?? "Not specified"}
+- About: ${candidateProfile.bio || "Not provided"}
+- Projects: ${JSON.stringify(candidateProfile.projects)}
+- Work History: ${JSON.stringify(candidateProfile.workHistory)}
+
+JOB POSTINGS:
+${JSON.stringify(jobList, null, 2)}
+
+SCORING CRITERIA:
+- Skills match with job requirements (40%)
+- Location preference match (20%): If the job's workplaceType is "REMOTE", give full score (20/20) for location regardless of candidate's preferred location — remote jobs have no location constraint.
+- Position/role interest match (20%)
+- GPA requirement (10%): minimumGpa is the MINIMUM GPA required by the job. If candidate GPA >= minimumGpa = full score. If minimumGpa is null = no requirement, give neutral score. If candidate has no GPA = partial score.
+- Overall profile fit (10%)
+
+Return ONLY a JSON object with job IDs as keys and scores (0-100) as values.
+Example: { "uuid-1": 85, "uuid-2": 62 }
+`;
+
+        const result = await model.generateContent(prompt);
+        const rawText = result.response.text().trim().replace(/```json\n?|```\n?/g, "");
+        aiScores = JSON.parse(rawText);
+      } catch (aiError) {
+        console.error("Gemini scoring failed, using keyword fallback:", aiError);
+        // Fallback keyword matching
+        const candidate2 = await prisma.candidateProfile.findUnique({
+          where: { id: candidateId },
+          include: { UserSkill: { include: { Skills: { select: { name: true } } } } },
+        });
+        jobPosts.forEach((job) => {
+          const cSkills = (candidate2?.UserSkill || []).map((us) => us.Skills.name.toLowerCase());
+          const jSkills = job.positions.map((p) => p.toLowerCase());
+          const matched = cSkills.filter((cs) => jSkills.some((js) => js.includes(cs) || cs.includes(js)));
+          aiScores[job.id] = Math.round(Math.min((matched.length / Math.max(jSkills.length, 1)) * 100, 100));
+        });
+      }
+
+      // 4. บันทึก cache (upsert)
+      await (prisma as any).jobMatchCache.upsert({
+        where: { candidateId },
+        update: { scores: aiScores },
+        create: { candidateId, scores: aiScores },
+      });
+    }
+
+    // 5. สร้าง response
+    const scoredJobs = jobPosts.map((job) => {
+      const jobProvinceName = (job as any).LocationProvince?.name ?? job.locationProvince ?? "";
+      return {
+        id: job.id,
+        jobTitle: job.jobTitle,
+        companyName: job.Company.companyName,
+        companyEmail: job.Company.CompanyEmails[0]?.email ?? "",
+        companyLogo: job.Company.logoURL ?? null,
+        workplaceType: job.workplaceType,
+        positions: job.positions,
+        locationProvince: jobProvinceName,
+        positionsAvailable: job.positionsAvailable ?? 0,
+        allowance: job.allowance ?? null,
+        allowancePeriod: job.allowancePeriod ?? null,
+        noAllowance: job.noAllowance,
+        score: aiScores[job.id] ?? 0,
+        isBookmarked: bookmarkedIds.has(job.id),
+      };
+    });
+
+    scoredJobs.sort((a, b) => b.score - a.score);
+
+    return res.json({ jobs: scoredJobs, cached: usedCache });
+  } catch (e: any) {
+    if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
+      return res.status(404).json({ error: "Candidate profile not found" });
+    }
+    console.error("Error fetching job matches:", e);
+    return res.status(500).json({ error: e?.message || "Failed to fetch job matches" });
+  }
+});
+
+
+// ============================================================
+// Helper function — เรียกหลังจาก candidate แก้ข้อมูลใดๆ
+// วางไว้ใกล้ๆ getCandidateIdForUser หรือเรียกในแต่ละ route ที่แก้ข้อมูล
+// ============================================================
+async function invalidateJobMatchCache(candidateId: string) {
+  try {
+    await (prisma as any).jobMatchCache.deleteMany({
+      where: { candidateId },
+    });
+  } catch (e) {
+    // ไม่มี cache อยู่ก็ไม่เป็นไร
+  }
+}
+
+// ============================================================
+// เพิ่ม invalidateJobMatchCache() ในทุก route ที่แก้ข้อมูล candidate:
+//
+// POST/PUT /projects      → invalidateJobMatchCache(candidateId)
+// DELETE /projects/:id    → invalidateJobMatchCache(candidateId)
+// POST/PUT /skills        → invalidateJobMatchCache(candidateId)
+// DELETE /skills/:id      → invalidateJobMatchCache(candidateId)
+// PUT /profile            → invalidateJobMatchCache(candidateId)
+// POST/PUT /education     → invalidateJobMatchCache(candidateId)
+// POST/PUT /experience    → invalidateJobMatchCache(candidateId)
+//
+// ตัวอย่าง (ใส่หลัง prisma.userProjects.create/update/delete สำเร็จ):
+//
+//   await invalidateJobMatchCache(candidateId);
+//   return res.status(201).json({ project: ... });
+// ============================================================
+
 // Get full candidate profile by ID (for companies to view)
 candidatesRouter.get("/:id", requireAuth, requireRole("COMPANY"), async (req, res) => {
   const candidateId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
@@ -641,6 +862,7 @@ candidatesRouter.post("/projects", requireAuth, requireRole("CANDIDATE"), async 
       },
     });
 
+    await invalidateJobMatchCache(candidateId);
     return res.status(201).json({
       project: {
         ...project,
@@ -710,7 +932,7 @@ candidatesRouter.put("/projects/:id", requireAuth, requireRole("CANDIDATE"), asy
         fileName: fileName ?? null,
       },
     });
-
+    await invalidateJobMatchCache(candidateId);
     return res.json({
       project: {
         ...project,
@@ -766,6 +988,7 @@ candidatesRouter.delete("/projects/:id", requireAuth, requireRole("CANDIDATE"), 
     await prisma.userProjects.delete({
       where: { id: projectId },
     });
+    await invalidateJobMatchCache(candidateId);
 
     return res.json({ success: true });
   } catch (e: any) {
@@ -1511,6 +1734,7 @@ candidatesRouter.delete("/skills/:id", requireAuth, requireRole("CANDIDATE"), as
     await prisma.userSkill.delete({
       where: { id: userSkillId },
     });
+    await invalidateJobMatchCache(candidateId);
 
     return res.json({ success: true, message: "Skill deleted successfully" });
   } catch (e: any) {
@@ -1571,6 +1795,7 @@ candidatesRouter.post("/skills", requireAuth, requireRole("CANDIDATE"), async (r
           category: skill.category || normalizedCategory,
         }
       });
+      await invalidateJobMatchCache(candidateId);
       return res.status(200).json({ message: "Skill updated", skill: updatedSkill });
     }
 
@@ -1583,7 +1808,7 @@ candidatesRouter.post("/skills", requireAuth, requireRole("CANDIDATE"), async (r
         category: skill.category || normalizedCategory,
       },
     });
-
+    await invalidateJobMatchCache(candidateId);
     return res.status(201).json({ message: "Skill added successfully", skill: userSkill });
   } catch (e: any) {
     if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
@@ -1651,7 +1876,7 @@ candidatesRouter.put("/skills/:id", requireAuth, requireRole("CANDIDATE"), async
         rating: rating,
       },
     });
-
+    await invalidateJobMatchCache(candidateId);
     return res.json({ message: "Skill updated successfully", skill: updatedSkill });
   } catch (e: any) {
     if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {

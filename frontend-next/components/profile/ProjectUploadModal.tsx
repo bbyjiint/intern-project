@@ -13,7 +13,6 @@ interface ProjectUploadModalProps {
 
 interface VerifyChecks {
   repoExists: boolean;
-  hasCommitsInPeriod: boolean;
   hasEnoughCommits: boolean;
 }
 
@@ -210,7 +209,6 @@ export default function ProjectUploadModal({
               <div className={`p-4 rounded-2xl border-2 animate-in slide-in-from-top-2 duration-300 ${githubVerified ? "bg-emerald-50/50 dark:bg-emerald-500/5 border-emerald-100 dark:border-emerald-900/30" : "bg-rose-50/50 dark:bg-rose-500/5 border-rose-100 dark:border-rose-900/30"}`}>
                 <div className="space-y-2.5">
                   <CheckItem label="Public Repository" passed={verifyChecks.repoExists} />
-                  <CheckItem label="Activity Check" passed={verifyChecks.hasCommitsInPeriod} detail={project?.startDate ? `During project period` : "Found commits"} />
                   <CheckItem label="Contribution Depth" passed={verifyChecks.hasEnoughCommits} detail={commitCount !== null ? `${commitCount} commits found` : "Min. 3 required"} />
                 </div>
               </div>

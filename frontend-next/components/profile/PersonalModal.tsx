@@ -40,7 +40,6 @@ export default function PersonalModal({
     preferredLocations: [] as string[], startDate: "", endDate: "",
   });
 
-  // Sync profile logic (คงเดิม)
   useEffect(() => {
     if (!isOpen || !profile) return;
     const names = (profile.fullName || "").split(" ");
@@ -76,7 +75,6 @@ export default function PersonalModal({
     );
   }, [profile, isOpen]);
 
-  // Load provinces (คงเดิม)
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -103,39 +101,39 @@ export default function PersonalModal({
   };
 
   const handleSave = async () => {
-    if (isSaving) return;
-    setIsSaving(true);
-    try {
-      const payload = {
-        ...profile,
-        fullName: `${formData.firstName} ${formData.lastName}`.trim(),
-        bio: formData.bio,
-        gender: formData.gender,
-        dateOfBirth: formData.dateOfBirth,
-        nationality: formData.nationality,
-        phoneNumber: formData.phoneNumber,
-        contactEmail: formData.email,
-        profileImage: formData.photo,
-        preferredPositions: formData.positionsOfInterest,
-        preferredLocations: formData.preferredLocations,
-        availableStartDate: formData.startDate || undefined,
-        availableEndDate: formData.endDate || undefined,
-      };
-      await apiFetch("/api/candidates/profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      await onSave();
-      onClose();
-    } catch (error) { alert("Failed to save changes"); } finally { setIsSaving(false); }
-  };
+  if (isSaving) return;
+  setIsSaving(true);
+  try {
+    const payload = {
+      fullName: `${formData.firstName} ${formData.lastName}`.trim(),
+      bio: formData.bio,
+      aboutYou: formData.bio,
+      gender: formData.gender,
+      dateOfBirth: formData.dateOfBirth,
+      nationality: formData.nationality,
+      phoneNumber: formData.phoneNumber,
+      email: formData.email,
+      contactEmail: formData.email,
+      profileImage: formData.photo,
+      positionsOfInterest: formData.positionsOfInterest,
+      preferredLocations: formData.preferredLocations,
+      internshipPeriod: formData.startDate && formData.endDate
+        ? `${formData.startDate} - ${formData.endDate}`
+        : undefined,
+    };
+    await apiFetch("/api/candidates/profile", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    await onSave();
+    onClose();
+  } catch (error) { alert("Failed to save changes"); } finally { setIsSaving(false); }
+};
 
   if (!isOpen) return null;
 
-  // คลาสสำหรับ Label เพื่อให้เห็นชัดเจน
   const labelClass = "block text-sm font-bold text-gray-700 dark:text-gray-200 mb-1.5";
-  // คลาสสำหรับ Input/Select/Textarea
   const inputClass = "w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-gray-100 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors placeholder-gray-400 dark:placeholder-gray-500";
 
   return (
@@ -173,11 +171,11 @@ export default function PersonalModal({
                 <div className="flex gap-6 mt-2">
                   {["Male", "Female"].map((g) => (
                     <label key={g} className="flex items-center gap-2 cursor-pointer group">
-                      <input 
-                        type="radio" 
-                        name="gender" 
-                        checked={formData.gender === g.toLowerCase()} 
-                        onChange={() => setFormData({ ...prev => ({ ...prev, gender: g.toLowerCase() }) })} 
+                      <input
+                        type="radio"
+                        name="gender"
+                        checked={formData.gender === g.toLowerCase()}
+                        onChange={() => setFormData((prev) => ({ ...prev, gender: g.toLowerCase() }))}
                         className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-900 dark:bg-gray-700 dark:border-gray-600"
                       />
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-blue-500 transition-colors">{g}</span>
@@ -227,18 +225,18 @@ export default function PersonalModal({
             </div>
             <div>
               <label className={labelClass}>Phone Number<span className="text-red-500">*</span></label>
-              <input 
-                type="tel" 
-                value={formData.phoneNumber} 
+              <input
+                type="tel"
+                value={formData.phoneNumber}
                 onChange={(e) => {
                   const digits = e.target.value.replace(/\D/g, "").slice(0, 10);
                   let f = digits;
                   if (digits.length > 6) f = `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
                   else if (digits.length > 3) f = `${digits.slice(0, 3)}-${digits.slice(3)}`;
                   setFormData({ ...formData, phoneNumber: f });
-                }} 
-                placeholder="0XX-XXX-XXXX" 
-                className={inputClass} 
+                }}
+                placeholder="0XX-XXX-XXXX"
+                className={inputClass}
               />
             </div>
           </div>
@@ -249,20 +247,20 @@ export default function PersonalModal({
             <div className="space-y-4">
               <div>
                 <label className={labelClass}>Position(s) of Interest<span className="text-red-500">*</span></label>
-                <MultiSelectDropdown 
-                   options={DEFAULT_POSITIONS.map(p => ({ value: p, label: p }))} 
-                   value={formData.positionsOfInterest} 
-                   onChange={(s) => setFormData({ ...formData, positionsOfInterest: s })} 
-                   placeholder="Select positions"
+                <MultiSelectDropdown
+                  options={DEFAULT_POSITIONS.map(p => ({ value: p, label: p }))}
+                  value={formData.positionsOfInterest ?? []}
+                  onChange={(s) => setFormData({ ...formData, positionsOfInterest: s })}
+                  placeholder="Select positions"
                 />
               </div>
               <div>
                 <label className={labelClass}>Preferred Location(s)<span className="text-gray-400 dark:text-gray-500 font-normal text-xs ml-2">(Max 3)</span></label>
-                <MultiSelectDropdown 
-                   options={provinces.map(p => ({ value: p.id, label: p.thname ? `${p.name} (${p.thname})` : p.name }))} 
-                   value={formData.preferredLocations} 
-                   onChange={(s) => s.length <= 3 && setFormData({ ...formData, preferredLocations: s })} 
-                   placeholder="Add preferred province"
+                <MultiSelectDropdown
+                  options={provinces.map(p => ({ value: p.name, label: p.thname ? `${p.name} (${p.thname})` : p.name }))}
+                  value={formData.preferredLocations ?? []}
+                  onChange={(s) => s.length <= 3 && setFormData({ ...formData, preferredLocations: s })}
+                  placeholder="Add preferred province"
                 />
               </div>
               <div>
@@ -282,9 +280,9 @@ export default function PersonalModal({
           <button onClick={onClose} disabled={isSaving} className="px-6 py-2.5 text-sm font-bold text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition-colors">
             Cancel
           </button>
-          <button 
-            onClick={handleSave} 
-            disabled={isSaving} 
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
             className="px-10 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-all active:scale-95 disabled:bg-blue-400"
           >
             {isSaving ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : "Save Changes"}

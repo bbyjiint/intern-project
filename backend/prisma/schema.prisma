@@ -266,6 +266,7 @@ model CandidateProfile {
   JobApplications         JobApplication[]
   JobBookmarks            JobBookmark[]
   JobIgnores              JobIgnore[]
+  JobMatchCache           JobMatchCache?  
 }
 
 model CompanyProfile {
@@ -615,4 +616,18 @@ model ReportedBug {
   updatedAt      DateTime @updatedAt
 
   @@index([reportedUserId])
+}
+
+model JobMatchCache {
+  id          String   @id @default(uuid()) @db.Uuid
+  candidateId String   @db.Uuid
+  scores      Json     // { "jobId": 85, "jobId2": 62 }
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  Profile CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@unique([candidateId])
+  @@index([candidateId])
+  
 }

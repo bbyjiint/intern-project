@@ -27,7 +27,9 @@ export default function MultiSelectDropdown({
   const [searchQuery, setSearchQuery] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown when clicking outside
+  // ป้องกัน value เป็น undefined
+  const safeValue = value ?? [];
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -38,12 +40,10 @@ export default function MultiSelectDropdown({
         setSearchQuery("");
       }
     }
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Helper functions to extract value and label from options
   const getOptionValue = (option: Option): string => {
     return typeof option === "string" ? option : option.value;
   };
@@ -59,23 +59,20 @@ export default function MultiSelectDropdown({
 
   const handleToggle = (option: Option) => {
     const optionValue = getOptionValue(option);
-    if (value.includes(optionValue)) {
-      // Remove if already selected
-      onChange(value.filter((v) => v !== optionValue));
+    if (safeValue.includes(optionValue)) {
+      onChange(safeValue.filter((v) => v !== optionValue));
     } else {
-      // Add if not selected and within max limit
-      if (!maxSelections || value.length < maxSelections) {
-        onChange([...value, optionValue]);
+      if (!maxSelections || safeValue.length < maxSelections) {
+        onChange([...safeValue, optionValue]);
       }
     }
   };
 
   const handleRemove = (optionValue: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    onChange(value.filter((v) => v !== optionValue));
+    onChange(safeValue.filter((v) => v !== optionValue));
   };
 
-  // Get label for selected value
   const getSelectedLabel = (val: string): string => {
     const option = options.find((opt) => getOptionValue(opt) === val);
     return option ? getOptionLabel(option) : val;
@@ -89,8 +86,8 @@ export default function MultiSelectDropdown({
         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-left flex items-center justify-between bg-white min-h-[44px]"
       >
         <div className="flex-1 flex flex-wrap gap-2">
-          {value.length > 0 ? (
-            value.map((selected) => (
+          {safeValue.length > 0 ? (
+            safeValue.map((selected) => (
               <span
                 key={selected}
                 className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded text-sm"
@@ -100,18 +97,8 @@ export default function MultiSelectDropdown({
                   onClick={(e) => handleRemove(selected, e)}
                   className="hover:bg-blue-100 rounded-full p-0.5 cursor-pointer"
                 >
-                  <svg
-                    className="w-3 h-3"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </span>
               </span>
@@ -126,12 +113,7 @@ export default function MultiSelectDropdown({
           stroke="currentColor"
           viewBox="0 0 24 24"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 9l-7 7-7-7"
-          />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
 
@@ -152,38 +134,24 @@ export default function MultiSelectDropdown({
               filteredOptions.map((option) => {
                 const optionValue = getOptionValue(option);
                 const optionLabel = getOptionLabel(option);
-                const isSelected = value.includes(optionValue);
+                const isSelected = safeValue.includes(optionValue);
                 return (
                   <button
                     key={optionValue}
                     type="button"
                     onClick={() => handleToggle(option)}
                     className={`w-full px-4 py-2 text-left hover:bg-gray-100 transition-colors flex items-center gap-2 ${
-                      isSelected
-                        ? "bg-blue-50 text-blue-600 font-medium"
-                        : "text-gray-900"
+                      isSelected ? "bg-blue-50 text-blue-600 font-medium" : "text-gray-900"
                     }`}
                   >
                     <div
                       className={`w-4 h-4 border-2 rounded flex items-center justify-center ${
-                        isSelected
-                          ? "border-blue-600 bg-blue-600"
-                          : "border-gray-300"
+                        isSelected ? "border-blue-600 bg-blue-600" : "border-gray-300"
                       }`}
                     >
                       {isSelected && (
-                        <svg
-                          className="w-3 h-3 text-white"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={3}
-                            d="M5 13l4 4L19 7"
-                          />
+                        <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                         </svg>
                       )}
                     </div>
@@ -192,9 +160,7 @@ export default function MultiSelectDropdown({
                 );
               })
             ) : (
-              <div className="px-4 py-2 text-gray-500 text-sm">
-                No options found
-              </div>
+              <div className="px-4 py-2 text-gray-500 text-sm">No options found</div>
             )}
           </div>
         </div>

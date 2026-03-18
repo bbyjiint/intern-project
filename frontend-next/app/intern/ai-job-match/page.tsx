@@ -7,79 +7,15 @@ import InternNavbar from '@/components/InternNavbar'
 import { apiFetch } from '@/lib/api'
 import JobMatchCard, { type JobMatchPost } from '@/components/job-post/JobMatchCard'
 
-const mockJobMatches: JobMatchPost[] = [
-  {
-    id: '1',
-    jobTitle: 'รับนักศึกษาฝึกงาน AI Engineer',
-    companyName: 'Trinity Securities Co., Ltd.',
-    companyEmail: 'info@trinitythai.com',
-    companyLogo: null,
-    workplaceType: 'HYBRID',
-    positions: ['AI Developer', 'Machine Learning'],
-    locationProvince: 'Bangkok',
-    positionsAvailable: 4,
-    allowance: 5000,
-    allowancePeriod: 'MONTH',
-    noAllowance: false,
-    score: 80,
-    isBookmarked: false,
-  },
-  {
-    id: '2',
-    jobTitle: 'รับนักศึกษาฝึกงาน Software Engineer',
-    companyName: 'DataWorks Thailand',
-    companyEmail: 'hr@dataworks.co.th',
-    companyLogo: null,
-    workplaceType: 'ON_SITE',
-    positions: ['Backend Developer', 'Node.js'],
-    locationProvince: 'Chiang Mai',
-    positionsAvailable: 2,
-    allowance: 6000,
-    allowancePeriod: 'MONTH',
-    noAllowance: false,
-    score: 75,
-    isBookmarked: false,
-  },
-  {
-    id: '3',
-    jobTitle: 'รับนักศึกษาฝึกงาน UX/UI Designer',
-    companyName: 'Creative Studio Co., Ltd.',
-    companyEmail: 'contact@creativestudio.co.th',
-    companyLogo: null,
-    workplaceType: 'REMOTE',
-    positions: ['UI Designer', 'Figma'],
-    locationProvince: 'Bangkok',
-    positionsAvailable: 1,
-    allowance: 7000,
-    allowancePeriod: 'MONTH',
-    noAllowance: false,
-    score: 68,
-    isBookmarked: false,
-  },
-  {
-    id: '4',
-    jobTitle: 'รับนักศึกษาฝึกงาน Data Analyst',
-    companyName: 'FinTech Solutions Co., Ltd.',
-    companyEmail: 'recruit@fintechsolutions.co.th',
-    companyLogo: null,
-    workplaceType: 'HYBRID',
-    positions: ['Data Analyst', 'Python'],
-    locationProvince: 'Bangkok',
-    positionsAvailable: 3,
-    allowance: 8000,
-    allowancePeriod: 'MONTH',
-    noAllowance: false,
-    score: 62,
-    isBookmarked: false,
-  },
-]
-
 export default function JobMatchPage() {
   const router = useRouter()
   const pathname = usePathname()
   const [isLoading, setIsLoading] = useState(true)
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false)
-  const [jobs, setJobs] = useState<JobMatchPost[]>(mockJobMatches)
+  const [jobs, setJobs] = useState<JobMatchPost[]>([])
+  const [isFetchingJobs, setIsFetchingJobs] = useState(false)
+  const [isFromCache, setIsFromCache] = useState(false)
+  const [isRecalculating, setIsRecalculating] = useState(false)
 
   const isAIAnalysisPage = pathname === '/intern/ai-analysis'
   const isCertificatesPage = pathname === '/intern/certificates'
@@ -101,6 +37,7 @@ export default function JobMatchPage() {
         if (userData.user.role === 'COMPANY') { router.push('/employer/profile'); return }
         if (!userData.user.role) { router.push('/role-selection'); return }
         setIsLoading(false)
+        fetchJobMatches(false)
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error)
         if (errorMessage.includes('401') || errorMessage.includes('Unauthorized')) {
@@ -113,12 +50,33 @@ export default function JobMatchPage() {
     checkAuth()
   }, [router])
 
+  const fetchJobMatches = async (forceRefresh = false) => {
+    try {
+      if (forceRefresh) {
+        setIsRecalculating(true)
+      } else {
+        setIsFetchingJobs(true)
+      }
+      const url = forceRefresh
+        ? '/api/candidates/job-matches?refresh=true'
+        : '/api/candidates/job-matches'
+      const data = await apiFetch<{ jobs: JobMatchPost[], cached: boolean }>(url)
+      setJobs(data.jobs || [])
+      setIsFromCache(data.cached ?? false)
+    } catch (e) {
+      console.error('Failed to fetch job matches:', e)
+    } finally {
+      setIsFetchingJobs(false)
+      setIsRecalculating(false)
+    }
+  }
+
   const handleBookmark = async (id: string, next: boolean) => {
     try {
       if (next) {
-        await apiFetch(`/api/bookmarks/${id}`, { method: 'POST' })
+        await apiFetch(`/api/intern/job-bookmarks/${id}`, { method: 'POST' })
       } else {
-        await apiFetch(`/api/bookmarks/${id}`, { method: 'DELETE' })
+        await apiFetch(`/api/intern/job-bookmarks/${id}`, { method: 'DELETE' })
       }
       setJobs((prev) => prev.map((j) => j.id === id ? { ...j, isBookmarked: next } : j))
     } catch (e) {
@@ -126,11 +84,10 @@ export default function JobMatchPage() {
     }
   }
 
-  // Helper function to handle dynamic classes for Sidebar Links
   const getLinkClasses = (active: boolean) => `
     px-4 py-3 rounded-lg flex items-center space-x-3 transition-all duration-200 font-medium
-    ${active 
-      ? 'bg-[#0273B1] text-white shadow-md' 
+    ${active
+      ? 'bg-[#0273B1] text-white shadow-md'
       : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-[#0273B1] dark:hover:text-[#38bdf8]'}
   `
 
@@ -156,7 +113,7 @@ export default function JobMatchPage() {
 
             {/* Profile Dropdown Group */}
             <div className="space-y-1">
-              <div 
+              <div
                 onClick={() => router.push('/intern/profile')}
                 className={`cursor-pointer group ${getLinkClasses(pathname === '/intern/profile')}`}
               >
@@ -213,37 +170,103 @@ export default function JobMatchPage() {
         {/* Main Content */}
         <main className="flex-1 p-6 md:p-10">
           <div className="max-w-7xl mx-auto">
-            <header className="mb-8">
-              <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-                AI Job Match
-              </h1>
-              <div className="mt-2 space-y-1">
-                <p className="text-lg font-semibold text-[#0273B1] dark:text-[#38bdf8]">
-                  Job Recommendations from AI
-                </p>
-                <p className="text-sm text-slate-600 dark:text-slate-400 max-w-2xl">
-                  A collection of jobs and internships personalized for your skills, updated in real-time.
-                </p>
+
+            {/* Header */}
+            <header className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
+              <div>
+                <h1 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                  AI Job Match
+                </h1>
+                <div className="mt-2 space-y-1">
+                  <p className="text-lg font-semibold text-[#0273B1] dark:text-[#38bdf8]">
+                    Job Recommendations from AI
+                  </p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 max-w-2xl">
+                    A collection of jobs and internships personalized for your skills, updated in real-time.
+                  </p>
+                </div>
+              </div>
+
+              {/* Recalculate button */}
+              <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                <button
+                  onClick={() => fetchJobMatches(true)}
+                  disabled={isRecalculating || isFetchingJobs}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-[#0273B1] hover:bg-[#0261a0] disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl shadow-md transition-all active:scale-95"
+                >
+                  <svg
+                    className={`w-4 h-4 ${isRecalculating ? 'animate-spin' : ''}`}
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  {isRecalculating ? 'Recalculating...' : 'Recalculate Match'}
+                </button>
+                {isFromCache && !isRecalculating && (
+                  <p className="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Using cached results
+                  </p>
+                )}
               </div>
             </header>
 
-            {/* Grid Layout */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {jobs.map((job) => (
-                <div key={job.id} className="transform transition-transform hover:-translate-y-1">
-                  <JobMatchCard
-                    post={job}
-                    onBookmark={handleBookmark}
-                    onDetail={() => router.push(`/intern/find-companies/${job.id}`)}
-                    onApply={() => router.push(`/intern/find-companies/${job.id}`)}
-                  />
-                </div>
-              ))}
-            </div>
-            
-            {jobs.length === 0 && (
+            {/* Loading skeleton */}
+            {(isFetchingJobs || isRecalculating) && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="bg-white dark:bg-slate-800 rounded-2xl p-5 animate-pulse">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-10 h-10 rounded-xl bg-slate-200 dark:bg-slate-700" />
+                      <div className="flex-1 space-y-2">
+                        <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-3/4" />
+                        <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded w-1/2" />
+                      </div>
+                      <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-700" />
+                    </div>
+                    <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-full mb-3" />
+                    <div className="flex gap-2 mb-4">
+                      <div className="h-6 w-16 bg-slate-200 dark:bg-slate-700 rounded-full" />
+                      <div className="h-6 w-20 bg-slate-200 dark:bg-slate-700 rounded-full" />
+                    </div>
+                    <div className="space-y-2">
+                      <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-2/3" />
+                      <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/2" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Job Grid */}
+            {!isFetchingJobs && !isRecalculating && jobs.length > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {jobs.map((job) => (
+                  <div key={job.id} className="transform transition-transform hover:-translate-y-1">
+                    <JobMatchCard
+                      post={job}
+                      onBookmark={handleBookmark}
+                      onDetail={() => router.push(`/intern/job-detail/${job.id}`)}
+                      onApply={() => router.push(`/intern/job-detail/${job.id}`)}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Empty state */}
+            {!isFetchingJobs && !isRecalculating && jobs.length === 0 && (
               <div className="text-center py-20 bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-dashed border-slate-300 dark:border-slate-700">
-                <p className="text-slate-500 dark:text-slate-400">No matching jobs found at the moment.</p>
+                <div className="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <p className="text-slate-700 dark:text-slate-300 font-bold text-lg mb-1">No matching jobs found</p>
+                <p className="text-slate-500 dark:text-slate-400 text-sm">Try updating your profile skills and preferred positions to get better matches.</p>
               </div>
             )}
           </div>
