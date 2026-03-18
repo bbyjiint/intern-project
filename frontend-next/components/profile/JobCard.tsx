@@ -1,3 +1,5 @@
+'use client'
+
 import React from "react";
 
 export interface JobPostData {
@@ -5,7 +7,7 @@ export interface JobPostData {
   jobTitle: string;
   companyName: string;
   companyEmail: string;
-  companyLogo?: string;
+  companyLogo?: string | null;
   location: string;
   workType: string;
   roleType: string;
@@ -28,8 +30,8 @@ interface JobCardProps {
 
 const workTypeStyles: Record<string, string> = {
   Hybrid: "#3B82F6",
-  "On-Site": "#F4C14D",
-  "On-site": "#F4C14D",
+  "On-Site": "#F59E0B", // ปรับเป็น Amber 500 เพื่อความชัดเจน
+  "On-site": "#F59E0B",
   Remote: "#EF4444",
 };
 
@@ -51,7 +53,7 @@ export default function JobCard({
       );
     }
     return (
-      <div className="flex h-[31px] w-[31px] items-center justify-center rounded-[4px] bg-[#23356E] text-[9px] font-bold text-white">
+      <div className="flex h-[31px] w-[31px] items-center justify-center rounded-[4px] bg-[#23356E] dark:bg-sky-900 text-[10px] font-bold text-white">
         {job.companyName.substring(0, 2).toUpperCase()}
       </div>
     );
@@ -59,85 +61,42 @@ export default function JobCard({
 
   return (
     <div
-      className={`relative flex h-full min-h-[274px] flex-col rounded-[12px] bg-white px-[20px] py-[18px] shadow-[0_2px_10px_rgba(15,23,42,0.05)] ${onClick ? "cursor-pointer hover:shadow-md transition-shadow" : ""}`}
+      className={`group relative flex h-full min-h-[274px] flex-col rounded-[12px] bg-white dark:bg-slate-800 px-[20px] py-[18px] shadow-sm border border-slate-100 dark:border-slate-700 transition-all duration-300 ${
+        onClick ? "cursor-pointer hover:shadow-xl hover:-translate-y-1" : ""
+      }`}
       onClick={() => onClick && onClick(job.id)}
     >
       {/* Top Row */}
-      <div className="mb-[9px] flex items-start justify-between gap-2">
+      <div className="mb-[12px] flex items-start justify-between gap-2">
         <div className="flex items-start gap-[14px]">
-          <div className="flex h-[48px] w-[48px] items-center justify-center overflow-hidden rounded-full bg-[#F3F4F7]">
+          <div className="flex h-[48px] w-[48px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-slate-50 dark:bg-slate-700/50 border border-slate-100 dark:border-slate-600">
             {renderCompanyLogo()}
           </div>
-          <div className="min-w-0 pt-[1px] max-w-[150px]">
+          <div className="min-w-0 pt-[2px]">
             <h3
-              className="truncate text-[15px] font-bold leading-tight text-[#111827]"
+              className="truncate text-[15px] font-bold leading-tight text-slate-900 dark:text-slate-50"
               title={job.companyName}
             >
               {job.companyName}
             </h3>
-            <p className="mt-[2px] text-[12px] text-[#8B94A7]">
+            <p className="mt-[2px] truncate text-[12px] text-slate-500 dark:text-slate-400">
               {job.companyEmail}
             </p>
           </div>
         </div>
 
-        {/* Status Badge + Bookmark มุมบนขวา */}
-        <div className="flex items-center gap-2 shrink-0 mt-1">
+        {/* Status Badge + Bookmark */}
+        <div className="flex items-center gap-2 shrink-0">
           {job.status && (
             <span
-              className={`flex items-center gap-1 rounded-full border px-3 py-1 text-[12px] font-semibold ${
+              className={`flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-bold tracking-wide uppercase ${
                 job.status === "Accept"
-                  ? "border-green-400 text-green-500 bg-green-50"
+                  ? "border-emerald-200 dark:border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10"
                   : job.status === "Decline"
-                    ? "border-red-400 text-red-500 bg-red-50"
-                    : "border-blue-400 text-blue-500 bg-blue-50"
+                    ? "border-rose-200 dark:border-rose-500/30 text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-500/10"
+                    : "border-sky-200 dark:border-sky-500/30 text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-500/10"
               }`}
             >
-              {job.status === "Accept" && (
-                <svg
-                  className="w-3 h-3"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2.5}
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              )}
-              {job.status === "Decline" && (
-                <svg
-                  className="w-3 h-3"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2.5}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-              )}
-              {job.status === "Applied" && (
-                <svg
-                  className="w-3 h-3"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2.5}
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-              )}
               {job.status}
             </span>
           )}
@@ -147,13 +106,17 @@ export default function JobCard({
                 e.stopPropagation();
                 onBookmarkClick(job.id);
               }}
-              className={`shrink-0 pt-[2px] ${job.isBookmarked ? "text-gray-800" : "text-gray-300"} hover:text-gray-600 transition-colors`}
+              className={`shrink-0 p-1 rounded-full transition-colors ${
+                job.isBookmarked 
+                ? "text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/30" 
+                : "text-slate-300 dark:text-slate-600 hover:text-slate-400 dark:hover:text-slate-500"
+              }`}
             >
               <svg
                 className={`w-5 h-5 ${job.isBookmarked ? "fill-current" : ""}`}
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="2"
+                strokeWidth="2.5"
                 viewBox="0 0 24 24"
               >
                 <path
@@ -168,62 +131,56 @@ export default function JobCard({
       </div>
 
       {/* Job Title */}
-      <h2 className="mb-[4px] min-h-[34px] text-[16px] font-bold leading-snug text-[#111827]">
+      <h2 className="mb-[10px] text-[17px] font-bold leading-snug text-slate-900 dark:text-white group-hover:text-[#0273B1] dark:group-hover:text-sky-400 transition-colors">
         {job.jobTitle}
       </h2>
 
       {/* Tags */}
-      <div className="mb-[16px] flex min-h-[30px] flex-wrap gap-[8px]">
+      <div className="mb-[18px] flex flex-wrap gap-[6px]">
         <span
-          className="rounded-[8px] px-[14px] py-[2px] text-[12px] font-semibold text-white inline-flex items-center"
+          className="rounded-[6px] px-[12px] py-[3px] text-[11px] font-bold text-white shadow-sm"
           style={{ backgroundColor: workTypeStyles[job.workType] || "#94A3B8" }}
         >
           {job.workType}
         </span>
         {(job.positions && job.positions.length > 0
           ? job.positions
-          : job.roleType
-            ? [job.roleType]
-            : []
+          : job.roleType ? [job.roleType] : []
         )
           .slice(0, 3)
           .map((pos) => (
             <span
               key={pos}
-              className="rounded-[8px] bg-[#E5E7EB] px-[14px] py-[2px] text-[12px] font-semibold text-[#4B5563] inline-flex items-center"
+              className="rounded-[6px] bg-slate-100 dark:bg-slate-700 px-[12px] py-[3px] text-[11px] font-bold text-slate-600 dark:text-slate-300 border border-transparent dark:border-slate-600"
             >
               {pos}
             </span>
           ))}
-        {job.positions && job.positions.length > 3 && (
-          <span
-            className="group relative rounded-[8px] bg-[#E5E7EB] px-[14px] py-[2px] text-[12px] font-semibold text-[#4B5563] cursor-default"
-            title={job.positions.slice(3).join(", ")}
-          >
-            ...
-            <span className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1 -translate-x-1/2 whitespace-nowrap rounded-[6px] bg-[#1F2937] px-2 py-1 text-[11px] text-white opacity-0 transition-opacity group-hover:opacity-100">
-              {job.positions.slice(3).join(", ")}
-            </span>
-          </span>
-        )}
       </div>
 
-      {/* Details */}
-      <div className="grid grid-cols-[150px_1fr] gap-y-[8px]">
-        <p className="text-[12px] text-[#8B94A7]">Preferred</p>
-        <p className="text-[13px] text-[#6B7280]">{job.location}</p>
-        <p className="text-[12px] text-[#8B94A7]">Number of applicants</p>
-        <p className="text-[13px] text-[#6B7280]">{job.applicants}</p>
-        <p className="text-[12px] text-[#8B94A7]">Allowance</p>
-        <p className="text-[13px] font-semibold text-[#111827]">
+      {/* Details Grid */}
+      <div className="grid grid-cols-[130px_1fr] gap-y-[10px] items-baseline">
+        <span className="text-[12px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider">Location</span>
+        <span className="text-[13px] font-medium text-slate-700 dark:text-slate-300">{job.location}</span>
+        
+        <span className="text-[12px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider">Applicants</span>
+        <span className="text-[13px] font-medium text-slate-700 dark:text-slate-300">{job.applicants} Persons</span>
+        
+        <span className="text-[12px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider">Allowance</span>
+        <span className="text-[14px] font-bold text-sky-700 dark:text-sky-400 italic">
           {job.allowance}
-        </p>
+        </span>
       </div>
 
-      {/* Footer: เวลา มุมล่างขวา */}
+      {/* Footer */}
       {job.timeAgo && (
-        <div className="mt-auto flex justify-end pt-[12px]">
-          <span className="text-[12px] text-[#C2C8D3]">{job.timeAgo}</span>
+        <div className="mt-auto flex justify-end pt-[14px] border-t border-slate-50 dark:border-slate-700/50">
+          <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500 flex items-center gap-1">
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            {job.timeAgo}
+          </span>
         </div>
       )}
     </div>

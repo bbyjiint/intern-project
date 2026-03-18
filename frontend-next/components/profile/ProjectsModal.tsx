@@ -11,7 +11,7 @@ export interface ProjectData {
   startDate?: string
   endDate?: string
   linkedToExperience?: string
-  relatedSkills: string[] // เปลี่ยนจาก skills เป็น relatedSkills
+  relatedSkills: string[]
   githubUrl?: string
   projectUrl?: string
 }
@@ -29,7 +29,7 @@ const MONTH_NAMES = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Date helpers (ดึงมาจาก ProjectsSection เพื่อให้ Format ตรงกัน)
+// Date helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
 function parseDateValue(val: string): { month: number; year: number } | null {
@@ -59,7 +59,7 @@ function toInputString(val: string): string {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MonthYearPicker (copied from ProjectsSection)
+// MonthYearPicker (Dark Mode Supported)
 // ─────────────────────────────────────────────────────────────────────────────
 
 function MonthYearPicker({
@@ -80,14 +80,11 @@ function MonthYearPicker({
   );
   const wrapRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    setInputVal(toInputString(value));
-  }, [value]);
+  useEffect(() => { setInputVal(toInputString(value)); }, [value]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node))
-        setOpen(false);
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -110,7 +107,7 @@ function MonthYearPicker({
 
   const borderCls = hasError
     ? "border-red-500 ring-1 ring-red-400"
-    : "border-gray-300";
+    : "border-gray-200 dark:border-gray-700";
 
   return (
     <div ref={wrapRef} className="relative">
@@ -122,37 +119,31 @@ function MonthYearPicker({
           onChange={(e) => setInputVal(e.target.value)}
           onBlur={(e) => commitInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && commitInput(inputVal)}
-          className={`w-full px-4 py-3 pr-10 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${borderCls}`}
+          className={`w-full px-4 py-3 pr-10 border rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${borderCls}`}
         />
         <button
           type="button"
-          tabIndex={-1}
           onClick={() => setOpen((v) => !v)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-500 transition-colors"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
         </button>
       </div>
 
       {open && (
-        <div className="absolute z-50 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4" style={{ minWidth: 260 }}>
-          <div className="flex items-center justify-between mb-3">
-            <button type="button" onClick={() => setCalYear((y) => y - 1)} className="p-1 rounded hover:bg-gray-100">
-              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
+        <div className="absolute z-[110] mt-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-2xl p-4 animate-in fade-in slide-in-from-top-2 duration-200" style={{ minWidth: 280 }}>
+          <div className="flex items-center justify-between mb-4">
+            <button type="button" onClick={() => setCalYear((y) => y - 1)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg>
             </button>
-            <span className="font-semibold text-sm" style={{ color: "#1C2D4F" }}>{calYear}</span>
-            <button type="button" onClick={() => setCalYear((y) => y + 1)} className="p-1 rounded hover:bg-gray-100">
-              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-              </svg>
+            <span className="font-black text-gray-900 dark:text-white tracking-tight">{calYear}</span>
+            <button type="button" onClick={() => setCalYear((y) => y + 1)} className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" /></svg>
             </button>
           </div>
-          <div className="grid grid-cols-3 gap-1">
+          <div className="grid grid-cols-3 gap-2">
             {MONTH_NAMES.map((name, i) => {
               const p = parseDateValue(value);
               const isSelected = p && p.month === i + 1 && p.year === calYear;
@@ -161,8 +152,8 @@ function MonthYearPicker({
                   key={name}
                   type="button"
                   onClick={() => selectMonth(i)}
-                  className={`p-2 text-sm rounded hover:bg-blue-50 hover:text-blue-600 transition-colors ${
-                    isSelected ? 'bg-blue-100 text-blue-700 font-semibold' : 'text-gray-700'
+                  className={`py-2.5 text-xs font-bold rounded-xl transition-all ${
+                    isSelected ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30' : 'text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-blue-900/30 hover:text-blue-600'
                   }`}
                 >
                   {name}
@@ -177,56 +168,24 @@ function MonthYearPicker({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Main Component
+// Main Modal Component
 // ─────────────────────────────────────────────────────────────────────────────
-interface MasterSkill {
-  id: string;
-  name: string;
-}
+interface MasterSkill { id: string; name: string; }
 
 export default function ProjectsModal({ isOpen, onClose, onSave, editingProject }: ProjectsModalProps) {
-  const [formData, setFormData] = useState<ProjectData>({
-    name: '',
-    role: '',
-    startDate: '',
-    endDate: '',
-    description: '',
-    relatedSkills: [],
-    githubUrl: '',
-    projectUrl: '',
-  })
+  const [formData, setFormData] = useState<ProjectData>({ name: '', role: '', startDate: '', endDate: '', description: '', relatedSkills: [], githubUrl: '', projectUrl: '' })
   const [selectedSkill, setSelectedSkill] = useState('')
-  const [errorMsg, setErrorMsg] = useState('') // State สำหรับเก็บข้อความแจ้งเตือน
-
+  const [errorMsg, setErrorMsg] = useState('')
   const [availableSkills, setAvailableSkills] = useState<MasterSkill[]>([])
   const [isLoadingSkills, setIsLoadingSkills] = useState(false)
-
-  // สร้าง Ref สำหรับเรียกเปิดปฏิทิน
-  const startPickerRef = useRef<HTMLInputElement>(null)
-  const endPickerRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (isOpen) {
       if (editingProject) {
-        setFormData({
-          ...editingProject,
-            startDate: toDisplayDate(editingProject.startDate || ''),
-            endDate: toDisplayDate(editingProject.endDate || ''),
-          relatedSkills: editingProject.relatedSkills || (editingProject as any).skills || [],
-        })
+        setFormData({ ...editingProject, startDate: toDisplayDate(editingProject.startDate || ''), endDate: toDisplayDate(editingProject.endDate || ''), relatedSkills: editingProject.relatedSkills || (editingProject as any).skills || [] })
       } else {
-        setFormData({
-          name: '',
-          role: '',
-          startDate: '',
-          endDate: '',
-          description: '',
-          relatedSkills: [],
-          githubUrl: '',
-          projectUrl: '',
-        })
+        setFormData({ name: '', role: '', startDate: '', endDate: '', description: '', relatedSkills: [], githubUrl: '', projectUrl: '' })
       }
-      setSelectedSkill('')
       setErrorMsg('')
     }
   }, [editingProject, isOpen])
@@ -238,224 +197,145 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
           setIsLoadingSkills(true)
           const data = await apiFetch<{ skills: MasterSkill[] }>('/api/skills')
           setAvailableSkills(data.skills || [])
-        } catch (error) {
-          console.error("Failed to fetch master skills:", error)
-        } finally {
-          setIsLoadingSkills(false)
-        }
+        } catch (error) { console.error(error) } finally { setIsLoadingSkills(false) }
       }
       fetchMasterSkills()
     }
   }, [isOpen, availableSkills.length])
 
-  const handleDateInput = (e: React.ChangeEvent<HTMLInputElement>, field: 'startDate' | 'endDate') => {
-    setErrorMsg(''); // ล้าง Error เมื่อมีการพิมพ์/เลือกวันที่
-
-    const rawValue = e.target.value;
-
-    if (rawValue.includes('-')) {
-      const [year, month] = rawValue.split('-');
-      setFormData({ ...formData, [field]: `${month}/${year}` });
-      return;
-    }
-
-    let value = rawValue.replace(/\D/g, '')
-    if (value.length > 6) value = value.slice(0, 6)
-
-    if (value.length >= 3) {
-      value = `${value.slice(0, 2)}/${value.slice(2)}`
-    }
-    setFormData({ ...formData, [field]: value })
-  }
-
-  const formatToMonthValue = (dateStr: string) => {
-    if (dateStr.includes('/')) {
-      const [m, y] = dateStr.split('/');
-      if (y && m && y.length === 4) return `${y}-${m.padStart(2, '0')}`;
-    }
-    return '';
-  }
-
-  if (!isOpen) return null
-
   const handleAddSkill = () => {
     if (selectedSkill && !formData.relatedSkills.includes(selectedSkill)) {
-      setFormData(prev => ({ 
-        ...prev, 
-        relatedSkills: [...prev.relatedSkills, selectedSkill] 
-      }))
-      setSelectedSkill('')
-      setErrorMsg('')
+      setFormData(prev => ({ ...prev, relatedSkills: [...prev.relatedSkills, selectedSkill] }))
+      setSelectedSkill(''); setErrorMsg('')
     }
-  }
-
-  const handleRemoveSkill = (skill: string) => {
-    setFormData(prev => ({ 
-      ...prev, 
-      relatedSkills: prev.relatedSkills.filter((s) => s !== skill) 
-    }))
   }
 
   const handleSubmit = () => {
-    // 1. ตรวจสอบฟิลด์บังคับ
-    if (
-      !formData.name.trim() || 
-      !formData.role?.trim() || 
-      !formData.startDate?.trim() ||
-      !formData.endDate?.trim() ||
-      !formData.description?.trim()
-    ) {
-      setErrorMsg('Please fill in all required fields.')
-      return
+    if (!formData.name.trim() || !formData.role?.trim() || !formData.startDate?.trim() || !formData.endDate?.trim() || !formData.description?.trim()) {
+      setErrorMsg('Please fill in all required fields.'); return
     }
-
-    // 2. ตรวจสอบ Format วันที่ก่อนบันทึก
-    const startP = parseDateValue(formData.startDate);
-    const endP = parseDateValue(formData.endDate);
-    if (!startP || !endP) {
-      setErrorMsg('Please enter a valid date (MM/YYYY).')
-      return
-    }
-
     if (formData.relatedSkills.length === 0) {
-      setErrorMsg('Please add at least one related skill.')
-      return
+      setErrorMsg('Please add at least one related skill.'); return
     }
-
-    // 3. เตรียม Data ส่งกลับ (แปลงเป็น DisplayDate "Jan 2024" ตาม ProjectsSection)
-    const dataToSave: ProjectData = {
-      ...formData,
-      startDate: toDisplayDate(formData.startDate || ''),
-      endDate: toDisplayDate(formData.endDate || ''),
-    }
-
-    onSave(dataToSave)
+    onSave({ ...formData, startDate: toDisplayDate(formData.startDate || ''), endDate: toDisplayDate(formData.endDate || '') })
     onClose()
   }
 
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 overflow-y-auto" onClick={onClose}>
-      <div className="relative w-full max-w-2xl rounded-2xl bg-white shadow-2xl my-8" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between border-b p-6">
-          <h2 className="text-xl font-bold text-[#1C2D4F]">
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div className="relative w-full max-w-2xl rounded-3xl bg-white dark:bg-gray-900 shadow-2xl overflow-hidden border border-gray-100 dark:border-gray-800 animate-in fade-in zoom-in duration-200" onClick={(e) => e.stopPropagation()}>
+        
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-gray-100 dark:border-gray-800 p-6 bg-white dark:bg-gray-900">
+          <h2 className="text-2xl font-black text-gray-900 dark:text-white">
             {editingProject ? 'Edit Project' : 'Add New Project'}
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 transition-colors">
             <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        <div className="p-6 space-y-5 max-h-[70vh] overflow-y-auto scrollbar-hide">
+        {/* Content */}
+        <div className="p-8 space-y-6 max-h-[70vh] overflow-y-auto scrollbar-hide bg-white dark:bg-gray-900">
           {errorMsg && (
-            <div className="p-3 mb-2 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm font-medium flex items-center gap-2">
-              <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" strokeWidth="2"></circle><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01"></path></svg>
+            <div className="p-4 mb-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-100 dark:border-red-900/30 rounded-2xl text-sm font-bold flex items-center gap-3 animate-shake">
+              <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" /></svg>
               {errorMsg}
             </div>
           )}
 
-          {/* Project Name */}
-          <div>
-            <label className="mb-1.5 block text-sm font-semibold text-[#0273B1]">Project Name *</label>
-            <input
-              type="text"
-              placeholder="Project Name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-blue-500 outline-none text-gray-700"
-            />
-          </div>
-
-          {/* Role */}
-          <div>
-            <label className="mb-1.5 block text-sm font-semibold text-[#0273B1]">Role *</label>
-            <input
-              type="text"
-              placeholder="e.g., Web developer"
-              value={formData.role}
-              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-blue-500 outline-none text-gray-700"
-            />
-          </div>
-
-          {/* Dates */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="relative">
-              <label className="mb-1.5 block text-sm font-semibold text-[#0273B1]">Start Date *</label>
-              <MonthYearPicker 
-                value={formData.startDate || ''} 
-                onChange={(v) => setFormData(prev => ({ ...prev, startDate: v }))} 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-xs font-black uppercase tracking-widest text-blue-600 dark:text-blue-400">Project Name *</label>
+              <input
+                type="text"
+                placeholder="Ex. E-commerce Platform"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all"
               />
             </div>
 
-            <div className="relative">
-              <label className="mb-1.5 block text-sm font-semibold text-[#0273B1]">End Date *</label>
-              <MonthYearPicker 
-                value={formData.endDate || ''} 
-                onChange={(v) => setFormData(prev => ({ ...prev, endDate: v }))} 
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-xs font-black uppercase tracking-widest text-blue-600 dark:text-blue-400">Role *</label>
+              <input
+                type="text"
+                placeholder="Ex. Lead Frontend Developer"
+                value={formData.role}
+                onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all"
               />
             </div>
-          </div>
 
-          {/* Description */}
-          <div>
-            <label className="mb-1.5 block text-sm font-semibold text-[#0273B1]">Description *</label>
-            <textarea
-              rows={4}
-              placeholder="Description about your project"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-blue-500 outline-none resize-none text-gray-700"
-            />
-          </div>
+            <div>
+              <label className="mb-2 block text-xs font-black uppercase tracking-widest text-blue-600 dark:text-blue-400">Start Date *</label>
+              <MonthYearPicker value={formData.startDate || ''} onChange={(v) => setFormData(prev => ({ ...prev, startDate: v }))} />
+            </div>
 
-          {/* Related Skills */}
-          <div>
-            <label className="mb-1.5 block text-sm font-semibold text-[#0273B1]">Related Skills *</label>
-            <div className="flex gap-2">
-              <select
-                value={selectedSkill}
-                onChange={(e) => setSelectedSkill(e.target.value)}
-                className="flex-1 rounded-xl border border-gray-200 px-4 py-2 focus:border-blue-500 focus:outline-none text-sm text-gray-500 bg-white"
-                disabled={isLoadingSkills}
-              >
-                <option value="">{isLoadingSkills ? "Loading skills..." : "Select skill"}</option>
-                {availableSkills.map(skill => (
-                  <option key={skill.id} value={skill.name}>{skill.name}</option>
+            <div>
+              <label className="mb-2 block text-xs font-black uppercase tracking-widest text-blue-600 dark:text-blue-400">End Date *</label>
+              <MonthYearPicker value={formData.endDate || ''} onChange={(v) => setFormData(prev => ({ ...prev, endDate: v }))} />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-xs font-black uppercase tracking-widest text-blue-600 dark:text-blue-400">Description *</label>
+              <textarea
+                rows={4}
+                placeholder="Describe what you built and your achievements..."
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                className="w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-blue-500 outline-none resize-none transition-all"
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="mb-2 block text-xs font-black uppercase tracking-widest text-blue-600 dark:text-blue-400">Related Skills *</label>
+              <div className="flex gap-3">
+                <select
+                  value={selectedSkill}
+                  onChange={(e) => setSelectedSkill(e.target.value)}
+                  className="flex-1 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-3 text-sm font-bold text-gray-700 dark:text-gray-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none"
+                  disabled={isLoadingSkills}
+                >
+                  <option value="">{isLoadingSkills ? "Loading..." : "Select skill"}</option>
+                  {availableSkills.map(skill => <option key={skill.id} value={skill.name}>{skill.name}</option>)}
+                </select>
+                <button
+                  type="button"
+                  onClick={handleAddSkill}
+                  className="rounded-xl bg-blue-50 dark:bg-blue-900/30 px-6 py-2 font-black text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white transition-all text-xs uppercase tracking-widest border border-blue-100 dark:border-blue-900/50"
+                >
+                  Add
+                </button>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {formData.relatedSkills.map((skill) => (
+                  <span key={skill} className="flex items-center gap-2 rounded-xl bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 px-4 py-2 text-[11px] font-black text-gray-700 dark:text-gray-300 transition-all hover:border-red-200 dark:hover:border-red-900/30">
+                    {skill}
+                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, relatedSkills: prev.relatedSkills.filter((s) => s !== skill) }))} className="text-gray-400 hover:text-red-500 text-lg leading-none">&times;</button>
+                  </span>
                 ))}
-              </select>
-              <button
-                type="button"
-                onClick={handleAddSkill}
-                className="rounded-xl bg-[#E3F5FF] px-6 py-2 font-bold text-[#0273B1] hover:bg-[#0273B1] hover:text-white transition-all text-sm"
-              >
-                ADD
-              </button>
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {formData.relatedSkills.map((skill) => (
-                <span key={skill} className="flex items-center gap-2 rounded-lg bg-blue-100 px-3 py-1.5 text-[12px] font-bold text-[#0273B1]">
-                  {skill}
-                  <button type="button" onClick={() => handleRemoveSkill(skill)} className="hover:text-red-500 font-bold">×</button>
-                </span>
-              ))}
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 border-t p-6 bg-gray-50 rounded-b-2xl">
-          <button type="button" onClick={onClose} className="rounded-xl px-6 py-2.5 font-bold text-gray-400 border border-gray-200 bg-white hover:bg-gray-50">
+        {/* Footer */}
+        <div className="flex justify-end gap-4 border-t border-gray-100 dark:border-gray-800 p-6 bg-gray-50/50 dark:bg-gray-900/50">
+          <button type="button" onClick={onClose} className="rounded-xl px-6 py-3 font-bold text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all">
             Cancel
           </button>
           <button
             type="button"
             onClick={handleSubmit}
-            className="rounded-xl bg-[#0273B1] px-8 py-2.5 font-bold text-white shadow-lg hover:bg-[#025a8f] transition-all"
+            className="rounded-xl bg-blue-600 px-10 py-3 font-black text-white shadow-xl shadow-blue-500/20 hover:bg-blue-700 active:scale-95 transition-all text-sm uppercase tracking-widest"
           >
-            {editingProject ? 'Update Project' : 'Add Project'}
+            {editingProject ? 'Update' : 'Save Project'}
           </button>
         </div>
       </div>

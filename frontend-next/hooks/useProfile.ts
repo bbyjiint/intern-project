@@ -50,8 +50,8 @@ export interface Education {
   startDate?: string
   endDate?: string
   isCurrent?: boolean
-  isVerified?: boolean      
-  transcriptUrl?: string | null  
+  isVerified?: boolean
+  transcriptUrl?: string | null
 }
 
 export interface Experience {
@@ -74,11 +74,11 @@ export interface Project {
   startDate?: string
   endDate?: string
   skills?: string[]
-  relatedSkills?: string[]   // ✅ เพิ่ม
+  relatedSkills?: string[]
   githubUrl?: string
   projectUrl?: string
   fileUrl?: string
-  fileName?: string          // ✅ เพิ่ม
+  fileName?: string
 }
 
 export interface Certificate {
@@ -141,10 +141,10 @@ export function useProfile() {
       // ---------- Education ----------
       const education: Education[] = (profile.education || []).map((edu: any, i: number) => ({
         id: edu.id || `edu-${i}`,
-        university: edu.universityName || edu.university,       
-        universityName: edu.universityName || edu.university,   
-        degree: edu.degreeName || edu.degree,                   
-        degreeName: edu.degreeName || edu.degree,              
+        university: edu.universityName || edu.university,
+        universityName: edu.universityName || edu.university,
+        degree: edu.degreeName || edu.degree,
+        degreeName: edu.degreeName || edu.degree,
         fieldOfStudy: edu.fieldOfStudy,
         educationLevel: edu.educationLevel || 'BACHELOR',
         gpa: edu.gpa ? parseFloat(edu.gpa) : undefined,
@@ -154,8 +154,8 @@ export function useProfile() {
         startDate: edu.startDate,
         endDate: edu.endDate,
         isCurrent: edu.isCurrent ?? !edu.endDate,
-        isVerified: edu.isVerified ?? false,      
-        transcriptUrl: edu.transcriptUrl ?? null, 
+        isVerified: edu.isVerified ?? false,
+        transcriptUrl: edu.transcriptUrl ?? null,
       }))
 
       // ---------- Experience ----------
@@ -231,7 +231,7 @@ export function useProfile() {
           profile.internshipPeriod ||
           (profile.availableStartDate && profile.availableEndDate
             ? `${profile.availableStartDate} - ${profile.availableEndDate}`
-            : ""),
+            : undefined),
 
         desiredPosition: profile.desiredPosition,
         introductionVideo: profile.introductionVideo,
@@ -250,7 +250,7 @@ export function useProfile() {
           githubUrl: p.githubUrl,
           projectUrl: p.projectUrl,
           fileUrl: p.fileUrl,
-          fileName: p.fileName,       // ✅ map มาด้วย
+          fileName: p.fileName,
         })),
         certificates,
 
@@ -310,23 +310,23 @@ export function useProfile() {
     fetchProfile()
   }, [])
 
+  // คำนวณ Profile Completion จากทุกช่องใน Profile Information modal
   const calculateCompletion = (profile: ProfileData | null): number => {
-
     if (!profile) return 0
 
     const checks = [
-
-      !!profile.profileImage,
-      !!profile.bio,
-      !!profile.resume,
-      !!profile.introductionVideo,
-      profile.education && profile.education.length > 0,
-      profile.experience && profile.experience.length > 0,
-      profile.projects && profile.projects.length > 0,
-      profile.skills && profile.skills.length > 0,
-      !!profile.internshipDetails?.desiredPosition,
-      profile.certificates && profile.certificates.length > 0
-
+      !!profile.profileImage,                                          // Profile Photo
+      !!profile.fullName?.split(' ')[0]?.trim(),                       // First Name
+      !!profile.fullName?.split(' ').slice(1).join(' ')?.trim(),       // Last Name
+      !!profile.gender,                                                // Gender
+      !!profile.dateOfBirth,                                           // Date of Birth
+      !!profile.nationality,                                           // Nationality
+      !!profile.bio,                                                   // About You
+      !!profile.contactEmail,                                          // Email
+      !!profile.phoneNumber,                                           // Phone Number
+      profile.preferredPositions && profile.preferredPositions.length > 0,  // Position(s) of Interest
+      profile.preferredLocations && profile.preferredLocations.length > 0,  // Preferred Location(s)
+      !!profile.internshipPeriod,                                      // Internship Period
     ]
 
     const completed = checks.filter(Boolean).length
@@ -336,12 +336,10 @@ export function useProfile() {
   const completionPercentage = calculateCompletion(profileData)
 
   return {
-
     profileData,
     isLoading,
     error,
     completionPercentage,
     refetch: fetchProfile
-
   }
 }

@@ -6,6 +6,7 @@ import InternSidebar from "@/components/InternSidebar";
 import SkillsModal, { SkillData } from "@/components/profile/SkillsModal";
 import { apiFetch } from "@/lib/api";
 import SkillTest from "@/components/skills/SkillTest";
+import { Search, Plus, Filter, Trash2, Edit3, AlertCircle } from "lucide-react";
 
 // --- Types ---
 type ProficiencyLevel = "Beginner" | "Intermediate" | "Advanced";
@@ -17,93 +18,13 @@ interface Skill {
   status: VerificationStatus;
   level: ProficiencyLevel;
   category: string;
-  attemptsUsed: number;             
+  attemptsUsed: number;
   nextAvailableDate: string | null;
+  hasCertEvidence?: boolean;
+  hasProjectEvidence?: boolean;
 }
 
-// --- Delete Confirmation Modal Component ---
-interface DeleteModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-  skillName: string;
-  isDeleting: boolean;
-}
-
-function DeleteConfirmationModal({
-  isOpen,
-  onClose,
-  onConfirm,
-  skillName,
-  isDeleting,
-}: DeleteModalProps) {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      {/* Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={() => !isDeleting && onClose()}
-      ></div>
-
-      {/* Modal Content */}
-      <div className="relative bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 text-center animate-in fade-in zoom-in duration-200">
-        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <svg
-            className="w-8 h-8 text-red-600"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-            />
-          </svg>
-        </div>
-
-        <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Skill?</h3>
-        <p className="text-gray-500 mb-6">
-          Are you sure you want to delete{" "}
-          <span className="font-semibold text-gray-700">"{skillName}"</span>?
-          This action cannot be undone.
-        </p>
-
-        <div className="flex gap-3">
-          <button
-            disabled={isDeleting}
-            onClick={onClose}
-            className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-colors disabled:opacity-50"
-          >
-            Cancel
-          </button>
-          <button
-            disabled={isDeleting}
-            onClick={onConfirm}
-            className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center"
-          >
-            {isDeleting ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-            ) : (
-              "Delete"
-            )}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// --- Helpers ---
-const categoryToDB: Record<string, string> = {
-  "Technical Skill": "TECHNICAL",
-  "Business Skills": "BUSINESS",
-};
-
-// --- Main SkillsPage Component ---
+// --- Main ---
 export default function SkillsPage() {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -115,24 +36,16 @@ export default function SkillsPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingSkill, setEditingSkill] = useState<SkillData | null>(null);
-  const [testingSkill, setTestingSkill] = useState<{
-    id: string;
-    name: string;
-  } | null>(null);
+  const [testingSkill, setTestingSkill] = useState<{ id: string; name: string } | null>(null);
 
-  // State สำหรับ Delete Modal
   const [isDeletingLoading, setIsDeletingLoading] = useState(false);
-  const [deleteModal, setDeleteModal] = useState<{
-    isOpen: boolean;
-    id: string;
-    name: string;
-  }>({
-    isOpen: false,
-    id: "",
-    name: "",
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; id: string; name: string }>({ 
+    isOpen: false, 
+    id: "", 
+    name: "" 
   });
 
-  // Lock scroll เมื่อเปิด Modal
+  // --- Lock Scroll ---
   useEffect(() => {
     const shouldHideScroll = isModalOpen || deleteModal.isOpen;
     document.body.style.overflow = shouldHideScroll ? "hidden" : "auto";
@@ -143,90 +56,48 @@ export default function SkillsPage() {
       setIsLoading(true);
       setLoadError(null);
 
-      const response = await apiFetch<{ skills: any[] }>("/api/candidates/skills");
-      console.log(response)
+      const [skillsRes, profileRes] = await Promise.all([
+        apiFetch<{ skills: any[] }>("/api/candidates/skills"),
+        apiFetch<{ profile: any }>("/api/candidates/profile").catch(() => ({ profile: null })),
+      ]);
 
-      const mappedSkills = (response.skills || []).map((skill): Skill => {
+      const profile = (profileRes as any).profile;
+      const certificates = profile?.files?.certificates || profile?.certificates || [];
+      const projects = profile?.projects || [];
+
+      const certSkillNames = new Set<string>(certificates.flatMap((c: any) => c.relatedSkills || c.tags || []));
+      const projectSkillNames = new Set<string>(projects.flatMap((p: any) => p.relatedSkills || p.skills || []));
+
+      const mappedSkills = (skillsRes.skills || []).map((skill: any): Skill => {
         let levelStr: ProficiencyLevel = "Beginner";
-        if (skill.level === "intermediate" || skill.level === "Intermediate" || skill.rating === 2) {
-          levelStr = "Intermediate";
-        } else if (skill.level === "advanced" || skill.level === "Advanced" || skill.rating === 3) {
-          levelStr = "Advanced";
-        }
+        if (skill.level?.toLowerCase() === "intermediate" || skill.rating === 2) levelStr = "Intermediate";
+        else if (skill.level?.toLowerCase() === "advanced" || skill.rating === 3) levelStr = "Advanced";
 
-        const categoryMap: Record<string, string> = {
-          TECHNICAL: "Technical Skill",
-          BUSINESS: "Business Skills",
-        };
-        const categoryLabel = categoryMap[skill.category?.toUpperCase()] || skill.category || "Technical Skill";
-
+        const categoryMap: Record<string, string> = { TECHNICAL: "Technical Skill", BUSINESS: "Business Skills" };
         return {
           id: skill.id,
           name: skill.name || skill.skill?.name || "Unknown Skill",
-          category: categoryLabel,
+          category: categoryMap[skill.category?.toUpperCase()] || skill.category || "Technical Skill",
           level: levelStr,
-          status: skill.status ? skill.status.toUpperCase() : "NOT_VERIFIED",
+          status: skill.status?.toUpperCase() === "VERIFIED" ? "VERIFIED" : "NOT_VERIFIED",
           attemptsUsed: skill.attemptsUsed || 0,
           nextAvailableDate: skill.nextAvailableDate || null,
+          hasCertEvidence: certSkillNames.has(skill.name),
+          hasProjectEvidence: projectSkillNames.has(skill.name),
         };
       });
-      console.log(mappedSkills)
 
       setSkills(mappedSkills);
     } catch (error) {
-      console.error("Failed to load candidate skills:", error);
       setLoadError(error instanceof Error ? error.message : "Failed to load skills");
-      setSkills([]);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
+  useEffect(() => { void loadSkills(); }, [loadSkills]);
 
-  useEffect(() => {
-    void loadSkills();
-  }, [loadSkills]);
-
-  const handleAddClick = () => {
-    setEditingSkill(null);
-    setIsModalOpen(true);
-  };
-
-  const handleEditClick = (skill: Skill) => {
-    setEditingSkill({
-      id: skill.id,
-      name: skill.name,
-      category: skill.category,
-      level: skill.level,
-    });
-    setIsModalOpen(true);
-  };
-
-  const handleSaveSkill = async (savedSkill: SkillData) => {
-    try {
-      const payload = {
-        ...savedSkill,
-        category: categoryToDB[savedSkill.category] || savedSkill.category,
-      };
-
-      const method = editingSkill?.id ? "PUT" : "POST";
-      const url = editingSkill?.id
-        ? `/api/candidates/skills/${editingSkill.id}`
-        : `/api/candidates/skills`;
-
-      await apiFetch(url, {
-        method,
-        body: JSON.stringify(payload),
-      });
-
-      await loadSkills();
-      setIsModalOpen(false);
-    } catch (error) {
-      console.error("Failed to save skill:", error);
-      alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
-    }
-  };
-
+  // --- Handlers ---
   const handleConfirmDelete = async () => {
     try {
       setIsDeletingLoading(true);
@@ -234,7 +105,6 @@ export default function SkillsPage() {
       await loadSkills();
       setDeleteModal({ isOpen: false, id: "", name: "" });
     } catch (error) {
-      console.error("Failed to delete skill:", error);
       alert("Failed to delete skill.");
     } finally {
       setIsDeletingLoading(false);
@@ -242,351 +112,256 @@ export default function SkillsPage() {
   };
 
   const filteredSkills = skills.filter((skill) => {
-    const matchSearch = skill.name
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    const matchTab = filterTab === "All" || skill.status === filterTab;
-    const matchCategory =
-      categoryFilter === "Select Category" || skill.category === categoryFilter;
+    const matchSearch = skill.name.toLowerCase().includes(searchQuery.toLowerCase());
+    let matchTab = true;
+    if (filterTab === "Not Verified") matchTab = skill.status === "NOT_VERIFIED" && !skill.hasCertEvidence && !skill.hasProjectEvidence;
+    else if (filterTab === "Verified") matchTab = skill.status === "VERIFIED";
+    else if (filterTab === "Certificate") matchTab = !!skill.hasCertEvidence;
+    else if (filterTab === "Project") matchTab = !!skill.hasProjectEvidence;
+
+    const matchCategory = categoryFilter === "Select Category" || skill.category === categoryFilter;
     return matchSearch && matchTab && matchCategory;
   });
 
   const getLevelStyles = (level: ProficiencyLevel) => {
     switch (level) {
-      case "Beginner":
-        return { color: "#68B383", width: "33.33%" };
-      case "Intermediate":
-        return { color: "#3B82F6", width: "66.66%" };
-      case "Advanced":
-        return { color: "#8B5CF6", width: "100%" };
-      default:
-        return { color: "#E5E7EB", width: "0%" };
+      case "Beginner": return { color: "#10B981", width: "33.33%", bg: "bg-emerald-500" };
+      case "Intermediate": return { color: "#3B82F6", width: "66.66%", bg: "bg-blue-500" };
+      case "Advanced": return { color: "#8B5CF6", width: "100%", bg: "bg-violet-500" };
+      default: return { color: "#94A3B8", width: "0%", bg: "bg-slate-400" };
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#E6EBF4] flex flex-col">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col transition-colors duration-300">
       <InternNavbar />
       <div className="flex flex-1">
         <InternSidebar />
-
-        {/* Main Content Area */}
-        <div className="layout-container layout-page flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto p-6 lg:p-10">
+          
           {isLoading ? (
             <div className="flex items-center justify-center min-h-[60vh]">
-              <div className="w-12 h-12 border-4 border-gray-200 border-t-[#0273B1] rounded-full animate-spin"></div>
+              <div className="w-12 h-12 border-4 border-slate-200 dark:border-slate-800 border-t-blue-600 rounded-full animate-spin" />
             </div>
-          ) : loadError ? (
-            <div className="m-8 rounded-xl border border-red-200 bg-red-50 px-6 py-4 text-sm text-red-700">
-              {loadError}
-            </div>
-          ) : testingSkill ? ( 
-            <div className="w-full">
-              <SkillTest
-                skillId={testingSkill.id}    
-                skillName={testingSkill.name}  
-                onBack={() => {
-                  setTestingSkill(null);
-                  loadSkills(); // โหลดข้อมูลใหม่หลังจากสอบเสร็จ
-                }} 
-              />
-            </div>
+          ) : testingSkill ? (
+            <SkillTest skillId={testingSkill.id} skillName={testingSkill.name} onBack={() => { setTestingSkill(null); loadSkills(); }} />
           ) : (
-            /* ถ้า testingSkill เป็น null ให้แสดงหน้าปกติตามเดิม */
             <>
               {/* Header */}
-              <div className="flex flex-col lg:flex-row lg:items-start justify-between mb-8 gap-4">
+              <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-10 gap-6">
                 <div>
-                  <h1 className="text-[36px] font-extrabold text-black mb-1 tracking-tight">
-                    Skills
-                  </h1>
-                  <p className="text-gray-500 text-sm">
-                    A collection of skills you have created and added to your
-                    profile.
-                  </p>
+                  <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">Skills</h1>
+                  <p className="text-base font-bold text-slate-500 dark:text-slate-400 mt-2">Manage and verify your professional expertise.</p>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="relative w-full lg:w-80">
+                <div className="flex flex-col sm:flex-row items-center gap-3">
+                  <div className="relative w-full sm:w-72">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
                     <input
                       type="text"
-                      placeholder="Search"
+                      placeholder="Search skills..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm"
+                      className="w-full pl-11 pr-4 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-500/10 outline-none text-slate-900 dark:text-white transition-all shadow-sm"
                     />
                   </div>
-                  <button
-                    className="px-6 py-2.5 bg-white border border-[#3B82F6] text-[#3B82F6] text-sm font-bold rounded-full hover:bg-blue-50 transition-colors shadow-sm whitespace-nowrap"
-                    onClick={handleAddClick}
+                  <button 
+                    onClick={() => { setEditingSkill(null); setIsModalOpen(true); }}
+                    className="w-full sm:w-auto px-7 py-3 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 transition-all active:scale-95"
                   >
-                    + Add Skill
+                    <Plus size={20} strokeWidth={3} />
+                    Add Skill
                   </button>
                 </div>
               </div>
 
-              {/* 💡 แถบ Filter */}
+              {/* Filters */}
               <div className="flex flex-col xl:flex-row xl:items-center justify-between mb-8 gap-4">
-                {/* Filter Tabs */}
-                <div className="flex flex-wrap gap-3">
-                  {[
-                    "All",
-                    "Not Verified",
-                    "Verified",
-                    "Certificate",
-                    "Project",
-                  ].map((tab) => (
+                <div className="flex flex-wrap p-1.5 bg-slate-200/50 dark:bg-slate-900/50 rounded-2xl w-fit border border-slate-200 dark:border-slate-800">
+                  {["All", "Not Verified", "Verified", "Certificate", "Project"].map((tab) => (
                     <button
                       key={tab}
                       onClick={() => setFilterTab(tab)}
-                      className={`px-6 py-2.5 text-sm font-bold rounded-lg border transition-colors ${
+                      className={`px-5 py-2 text-xs font-black uppercase tracking-wider rounded-xl transition-all ${
                         filterTab === tab
-                          ? "border-[#3B82F6] text-[#3B82F6] bg-white shadow-sm"
-                          : "border-gray-200 text-black bg-white hover:bg-gray-50"
+                          ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-md"
+                          : "text-slate-500 dark:text-slate-500 hover:text-slate-900 dark:hover:text-slate-200"
                       }`}
                     >
                       {tab}
                     </button>
                   ))}
                 </div>
-
-                {/* Right Filters */}
+                
                 <div className="flex items-center gap-3">
                   <div className="relative">
                     <select
                       value={categoryFilter}
                       onChange={(e) => setCategoryFilter(e.target.value)}
-                      className="appearance-none pl-4 pr-10 py-2.5 bg-white border border-gray-200 rounded-lg text-sm text-gray-500 focus:outline-none w-48 shadow-sm cursor-pointer"
+                      className="appearance-none pl-4 pr-10 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-bold text-slate-600 dark:text-slate-300 focus:outline-none w-48 shadow-sm cursor-pointer"
                     >
-                      <option value="Select Category">Select Category</option>
+                      <option value="Select Category">All Categories</option>
                       <option value="Technical Skill">Technical Skill</option>
                       <option value="Business Skills">Business Skills</option>
                     </select>
-                    <svg
-                      className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
+                    <Filter className="w-4 h-4 text-slate-400 absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
                   <button
-                    onClick={() => {
-                      setFilterTab("All");
-                      setCategoryFilter("Select Category");
-                      setSearchQuery("");
-                    }}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 text-black font-bold text-sm rounded-lg hover:bg-gray-50 shadow-sm"
+                    onClick={() => { setFilterTab("All"); setCategoryFilter("Select Category"); setSearchQuery(""); }}
+                    className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 rounded-2xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-sm"
+                    title="Clear Filters"
                   >
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
-                      />
-                    </svg>
-                    Clear Filter
+                    <AlertCircle size={20} />
                   </button>
                 </div>
               </div>
 
               {/* Grid */}
-              <h2 className="text-lg font-extrabold text-gray-900 mb-4">
-                {filteredSkills.length} Total Skills
+              <h2 className="text-[11px] font-black text-slate-400 dark:text-slate-600 uppercase tracking-[0.2em] mb-6">
+                Showing {filteredSkills.length} Total Skills
               </h2>
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {filteredSkills.map((skill) => {
                   const style = getLevelStyles(skill.level);
                   return (
-                    <div
-                      key={skill.id}
-                      className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col"
-                    >
-                      {/* Top: Name & Status */}
-                      <div className="flex justify-between items-center mb-5">
-                        <h3 className="text-[19px] font-bold text-gray-900">
-                          {skill.name}
-                        </h3>
-                        <div className="flex items-center gap-1.5 text-sm">
-                          {skill.status?.toUpperCase() === "VERIFIED" ? (
-                            <>
-                              <svg
-                                className="w-4 h-4 text-[#8BC34A]"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <circle
-                                  cx="12"
-                                  cy="12"
-                                  r="10"
-                                  strokeWidth="2"
-                                ></circle>
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="2"
-                                  d="M9 12l2 2 4-4"
-                                ></path>
-                              </svg>
-                              <span className="text-gray-500 font-medium">
-                                Verified
-                              </span>
-                            </>
-                          ) : (
-                            <>
-                              <svg
-                                className="w-4 h-4 text-[#FF5252]"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                              >
-                                <circle
-                                  cx="12"
-                                  cy="12"
-                                  r="10"
-                                  strokeWidth="2"
-                                ></circle>
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  strokeWidth="2"
-                                  d="M15 9l-6 6M9 9l6 6"
-                                ></path>
-                              </svg>
-                              <span className="text-gray-500 font-medium">
-                                Not Verified
-                              </span>
-                            </>
-                          )}
+                    <div key={skill.id} className="group bg-white dark:bg-slate-900 rounded-[2rem] shadow-sm border border-slate-200 dark:border-slate-800 p-8 hover:shadow-2xl hover:shadow-blue-500/5 transition-all duration-500">
+                      <div className="flex justify-between items-start mb-6">
+                        <div>
+                          <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                            {skill.name}
+                          </h3>
+                          <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-1 block">
+                            {skill.category}
+                          </span>
                         </div>
+                        <EvidenceBadge skill={skill} />
                       </div>
 
                       {/* Progress Bar */}
-                      <div className="relative w-full h-[10px] bg-[#E2E8F0] rounded-full mb-3 overflow-hidden">
-                        <div
-                          className="absolute top-0 left-0 h-full transition-all duration-500"
-                          style={{
-                            width: style.width,
-                            backgroundColor: style.color,
-                          }}
-                        />
-                        <div className="absolute top-0 left-[33.33%] w-0.5 h-full bg-white z-10" />
-                        <div className="absolute top-0 left-[66.66%] w-0.5 h-full bg-white z-10" />
+                      <div className="mb-2 flex justify-between items-end">
+                        <span className="text-[10px] font-black uppercase tracking-widest" style={{ color: style.color }}>
+                          {skill.level} Proficiency
+                        </span>
+                      </div>
+                      <div className="relative w-full h-3 bg-slate-100 dark:bg-slate-800 rounded-full mb-8 overflow-hidden">
+                        <div className={`absolute top-0 left-0 h-full transition-all duration-700 ease-out ${style.bg}`} style={{ width: style.width }} />
+                        <div className="absolute top-0 left-[33.33%] w-0.5 h-full bg-white dark:bg-slate-900 z-10 opacity-30" />
+                        <div className="absolute top-0 left-[66.66%] w-0.5 h-full bg-white dark:bg-slate-900 z-10 opacity-30" />
                       </div>
 
-                      {/* Level Badge */}
-                      <div className="mb-6">
-                        <span
-                          className="inline-block px-3 py-1 rounded text-[11px] font-bold text-white shadow-sm"
-                          style={{ backgroundColor: style.color }}
+                      {/* Actions */}
+                      <div className="flex items-center justify-between border-t border-slate-50 dark:border-slate-800/50 pt-6 mt-auto">
+                         <div className="flex gap-2">
+                           <button 
+                             className="p-3 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-2xl transition-all"
+                             onClick={() => setDeleteModal({ isOpen: true, name: skill.name, id: skill.id })}
+                           >
+                             <Trash2 size={20} />
+                           </button>
+                           <button 
+                             onClick={() => {
+                               setEditingSkill({ id: skill.id, name: skill.name, category: skill.category, level: skill.level });
+                               setIsModalOpen(true);
+                             }}
+                             className="p-3 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-2xl transition-all"
+                           >
+                             <Edit3 size={20} />
+                           </button>
+                         </div>
+
+                        <button
+                          disabled={skill.attemptsUsed >= 3}
+                          onClick={() => setTestingSkill({ id: skill.id, name: skill.name })}
+                          className={`px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-2xl transition-all border shadow-sm ${
+                            skill.attemptsUsed >= 3 
+                              ? "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 cursor-not-allowed" 
+                              : "border-blue-600 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-400 dark:hover:text-slate-950"
+                          }`}
                         >
-                          {skill.level}
-                        </span>
-                      </div>
-
-                      {/* Bottom: Category & Action Buttons */}
-                      <div className="flex items-center justify-between mt-auto pt-2">
-                        <span className="text-sm text-gray-500 font-medium">
-                          {skill.category}
-                        </span>
-
-                        <div className="flex gap-3">
-                          {/* Delete Button */}
-                          <button
-                            className="text-gray-400 hover:text-red-500 transition-colors mr-1"
-                            onClick={() =>
-                              setDeleteModal({
-                                isOpen: true,
-                                name: skill.name,
-                                id: skill.id,
-                              })
-                            }
-                            title="Delete Skill"
-                          >
-                            <svg
-                              className="w-5 h-5"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                              />
-                            </svg>
-                          </button>
-
-                          {/* Skill Test Button */}
-                          <button
-                            disabled={skill.attemptsUsed >= 3}
-                            onClick={() =>
-                              setTestingSkill({
-                                id: skill.id,
-                                name: skill.name,
-                              })
-                            } 
-                            // เพิ่ม title ตรงนี้: ถ้าครบ 3 ครั้ง ให้โชว์วันปลดล็อก
-                            title={
-                              skill.attemptsUsed >= 3 && skill.nextAvailableDate
-                                ? `You can test again on: ${new Date(skill.nextAvailableDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`
-                                : `Attempts used: ${skill.attemptsUsed || 0}/3`
-                            }
-                            className={`px-5 py-1.5 border text-sm font-bold rounded-lg transition-colors shadow-sm ${
-                              skill.attemptsUsed >= 3
-                                ? "bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed" // สีเทากดไม่ได้
-                                : "border-[#3B82F6] text-[#3B82F6] hover:bg-blue-50" // สีฟ้าปกติ
-                            }`}
-                          >
-                            Skill Test {skill.attemptsUsed || 0}/3
-                          </button>
-
-                          {/* Edit Button */}
-                          <button
-                            onClick={() => handleEditClick(skill)}
-                            className="px-5 py-1.5 border border-[#3B82F6] text-[#3B82F6] text-sm font-bold rounded-lg hover:bg-blue-50 transition-colors shadow-sm"
-                          >
-                            Edit
-                          </button>
-                        </div>
+                          Skill Test {skill.attemptsUsed || 0}/3
+                        </button>
                       </div>
                     </div>
                   );
                 })}
               </div>
+
+              {/* Empty state */}
+              {filteredSkills.length === 0 && (
+                <div className="text-center py-24">
+                  <div className="w-20 h-20 bg-slate-100 dark:bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Search className="text-slate-300 dark:text-slate-700" size={32} />
+                  </div>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white">No skills found</h3>
+                  <p className="text-slate-500 dark:text-slate-400">Try adjusting your filters or search terms.</p>
+                </div>
+              )}
             </>
           )}
-        </div>
+        </main>
       </div>
 
       {/* Modals */}
-      <SkillsModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleSaveSkill}
-        editingSkill={editingSkill}
+      <SkillsModal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        onSave={async (s) => {
+          const payload = { ...s, category: s.category === "Technical Skill" ? "TECHNICAL" : "BUSINESS" };
+          const method = editingSkill?.id ? "PUT" : "POST";
+          const url = editingSkill?.id ? `/api/candidates/skills/${editingSkill.id}` : `/api/candidates/skills`;
+          await apiFetch(url, { method, body: JSON.stringify(payload) });
+          await loadSkills();
+          setIsModalOpen(false);
+        }} 
+        editingSkill={editingSkill} 
       />
 
-      <DeleteConfirmationModal
-        isOpen={deleteModal.isOpen}
-        onClose={() => setDeleteModal((prev) => ({ ...prev, isOpen: false }))}
-        onConfirm={handleConfirmDelete}
-        skillName={deleteModal.name}
-        isDeleting={isDeletingLoading}
-      />
+      {/* Delete Confirmation Modal */}
+      {deleteModal.isOpen && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+          <div className="relative bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl max-w-sm w-full p-8 text-center border border-slate-100 dark:border-slate-800">
+            <div className="w-20 h-20 bg-rose-50 dark:bg-rose-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Trash2 size={32} className="text-rose-600 dark:text-rose-400" />
+            </div>
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-3 tracking-tight">Delete Skill?</h3>
+            <p className="text-slate-500 dark:text-slate-400 font-medium mb-8">
+              Are you sure you want to delete <b className="text-slate-900 dark:text-slate-200">"{deleteModal.name}"</b>?
+            </p>
+            <div className="flex gap-4">
+              <button onClick={() => setDeleteModal(p => ({ ...p, isOpen: false }))} className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white rounded-2xl font-black text-xs uppercase tracking-widest">
+                Cancel
+              </button>
+              <button onClick={handleConfirmDelete} className="flex-1 py-4 bg-rose-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-rose-600/20 active:scale-95 transition-all">
+                {isDeletingLoading ? "..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+// --- Sub-components ---
+function EvidenceBadge({ skill }: { skill: Skill }) {
+  let label = "Not Verified";
+  let colorClass = "bg-slate-50 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700";
+  let dotClass = "bg-slate-300 dark:bg-slate-600";
+
+  if (skill.status === "VERIFIED") {
+    label = "Verified";
+    colorClass = "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20";
+    dotClass = "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]";
+  } else if (skill.hasCertEvidence || skill.hasProjectEvidence) {
+    label = "Has Evidence";
+    colorClass = "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-500/20";
+    dotClass = "bg-amber-500";
+  }
+
+  return (
+    <span className={`flex items-center gap-2 px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full border shadow-sm ${colorClass}`}>
+      <div className={`w-2 h-2 rounded-full ${dotClass} ${label === "Not Verified" ? "" : label === "Verified" ? "" : "animate-pulse"}`} />
+      {label}
+    </span>
   );
 }
