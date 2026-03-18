@@ -636,6 +636,189 @@ async function invalidateJobMatchCache(candidateId: string) {
 //   return res.status(201).json({ project: ... });
 // ============================================================
 
+// GET /api/candidates/applicant-match-scores?jobPostId=xxx&candidateIds=id1,id2,id3
+candidatesRouter.get(
+  "/applicant-match-scores",
+  requireAuth,
+  requireRole("COMPANY"),
+  async (req, res) => {
+    const jobPostId = typeof req.query.jobPostId === "string" ? req.query.jobPostId : "";
+    const rawIds = typeof req.query.candidateIds === "string" ? req.query.candidateIds : "";
+    const candidateIds = rawIds.split(",").filter(Boolean);
+    const forceRefresh = req.query.refresh === "true";
+
+    if (!jobPostId || candidateIds.length === 0) {
+      return res.status(400).json({ error: "jobPostId and candidateIds are required" });
+    }
+
+    try {
+      // ✅ STEP 1: ดึงจาก JobMatchCache ของ intern ก่อน (ตัวเลขเดียวกัน 100%)
+      const internCaches = await (prisma as any).jobMatchCache.findMany({
+        where: { candidateId: { in: candidateIds } },
+      });
+
+      const scores: Record<string, number> = {};
+      const missingIds: string[] = [];
+
+      for (const candidateId of candidateIds) {
+        const internCache = internCaches.find((c: any) => c.candidateId === candidateId);
+        if (internCache && !forceRefresh) {
+          const jobScore = (internCache.scores as Record<string, number>)[jobPostId];
+          if (jobScore !== undefined) {
+            scores[candidateId] = jobScore; // ✅ ใช้ตัวเลขเดียวกับ intern
+          } else {
+            missingIds.push(candidateId); // intern ยังไม่เคย calculate job นี้
+          }
+        } else {
+          missingIds.push(candidateId); // ไม่มี intern cache หรือ force refresh
+        }
+      }
+
+      // ✅ STEP 2: ถ้าทุกคนมีครบแล้ว return เลย
+      if (missingIds.length === 0) {
+        await (prisma as any).applicantMatchCache.upsert({
+          where: { jobPostId },
+          update: { scores },
+          create: { jobPostId, scores },
+        });
+        console.log(`[ApplicantMatch] All scores from intern cache for jobPost ${jobPostId}`);
+        return res.json({ scores, cached: true });
+      }
+
+      // ✅ STEP 3: มีบางคนที่ไม่มีใน intern cache → เรียก Gemini เฉพาะคนที่ขาด
+      console.log(`[ApplicantMatch] Calling Gemini for ${missingIds.length} missing candidates...`);
+
+      const jobPost = await prisma.jobPost.findUnique({
+        where: { id: jobPostId },
+        select: {
+          jobTitle: true,
+          positions: true,
+          workplaceType: true,
+          jobDescription: true,
+          jobSpecification: true,
+          gpa: true,
+          locationProvince: true,
+          LocationProvince: { select: { name: true } },
+        },
+      });
+
+      if (!jobPost) return res.status(404).json({ error: "Job post not found" });
+
+      const jobInfo = {
+        title: jobPost.jobTitle,
+        positions: jobPost.positions,
+        workplaceType: jobPost.workplaceType,
+        province: (jobPost as any).LocationProvince?.name ?? jobPost.locationProvince ?? "",
+        description: jobPost.jobDescription ?? "",
+        specification: jobPost.jobSpecification ?? "",
+        minimumGpa: jobPost.gpa ?? null,
+      };
+
+      // ดึงเฉพาะ candidate ที่ขาด
+      const missingCandidates = await prisma.candidateProfile.findMany({
+        where: { id: { in: missingIds } },
+        include: {
+          UserSkill: { include: { Skills: { select: { name: true, category: true } } } },
+          CandidateUniversity: {
+            orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
+            take: 1,
+          },
+          CandidatePreferredProvince: {
+            include: { Province: { select: { name: true } } },
+          },
+          UserProjects: {
+            select: { name: true, role: true, relatedSkills: true, description: true },
+          },
+          WorkHistory: {
+            select: { position: true, companyName: true, description: true },
+            take: 3,
+          },
+        },
+      });
+
+      const missingProfiles = missingCandidates.map((c) => ({
+        id: c.id,
+        skills: c.UserSkill.map((us) => ({ name: us.Skills.name, category: us.Skills.category })),
+        preferredPositions: c.preferredPositions,
+        preferredProvinces: c.CandidatePreferredProvince.map((p) => p.Province.name),
+        gpa: c.CandidateUniversity[0]?.gpa ?? null,
+        bio: c.bio ?? "",
+        projects: c.UserProjects.map((p) => ({
+          name: p.name, role: p.role, skills: p.relatedSkills, description: p.description,
+        })),
+        workHistory: c.WorkHistory.map((w) => ({
+          position: w.position, company: w.companyName, description: w.description,
+        })),
+      }));
+
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+      const model = genAI.getGenerativeModel({
+        model: "gemini-2.5-flash",
+        generationConfig: { responseMimeType: "application/json" },
+      });
+
+      const prompt = `
+You are a job matching expert for internship positions in Thailand.
+
+Analyze how well each candidate matches this job posting and return a match score (0-100) for each candidate.
+
+JOB POSTING:
+${JSON.stringify(jobInfo, null, 2)}
+
+CANDIDATES:
+${JSON.stringify(missingProfiles, null, 2)}
+
+SCORING CRITERIA:
+- Skills match with job requirements (40%)
+- Location preference match (20%): If workplaceType is "REMOTE", give full location score regardless of candidate preference.
+- Position/role interest match (20%)
+- GPA requirement (10%): minimumGpa is minimum required. candidate GPA >= minimumGpa = full score. null = no requirement.
+- Overall profile fit (10%)
+
+Return ONLY a JSON object with candidate IDs as keys and scores (0-100) as values.
+Example: { "uuid-1": 85, "uuid-2": 62 }
+`;
+
+      let geminiScores: Record<string, number> = {};
+
+      try {
+        const result = await model.generateContent(prompt);
+        const rawText = result.response.text().trim().replace(/```json\n?|```\n?/g, "");
+        geminiScores = JSON.parse(rawText);
+      } catch (aiError) {
+        console.error("Gemini scoring failed, fallback to keyword:", aiError);
+        missingCandidates.forEach((c) => {
+          const cSkills = c.UserSkill.map((us) => us.Skills.name.toLowerCase());
+          const jSkills = jobPost.positions.map((p: string) => p.toLowerCase());
+          const matched = cSkills.filter((cs) => jSkills.some((js: string) => js.includes(cs) || cs.includes(js)));
+          geminiScores[c.id] = Math.round(Math.min((matched.length / Math.max(jSkills.length, 1)) * 100, 100));
+        });
+      }
+
+      // ✅ STEP 4: Merge scores จาก intern cache + Gemini
+      const finalScores = { ...scores, ...geminiScores };
+
+      // บันทึกลง ApplicantMatchCache
+      const existingAppCache = await (prisma as any).applicantMatchCache.findUnique({
+        where: { jobPostId },
+      });
+      const existingScores = existingAppCache ? (existingAppCache.scores as Record<string, number>) : {};
+      const mergedScores = { ...existingScores, ...finalScores };
+
+      await (prisma as any).applicantMatchCache.upsert({
+        where: { jobPostId },
+        update: { scores: mergedScores },
+        create: { jobPostId, scores: mergedScores },
+      });
+
+      return res.json({ scores: finalScores, cached: false });
+    } catch (e: any) {
+      console.error("Error computing applicant match scores:", e);
+      return res.status(500).json({ error: e?.message || "Failed to compute scores" });
+    }
+  }
+);
+
 // Get full candidate profile by ID (for companies to view)
 candidatesRouter.get("/:id", requireAuth, requireRole("COMPANY"), async (req, res) => {
   const candidateId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];

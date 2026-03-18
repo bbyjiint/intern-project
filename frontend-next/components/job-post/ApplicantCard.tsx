@@ -23,7 +23,7 @@ export interface Applicant {
 
 interface ApplicantCardProps {
   applicant: Applicant;
-  score: number;
+  score: number; // -1 = loading
   isMessaging: boolean;
   onMessage: () => void;
   onViewProfile: () => void;
@@ -52,6 +52,13 @@ function formatDisplayDate(value?: string | null) {
   return value && value.trim() ? value : "-";
 }
 
+// ✅ เลือกสีวงกลมตามคะแนน
+function getScoreColor(score: number): string {
+  if (score >= 70) return "#22C55E"; // เขียว
+  if (score >= 50) return "#F59E0B"; // เหลือง
+  return "#EF4444";                  // แดง
+}
+
 export default function ApplicantCard({
   applicant,
   score,
@@ -60,6 +67,8 @@ export default function ApplicantCard({
   onViewProfile,
   onMarkViewed,
 }: ApplicantCardProps) {
+  const isLoading = score === -1;
+
   return (
     <div className="relative flex h-full min-h-[274px] flex-col rounded-[12px] bg-white px-[20px] py-[18px] shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
       {applicant.status === "new" && (
@@ -92,16 +101,24 @@ export default function ApplicantCard({
             </p>
           </div>
         </div>
-        <div
-          className="relative flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-full"
-          style={{
-            background: `conic-gradient(#F59E0B ${score}%, #E5E7EB ${score}% 100%)`,
-          }}
-        >
-          <div className="flex h-[30px] w-[30px] items-center justify-center rounded-full bg-white text-[10px] font-semibold text-[#4B5563]">
-            {score}%
+
+        {/* ✅ Score Circle — loading spinner หรือ % */}
+        {isLoading ? (
+          <div className="relative flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-full border-[3px] border-[#E5E7EB]">
+            <div className="h-[20px] w-[20px] animate-spin rounded-full border-[2px] border-[#D1D5DB] border-t-[#6B7280]" />
           </div>
-        </div>
+        ) : (
+          <div
+            className="relative flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-full"
+            style={{
+              background: `conic-gradient(${getScoreColor(score)} ${score}%, #E5E7EB ${score}% 100%)`,
+            }}
+          >
+            <div className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-white text-[11px] font-bold text-[#374151]">
+              {score}%
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Info grid */}

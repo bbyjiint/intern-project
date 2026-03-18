@@ -110,7 +110,11 @@ export default function ViewApplicantsPage() {
   const [jobPost, setJobPost] = useState<JobPost | null>(null)
   const [applicants, setApplicants] = useState<Applicant[]>([])
   const [loading, setLoading] = useState(true)
-  const [stateUpdating, setStateUpdating] = useState(false) // ✅ loading state สำหรับ toggle
+  const [stateUpdating, setStateUpdating] = useState(false)
+
+  // ✅ AI scores state
+  const [aiScores, setAiScores] = useState<Map<string, number>>(new Map())
+  const [scoresLoading, setScoresLoading] = useState(false)
 
   const [searchQuery, setSearchQuery] = useState('')
   const [positionFilter, setPositionFilter] = useState('')
@@ -130,6 +134,30 @@ export default function ViewApplicantsPage() {
 
   const [messagingCandidateId, setMessagingCandidateId] = useState<string | null>(null)
 
+  // ✅ fetch AI scores จาก Gemini ผ่าน backend
+  const fetchAIScores = async (applicantList: Applicant[], jpId: string) => {
+    if (applicantList.length === 0) return
+    setScoresLoading(true)
+    try {
+      const ids = applicantList.map((a) => a.candidateId).join(',')
+      const data = await apiFetch<{ scores: Record<string, number> }>(
+        `/api/candidates/applicant-match-scores?jobPostId=${jpId}&candidateIds=${ids}`
+      )
+      const map = new Map<string, number>()
+      applicantList.forEach((a) => {
+        // key ใน scores คือ candidateId, เก็บโดยใช้ applicant.id เป็น key ของ map
+        const s = data.scores[a.candidateId]
+        if (s !== undefined) map.set(a.id, s)
+      })
+      setAiScores(map)
+    } catch (e) {
+      console.error('Failed to fetch AI scores:', e)
+      // ถ้า AI fail ก็ใช้ keyword fallback ที่คำนวณใน useMemo อยู่แล้ว
+    } finally {
+      setScoresLoading(false)
+    }
+  }
+
   // ─── Load data ──────────────────────────────────────────────────────────────
   useEffect(() => {
     const load = async () => {
@@ -140,7 +168,8 @@ export default function ViewApplicantsPage() {
           apiFetch<{ jobPost: JobPost; applicants: Applicant[] }>(`/api/job-posts/${jobPostId}/applicants`),
           apiFetch<{ jobPost: any }>(`/api/job-posts/${jobPostId}`),
         ])
-        setApplicants(applicantsData.applicants || [])
+        const loadedApplicants = applicantsData.applicants || []
+        setApplicants(loadedApplicants)
         setJobPost({
           ...applicantsData.jobPost,
           state: jobPostData.jobPost?.state || null,
@@ -150,6 +179,8 @@ export default function ViewApplicantsPage() {
           locationDistrict: jobPostData.jobPost?.locationDistrict || null,
           jobType: jobPostData.jobPost?.jobType || null,
         })
+        // ✅ เรียก AI scores หลังได้ applicants แล้ว
+        fetchAIScores(loadedApplicants, jobPostId)
       } catch {
         setApplicants(mockApplicants)
         setJobPost({
@@ -180,11 +211,16 @@ export default function ViewApplicantsPage() {
   }, [])
 
   // ─── Derived ────────────────────────────────────────────────────────────────
+
+  // ✅ ใช้ AI score ถ้ามี ไม่งั้น fallback keyword matching
   const applicantScores = useMemo(() => {
     const map = new Map<string, number>()
-    applicants.forEach((a) => map.set(a.id, computeJobMatch(a, jobPost)))
+    applicants.forEach((a) => {
+      const ai = aiScores.get(a.id)
+      map.set(a.id, ai !== undefined ? ai : computeJobMatch(a, jobPost))
+    })
     return map
-  }, [applicants, jobPost])
+  }, [applicants, jobPost, aiScores])
 
   const positionOptions = useMemo(() =>
     Array.from(new Set(applicants.flatMap((a) => a.preferredPositions || []).filter(Boolean))),
@@ -246,13 +282,11 @@ export default function ViewApplicantsPage() {
     setActiveTab('all')
   }
 
-  // ✅ Toggle Open/Closed state
   const handleToggleState = async (targetState: 'PUBLISHED' | 'CLOSED') => {
     if (!jobPost || stateUpdating) return
-    if (jobPost.state === targetState) return // กดซ้ำ state เดิม ไม่ทำอะไร
+    if (jobPost.state === targetState) return
 
     setStateUpdating(true)
-    // อัป UI ทันที
     setJobPost((prev) => prev ? { ...prev, state: targetState } : prev)
     try {
       await apiFetch(`/api/job-posts/${jobPostId}`, {
@@ -261,14 +295,12 @@ export default function ViewApplicantsPage() {
       })
     } catch (e) {
       console.error('Failed to update job post state:', e)
-      // rollback ถ้า API fail
       setJobPost((prev) => prev ? { ...prev, state: jobPost.state } : prev)
     } finally {
       setStateUpdating(false)
     }
   }
 
-  // ✅ mark viewed: new → reviewed ทั้ง state และ DB
   const handleMarkViewed = async (applicantId: string) => {
     setApplicants((prev) =>
       prev.map((a) =>
@@ -311,7 +343,6 @@ export default function ViewApplicantsPage() {
     }
   }
 
-  // ✅ Accept → shortlisted
   const handleAccept = async () => {
     if (!selectedApplicant) return
     try {
@@ -325,7 +356,6 @@ export default function ViewApplicantsPage() {
     finally { closePopup() }
   }
 
-  // ✅ Decline → rejected
   const handleDecline = async () => {
     if (!selectedApplicant) return
     try {
@@ -383,7 +413,7 @@ export default function ViewApplicantsPage() {
                 <p className="mt-[14px] text-[22px] font-semibold text-[#1F2937]">{jobPost.title}</p>
               </div>
 
-              {/* ✅ Open / Closed toggle */}
+              {/* Open / Closed toggle */}
               <div className="flex items-center gap-[10px] pt-3">
                 <button
                   type="button"
@@ -443,7 +473,10 @@ export default function ViewApplicantsPage() {
                 <ApplicantCard
                   key={applicant.id}
                   applicant={applicant}
-                  score={applicantScores.get(applicant.id) || 0}
+                  // ✅ ส่ง -1 ถ้ากำลัง load AI score (วงกลมจะแสดง spinner)
+                  score={scoresLoading && !aiScores.has(applicant.id)
+                    ? -1
+                    : applicantScores.get(applicant.id) || 0}
                   isMessaging={messagingCandidateId === applicant.candidateId}
                   onMessage={() => handleMessageCandidate(applicant.candidateId)}
                   onViewProfile={() => handleViewProfile(applicant)}

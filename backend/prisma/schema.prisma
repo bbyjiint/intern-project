@@ -375,7 +375,8 @@ model JobPost {
   positions         String[]    @default([])   
   workingDaysHours  String? 
   locationProvinceId String?   @db.Uuid
-  LocationProvince   Province? @relation("JobPostProvince", fields: [locationProvinceId], references: [id], onDelete: SetNull)               
+  LocationProvince   Province? @relation("JobPostProvince", fields: [locationProvinceId], references: [id], onDelete: SetNull)
+  ApplicantMatchCache ApplicantMatchCache?               
 
   @@index([companyId])
   @@index([state])
@@ -630,4 +631,17 @@ model JobMatchCache {
   @@unique([candidateId])
   @@index([candidateId])
   
+}
+
+model ApplicantMatchCache {
+  id        String   @id @default(uuid()) @db.Uuid
+  jobPostId String   @db.Uuid
+  scores    Json     // { "candidateId": 85, "candidateId2": 62 }
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  JobPost   JobPost  @relation(fields: [jobPostId], references: [id], onDelete: Cascade)
+
+  @@unique([jobPostId])
+  @@index([jobPostId])
 }
