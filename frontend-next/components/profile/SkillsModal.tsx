@@ -19,7 +19,6 @@ interface SkillsModalProps {
   editingSkill?: SkillData | null;
 }
 
-// Interface สำหรับรับข้อมูล Master Skill จาก DB
 interface MasterSkill {
   id: string;
   name: string;
@@ -45,12 +44,9 @@ export default function SkillsModal({
     level: "",
   });
   const [errorMsg, setErrorMsg] = useState("");
-
-  // State เก็บรายชื่อ Skill ทั้งหมดจาก DB
   const [availableSkills, setAvailableSkills] = useState<MasterSkill[]>([]);
   const [isLoadingSkills, setIsLoadingSkills] = useState(false);
 
-  // ดึงรายชื่อ Skill ตอน Modal เปิดครั้งแรก
   useEffect(() => {
     if (isOpen && availableSkills.length === 0) {
       const fetchMasterSkills = async () => {
@@ -78,9 +74,7 @@ export default function SkillsModal({
 
   const handleSubmit = () => {
     if (!formData.name || !formData.category || !formData.level) {
-      setErrorMsg(
-        "Please fill in all required fields and select a proficiency level.",
-      );
+      setErrorMsg("Please fill in all required fields and select a proficiency level.");
       return;
     }
     setErrorMsg("");
@@ -92,63 +86,66 @@ export default function SkillsModal({
   });
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-[1px] p-4">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 transition-all">
       <div
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-[700px] flex flex-col"
+        className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-[700px] flex flex-col border border-slate-100 dark:border-slate-800 transition-colors"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 pb-2">
-          <h2 className="text-[22px] font-bold text-[#1C2D4F]">
-            {editingSkill ? "Edit Skill" : "Add Skills"}
+        <div className="flex items-center justify-between p-6 pb-4 border-b border-slate-50 dark:border-slate-800">
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+            {editingSkill ? "Edit Skill" : "Add New Skill"}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-700 transition-colors p-1"
+            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full"
           >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 18L18 6M6 6l12 12"
-              />
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-8 overflow-y-auto max-h-[70vh]">
           {errorMsg && (
-            <div className="p-3 bg-red-50 text-red-600 border border-red-200 rounded-lg text-sm font-medium flex items-center gap-2">
-              <svg
-                className="w-5 h-5 flex-shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <circle cx="12" cy="12" r="10" strokeWidth="2"></circle>
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M12 8v4m0 4h.01"
-                ></path>
+            <div className="p-4 bg-rose-50 dark:bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-500/20 rounded-xl text-sm font-bold flex items-center gap-3">
+              <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
               </svg>
               {errorMsg}
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Category */}
+            <div>
+              <label className="block text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest mb-3">
+                1. Select Category <span className="text-rose-500">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  value={formData.category}
+                  onChange={(e) => {
+                    setFormData({ ...formData, category: e.target.value, name: "" });
+                    setErrorMsg("");
+                  }}
+                  className="w-full appearance-none px-4 py-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-[15px] text-slate-900 dark:text-slate-100 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all cursor-pointer font-medium"
+                >
+                  <option value="" disabled>Choose Category</option>
+                  <option value="Technical Skill">Technical Skill</option>
+                  <option value="Business Skills">Business Skills</option>
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                </div>
+              </div>
+            </div>
+
             {/* Skill Name */}
             <div>
-              <label className="block text-[15px] font-bold text-[#1C2D4F] mb-2">
-                Skill Name <span className="text-red-500">*</span>
+              <label className="block text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest mb-3">
+                2. Skill Name <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
                 <select
@@ -157,204 +154,108 @@ export default function SkillsModal({
                     setFormData({ ...formData, name: e.target.value });
                     setErrorMsg("");
                   }}
-                  className="w-full appearance-none px-4 py-3 bg-white border border-gray-200 rounded-lg text-[15px] text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed"
-                  disabled={isLoadingSkills || !formData.category} // ล็อกไว้ถ้ายังไม่เลือก Category
+                  className="w-full appearance-none px-4 py-3.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-[15px] text-slate-900 dark:text-slate-100 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                  disabled={isLoadingSkills || !formData.category}
                 >
                   <option value="" disabled>
-                    {!formData.category
-                      ? "Select a category first"
-                      : isLoadingSkills
-                        ? "Loading skills..."
-                        : "Select skill"}
+                    {!formData.category ? "Waiting for category..." : isLoadingSkills ? "Loading..." : "Select Skill"}
                   </option>
                   {filteredSkills.map((skill) => (
-                    <option key={skill.id} value={skill.name}>
-                      {skill.name}
-                    </option>
+                    <option key={skill.id} value={skill.name}>{skill.name}</option>
                   ))}
                 </select>
-                <svg
-                  className="w-5 h-5 text-gray-300 absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </div>
-            </div>
-
-            {/* Category (Auto-filled and Disabled) */}
-            <div>
-              <label className="block text-[15px] font-bold text-[#1C2D4F] mb-2">
-                Category <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
-                <select
-                  value={formData.category}
-                  onChange={(e) => {
-                    // เมื่อเปลี่ยน Category ให้ล้างค่า Skill Name ทิ้ง เพื่อบังคับให้เลือกใหม่
-                    setFormData({
-                      ...formData,
-                      category: e.target.value,
-                      name: "",
-                    });
-                    setErrorMsg("");
-                  }}
-                  className="w-full appearance-none px-4 py-3 bg-white border border-gray-200 rounded-lg text-[15px] text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm cursor-pointer"
-                >
-                  <option value="" disabled>
-                    Select category
-                  </option>
-                  <option value="Technical Skill">Technical Skill</option>
-                  <option value="Business Skills">Business Skills</option>
-                </select>
-                <svg
-                  className="w-5 h-5 text-gray-300 absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                </div>
               </div>
             </div>
           </div>
 
           {/* Proficiency Level */}
           <div>
-            <label className="block text-[15px] font-bold text-[#1C2D4F] mb-3">
-              Proficiency Level <span className="text-red-500">*</span>
+            <label className="block text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest mb-4">
+              3. Proficiency Level <span className="text-rose-500">*</span>
             </label>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Beginner Card */}
+              {/* Beginner */}
               <div
-                onClick={() => {
-                  setFormData({ ...formData, level: "Beginner" });
-                  setErrorMsg("");
-                }}
-                className={`border rounded-xl p-5 cursor-pointer transition-all duration-200 ${
+                onClick={() => setFormData({ ...formData, level: "Beginner" })}
+                className={`group border-2 rounded-2xl p-5 cursor-pointer transition-all ${
                   formData.level === "Beginner"
-                    ? "border-[#68B383] border-[2px] shadow-sm bg-[#F0FDF4]/30"
-                    : "border-gray-200 hover:border-gray-300 bg-white"
+                    ? "border-emerald-500 bg-emerald-50/50 dark:bg-emerald-500/10 shadow-lg shadow-emerald-500/5"
+                    : "border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-white dark:bg-slate-800/40"
                 }`}
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-9 h-9 rounded-full bg-[#68B383] flex items-center justify-center text-white font-bold">
-                    1
-                  </div>
-                  <span className="font-bold text-gray-900 text-[15px]">
-                    Beginner
-                  </span>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-black text-sm transition-colors ${formData.level === "Beginner" ? "bg-emerald-500" : "bg-slate-200 dark:bg-slate-700 group-hover:bg-slate-300"}`}>1</div>
+                  <span className={`font-black text-[15px] ${formData.level === "Beginner" ? "text-emerald-700 dark:text-emerald-400" : "text-slate-500 dark:text-slate-400"}`}>Beginner</span>
                 </div>
-                <div className="flex gap-1.5 mb-3">
-                  <div
-                    className={`h-1.5 flex-1 rounded-full ${formData.level === "Beginner" ? "bg-[#68B383]" : "bg-[#68B383]"}`}
-                  ></div>
-                  <div className="h-1.5 flex-1 rounded-full bg-[#E2E8F0]"></div>
-                  <div className="h-1.5 flex-1 rounded-full bg-[#E2E8F0]"></div>
+                <div className="flex gap-1.5 mb-4">
+                  <div className={`h-1.5 flex-1 rounded-full ${formData.level === "Beginner" ? "bg-emerald-500" : "bg-slate-200 dark:bg-slate-700"}`} />
+                  <div className="h-1.5 flex-1 rounded-full bg-slate-100 dark:bg-slate-800" />
+                  <div className="h-1.5 flex-1 rounded-full bg-slate-100 dark:bg-slate-800" />
                 </div>
-                <p className="text-[13px] text-gray-500 font-medium mt-3">
-                  Learning basics, needs guidance
-                </p>
+                <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase leading-relaxed">Basic knowledge & guidance needed</p>
               </div>
 
-              {/* Intermediate Card */}
+              {/* Intermediate */}
               <div
-                onClick={() => {
-                  setFormData({ ...formData, level: "Intermediate" });
-                  setErrorMsg("");
-                }}
-                className={`border rounded-xl p-5 cursor-pointer transition-all duration-200 ${
+                onClick={() => setFormData({ ...formData, level: "Intermediate" })}
+                className={`group border-2 rounded-2xl p-5 cursor-pointer transition-all ${
                   formData.level === "Intermediate"
-                    ? "border-[#3B82F6] border-[2px] shadow-sm bg-[#EFF6FF]/30"
-                    : "border-gray-200 hover:border-gray-300 bg-white"
+                    ? "border-blue-500 bg-blue-50/50 dark:bg-blue-500/10 shadow-lg shadow-blue-500/5"
+                    : "border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-white dark:bg-slate-800/40"
                 }`}
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-9 h-9 rounded-full bg-[#3B82F6] flex items-center justify-center text-white font-bold">
-                    2
-                  </div>
-                  <span className="font-bold text-gray-900 text-[15px]">
-                    Intermediate
-                  </span>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-black text-sm transition-colors ${formData.level === "Intermediate" ? "bg-blue-500" : "bg-slate-200 dark:bg-slate-700 group-hover:bg-slate-300"}`}>2</div>
+                  <span className={`font-black text-[15px] ${formData.level === "Intermediate" ? "text-blue-700 dark:text-blue-400" : "text-slate-500 dark:text-slate-400"}`}>Intermediate</span>
                 </div>
-                <div className="flex gap-1.5 mb-3">
-                  <div
-                    className={`h-1.5 flex-1 rounded-full ${formData.level === "Intermediate" ? "bg-[#3B82F6]" : "bg-[#3B82F6]"}`}
-                  ></div>
-                  <div
-                    className={`h-1.5 flex-1 rounded-full ${formData.level === "Intermediate" ? "bg-[#3B82F6]" : "bg-[#3B82F6]"}`}
-                  ></div>
-                  <div className="h-1.5 flex-1 rounded-full bg-[#E2E8F0]"></div>
+                <div className="flex gap-1.5 mb-4">
+                  <div className={`h-1.5 flex-1 rounded-full ${formData.level === "Intermediate" ? "bg-blue-500" : "bg-blue-500/40"}`} />
+                  <div className={`h-1.5 flex-1 rounded-full ${formData.level === "Intermediate" ? "bg-blue-500" : "bg-slate-200 dark:bg-slate-700"}`} />
+                  <div className="h-1.5 flex-1 rounded-full bg-slate-100 dark:bg-slate-800" />
                 </div>
-                <p className="text-[13px] text-gray-500 font-medium mt-3">
-                  Can work independently
-                </p>
+                <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase leading-relaxed">Can work independently on tasks</p>
               </div>
 
-              {/* Advanced Card */}
+              {/* Advanced */}
               <div
-                onClick={() => {
-                  setFormData({ ...formData, level: "Advanced" });
-                  setErrorMsg("");
-                }}
-                className={`border rounded-xl p-5 cursor-pointer transition-all duration-200 ${
+                onClick={() => setFormData({ ...formData, level: "Advanced" })}
+                className={`group border-2 rounded-2xl p-5 cursor-pointer transition-all ${
                   formData.level === "Advanced"
-                    ? "border-[#8B5CF6] border-[2px] shadow-sm bg-[#F5F3FF]/30"
-                    : "border-gray-200 hover:border-gray-300 bg-white"
+                    ? "border-violet-500 bg-violet-50/50 dark:bg-violet-500/10 shadow-lg shadow-violet-500/5"
+                    : "border-slate-100 dark:border-slate-800 hover:border-slate-200 dark:hover:border-slate-700 bg-white dark:bg-slate-800/40"
                 }`}
               >
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-9 h-9 rounded-full bg-[#8B5CF6] flex items-center justify-center text-white font-bold">
-                    3
-                  </div>
-                  <span className="font-bold text-gray-900 text-[15px]">
-                    Advanced
-                  </span>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-black text-sm transition-colors ${formData.level === "Advanced" ? "bg-violet-500" : "bg-slate-200 dark:bg-slate-700 group-hover:bg-slate-300"}`}>3</div>
+                  <span className={`font-black text-[15px] ${formData.level === "Advanced" ? "text-violet-700 dark:text-violet-400" : "text-slate-500 dark:text-slate-400"}`}>Advanced</span>
                 </div>
-                <div className="flex gap-1.5 mb-3">
-                  <div
-                    className={`h-1.5 flex-1 rounded-full ${formData.level === "Advanced" ? "bg-[#8B5CF6]" : "bg-[#8B5CF6]"}`}
-                  ></div>
-                  <div
-                    className={`h-1.5 flex-1 rounded-full ${formData.level === "Advanced" ? "bg-[#8B5CF6]" : "bg-[#8B5CF6]"}`}
-                  ></div>
-                  <div
-                    className={`h-1.5 flex-1 rounded-full ${formData.level === "Advanced" ? "bg-[#8B5CF6]" : "bg-[#8B5CF6]"}`}
-                  ></div>
+                <div className="flex gap-1.5 mb-4">
+                  <div className={`h-1.5 flex-1 rounded-full ${formData.level === "Advanced" ? "bg-violet-500" : "bg-violet-500/40"}`} />
+                  <div className={`h-1.5 flex-1 rounded-full ${formData.level === "Advanced" ? "bg-violet-500" : "bg-violet-500/40"}`} />
+                  <div className={`h-1.5 flex-1 rounded-full ${formData.level === "Advanced" ? "bg-violet-500" : "bg-slate-200 dark:bg-slate-700"}`} />
                 </div>
-                <p className="text-[13px] text-gray-500 font-medium mt-3">
-                  Can mentor others
-                </p>
+                <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase leading-relaxed">Expert knowledge & can mentor</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Footer Buttons */}
-        <div className="flex justify-end gap-3 p-6 pt-2">
+        {/* Footer */}
+        <div className="flex justify-end gap-3 p-6 bg-slate-50/50 dark:bg-slate-800/30 rounded-b-2xl border-t border-slate-100 dark:border-slate-800">
           <button
             onClick={onClose}
-            className="px-6 py-2.5 border border-gray-300 rounded-lg text-[15px] font-bold text-gray-600 hover:bg-gray-50 transition-colors"
+            className="px-6 py-3 rounded-xl text-sm font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all"
           >
             Cancel
           </button>
           <button
             onClick={handleSubmit}
-            className="px-8 py-2.5 bg-[#2563EB] text-white rounded-lg text-[15px] font-bold hover:bg-blue-600 transition-colors shadow-sm"
+            className="px-10 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-black uppercase tracking-widest transition-all shadow-lg shadow-blue-500/25 active:scale-95"
           >
-            {editingSkill ? "Save Changes" : "Add Skill"}
+            {editingSkill ? "Save Changes" : "Confirm Add"}
           </button>
         </div>
       </div>

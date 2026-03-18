@@ -27,11 +27,9 @@ export default function CertificatesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCert, setEditingCert] = useState<ModalCertificate | null>(null);
 
-  // --- ส่วนที่เพิ่มใหม่: สำหรับ Delete Confirmation Popup ---
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [certToDelete, setCertToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  // ---------------------------------------------------
 
   const fetchCertificates = useCallback(async () => {
     try {
@@ -61,7 +59,6 @@ export default function CertificatesPage() {
   }, []);
 
   useEffect(() => {
-    // ป้องกันการ Scroll เมื่อเปิด Modal ใดๆ
     if (isModalOpen || isDeleteModalOpen) {
       document.body.style.overflow = "hidden";
     } else {
@@ -93,13 +90,11 @@ export default function CertificatesPage() {
     checkAuth();
   }, [router, fetchCertificates]);
 
-  // ฟังก์ชันเรียกเปิด Popup ยืนยันการลบ
   const openDeleteConfirm = (id: string) => {
     setCertToDelete(id);
     setIsDeleteModalOpen(true);
   };
 
-  // ฟังก์ชันลบจริงเมื่อกดยืนยันใน Popup
   const handleConfirmDelete = async () => {
     if (!certToDelete) return;
     setIsDeleting(true);
@@ -164,34 +159,34 @@ export default function CertificatesPage() {
   );
 
   return (
-    <div className="min-h-screen bg-[#E6EBF4] flex flex-col">
+    <div className="min-h-screen bg-[#0B0F1A] text-gray-100 flex flex-col">
       <InternNavbar />
 
       <div className="flex flex-1">
         <Sidebar />
 
-        <div className="layout-container layout-page flex-1 overflow-y-auto">
+        <div className="layout-container layout-page flex-1 overflow-y-auto p-6">
           {isLoading ? (
             <div className="flex items-center justify-center min-h-[60vh]">
-              <div className="w-12 h-12 border-4 border-gray-200 border-t-[#0273B1] rounded-full animate-spin"></div>
+              <div className="w-12 h-12 border-4 border-gray-700 border-t-blue-500 rounded-full animate-spin"></div>
             </div>
           ) : (
             <>
               {/* Header Section */}
               <div className="flex flex-col lg:flex-row lg:items-start justify-between mb-8 gap-4">
                 <div>
-                  <h1 className="text-[36px] font-extrabold text-gray-900 mb-1 tracking-tight">
-                    Certificate
+                  <h1 className="text-4xl font-black text-white mb-2 tracking-tight">
+                    Certificates
                   </h1>
-                  <p className="text-gray-500 text-sm">
-                    A collection of certificate you have created and added to your profile.
+                  <p className="text-gray-400 text-base">
+                    Manage and showcase your professional achievements and skills.
                   </p>
                 </div>
 
                 <div className="flex items-center gap-4">
                   <div className="relative w-full lg:w-72">
                     <svg
-                      className="w-4 h-4 text-gray-400 absolute left-4 top-1/2 transform -translate-y-1/2"
+                      className="w-5 h-5 text-gray-500 absolute left-4 top-1/2 transform -translate-y-1/2"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -200,15 +195,15 @@ export default function CertificatesPage() {
                     </svg>
                     <input
                       type="text"
-                      placeholder="Search"
+                      placeholder="Search certificates..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-full pl-11 pr-4 py-2.5 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 shadow-sm"
+                      className="w-full pl-12 pr-4 py-3 bg-[#161B26] border border-gray-700 rounded-full text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
                     />
                   </div>
                   <button
                     onClick={handleAddClick}
-                    className="px-5 py-2.5 bg-white border border-[#3B82F6] text-[#3B82F6] text-sm font-bold rounded-full hover:bg-blue-50 transition-colors whitespace-nowrap shadow-sm"
+                    className="px-6 py-3 bg-blue-600 text-white text-sm font-bold rounded-full hover:bg-blue-700 transition-all whitespace-nowrap shadow-lg shadow-blue-900/20"
                   >
                     + Add Certificate
                   </button>
@@ -217,10 +212,10 @@ export default function CertificatesPage() {
 
               {/* Filters */}
               <div className="flex items-center justify-between mb-6">
-                <button className="px-8 py-2 text-sm font-bold rounded-lg border border-[#3B82F6] text-[#3B82F6] bg-white shadow-sm">
+                <button className="px-10 py-2.5 text-sm font-bold rounded-xl bg-blue-600/10 text-blue-400 border border-blue-600/30">
                   All
                 </button>
-                <button className="flex items-center gap-2 px-5 py-2 bg-white border border-gray-200 text-gray-800 font-bold text-sm rounded-lg hover:bg-gray-50 shadow-sm">
+                <button className="flex items-center gap-2 px-6 py-2.5 bg-[#161B26] border border-gray-700 text-gray-300 font-bold text-sm rounded-xl hover:bg-[#1f2633] transition-colors">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                   </svg>
@@ -229,65 +224,71 @@ export default function CertificatesPage() {
               </div>
 
               {/* Count */}
-              <h2 className="text-[17px] font-extrabold text-gray-900 mb-4">
-                {filteredCertificates.length} Total Certificate
+              <h2 className="text-xl font-bold text-white mb-6">
+                {filteredCertificates.length} Total Certificates
               </h2>
 
               {/* Certificates List */}
-              <div className="space-y-4">
+              <div className="grid grid-cols-1 gap-6">
                 {filteredCertificates.length === 0 ? (
-                  <div className="text-center py-10 text-gray-500 bg-white rounded-xl shadow-sm border border-gray-100">
-                    No certificates found.
+                  <div className="text-center py-20 text-gray-500 bg-[#161B26] rounded-2xl border border-gray-800 border-dashed">
+                    No certificates found. Try adjusting your search.
                   </div>
                 ) : (
                   filteredCertificates.map((cert) => (
                     <div
                       key={cert.id}
-                      className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col"
+                      className="group bg-[#161B26] rounded-2xl border border-gray-800 p-6 hover:border-blue-500/50 transition-all duration-300 shadow-xl"
                     >
-                      <h3 className="text-[19px] font-bold text-gray-900 mb-1">{cert.name}</h3>
-                      <p className="text-[13px] text-gray-500 mb-4">
-                        Issued by {cert.issuedBy || "Unknown"} | {cert.issueDate || ""}
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="text-2xl font-bold text-white group-hover:text-blue-400 transition-colors">
+                          {cert.name}
+                        </h3>
+                        <button
+                          onClick={() => openDeleteConfirm(cert.id)}
+                          className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all"
+                        >
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
+                      
+                      <p className="text-sm font-medium text-blue-400/80 mb-4">
+                        Issued by {cert.issuedBy || "Unknown"} • {cert.issueDate || "N/A"}
                       </p>
-                      <p className="text-[14px] text-gray-700 leading-relaxed mb-6 max-w-[85%]">
+                      
+                      <p className="text-gray-400 leading-relaxed mb-6 text-base max-w-3xl">
                         {cert.description}
                       </p>
 
-                      <div className="flex items-center justify-between mt-auto">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-4 border-t border-gray-800">
                         <div className="flex flex-wrap gap-2">
                           {(cert.tags || []).map((tag, idx) => (
                             <span
                               key={idx}
-                              className="px-3 py-1.5 bg-[#EFF6FF] text-[#3B82F6] text-[11px] font-bold rounded-md"
+                              className="px-3 py-1 bg-blue-500/10 text-blue-400 text-xs font-bold rounded-lg border border-blue-500/20"
                             >
                               {tag}
                             </span>
                           ))}
                         </div>
                         <div className="flex items-center gap-3">
-                          <button
-                            onClick={() => openDeleteConfirm(cert.id)}
-                            className="text-gray-400 hover:text-red-500 transition-colors mr-2"
-                          >
-                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                            </svg>
-                          </button>
                           {cert.url && cert.url !== "#" && (
                             <a
                               href={cert.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="px-5 py-2 border border-[#3B82F6] text-[#3B82F6] text-xs font-bold rounded-md hover:bg-blue-50 transition-colors shadow-sm"
+                              className="px-5 py-2.5 bg-gray-800 text-gray-200 text-xs font-bold rounded-xl hover:bg-gray-700 transition-all border border-gray-700"
                             >
                               View File
                             </a>
                           )}
                           <button
                             onClick={() => handleEditClick(cert)}
-                            className="px-5 py-2 border border-[#3B82F6] text-[#3B82F6] text-xs font-bold rounded-md hover:bg-blue-50 transition-colors shadow-sm"
+                            className="px-5 py-2.5 bg-blue-600/10 text-blue-400 text-xs font-bold rounded-xl hover:bg-blue-600 hover:text-white transition-all border border-blue-600/30"
                           >
-                            Edit Certificate
+                            Edit Details
                           </button>
                         </div>
                       </div>
@@ -300,50 +301,49 @@ export default function CertificatesPage() {
         </div>
       </div>
 
-      {/* --- ส่วนที่เพิ่มใหม่: Delete Confirmation Modal UI --- */}
+      {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          {/* Backdrop */}
           <div 
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/80 backdrop-blur-md"
             onClick={() => !isDeleting && setIsDeleteModalOpen(false)}
           ></div>
           
-          {/* Modal Content */}
-          <div className="relative bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 text-center animate-in fade-in zoom-in duration-200">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="relative bg-[#161B26] border border-gray-800 rounded-3xl shadow-2xl max-w-sm w-full p-8 text-center animate-in zoom-in duration-200">
+            <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
             
-            <h3 className="text-xl font-bold text-gray-900 mb-2">Delete Certificate?</h3>
-            <p className="text-gray-500 mb-6">
-              Are you sure you want to delete this certificate? This action cannot be undone.
+            <h3 className="text-2xl font-bold text-white mb-3">Delete Certificate?</h3>
+            <p className="text-gray-400 mb-8 leading-relaxed">
+              This action is permanent and cannot be undone. Are you sure you want to proceed?
             </p>
             
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <button
                 disabled={isDeleting}
                 onClick={() => setIsDeleteModalOpen(false)}
-                className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl transition-colors disabled:opacity-50"
+                className="flex-1 px-4 py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold rounded-2xl transition-all disabled:opacity-50"
               >
-                Cancel
+                Go Back
               </button>
               <button
                 disabled={isDeleting}
                 onClick={handleConfirmDelete}
-                className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center"
+                className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl transition-all disabled:opacity-50 flex items-center justify-center shadow-lg shadow-red-900/20"
               >
                 {isDeleting ? (
-                   <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                ) : "Delete"}
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                ) : "Yes, Delete"}
               </button>
             </div>
           </div>
         </div>
       )}
 
+      {/* Modal - Make sure to update the internal styling of CertificatesModal to Dark Mode as well */}
       <CertificatesModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -353,5 +353,4 @@ export default function CertificatesPage() {
     </div>
   );
 }
-
 

@@ -18,7 +18,6 @@ export default function EducationModal({
   onClose,
   onSave,
 }: EducationModalProps) {
-  // 💡 1. เปลี่ยน studyStatus เป็น isCurrent เพื่อให้สอดคล้องกับ API
   const [formData, setFormData] = useState({
     school: "",
     degree: "",
@@ -29,25 +28,12 @@ export default function EducationModal({
     isCurrent: true,
   });
 
-  const [universities, setUniversities] = useState<
-    Array<{
-      id: string;
-      name: string;
-      thname: string | null;
-      code: string | null;
-    }>
-  >([]);
-  const [universitiesLoading, setUniversitiesLoading] = useState(false);
+  const [universities, setUniversities] = useState<any[]>([]);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Initialize data when editing
   useEffect(() => {
     if (isOpen && education) {
-      const isCurrent =
-        education.isCurrent ??
-        !(education.endDate || (education as any).endYear);
-
-      // ดึงค่า yearOfStudy เดิมมา ถ้าเรียนจบแล้วให้บังคับแสดงเป็น Graduated
+      const isCurrent = education.isCurrent ?? !(education.endDate || (education as any).endYear);
       const rawYear = (education as any).yearOfStudy || "";
       let initialYear = rawYear.match(/\d+/)?.[0] || rawYear;
       if (!isCurrent) initialYear = "Graduated";
@@ -59,10 +45,9 @@ export default function EducationModal({
         educationLevel: (education as any).educationLevel || "BACHELOR",
         yearOfStudy: initialYear,
         gpa: education.gpa?.toString() || "",
-        isCurrent: isCurrent, // 💡 ใช้ isCurrent แทน
+        isCurrent: isCurrent,
       });
     } else if (isOpen) {
-      // Reset form for new entry
       setFormData({
         school: "",
         degree: "",
@@ -73,27 +58,16 @@ export default function EducationModal({
         isCurrent: true,
       });
     }
-  }, [isOpen, education]); // 💡 เอา education?.id ออก ใช้แค่ education ก็พอ
+  }, [isOpen, education]);
 
-  // Load universities
   useEffect(() => {
     if (isOpen) {
       (async () => {
-        setUniversitiesLoading(true);
         try {
-          const data = await apiFetch<{
-            universities: Array<{
-              id: string;
-              name: string;
-              thname: string | null;
-              code: string | null;
-            }>;
-          }>(`/api/universities`);
+          const data = await apiFetch<{ universities: any[] }>(`/api/universities`);
           setUniversities(data.universities || []);
         } catch (err) {
           console.error("Failed to load universities:", err);
-        } finally {
-          setUniversitiesLoading(false);
         }
       })();
     }
@@ -101,38 +75,30 @@ export default function EducationModal({
 
   const handleSave = async () => {
     if (!formData.school || !formData.degree || !formData.major) {
-      alert("กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน (สถาบัน, ปริญญา, สาขาวิชา)");
+      alert("กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน");
       return;
     }
 
     setIsSaving(true);
     try {
-      // 💡 2. อัปเดต payload ให้ใช้ formData.isCurrent ที่คำนวณมาแล้ว
       const payload = {
         universityName: formData.school,
         degreeName: formData.degree,
         fieldOfStudy: formData.major,
         educationLevel: formData.educationLevel,
-        yearOfStudy: formData.isCurrent
-          ? `${formData.yearOfStudy}th Year`
-          : "Graduated",
+        yearOfStudy: formData.isCurrent ? `${formData.yearOfStudy}th Year` : "Graduated",
         gpa: parseFloat(formData.gpa) || 0,
         isCurrent: formData.isCurrent,
-        endDate: formData.isCurrent
-          ? null
-          : (education as any)?.endDate || null,
+        endDate: formData.isCurrent ? null : (education as any)?.endDate || null,
       };
 
       await apiFetch(
-        education
-          ? `/api/candidates/education/${education.id}`
-          : "/api/candidates/education",
+        education ? `/api/candidates/education/${education.id}` : "/api/candidates/education",
         {
           method: education ? "PUT" : "POST",
           body: JSON.stringify(payload),
-        },
+        }
       );
-
       onSave();
       onClose();
     } catch (error: any) {
@@ -144,71 +110,43 @@ export default function EducationModal({
 
   if (!isOpen) return null;
 
+  // Reusable label component for clarity
+  const Label = ({ children, required = false }: { children: React.ReactNode; required?: boolean }) => (
+    <label className="block text-sm font-extrabold text-gray-700 dark:text-gray-200 mb-2">
+      {children} {required && <span className="text-red-500">*</span>}
+    </label>
+  );
+
+  // Reusable Input/Select style
+  const inputClassName = "w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-gray-400 dark:placeholder:text-gray-500";
+
   return (
-    <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center z-[110] p-4"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative"
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="fixed inset-0 z-[120] flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+      
+      {/* Modal Content */}
+      <div className="relative bg-white dark:bg-gray-900 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden border border-gray-100 dark:border-gray-800 animate-in fade-in zoom-in duration-200">
+        
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-100 sticky top-0 bg-white z-10">
-          <h2 className="text-xl font-bold text-gray-800">
+        <div className="flex items-center justify-between p-6 border-b border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-900 sticky top-0 z-10">
+          <h2 className="text-2xl font-black text-gray-900 dark:text-white">
             {education ? "Edit Education" : "Add Education"}
           </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 transition-colors">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
 
-        <div className="p-8 space-y-5">
-          {/* Education Level & Institution */}
-          <div className="grid grid-cols-1 gap-5">
+        {/* Scrollable Body */}
+        <div className="p-8 space-y-6 overflow-y-auto">
+          
+          {/* Institution Selection */}
+          <div className="space-y-6">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Education Level <span className="text-red-500">*</span>
-              </label>
-              <select
-                value={formData.educationLevel}
-                onChange={(e) =>
-                  setFormData({ ...formData, educationLevel: e.target.value })
-                }
-                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-              >
-                <option value="BELOW_HIGH_SCHOOL">Below High School</option>
-                <option value="HIGH_SCHOOL">
-                  High School / Vocational Certificate
-                </option>
-                <option value="HIGHER_VOCATIONAL">
-                  Higher Vocational Diploma
-                </option>
-                <option value="BACHELOR">Bachelor's Degree</option>
-                <option value="MASTERS">Master's Degree</option>
-                <option value="PHD">Doctoral Degree (PhD)</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Institution Name <span className="text-red-500">*</span>
-              </label>
+              <Label required>Institution Name</Label>
               <SearchableDropdown
                 options={universities.map((uni) => ({
                   value: uni.name,
@@ -216,50 +154,58 @@ export default function EducationModal({
                 }))}
                 value={formData.school}
                 onChange={(val) => setFormData({ ...formData, school: val })}
-                placeholder="Select Institution"
+                placeholder="Search or Select Institution"
+                // 💡 หมายเหตุ: ตรวจสอบให้มั่นใจว่า SearchableDropdown รองรับ Dark Mode ด้วยนะครับ
               />
+            </div>
+
+            <div>
+              <Label required>Education Level</Label>
+              <select
+                value={formData.educationLevel}
+                onChange={(e) => setFormData({ ...formData, educationLevel: e.target.value })}
+                className={inputClassName}
+              >
+                <option value="BELOW_HIGH_SCHOOL">Below High School</option>
+                <option value="HIGH_SCHOOL">High School / Vocational Certificate</option>
+                <option value="HIGHER_VOCATIONAL">Higher Vocational Diploma</option>
+                <option value="BACHELOR">Bachelor's Degree</option>
+                <option value="MASTERS">Master's Degree</option>
+                <option value="PHD">Doctoral Degree (PhD)</option>
+              </select>
             </div>
           </div>
 
-          {/* Degree & Field of Study */}
-          <div className="grid grid-cols-2 gap-4">
+          <hr className="border-gray-100 dark:border-gray-800" />
+
+          {/* Degree & Major */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Degree <span className="text-red-500">*</span>
-              </label>
+              <Label required>Degree</Label>
               <input
                 type="text"
-                placeholder="e.g., Bachelor of Engineering"
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="e.g. Bachelor of Engineering"
+                className={inputClassName}
                 value={formData.degree}
-                onChange={(e) =>
-                  setFormData({ ...formData, degree: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, degree: e.target.value })}
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Field of Study <span className="text-red-500">*</span>
-              </label>
+              <Label required>Field of Study (Major)</Label>
               <input
                 type="text"
-                placeholder="e.g., Computer Engineering"
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="e.g. Computer Science"
+                className={inputClassName}
                 value={formData.major}
-                onChange={(e) =>
-                  setFormData({ ...formData, major: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, major: e.target.value })}
               />
             </div>
           </div>
 
           {/* Year & GPA */}
-          <div className="grid grid-cols-2 gap-4">
-            {/* Year of Study Dropdown */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                Year of Study <span className="text-red-500">*</span>
-              </label>
+              <Label required>Year of Study</Label>
               <select
                 value={formData.yearOfStudy}
                 onChange={(e) => {
@@ -267,38 +213,28 @@ export default function EducationModal({
                   setFormData({
                     ...formData,
                     yearOfStudy: selectedVal,
-                    isCurrent:
-                      selectedVal !== "Graduated" && selectedVal !== "",
+                    isCurrent: selectedVal !== "Graduated" && selectedVal !== "",
                   });
                 }}
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                className={inputClassName}
               >
-                <option value="" disabled>
-                  Select year
-                </option>
-                {[1, 2, 3, 4, 5].map((y) => (
-                  <option key={y} value={y.toString()}>
-                    Year {y}
-                  </option>
+                <option value="" disabled>Select year</option>
+                {[1, 2, 3, 4, 5, 6].map((y) => (
+                  <option key={y} value={y.toString()}>Year {y}</option>
                 ))}
                 <option value="Graduated">Graduated</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                GPA <span className="text-gray-400 font-normal">(Current)</span>{" "}
-                <span className="text-red-500">*</span>
-              </label>
+              <Label required>GPA (Current/Final)</Label>
               <input
                 type="text"
-                placeholder="e.g., 3.50"
-                className="w-full px-4 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                placeholder="e.g. 3.50"
+                className={inputClassName}
                 value={formData.gpa}
                 onChange={(e) => {
                   const val = e.target.value;
-                  // ตรวจสอบ: ว่างเปล่า หรือ ตัวเลขที่มีทศนิยมสูงสุด 2 ตำแหน่ง
                   if (val === "" || /^\d*\.?\d{0,2}$/.test(val)) {
-                    // หากต้องการจำกัดเกรดสูงสุดไม่เกิน 4.00 เปิดใช้โค้ดบรรทัดด้านล่าง
                     if (Number(val) > 4.0) return;
                     setFormData({ ...formData, gpa: val });
                   }
@@ -308,20 +244,25 @@ export default function EducationModal({
           </div>
         </div>
 
-        {/* Footer Buttons - อยู่ข้างนอก p-8 และถูกต้องตามลำดับ */}
-        <div className="flex justify-center gap-3 p-8 border-t border-gray-100">
+        {/* Footer Actions */}
+        <div className="flex flex-col sm:flex-row justify-end gap-3 p-6 border-t border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/20">
           <button
             onClick={onClose}
-            className="px-8 py-2.5 rounded-full border border-gray-200 text-gray-500 font-medium hover:bg-gray-50 transition-all active:scale-95"
+            className="order-2 sm:order-1 px-8 py-3 rounded-xl border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 font-bold hover:bg-gray-100 dark:hover:bg-gray-800 transition-all active:scale-95"
           >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="px-10 py-2.5 bg-blue-600 text-white rounded-full font-medium hover:bg-blue-700 transition-all disabled:opacity-50 active:scale-95 shadow-lg shadow-blue-200"
+            className="order-1 sm:order-2 px-12 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all disabled:opacity-50 active:scale-95 shadow-xl shadow-blue-500/20"
           >
-            {isSaving ? "Saving..." : education ? "Update" : "Add"}
+            {isSaving ? (
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Saving...
+              </div>
+            ) : education ? "Update Education" : "Add Education"}
           </button>
         </div>
       </div>

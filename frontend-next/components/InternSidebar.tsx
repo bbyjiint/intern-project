@@ -15,125 +15,124 @@ export default function Sidebar() {
   const isCertificatesPage = pathname === '/intern/certificates';
   const isProjectPage = pathname === '/intern/project';
   const isSkillPage = pathname === '/intern/skills';
+  const isAiMatchPage = pathname === '/intern/ai-job-match';
+  const isAppliedPage = pathname === '/intern/applied';
+  const isBookmarkPage = pathname === '/intern/bookmark';
 
   return (
-    <aside className="w-64 bg-white min-h-screen pt-8 border-r border-gray-200 shrink-0">
-      <div className="px-6 space-y-2">
+    <aside className="w-64 bg-white dark:bg-slate-900 min-h-screen pt-8 border-r border-slate-200 dark:border-slate-800 shrink-0 transition-colors">
+      <div className="px-4 space-y-1.5">
         
-        {/* Profile with Dropdown */}
-        <div className="profile-dropdown-container">
-          <div className={`w-full px-4 py-3 rounded-lg flex items-center justify-between transition-colors ${
+        {/* Profile Group */}
+        <div className="space-y-1">
+          <div className={`group w-full px-4 py-3 rounded-xl flex items-center justify-between transition-all duration-200 ${
               isProfilePage 
-                ? 'bg-[#0273B1] text-white' 
-                : 'bg-transparent text-[#1C2D4F] hover:bg-[#F0F4F8] hover:text-[#0273B1]'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' 
+                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400'
             }`}>
             
-            {/* คลิกที่ข้อความ/ไอคอนซ้ายเพื่อไปหน้า Profile */}
-            <Link href="/intern/profile" className="flex items-center space-x-3 flex-1">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            <Link href="/intern/profile" className="flex items-center space-x-3 flex-1 font-bold tracking-tight">
+              <svg className={`w-5 h-5 ${isProfilePage ? 'text-white' : 'text-slate-400 dark:text-slate-500 group-hover:text-blue-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-              <span className="font-medium">Profile</span>
+              <span>Profile</span>
             </Link>
             
-            {/* Toggle Dropdown Button */}
             <button
               onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-              className={`p-1 rounded transition-colors ${
-                isProfilePage ? 'hover:bg-[#025c8d]' : 'hover:bg-gray-200'
+              className={`p-1 rounded-lg transition-colors ${
+                isProfilePage ? 'hover:bg-white/20' : 'hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
               <svg 
-                className={`w-4 h-4 transition-transform duration-200 ${isProfileDropdownOpen ? 'rotate-180' : ''}`}
+                className={`w-4 h-4 transition-transform duration-300 ${isProfileDropdownOpen ? 'rotate-180' : ''}`}
                 fill="none" 
                 stroke="currentColor" 
                 viewBox="0 0 24 24"
+                strokeWidth={3}
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
               </svg>
             </button>
           </div>
           
           {/* Dropdown Menu */}
           {isProfileDropdownOpen && (
-            <div className="ml-4 mt-2 space-y-1">
-              <Link
-                href="/intern/project"
-                className={`block px-4 py-3 rounded-lg text-sm transition-colors flex items-center space-x-3 ${
-                  isProjectPage
-                    ? 'bg-[#0273B1] text-white'
-                    : 'bg-transparent text-[#1C2D4F] hover:bg-[#F0F4F8] hover:text-[#0273B1]'
-                }`}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                </svg>
-                <span>Project</span>
-              </Link>
-
-              <Link
-                href="/intern/skills"
-                className={`block px-4 py-3 rounded-lg text-sm transition-colors flex items-center space-x-3 ${
-                  isSkillPage
-                    ? 'bg-[#0273B1] text-white'
-                    : 'bg-transparent text-[#1C2D4F] hover:bg-[#F0F4F8] hover:text-[#0273B1]'
-                }`}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                </svg>
-                <span>Skills</span>
-              </Link>
-              <Link
-                href="/intern/certificates"
-                className={`block px-4 py-3 rounded-lg text-sm transition-colors flex items-center space-x-3 ${
-                  isCertificatesPage
-                    ? 'bg-[#0273B1] text-white'
-                    : 'bg-transparent text-[#1C2D4F] hover:bg-[#F0F4F8] hover:text-[#0273B1]'
-                }`}
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <span>Certificates</span>
-              </Link>
+            <div className="ml-4 pl-2 border-l-2 border-slate-100 dark:border-slate-800 space-y-1 mt-1">
+              {[
+                { href: '/intern/project', label: 'Project', active: isProjectPage, icon: 'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10' },
+                { href: '/intern/skills', label: 'Skills', active: isSkillPage, icon: 'M13 10V3L4 14h7v7l9-11h-7z' },
+                { href: '/intern/certificates', label: 'Certificates', active: isCertificatesPage, icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' }
+              ].map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center space-x-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                    item.active
+                      ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                  }`}
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
+                  </svg>
+                  <span>{item.label}</span>
+                </Link>
+              ))}
             </div>
           )}
         </div>
 
-        {/* AI Job Match */}
-        <Link
-          href="/intern/ai-job-match"
-          className="px-4 py-3 rounded-lg flex items-center space-x-3 transition-colors text-[#1C2D4F] hover:text-[#0273B1] hover:bg-[#F0F4F8]"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            {/* เปลี่ยน path ตรงนี้เป็นรูปแว่นขยาย */}
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-          </svg>
-          <span className="font-medium">AI Job Match</span>
-        </Link>
+        <div className="pt-4 pb-2">
+          <p className="px-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-400 dark:text-slate-600 mb-2">
+            Discovery
+          </p>
+          
+          {/* AI Job Match */}
+          <Link
+            href="/intern/ai-job-match"
+            className={`group px-4 py-3 rounded-xl flex items-center space-x-3 transition-all ${
+              isAiMatchPage 
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' 
+                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            <svg className={`w-5 h-5 ${isAiMatchPage ? 'text-white' : 'text-slate-400 dark:text-slate-500 group-hover:text-blue-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <span className="font-bold tracking-tight">AI Job Match</span>
+          </Link>
 
-        {/* Applied Link */}
-        <Link
-          href="/intern/applied"
-          className="px-4 py-3 rounded-lg flex items-center space-x-3 transition-colors text-[#1C2D4F] hover:text-[#0273B1] hover:bg-[#F0F4F8]"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-          </svg>
-          <span className="font-medium">Applied</span>
-        </Link>
+          {/* Applied Link */}
+          <Link
+            href="/intern/applied"
+            className={`group px-4 py-3 rounded-xl flex items-center space-x-3 transition-all mt-1 ${
+              isAppliedPage 
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' 
+                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            <svg className={`w-5 h-5 ${isAppliedPage ? 'text-white' : 'text-slate-400 dark:text-slate-500 group-hover:text-blue-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span className="font-bold tracking-tight">Applied</span>
+          </Link>
 
-        {/* Bookmark Link */}
-        <Link
-          href="/intern/bookmark"
-          className="px-4 py-3 rounded-lg flex items-center space-x-3 transition-colors text-[#1C2D4F] hover:text-[#0273B1] hover:bg-[#F0F4F8]"
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-          </svg>
-          <span className="font-medium">Bookmark</span>
-        </Link>
+          {/* Bookmark Link */}
+          <Link
+            href="/intern/bookmark"
+            className={`group px-4 py-3 rounded-xl flex items-center space-x-3 transition-all mt-1 ${
+              isBookmarkPage 
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' 
+                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
+            }`}
+          >
+            <svg className={`w-5 h-5 ${isBookmarkPage ? 'text-white' : 'text-slate-400 dark:text-slate-500 group-hover:text-blue-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+            </svg>
+            <span className="font-bold tracking-tight">Bookmark</span>
+          </Link>
+        </div>
 
       </div>
     </aside>

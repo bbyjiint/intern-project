@@ -44,35 +44,41 @@ export default function InternProfilePage() {
   }, [router])
 
   return (
-    <div className="min-h-screen bg-[#E6EBF4] flex flex-col">
+    // 1. ปรับ Background หลักของหน้า และเพิ่ม transition
+    <div className="min-h-screen bg-[#E6EBF4] dark:bg-gray-950 flex flex-col transition-colors duration-300">
       <InternNavbar />
 
       <div className="flex flex-1">
         <Sidebar />
 
+        {/* 2. ปรับพื้นที่แสดงเนื้อหา */}
         <div className="layout-container layout-page flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-4xl">
+          <div className="mx-auto max-w-4xl py-8">
             {isLoading ? (
               <div className="flex items-center justify-center min-h-[60vh]">
                 <div className="text-center">
-                  <div className="w-16 h-16 mx-auto mb-4 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
-                  <p className="text-gray-500">Loading profile...</p>
+                  {/* ปรับสี Spinner ให้รับกับ Dark Mode */}
+                  <div className="w-16 h-16 mx-auto mb-4 border-4 border-gray-200 dark:border-gray-800 border-t-blue-600 rounded-full animate-spin" />
+                  <p className="text-gray-500 dark:text-gray-400">Loading profile...</p>
                 </div>
               </div>
             ) : !profileData ? (
               <div className="flex items-center justify-center min-h-[60vh]">
                 <div className="text-center">
-                  <p className="text-gray-600 mb-4">No profile data found. Please complete your profile setup.</p>
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">No profile data found. Please complete your profile setup.</p>
                   <button
                     onClick={() => router.push('/intern/profile-setup')}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20"
                   >
                     Go to Profile Setup
                   </button>
                 </div>
               </div>
             ) : (
-              <>
+              <div className="space-y-6 pb-12"> 
+                {/* 3. ส่วน Content ที่เรียกใช้ Component ย่อย */}
+                {/* หมายเหตุ: คุณต้องเข้าไปใส่ dark: ใน Component ย่อยเหล่านี้ด้วย (เช่น ProfileHeader, PersonalInfoCard) */}
+                
                 <ProfileHeader
                   fullName={profileData.fullName || 'User'}
                   currentDate={currentDate}
@@ -110,7 +116,7 @@ export default function InternProfilePage() {
                 />
 
                 <CertificatesSection />
-              </>
+              </div>
             )}
           </div>
         </div>

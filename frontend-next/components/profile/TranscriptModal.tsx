@@ -6,8 +6,8 @@ interface TranscriptUploadModalProps {
   isOpen: boolean
   onClose: () => void
   educationId: string
-  onUploaded?: () => void  // เรียกเมื่อ verified สำเร็จ → refresh education list
-  onNeedEdit?: () => void  // เรียกเมื่อ mismatch → เปิด edit modal
+  onUploaded?: () => void
+  onNeedEdit?: () => void
 }
 
 type Step = 'upload' | 'analyzing' | 'success' | 'mismatch' | 'error'
@@ -101,11 +101,11 @@ export default function TranscriptUploadModal({
 
   return (
     <div
-      className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 transition-all"
       onClick={handleClose}
     >
       <div
-        className="bg-white rounded-xl shadow-xl w-full max-w-2xl overflow-hidden"
+        className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-100 dark:border-slate-800 transition-colors"
         onClick={(e) => e.stopPropagation()}
       >
 
@@ -114,23 +114,23 @@ export default function TranscriptUploadModal({
           <>
             <div className="flex justify-between items-start p-8 pb-6">
               <div>
-                <h2 className="text-[22px] font-bold text-[#1C2D4F] mb-1">Upload Transcript</h2>
-                <p className="text-[#64748B] text-sm">
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">Upload Transcript</h2>
+                <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">
                   Upload your transcript to verify your education information.
                 </p>
               </div>
-              <button onClick={handleClose} className="text-gray-400 hover:text-gray-700 transition-colors">
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <button onClick={handleClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
 
             <div className="px-8 pb-6">
               <div
-                className={`w-full border-2 border-dashed rounded-xl p-10 flex flex-col items-center justify-center transition-colors
-                  ${isDragging ? 'border-blue-400 bg-blue-50' : 'border-[#CBD5E1]'}
-                  ${file ? 'border-green-400 bg-green-50/30' : ''}
+                className={`w-full border-2 border-dashed rounded-2xl p-10 flex flex-col items-center justify-center transition-all duration-300
+                  ${isDragging ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-500/10 shadow-inner' : 'border-slate-200 dark:border-slate-700'}
+                  ${file ? 'border-emerald-500 bg-emerald-50/30 dark:bg-emerald-500/5' : ''}
                 `}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
@@ -143,25 +143,29 @@ export default function TranscriptUploadModal({
                   onChange={(e) => setFile(e.target.files?.[0] || null)}
                   className="hidden"
                 />
-                <label htmlFor="transcript-upload" className="flex flex-col items-center cursor-pointer w-full">
+                <label htmlFor="transcript-upload" className="flex flex-col items-center cursor-pointer w-full text-center">
                   <div className="mb-4">
                     {file ? (
-                      <svg className="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+                      <div className="bg-emerald-100 dark:bg-emerald-500/20 p-4 rounded-full">
+                        <svg className="w-12 h-12 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
                     ) : (
-                      <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M12 16V3" /><path d="M7 8l5-5 5 5" /><path d="M5 21h14" />
-                      </svg>
+                      <div className="bg-blue-100 dark:bg-blue-500/20 p-4 rounded-full">
+                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#2563EB" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M12 16V3" /><path d="M7 8l5-5 5 5" /><path d="M5 21h14" />
+                        </svg>
+                      </div>
                     )}
                   </div>
-                  <h3 className="text-[#334155] font-bold text-base mb-4">
+                  <h3 className="text-slate-800 dark:text-slate-100 font-black text-lg mb-2 truncate max-w-xs">
                     {file ? file.name : 'Drag and drop your file here'}
                   </h3>
-                  <div className="bg-[#2563EB] text-white px-6 py-2.5 rounded-lg text-sm font-medium mb-4 hover:bg-blue-700 transition-colors shadow-sm">
+                  <div className="bg-blue-600 text-white px-8 py-3 rounded-xl text-sm font-black uppercase tracking-widest mb-4 hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20 active:scale-95">
                     {file ? 'Change File' : 'Select File'}
                   </div>
-                  <p className="text-[#94A3B8] text-xs">PDF or DOCX format. Max size: 5 MB</p>
+                  <p className="text-slate-400 dark:text-slate-500 text-xs font-bold uppercase tracking-wide">PDF or DOCX • Max size 5 MB</p>
                 </label>
               </div>
             </div>
@@ -169,16 +173,16 @@ export default function TranscriptUploadModal({
             <div className="flex justify-end gap-3 px-8 pb-8">
               <button
                 onClick={handleClose}
-                className="px-6 py-2.5 rounded-lg border border-[#CBD5E1] text-[#64748B] font-medium text-sm hover:bg-gray-50 transition-colors"
+                className="px-6 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-black text-xs uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={handleVerify}
                 disabled={!file}
-                className="px-8 py-2.5 rounded-lg bg-[#2563EB] text-white font-medium text-sm hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+                className="px-8 py-3 rounded-xl bg-blue-600 text-white font-black text-xs uppercase tracking-widest hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-600/20"
               >
-                Verify
+                Start Verification
               </button>
             </div>
           </>
@@ -186,20 +190,20 @@ export default function TranscriptUploadModal({
 
         {/* ── ANALYZING ── */}
         {step === 'analyzing' && (
-          <div className="flex flex-col items-center justify-center py-16 px-8 text-center">
-            <div className="relative w-20 h-20 mb-6">
-              <div className="absolute inset-0 rounded-full border-4 border-blue-100" />
+          <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
+            <div className="relative w-24 h-24 mb-8">
+              <div className="absolute inset-0 rounded-full border-4 border-blue-100 dark:border-blue-900/30" />
               <div className="absolute inset-0 rounded-full border-4 border-blue-600 border-t-transparent animate-spin" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                     d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
             </div>
-            <h3 className="text-xl font-bold text-gray-800 mb-2">Analyzing Transcript...</h3>
-            <p className="text-gray-500 text-sm max-w-xs">
-              AI is reading and comparing your transcript with the information you provided. Please wait.
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-3 tracking-tight">AI is Analyzing...</h3>
+            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium max-w-sm leading-relaxed">
+              We're comparing your transcript data with your profile info. This will take just a few seconds.
             </p>
           </div>
         )}
@@ -207,46 +211,38 @@ export default function TranscriptUploadModal({
         {/* ── SUCCESS ── */}
         {step === 'success' && (
           <>
-            <div className="flex flex-col items-center pt-12 pb-6 px-8 text-center">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-5">
-                <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+            <div className="flex flex-col items-center pt-16 pb-6 px-8 text-center transition-all animate-in fade-in zoom-in duration-300">
+              <div className="w-24 h-24 bg-emerald-100 dark:bg-emerald-500/20 rounded-full flex items-center justify-center mb-6 ring-8 ring-emerald-50 dark:ring-emerald-500/5">
+                <svg className="w-12 h-12 text-emerald-600 dark:text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Successfully Verified!</h3>
-              <p className="text-gray-500 text-sm max-w-sm">
-                All information matches your transcript. Your education badge will be updated to{' '}
-                <span className="font-semibold text-green-600">Verified by Transcript</span>.
+              <h3 className="text-3xl font-black text-slate-900 dark:text-white mb-3">Verified!</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-sm font-medium max-w-sm">
+                Your education is now <span className="text-emerald-600 dark:text-emerald-400 font-black">AI Verified</span>. A badge will be added to your profile.
               </p>
             </div>
 
-            {result?.extractedData && Object.keys(result.extractedData).length > 0 && (
-              <div className="mx-8 mb-6 bg-green-50 border border-green-100 rounded-xl p-4">
-                <p className="text-xs font-semibold text-green-700 mb-3 uppercase tracking-wide">
-                  Verified Information
-                </p>
-                <div className="space-y-2">
+            {result?.extractedData && (
+              <div className="mx-8 mb-8 bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 rounded-2xl p-6 transition-all">
+                <p className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 mb-4 uppercase tracking-[0.2em]">Verified Data Point</p>
+                <div className="grid grid-cols-1 gap-3">
                   {Object.entries(result.extractedData).map(([key, val]) => (
-                    <div key={key} className="flex items-center gap-2 text-sm">
-                      <svg className="w-4 h-4 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      <span className="text-gray-500 w-32 capitalize">
-                        {key.replace(/([A-Z])/g, ' $1').trim()}:
-                      </span>
-                      <span className="font-medium text-gray-800">{val}</span>
+                    <div key={key} className="flex justify-between items-center text-sm border-b border-slate-200/50 dark:border-slate-700/50 pb-2 last:border-0 last:pb-0">
+                      <span className="text-slate-400 dark:text-slate-500 font-bold capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
+                      <span className="font-black text-slate-800 dark:text-slate-100">{val}</span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            <div className="flex justify-center px-8 pb-8">
+            <div className="flex justify-center px-8 pb-10">
               <button
                 onClick={handleConfirm}
-                className="px-10 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-colors shadow-sm"
+                className="px-12 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl transition-all shadow-xl shadow-emerald-500/20 uppercase tracking-widest text-xs"
               >
-                Done
+                Close & Done
               </button>
             </div>
           </>
@@ -255,59 +251,55 @@ export default function TranscriptUploadModal({
         {/* ── MISMATCH ── */}
         {step === 'mismatch' && (
           <>
-            <div className="flex flex-col items-center pt-10 pb-4 px-8 text-center">
-              <div className="w-20 h-20 bg-yellow-100 rounded-full flex items-center justify-center mb-5">
-                <svg className="w-10 h-10 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            <div className="flex flex-col items-center pt-12 pb-4 px-8 text-center animate-in slide-in-from-bottom-4 duration-300">
+              <div className="w-20 h-20 bg-amber-100 dark:bg-amber-500/20 rounded-full flex items-center justify-center mb-6">
+                <svg className="w-10 h-10 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Information Doesn't Match</h3>
-              <p className="text-gray-500 text-sm max-w-sm">
-                The following fields differ from your uploaded transcript.
-                Please edit your profile to match, then try again.
+              <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Data Mismatch</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-sm font-medium max-w-sm">
+                Some fields on your profile don't match the transcript. Please correct them to get verified.
               </p>
             </div>
 
-            {result?.mismatches && result.mismatches.length > 0 && (
-              <div className="mx-8 mb-6 border border-yellow-200 bg-yellow-50 rounded-xl overflow-hidden">
-                <div className="px-4 py-3 bg-yellow-100 border-b border-yellow-200">
-                  <p className="text-xs font-semibold text-yellow-800 uppercase tracking-wide">
-                    Fields That Don't Match
-                  </p>
+            <div className="px-8 mb-8">
+              <div className="bg-amber-50 dark:bg-amber-500/5 border border-amber-100 dark:border-amber-500/20 rounded-2xl overflow-hidden shadow-sm transition-all">
+                <div className="px-5 py-3 bg-amber-100 dark:bg-amber-500/10 border-b border-amber-200 dark:border-amber-500/20">
+                  <p className="text-[10px] font-black text-amber-800 dark:text-amber-400 uppercase tracking-widest">Mismatch Report</p>
                 </div>
-                <div className="divide-y divide-yellow-100">
-                  {result.mismatches.map((m, i) => (
-                    <div key={i} className="px-4 py-3">
-                      <p className="text-sm font-semibold text-gray-700 mb-2">{m.field}</p>
-                      <div className="grid grid-cols-2 gap-2 text-xs">
-                        <div className="bg-white rounded-lg px-3 py-2 border border-gray-200">
-                          <p className="text-gray-400 mb-0.5">Your Profile</p>
-                          <p className="font-semibold text-gray-700">{m.profile}</p>
+                <div className="max-h-48 overflow-y-auto divide-y divide-amber-100 dark:divide-amber-500/10">
+                  {result?.mismatches?.map((m, i) => (
+                    <div key={i} className="p-5">
+                      <p className="text-sm font-black text-slate-800 dark:text-slate-200 mb-3 uppercase tracking-tighter">{m.field}</p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-white dark:bg-slate-800 p-3 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                          <p className="text-[10px] text-slate-400 font-black uppercase mb-1">Your Profile</p>
+                          <p className="font-bold text-slate-700 dark:text-slate-300 text-sm truncate">{m.profile}</p>
                         </div>
-                        <div className="bg-white rounded-lg px-3 py-2 border border-red-200">
-                          <p className="text-red-400 mb-0.5">From Transcript</p>
-                          <p className="font-semibold text-red-600">{m.transcript}</p>
+                        <div className="bg-white dark:bg-rose-500/5 p-3 rounded-xl border border-rose-100 dark:border-rose-500/20 shadow-sm">
+                          <p className="text-[10px] text-rose-400 font-black uppercase mb-1">Transcript</p>
+                          <p className="font-bold text-rose-600 dark:text-rose-400 text-sm truncate">{m.transcript}</p>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
-            )}
+            </div>
 
-            <div className="flex justify-center gap-3 px-8 pb-8">
+            <div className="flex justify-center gap-3 px-8 pb-10">
               <button
                 onClick={reset}
-                className="px-6 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-medium text-sm hover:bg-gray-50 transition-colors"
+                className="px-6 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-black text-xs uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
               >
-                Try Another File
+                Retry File
               </button>
               <button
                 onClick={handleGoEdit}
-                className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors shadow-sm"
+                className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl transition-all shadow-lg shadow-blue-500/20 uppercase tracking-widest text-xs"
               >
-                Go Edit Profile
+                Edit My Profile
               </button>
             </div>
           </>
@@ -315,27 +307,27 @@ export default function TranscriptUploadModal({
 
         {/* ── ERROR ── */}
         {step === 'error' && (
-          <>
-            <div className="flex flex-col items-center pt-12 pb-6 px-8 text-center">
-              <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mb-5">
-                <svg className="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          <div className="animate-in fade-in duration-300">
+            <div className="flex flex-col items-center pt-16 pb-8 px-8 text-center">
+              <div className="w-24 h-24 bg-rose-100 dark:bg-rose-500/20 rounded-full flex items-center justify-center mb-6 ring-8 ring-rose-50 dark:ring-rose-500/5">
+                <svg className="w-12 h-12 text-rose-600 dark:text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Upload Failed</h3>
-              <p className="text-gray-500 text-sm max-w-sm">
-                {result?.message || 'Something went wrong. Please try again.'}
+              <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-3">Upload Failed</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-sm font-medium max-w-xs leading-relaxed">
+                {result?.message || 'We encountered an error processing your file. Please check your connection and try again.'}
               </p>
             </div>
-            <div className="flex justify-center px-8 pb-8">
+            <div className="flex justify-center px-8 pb-10">
               <button
                 onClick={reset}
-                className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors"
+                className="px-10 py-3.5 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-xl transition-all shadow-xl shadow-rose-500/20 uppercase tracking-widest text-xs"
               >
                 Try Again
               </button>
             </div>
-          </>
+          </div>
         )}
 
       </div>
