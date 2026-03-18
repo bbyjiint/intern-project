@@ -47,7 +47,7 @@ export default function SkillsSection({
 
   const YellowCheck = () => (
     <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 flex-shrink-0 shadow-sm">
-      <svg className="w-2.5 h-2.5 text-slate-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M5 13l4 4L19 7" />
       </svg>
     </span>
@@ -102,7 +102,7 @@ export default function SkillsSection({
                 {hasCertEvidence || hasProjectEvidence ? (
                   <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
                     <YellowCheck />
-                    {hasCertEvidence && hasProjectEvidence ? "Evidence: All" : hasCertEvidence ? "Evidence: Cert" : "Evidence: Proj"}
+                    {hasCertEvidence && hasProjectEvidence ? "Evidence: All" : hasCertEvidence ? "Evidence: Certificate" : "Evidence: Project"}
                   </span>
                 ) : (
                   <span className="flex items-center gap-1.5 text-slate-400 dark:text-slate-500">
@@ -112,7 +112,7 @@ export default function SkillsSection({
               </>
             ) : (
               <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
-                <GreenCheck /> Verified By Test
+                <GreenCheck /> Verified By Skill Test
               </span>
             )}
           </div>

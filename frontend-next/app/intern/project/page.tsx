@@ -121,7 +121,7 @@ export default function ProjectPage() {
           rawEndDate: p.endDate,
         };
       });
-      setProjects([...mapped].reverse());
+      setProjects(mapped);
     }
   }, [profileData]);
 
@@ -141,7 +141,7 @@ export default function ProjectPage() {
     checkAuth();
   }, [router]);
 
-const filteredProjects = useMemo(() => {
+  const filteredProjects = useMemo(() => {
     return projects.filter((p) => {
       const matchTab = filterTab === "All" || p.uploadStatus === filterTab;
       const matchSearch =
@@ -159,13 +159,42 @@ const filteredProjects = useMemo(() => {
     );
   }
 
-  function handleSave(project: ProjectData): void {
-    throw new Error("Function not implemented.");
-  }
+  const handleSave = async (project: ProjectData) => {
+    try {
+      if (project.id) {
+        await apiFetch(`/api/candidates/projects/${project.id}`, {
+          method: "PUT",
+          body: JSON.stringify(project),
+        });
+      } else {
+        await apiFetch("/api/candidates/projects", {
+          method: "POST",
+          body: JSON.stringify(project),
+        });
+      }
+      await refetch();
+      setIsModalOpen(false);
+    } catch (error) {
+      console.error("Failed to save project:", error);
+    }
+  };
 
-  function handleDeleteExecute(event: MouseEvent<HTMLButtonElement, MouseEvent>): void {
-    throw new Error("Function not implemented.");
-  }
+  const handleDeleteExecute = async () => {
+    if (!projectToDelete) return;
+    setIsDeleting(true);
+    try {
+      await apiFetch(`/api/candidates/projects/${projectToDelete.id}`, {
+        method: "DELETE",
+      });
+      await refetch();
+      setIsDeleteModalOpen(false);
+      setProjectToDelete(null);
+    } catch (error) {
+      console.error("Failed to delete project:", error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col transition-colors duration-300">
@@ -342,11 +371,8 @@ const filteredProjects = useMemo(() => {
           </div>
         </div>
       </div>
-      
-
 
       {/* Modals */}
-
       <ProjectsModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
@@ -363,33 +389,31 @@ const filteredProjects = useMemo(() => {
 
       {/* Delete Confirmation */}
       {isDeleteModalOpen && (
-              <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-                <div className="relative bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl max-w-sm w-full p-8 text-center border border-slate-100 dark:border-slate-800">
-                  <div className="w-20 h-20 bg-rose-50 dark:bg-rose-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Trash2 size={32} className="text-rose-600 dark:text-rose-400" />
-                  </div>
-                  <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-3 tracking-tight">Delete Project?</h3>
-                  <p className="text-slate-500 dark:text-slate-400 font-medium mb-8">
-                    Confirm deletion of <b className="text-slate-900 dark:text-slate-200">{projectToDelete?.title}</b>? This cannot be undone.
-                  </p>
-                  <div className="flex gap-4">
-                    <button onClick={() => setIsDeleteModalOpen(false)} className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all">
-                      Keep it
-                    </button>
-                    <button onClick={handleDeleteExecute} className="flex-1 py-4 bg-rose-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-rose-600/20 transition-all active:scale-95">
-                      {isDeleting ? "Deleting..." : "Delete"}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
+          <div className="relative bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl max-w-sm w-full p-8 text-center border border-slate-100 dark:border-slate-800">
+            <div className="w-20 h-20 bg-rose-50 dark:bg-rose-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Trash2 size={32} className="text-rose-600 dark:text-rose-400" />
+            </div>
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-3 tracking-tight">Delete Project?</h3>
+            <p className="text-slate-500 dark:text-slate-400 font-medium mb-8">
+              Confirm deletion of <b className="text-slate-900 dark:text-slate-200">{projectToDelete?.title}</b>? This cannot be undone.
+            </p>
+            <div className="flex gap-4">
+              <button onClick={() => setIsDeleteModalOpen(false)} className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all">
+                Keep it
+              </button>
+              <button onClick={handleDeleteExecute} disabled={isDeleting} className="flex-1 py-4 bg-rose-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-rose-600/20 transition-all active:scale-95 disabled:opacity-60">
+                {isDeleting ? "Deleting..." : "Delete"}
+              </button>
+            </div>
           </div>
-        );
-      }
+        </div>
+      )}
+    </div>
+  );
+}
 
-
-
-// ─── Sub-components ปรับแต่งความชัด ───────────────────────────────────────────
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function Badge({ status }: { status: string }) {
   const isUploaded = status === "File Uploaded";
@@ -414,8 +438,8 @@ function ProjectLink({ label, active, url, icon }: { label: string; active: bool
       target="_blank"
       rel="noopener noreferrer"
       className={`flex items-center gap-4 px-5 py-4 rounded-2xl border transition-all duration-300 ${
-        active 
-          ? "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:shadow-lg hover:shadow-black/5 cursor-pointer" 
+        active
+          ? "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:shadow-lg hover:shadow-black/5 cursor-pointer"
           : "border-slate-100 dark:border-slate-800/50 bg-slate-50/50 dark:bg-slate-900/50 opacity-60 cursor-not-allowed"
       }`}
       onClick={(e) => !active && e.preventDefault()}
@@ -423,11 +447,9 @@ function ProjectLink({ label, active, url, icon }: { label: string; active: bool
       <span className={`${active ? "text-blue-600 dark:text-blue-400" : "text-slate-400 dark:text-slate-600"}`}>
         {icon}
       </span>
-
       <span className={`flex-1 text-sm font-bold ${active ? "text-slate-700 dark:text-slate-200" : "text-slate-400 dark:text-slate-600"}`}>
         {label}
       </span>
-
       {active ? (
         <div className="w-6 h-6 rounded-full bg-emerald-500 dark:bg-emerald-600 flex items-center justify-center shadow-sm">
           <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={4}>
@@ -436,7 +458,7 @@ function ProjectLink({ label, active, url, icon }: { label: string; active: bool
         </div>
       ) : (
         <div className="w-6 h-6 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center">
-            <div className="w-2 h-2 rounded-full bg-slate-400 dark:bg-slate-600" />
+          <div className="w-2 h-2 rounded-full bg-slate-400 dark:bg-slate-600" />
         </div>
       )}
     </a>
