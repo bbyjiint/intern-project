@@ -1,6 +1,8 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { apiFetch } from '@/lib/api'
 import { type Applicant } from './ApplicantCard'
 
 export interface CandidateEducation {
@@ -26,25 +28,28 @@ export interface CandidateProfile {
   education?: CandidateEducation[]
   experience?: Array<{ id?: string }>
   projects?: Array<{ id?: string }>
-  skills?: Array<{ name: string; level?: string; rating?: number }>
+  skills?: Array<{ name: string; level?: string; rating?: number; status?: string }>
+  gender?: string | null
+  dateOfBirth?: string | null
+  nationality?: string | null
 }
 
-const MOCK_AI_JOB_MATCH = {
-  position: { label: 'AI Developer', matched: true },
-  education: { label: 'GPA > 3.50 - (Verified by Transcript)', matched: true },
-  skills: [
-    { label: 'Python - (Verified by Skill Test)', matched: true },
-    { label: 'SQL - (Evidence by Certificate)', matched: true },
-    { label: 'HTML - (Not Verified)', matched: false },
-  ],
-  project: { label: 'Dashboard Project (Relevant) - (File Uploaded)', matched: true },
+// ─── AI Analysis Types ────────────────────────────────────────────────────────
+
+interface AIMatchItem {
+  matched: boolean
+  label: string
 }
 
-const MOCK_AI_INSIGHT = [
-  'Candidate has verified experience in Figma and completed a UI redesign project with GitHub activity.',
-  'UX research knowledge is supported by certificate.',
-  'Illustrator skill is present but not verified.',
-]
+interface AIAnalysis {
+  position: AIMatchItem
+  education: AIMatchItem
+  skills: AIMatchItem[]
+  project: AIMatchItem
+  insight: string[]
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function CheckIcon({ matched }: { matched: boolean }) {
   return matched ? (
@@ -94,25 +99,77 @@ function CircularProgress({ percentage, label }: { percentage: number; label: st
   )
 }
 
+// ─── Skeleton loader for AI section ──────────────────────────────────────────
+
+function AIAnalysisSkeleton() {
+  return (
+    <div className="space-y-[10px]">
+      {[90, 110, 80, 100].map((w, i) => (
+        <div key={i} className="flex items-center gap-[12px]">
+          <div className="h-[18px] w-[18px] rounded-full bg-[#E5E7EB] animate-pulse shrink-0" />
+          <div className={`h-[12px] rounded bg-[#E5E7EB] animate-pulse`} style={{ width: `${w}px` }} />
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ─── Props ────────────────────────────────────────────────────────────────────
+
 interface ApplicantProfilePopupProps {
   applicant: Applicant
   profile: CandidateProfile | null
   jobMatch: number
   profileCompletion: number
   isLoading: boolean
+  jobPostId?: string
   onClose: () => void
   onAccept: () => void
   onDecline: () => void
 }
 
+// ─── Main Component ───────────────────────────────────────────────────────────
+
 export default function ApplicantProfilePopup({
   applicant, profile, jobMatch, profileCompletion, isLoading,
-  onClose, onAccept, onDecline,
+  jobPostId, onClose, onAccept, onDecline,
 }: ApplicantProfilePopupProps) {
   const router = useRouter()
   const candidateId = profile?.id || applicant.candidateId
 
-  // ✅ navigate ไปหน้า employer/candidate/[id] พร้อม scroll section
+  const [aiAnalysis, setAiAnalysis] = useState<AIAnalysis | null>(null)
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState(false)
+
+  // ✅ เรียก AI analysis เมื่อ profile โหลดเสร็จและมี jobPostId
+  useEffect(() => {
+    if (!profile?.id || !jobPostId || aiAnalysis) return
+
+    const fetchAnalysis = async () => {
+      setAiLoading(true)
+      setAiError(false)
+      try {
+        const data = await apiFetch<{ analysis: AIAnalysis }>(
+          `/api/candidates/applicant-job-analysis?jobPostId=${jobPostId}&candidateId=${profile.id}`
+        )
+        setAiAnalysis(data.analysis)
+      } catch (e) {
+        console.error('Failed to fetch AI analysis:', e)
+        setAiError(true)
+      } finally {
+        setAiLoading(false)
+      }
+    }
+
+    fetchAnalysis()
+  }, [profile?.id, jobPostId])
+
+  // reset เมื่อเปิด popup ใหม่
+  useEffect(() => {
+    setAiAnalysis(null)
+    setAiError(false)
+  }, [applicant.candidateId])
+
   const goToProfile = (section?: string) => {
     const url = `/employer/candidate/${candidateId}${section ? `?section=${section}` : ''}`
     router.push(url)
@@ -137,9 +194,10 @@ export default function ApplicantProfilePopup({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 p-5" onClick={onClose}>
-      <div className="relative max-h-[92vh] w-full max-w-[940px] overflow-y-auto rounded-[18px] bg-white px-[32px] py-[24px] shadow-[0_20px_60px_rgba(15,23,42,0.18)]"
-        onClick={(e) => e.stopPropagation()}>
-
+      <div
+        className="relative max-h-[92vh] w-full max-w-[940px] overflow-y-auto rounded-[18px] bg-white px-[32px] py-[24px] shadow-[0_20px_60px_rgba(15,23,42,0.18)]"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Close */}
         <button type="button" onClick={onClose}
           className="absolute right-[16px] top-[14px] text-[#4B5563] transition hover:text-[#111827]" aria-label="Close">
@@ -165,7 +223,6 @@ export default function ApplicantProfilePopup({
               {isLoading && <p className="mt-[6px] text-[12px] text-[#6B7280]">Loading profile...</p>}
             </div>
           </div>
-          {/* ✅ See Profile → ไปหน้า profile เต็ม ไม่มี section */}
           <button type="button" onClick={() => goToProfile()}
             className="mt-[10px] flex h-[36px] items-center justify-center rounded-[8px] border border-[#2563EB] bg-white px-[16px] text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#EFF6FF]">
             See Profile
@@ -205,89 +262,129 @@ export default function ApplicantProfilePopup({
             </div>
           </div>
 
+          {/* Circular progress */}
           <div className="mt-[16px] flex justify-center gap-[48px]">
             <CircularProgress percentage={jobMatch} label="Job Match" />
             <CircularProgress percentage={profileCompletion} label="Profile Completion" />
           </div>
 
-          {/* AI Job Match Section */}
+          {/* ✅ AI Job Match Section — Real Data */}
           <div className="mt-[20px] rounded-[12px] border border-[#E5E7EB] bg-[#F9FAFB] px-[20px] py-[16px]">
             <div className="mb-[14px] flex items-center gap-[6px]">
               <span className="text-[13px] font-bold text-[#2563EB]">AI</span>
               <h3 className="text-[13px] font-bold text-[#1F2937]">Job Match Section</h3>
               <span className="text-[14px] text-[#6B7280]">✦</span>
             </div>
-            <div className="space-y-[10px] text-[12px]">
-              <div className="grid grid-cols-[90px_1fr] items-center gap-x-[12px]">
-                <span className="text-[#6B7280]">Position</span>
-                <div className="flex items-center gap-[8px]">
-                  <CheckIcon matched={MOCK_AI_JOB_MATCH.position.matched} />
-                  <span className="text-[#374151]">{MOCK_AI_JOB_MATCH.position.label}</span>
-                </div>
-              </div>
-              <div className="grid grid-cols-[90px_1fr] items-center gap-x-[12px]">
-                <span className="text-[#6B7280]">Education</span>
-                <div className="flex items-center justify-between gap-[8px]">
+
+            {/* Loading state */}
+            {(aiLoading || (isLoading && !aiAnalysis)) && <AIAnalysisSkeleton />}
+
+            {/* Error state */}
+            {aiError && !aiLoading && (
+              <p className="text-[12px] text-[#EF4444]">Could not load AI analysis. Please try again.</p>
+            )}
+
+            {/* ✅ Real AI data */}
+            {aiAnalysis && !aiLoading && (
+              <div className="space-y-[10px] text-[12px]">
+                {/* Position */}
+                <div className="grid grid-cols-[90px_1fr] items-center gap-x-[12px]">
+                  <span className="text-[#6B7280]">Position</span>
                   <div className="flex items-center gap-[8px]">
-                    <CheckIcon matched={MOCK_AI_JOB_MATCH.education.matched} />
-                    <span className="text-[#374151]">{MOCK_AI_JOB_MATCH.education.label}</span>
+                    <CheckIcon matched={aiAnalysis.position.matched} />
+                    <span className="text-[#374151]">{aiAnalysis.position.label}</span>
                   </div>
-                  {/* ✅ scroll ไป education */}
-                  <button type="button" onClick={() => goToProfile('education')}
-                    className="shrink-0 text-[11px] text-[#2563EB] hover:underline">
-                    &gt;&gt; Go to Profile to see file
-                  </button>
                 </div>
-              </div>
-              <div className="grid grid-cols-[90px_1fr] items-start gap-x-[12px]">
-                <span className="pt-[2px] text-[#6B7280]">Skills</span>
-                <div className="flex flex-col gap-[6px]">
-                  {MOCK_AI_JOB_MATCH.skills.map((skill, i) => (
-                    <div key={i} className="flex items-center justify-between gap-[8px]">
-                      <div className="flex items-center gap-[8px]">
-                        <CheckIcon matched={skill.matched} />
-                        <span className="text-[#374151]">{skill.label}</span>
-                      </div>
-                      {/* ✅ scroll ไป skills (แสดงที่ skill สุดท้าย) */}
-                      {i === MOCK_AI_JOB_MATCH.skills.length - 1 && (
-                        <button type="button" onClick={() => goToProfile('skills')}
-                          className="shrink-0 text-[11px] text-[#2563EB] hover:underline">
-                          &gt;&gt; Go to Profile to see more Skill
-                        </button>
-                      )}
+
+                {/* Education */}
+                <div className="grid grid-cols-[90px_1fr] items-center gap-x-[12px]">
+                  <span className="text-[#6B7280]">Education</span>
+                  <div className="flex items-center justify-between gap-[8px]">
+                    <div className="flex items-center gap-[8px]">
+                      <CheckIcon matched={aiAnalysis.education.matched} />
+                      <span className="text-[#374151]">{aiAnalysis.education.label}</span>
                     </div>
-                  ))}
-                </div>
-              </div>
-              <div className="grid grid-cols-[90px_1fr] items-center gap-x-[12px]">
-                <span className="text-[#6B7280]">Project</span>
-                <div className="flex items-center justify-between gap-[8px]">
-                  <div className="flex items-center gap-[8px]">
-                    <CheckIcon matched={MOCK_AI_JOB_MATCH.project.matched} />
-                    <span className="text-[#374151]">{MOCK_AI_JOB_MATCH.project.label}</span>
+                    <button type="button" onClick={() => goToProfile('education')}
+                      className="shrink-0 text-[11px] text-[#2563EB] hover:underline">
+                      &gt;&gt; Go to Profile to see file
+                    </button>
                   </div>
-                  {/* ✅ scroll ไป projects */}
-                  <button type="button" onClick={() => goToProfile('projects')}
-                    className="shrink-0 text-[11px] text-[#2563EB] hover:underline">
-                    &gt;&gt; Go to Profile to see file
-                  </button>
+                </div>
+
+                {/* Skills */}
+                <div className="grid grid-cols-[90px_1fr] items-start gap-x-[12px]">
+                  <span className="pt-[2px] text-[#6B7280]">Skills</span>
+                  <div className="flex flex-col gap-[6px]">
+                    {aiAnalysis.skills.map((skill, i) => (
+                      <div key={i} className="flex items-center justify-between gap-[8px]">
+                        <div className="flex items-center gap-[8px]">
+                          <CheckIcon matched={skill.matched} />
+                          <span className="text-[#374151]">{skill.label}</span>
+                        </div>
+                        {i === aiAnalysis.skills.length - 1 && (
+                          <button type="button" onClick={() => goToProfile('skills')}
+                            className="shrink-0 text-[11px] text-[#2563EB] hover:underline">
+                            &gt;&gt; Go to Profile to see more Skill
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Project */}
+                <div className="grid grid-cols-[90px_1fr] items-center gap-x-[12px]">
+                  <span className="text-[#6B7280]">Project</span>
+                  <div className="flex items-center justify-between gap-[8px]">
+                    <div className="flex items-center gap-[8px]">
+                      <CheckIcon matched={aiAnalysis.project.matched} />
+                      <span className="text-[#374151]">{aiAnalysis.project.label}</span>
+                    </div>
+                    <button type="button" onClick={() => goToProfile('projects')}
+                      className="shrink-0 text-[11px] text-[#2563EB] hover:underline">
+                      &gt;&gt; Go to Profile to see file
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
+
+            {/* No jobPostId fallback */}
+            {!jobPostId && !aiLoading && (
+              <p className="text-[12px] text-[#9CA3AF]">Job post information not available for analysis.</p>
+            )}
           </div>
 
-          {/* AI Insight */}
+          {/* ✅ AI Insight — Real Data */}
           <div className="mt-[12px] rounded-[12px] border border-[#E5E7EB] bg-[#F9FAFB] px-[20px] py-[16px]">
             <div className="mb-[10px] flex items-center gap-[6px]">
               <span className="text-[13px] font-bold text-[#2563EB]">AI</span>
               <h3 className="text-[13px] font-bold text-[#1F2937]">Insight</h3>
               <span className="text-[14px]">🔒</span>
             </div>
-            <div className="space-y-[4px]">
-              {MOCK_AI_INSIGHT.map((line, i) => (
-                <p key={i} className="text-[12px] leading-[1.6] text-[#51617C]">{line}</p>
-              ))}
-            </div>
+
+            {/* Loading */}
+            {(aiLoading || (isLoading && !aiAnalysis)) && (
+              <div className="space-y-[6px]">
+                {[200, 160, 180].map((w, i) => (
+                  <div key={i} className="h-[12px] rounded bg-[#E5E7EB] animate-pulse" style={{ width: `${w}px` }} />
+                ))}
+              </div>
+            )}
+
+            {/* Real insight */}
+            {aiAnalysis && !aiLoading && (
+              <div className="space-y-[4px]">
+                {aiAnalysis.insight.map((line, i) => (
+                  <p key={i} className="text-[12px] leading-[1.6] text-[#51617C]">{line}</p>
+                ))}
+              </div>
+            )}
+
+            {/* Error */}
+            {aiError && !aiLoading && (
+              <p className="text-[12px] text-[#9CA3AF]">Insight not available.</p>
+            )}
           </div>
 
           {/* Action Buttons */}
@@ -316,10 +413,18 @@ export default function ApplicantProfilePopup({
 export function calculateProfileCompletion(profile: CandidateProfile | null): number {
   if (!profile) return 0
   const checks = [
-    !!profile.profileImage, !!profile.bio?.trim(), !!profile.phoneNumber,
-    !!profile.internshipPeriod, !!profile.education?.length, !!profile.skills?.length,
-    !!profile.experience?.length, !!profile.projects?.length,
-    !!profile.preferredPositions?.length, !!profile.preferredLocations?.length,
+    !!profile.profileImage,
+    !!profile.fullName?.split(' ')[0]?.trim(),
+    !!profile.fullName?.split(' ').slice(1).join(' ')?.trim(),
+    !!profile.gender,
+    !!profile.dateOfBirth,
+    !!profile.nationality,
+    !!profile.bio?.trim(),
+    !!profile.email,
+    !!profile.phoneNumber,
+    !!(profile.preferredPositions?.length),
+    !!(profile.preferredLocations?.length),
+    !!profile.internshipPeriod,
   ]
   return Math.round((checks.filter(Boolean).length / checks.length) * 100)
 }

@@ -619,6 +619,14 @@ async function invalidateJobMatchCache(candidateId: string) {
   }
 }
 
+async function invalidateAnalysisCache(candidateId: string) {
+  try {
+    await (prisma as any).applicantAnalysisCache.deleteMany({
+      where: { candidateId },
+    });
+  } catch (e) { }
+}
+
 // ============================================================
 // เพิ่ม invalidateJobMatchCache() ในทุก route ที่แก้ข้อมูล candidate:
 //
@@ -633,6 +641,7 @@ async function invalidateJobMatchCache(candidateId: string) {
 // ตัวอย่าง (ใส่หลัง prisma.userProjects.create/update/delete สำเร็จ):
 //
 //   await invalidateJobMatchCache(candidateId);
+//   await invalidateAnalysisCache(candidateId);
 //   return res.status(201).json({ project: ... });
 // ============================================================
 
@@ -819,6 +828,161 @@ Example: { "uuid-1": 85, "uuid-2": 62 }
   }
 );
 
+// ✅ เพิ่ม route ใหม่ตรงนี้ — ระหว่าง applicant-match-scores และ /:id
+candidatesRouter.get(
+  "/applicant-job-analysis",
+  requireAuth,
+  requireRole("COMPANY"),
+  async (req, res) => {
+    const jobPostId = typeof req.query.jobPostId === "string" ? req.query.jobPostId : "";
+    const candidateId = typeof req.query.candidateId === "string" ? req.query.candidateId : "";
+
+    if (!jobPostId || !candidateId) {
+      return res.status(400).json({ error: "jobPostId and candidateId are required" });
+    }
+
+    try {
+
+      const cached = await (prisma as any).applicantAnalysisCache.findUnique({
+        where: { jobPostId_candidateId: { jobPostId, candidateId } },
+      });
+      if (cached) {
+        console.log(`[JobAnalysis] DB Cache HIT for ${candidateId}`);
+        return res.json({ analysis: cached.analysis, cached: true });
+      }
+      const [jobPost, candidate] = await Promise.all([
+        prisma.jobPost.findUnique({
+          where: { id: jobPostId },
+          select: {
+            jobTitle: true,
+            positions: true,
+            workplaceType: true,
+            jobDescription: true,
+            jobSpecification: true,
+            gpa: true,
+            locationProvince: true,
+            LocationProvince: { select: { name: true } },
+          },
+        }),
+        prisma.candidateProfile.findUnique({
+          where: { id: candidateId },
+          include: {
+            UserSkill: {
+              include: { Skills: { select: { name: true } } },
+              orderBy: { rating: "desc" },
+            },
+            CandidateUniversity: {
+              orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
+              take: 1,
+            },
+            UserProjects: {
+              select: { name: true, role: true, description: true, relatedSkills: true, fileUrl: true, githubUrl: true },
+              orderBy: { createdAt: "desc" },
+              take: 5,
+            },
+            CertificateFile: {
+              select: { name: true, relatedSkills: true },
+              orderBy: { createdAt: "desc" },
+            },
+          },
+        }),
+      ]);
+
+      if (!jobPost || !candidate) {
+        return res.status(404).json({ error: "Job post or candidate not found" });
+      }
+
+      const jobInfo = {
+        title: jobPost.jobTitle,
+        positions: jobPost.positions,
+        description: jobPost.jobDescription ?? "",
+        specification: jobPost.jobSpecification ?? "",
+        minimumGpa: jobPost.gpa ?? null,
+        province: (jobPost as any).LocationProvince?.name ?? jobPost.locationProvince ?? "",
+        workplaceType: jobPost.workplaceType,
+      };
+
+      const candidateInfo = {
+        preferredPositions: candidate.preferredPositions,
+        gpa: candidate.CandidateUniversity[0]?.gpa ?? null,
+        isGpaVerified: candidate.CandidateUniversity[0]?.isVerified ?? false,
+        skills: candidate.UserSkill.map((us) => ({
+          name: us.Skills.name,
+          status: us.status,
+        })),
+        certificates: candidate.CertificateFile.map((c) => ({
+          name: c.name,
+          relatedSkills: c.relatedSkills,
+        })),
+        projects: candidate.UserProjects.map((p) => ({
+          name: p.name,
+          role: p.role,
+          description: p.description,
+          relatedSkills: p.relatedSkills,
+          hasFile: !!p.fileUrl,
+          hasGithub: !!p.githubUrl,
+        })),
+      };
+
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+      const model = genAI.getGenerativeModel({
+        model: "gemini-2.5-flash",
+        generationConfig: { responseMimeType: "application/json" },
+      });
+
+      const prompt = `
+You are a job application analyzer for internship positions in Thailand.
+
+Analyze how well this candidate fits the job posting and return a structured breakdown.
+
+JOB POSTING:
+${JSON.stringify(jobInfo, null, 2)}
+
+CANDIDATE:
+${JSON.stringify(candidateInfo, null, 2)}
+
+Return ONLY valid JSON:
+{
+  "position": { "matched": true, "label": "AI Developer" },
+  "education": { "matched": true, "label": "GPA 3.55 > 3.50 - (Verified by Transcript)" },
+  "skills": [
+    { "matched": true, "label": "Python - (Verified by Skill Test)" },
+    { "matched": true, "label": "SQL - (Evidence by Certificate)" },
+    { "matched": false, "label": "HTML - (Not Verified)" }
+  ],
+  "project": { "matched": true, "label": "Dashboard Project (Relevant) - (File Uploaded)" },
+  "insight": [
+    "Candidate has strong Python skills verified by skill test.",
+    "GPA meets the minimum requirement and is transcript-verified.",
+    "Missing experience in HTML which is listed as a job requirement."
+  ]
+}
+
+Rules:
+- position.matched = true if candidate preferredPositions overlap with job positions
+- education.matched = true if candidate gpa >= minimumGpa (if minimumGpa is null, matched = true). Add "(Verified by Transcript)" if isGpaVerified = true
+- skills: list top 3-4 relevant skills from job. For each: add "(Verified by Skill Test)" if status=VERIFIED, "(Evidence by Certificate)" if in certificates relatedSkills, "(Not Verified)" if candidate has skill but unverified. matched=false if candidate doesn't have the skill at all
+- project.matched = true if any project relevant to job. Add "(File Uploaded)" if hasFile, "(GitHub)" if hasGithub. If no relevant project: label = "No relevant project found"
+- insight: 2-3 sentences summarizing strengths and gaps
+`;
+
+      const result = await model.generateContent(prompt);
+      const rawText = result.response.text().trim().replace(/```json\n?|```\n?/g, "");
+      const analysis = JSON.parse(rawText);
+
+      await (prisma as any).applicantAnalysisCache.create({
+        data: { jobPostId, candidateId, analysis },
+      });
+
+
+      return res.json({ analysis });
+    } catch (e: any) {
+      console.error("Error analyzing applicant job fit:", e);
+      return res.status(500).json({ error: e?.message || "Failed to analyze" });
+    }
+  }
+);
+
 // Get full candidate profile by ID (for companies to view)
 candidatesRouter.get("/:id", requireAuth, requireRole("COMPANY"), async (req, res) => {
   const candidateId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
@@ -896,6 +1060,9 @@ candidatesRouter.get("/:id", requireAuth, requireRole("COMPANY"), async (req, re
       email: candidateProfile.contactEmail || candidateProfile.User.email,
       phoneNumber: candidateProfile.phoneNumber || null,
       profileImage: candidateProfile.profileImage || null,
+      gender: candidateProfile.gender || null,
+      dateOfBirth: candidateProfile.dateOfBirth ? candidateProfile.dateOfBirth.toISOString() : null,
+      nationality: candidateProfile.nationality || null,
       desiredPosition: candidateProfile.desiredPosition || null,
       internshipPeriod: candidateProfile.internshipPeriod || null,
       bio: candidateProfile.bio || null,
@@ -934,6 +1101,7 @@ candidatesRouter.get("/:id", requireAuth, requireRole("COMPANY"), async (req, re
           level: ratingMap[us.rating || 1] || "beginner",
           rating: us.rating || 1,
           category: us.category || "TECHNICAL",
+          status: us.status,
         };
       }),
       files: {
@@ -1050,6 +1218,7 @@ candidatesRouter.post("/projects", requireAuth, requireRole("CANDIDATE"), async 
     });
 
     await invalidateJobMatchCache(candidateId);
+    await invalidateAnalysisCache(candidateId);
     return res.status(201).json({
       project: {
         ...project,
@@ -1120,6 +1289,7 @@ candidatesRouter.put("/projects/:id", requireAuth, requireRole("CANDIDATE"), asy
       },
     });
     await invalidateJobMatchCache(candidateId);
+    await invalidateAnalysisCache(candidateId);
     return res.json({
       project: {
         ...project,
@@ -1176,6 +1346,7 @@ candidatesRouter.delete("/projects/:id", requireAuth, requireRole("CANDIDATE"), 
       where: { id: projectId },
     });
     await invalidateJobMatchCache(candidateId);
+    await invalidateAnalysisCache(candidateId);
 
     return res.json({ success: true });
   } catch (e: any) {
@@ -1922,6 +2093,7 @@ candidatesRouter.delete("/skills/:id", requireAuth, requireRole("CANDIDATE"), as
       where: { id: userSkillId },
     });
     await invalidateJobMatchCache(candidateId);
+    await invalidateAnalysisCache(candidateId);
 
     return res.json({ success: true, message: "Skill deleted successfully" });
   } catch (e: any) {
@@ -1983,6 +2155,7 @@ candidatesRouter.post("/skills", requireAuth, requireRole("CANDIDATE"), async (r
         }
       });
       await invalidateJobMatchCache(candidateId);
+      await invalidateAnalysisCache(candidateId);
       return res.status(200).json({ message: "Skill updated", skill: updatedSkill });
     }
 
@@ -1996,6 +2169,7 @@ candidatesRouter.post("/skills", requireAuth, requireRole("CANDIDATE"), async (r
       },
     });
     await invalidateJobMatchCache(candidateId);
+    await invalidateAnalysisCache(candidateId);
     return res.status(201).json({ message: "Skill added successfully", skill: userSkill });
   } catch (e: any) {
     if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
@@ -2009,7 +2183,7 @@ candidatesRouter.post("/skills", requireAuth, requireRole("CANDIDATE"), async (r
 candidatesRouter.put("/skills/:id", requireAuth, requireRole("CANDIDATE"), async (req: AuthedRequest, res) => {
   const userId = req.user!.id;
   const userSkillId = typeof req.params.id === "string" ? req.params.id : req.params.id[0];
-  const { name, category, level } = req.body ?? {}; 
+  const { name, category, level } = req.body ?? {};
 
   if (!level) {
     return res.status(400).json({ error: "Proficiency level is required" });
@@ -2064,6 +2238,7 @@ candidatesRouter.put("/skills/:id", requireAuth, requireRole("CANDIDATE"), async
       },
     });
     await invalidateJobMatchCache(candidateId);
+    await invalidateAnalysisCache(candidateId);
     return res.json({ message: "Skill updated successfully", skill: updatedSkill });
   } catch (e: any) {
     if (e?.message === "CANDIDATE_PROFILE_NOT_FOUND") {
@@ -2320,7 +2495,7 @@ candidatesRouter.post("/skills/generate-test", requireAuth, async (req: AuthedRe
 
       const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
       const model = genAI.getGenerativeModel({
-        model: "gemini-2.5-flash", 
+        model: "gemini-2.5-flash",
         generationConfig: { responseMimeType: "application/json" }
       });
 
@@ -2417,7 +2592,7 @@ candidatesRouter.post("/skills/submit-test", requireAuth, async (req: AuthedRequ
 
     originalQuestions.forEach(q => {
       // ดึงคำตอบของ user (รองรับทั้ง key ที่เป็นตัวเลขและ string)
-      const userAnswer = answers[q.id] || answers[String(q.id)]; 
+      const userAnswer = answers[q.id] || answers[String(q.id)];
 
       if (userAnswer) {
         const correctAns = String(q.correctAnswer).trim();
@@ -2428,17 +2603,17 @@ candidatesRouter.post("/skills/submit-test", requireAuth, async (req: AuthedRequ
         // กรณีที่ 1: ตรงกันเป๊ะๆ (เช่น "Python" === "Python" หรือ "A) Python" === "A) Python")
         if (userAnsStr === correctAns) {
           isMatch = true;
-        } 
+        }
         // กรณีที่ 2: AI ให้คำตอบมาแค่ "A", "B", "C", "D"
         else if (correctAns.length === 1) {
           const letter = correctAns.toUpperCase();
-          
+
           // เช็คว่า User ตอบแบบมี Prefix ไหม (เช่น "A) Python", "A. Python")
-          if (userAnsStr.startsWith(`${letter})`) || 
-              userAnsStr.startsWith(`${letter}.`) || 
-              userAnsStr.startsWith(`${letter} `)) {
+          if (userAnsStr.startsWith(`${letter})`) ||
+            userAnsStr.startsWith(`${letter}.`) ||
+            userAnsStr.startsWith(`${letter} `)) {
             isMatch = true;
-          } 
+          }
           // เช็คแบบ Index: A = 0, B = 1, C = 2, D = 3 (เช่น ตอบ "Python" ซึ่งอยู่ index 0 ตรงกับ A พอดี)
           else if (Array.isArray(q.options)) {
             const expectedIndex = letter.charCodeAt(0) - 65; // แปลงตัวอักษรเป็น Index
@@ -2494,10 +2669,10 @@ candidatesRouter.post("/skills/submit-test", requireAuth, async (req: AuthedRequ
 
     if (duplicateCheck) {
       console.log("ดักจับการยิง API เบิ้ลสำเร็จ! ไม่ตัดโควต้าซ้ำ");
-      return res.json({ 
-        success: true, 
-        isPassed: false, 
-        message: "Duplicate submission prevented" 
+      return res.json({
+        success: true,
+        isPassed: false,
+        message: "Duplicate submission prevented"
       });
     }
 

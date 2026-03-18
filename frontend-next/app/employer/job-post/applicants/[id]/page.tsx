@@ -134,7 +134,7 @@ export default function ViewApplicantsPage() {
 
   const [messagingCandidateId, setMessagingCandidateId] = useState<string | null>(null)
 
-  // ✅ fetch AI scores จาก Gemini ผ่าน backend
+  // ✅ fetch AI scores
   const fetchAIScores = async (applicantList: Applicant[], jpId: string) => {
     if (applicantList.length === 0) return
     setScoresLoading(true)
@@ -145,14 +145,12 @@ export default function ViewApplicantsPage() {
       )
       const map = new Map<string, number>()
       applicantList.forEach((a) => {
-        // key ใน scores คือ candidateId, เก็บโดยใช้ applicant.id เป็น key ของ map
         const s = data.scores[a.candidateId]
         if (s !== undefined) map.set(a.id, s)
       })
       setAiScores(map)
     } catch (e) {
       console.error('Failed to fetch AI scores:', e)
-      // ถ้า AI fail ก็ใช้ keyword fallback ที่คำนวณใน useMemo อยู่แล้ว
     } finally {
       setScoresLoading(false)
     }
@@ -179,7 +177,6 @@ export default function ViewApplicantsPage() {
           locationDistrict: jobPostData.jobPost?.locationDistrict || null,
           jobType: jobPostData.jobPost?.jobType || null,
         })
-        // ✅ เรียก AI scores หลังได้ applicants แล้ว
         fetchAIScores(loadedApplicants, jobPostId)
       } catch {
         setApplicants(mockApplicants)
@@ -211,8 +208,6 @@ export default function ViewApplicantsPage() {
   }, [])
 
   // ─── Derived ────────────────────────────────────────────────────────────────
-
-  // ✅ ใช้ AI score ถ้ามี ไม่งั้น fallback keyword matching
   const applicantScores = useMemo(() => {
     const map = new Map<string, number>()
     applicants.forEach((a) => {
@@ -285,7 +280,6 @@ export default function ViewApplicantsPage() {
   const handleToggleState = async (targetState: 'PUBLISHED' | 'CLOSED') => {
     if (!jobPost || stateUpdating) return
     if (jobPost.state === targetState) return
-
     setStateUpdating(true)
     setJobPost((prev) => prev ? { ...prev, state: targetState } : prev)
     try {
@@ -304,9 +298,7 @@ export default function ViewApplicantsPage() {
   const handleMarkViewed = async (applicantId: string) => {
     setApplicants((prev) =>
       prev.map((a) =>
-        a.id === applicantId && a.status === 'new'
-          ? { ...a, status: 'reviewed' }
-          : a
+        a.id === applicantId && a.status === 'new' ? { ...a, status: 'reviewed' } : a
       )
     )
     try {
@@ -412,33 +404,25 @@ export default function ViewApplicantsPage() {
                 <h1 className="text-[30px] font-bold leading-none text-black">Applicants › View Candidates</h1>
                 <p className="mt-[14px] text-[22px] font-semibold text-[#1F2937]">{jobPost.title}</p>
               </div>
-
-              {/* Open / Closed toggle */}
               <div className="flex items-center gap-[10px] pt-3">
                 <button
-                  type="button"
-                  disabled={stateUpdating}
+                  type="button" disabled={stateUpdating}
                   onClick={() => handleToggleState('PUBLISHED')}
                   className={`h-[34px] rounded-[6px] px-[20px] text-[13px] font-semibold transition disabled:opacity-60 ${
                     jobPost.state !== 'CLOSED'
                       ? 'bg-[#2563EB] text-white'
                       : 'border border-[#2563EB] bg-white text-[#2563EB] hover:bg-[#F0F4F8]'
                   }`}
-                >
-                  Open
-                </button>
+                >Open</button>
                 <button
-                  type="button"
-                  disabled={stateUpdating}
+                  type="button" disabled={stateUpdating}
                   onClick={() => handleToggleState('CLOSED')}
                   className={`h-[34px] rounded-[6px] px-[20px] text-[13px] font-semibold transition disabled:opacity-60 ${
                     jobPost.state === 'CLOSED'
                       ? 'bg-[#2563EB] text-white'
                       : 'border border-[#2563EB] bg-white text-[#2563EB] hover:bg-[#F0F4F8]'
                   }`}
-                >
-                  Closed
-                </button>
+                >Closed</button>
               </div>
             </div>
 
@@ -473,7 +457,6 @@ export default function ViewApplicantsPage() {
                 <ApplicantCard
                   key={applicant.id}
                   applicant={applicant}
-                  // ✅ ส่ง -1 ถ้ากำลัง load AI score (วงกลมจะแสดง spinner)
                   score={scoresLoading && !aiScores.has(applicant.id)
                     ? -1
                     : applicantScores.get(applicant.id) || 0}
@@ -494,7 +477,7 @@ export default function ViewApplicantsPage() {
         </div>
       </div>
 
-      {/* Popup */}
+      {/* ✅ Popup — ส่ง jobPostId ให้ popup เรียก AI analysis */}
       {selectedApplicant && (
         <ApplicantProfilePopup
           applicant={selectedApplicant}
@@ -502,6 +485,7 @@ export default function ViewApplicantsPage() {
           jobMatch={applicantScores.get(selectedApplicant.id) || 0}
           profileCompletion={calculateProfileCompletion(selectedProfile)}
           isLoading={profileLoading}
+          jobPostId={jobPostId}
           onClose={closePopup}
           onAccept={handleAccept}
           onDecline={handleDecline}
