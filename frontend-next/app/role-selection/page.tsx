@@ -31,41 +31,35 @@ function RoleCard({ icon, title, description, buttonText, onClick, isSelected, o
   return (
     <div
       onClick={handleCardClick}
-      className={`bg-white dark:bg-gray-800 border-2 rounded-2xl shadow-md p-6 md:p-8 transition-all duration-300 cursor-pointer flex flex-col items-center group ${
+      className={`bg-white dark:bg-gray-800 border-2 rounded-lg shadow-md dark:shadow-gray-900/50 p-8 transition-colors cursor-pointer ${
         isActive 
-          ? 'border-[#0273B1] scale-[1.03] shadow-xl' 
-          : 'border-gray-100 dark:border-gray-700 hover:border-blue-200'
+          ? 'border-[#0273B1]' 
+          : 'border-gray-200 dark:border-gray-700'
       }`}
     >
-      <div className="text-center w-full flex flex-col items-center">
-        <div className="flex justify-center items-center mb-5 w-full">
-          <div 
-            className="w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center transition-all duration-300"
-            style={{ 
-              backgroundColor: isActive ? '#E3F2FD' : '#F1F5F9' 
-            }}
-          >
-            <div className="flex items-center justify-center w-10 h-10 md:w-12 md:h-12">
-               {icon}
-            </div>
-          </div>
+      <div className="text-center">
+        {/* Icon */}
+        <div className="flex justify-center mb-6">
+          {icon}
         </div>
 
-        <h2 className={`text-xl md:text-2xl font-extrabold mb-2 transition-colors ${isActive ? 'text-[#0273B1]' : 'text-[#0F172A] dark:text-white'}`}>
+        {/* Title */}
+        <h2 className="text-xl font-semibold mb-3 text-[#1C2D4F] dark:text-white transition-colors" style={{ letterSpacing: '0' }}>
           {title}
         </h2>
 
-        <p className={`text-sm md:text-base mb-6 leading-relaxed min-h-[48px] font-medium transition-colors ${isActive ? 'text-slate-700 dark:text-slate-200' : 'text-slate-600 dark:text-gray-400'}`}>
+        {/* Description */}
+        <p className="text-sm mb-6 text-center leading-relaxed text-[#A9B4CD] dark:text-gray-300 transition-colors">
           {description}
         </p>
 
-        {/* ปรับสีปุ่มตอน Mouse Out ให้เข้มขึ้นชัดเจน */}
+        {/* Button */}
         <button
           onClick={handleButtonClick}
-          className={`w-full py-3 md:py-4 rounded-xl font-bold text-sm md:text-base transition-all active:scale-95 shadow-sm border-2 ${
+          className={`w-full py-3 rounded-lg font-semibold text-sm transition-colors ${
             isActive 
-              ? 'bg-[#0273B1] border-[#0273B1] text-white shadow-blue-200' 
-              : 'bg-white border-[#0F172A] text-[#0F172A] dark:bg-transparent dark:border-gray-400 dark:text-gray-200 hover:bg-[#0273B1] hover:border-[#0273B1] hover:text-white'
+              ? 'bg-[#0273B1] hover:bg-[#025a8f] text-white border-none' 
+              : 'bg-transparent border-2 border-[#1C2D4F] dark:border-gray-300 text-[#1C2D4F] dark:text-gray-300 hover:border-[#0273B1] dark:hover:border-blue-400 hover:text-[#0273B1] dark:hover:text-blue-400'
           }`}
         >
           {buttonText}
@@ -82,6 +76,7 @@ export default function RoleSelectionPage() {
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Check if user has a session, redirect to login if not
   useEffect(() => {
     const check = async () => {
       try {
@@ -96,10 +91,12 @@ export default function RoleSelectionPage() {
 
   const handleInternClick = async () => {
     if (isSubmitting) return
+    
     setIsSubmitting(true)
     setError(null)
+    
     try {
-      await apiFetch(`/api/auth/me/role`, {
+      await apiFetch<{ user: { id: string; email: string; role: string } }>(`/api/auth/me/role`, {
         method: 'PATCH',
         body: JSON.stringify({ role: 'CANDIDATE' }),
       })
@@ -112,10 +109,12 @@ export default function RoleSelectionPage() {
 
   const handleEmployerClick = async () => {
     if (isSubmitting) return
+    
     setIsSubmitting(true)
     setError(null)
+    
     try {
-      await apiFetch(`/api/auth/me/role`, {
+      await apiFetch<{ user: { id: string; email: string; role: string } }>(`/api/auth/me/role`, {
         method: 'PATCH',
         body: JSON.stringify({ role: 'COMPANY' }),
       })
@@ -126,69 +125,100 @@ export default function RoleSelectionPage() {
     }
   }
 
-  const getIconStroke = (role: 'intern' | 'employer') => {
-    return (selectedRole === role || hoveredRole === role) ? '#0273B1' : '#0F172A'
+  const handleInternSelect = () => {
+    setSelectedRole('intern')
+  }
+
+  const handleEmployerSelect = () => {
+    setSelectedRole('employer')
   }
 
   return (
-    <div className="h-screen w-full flex items-center justify-center bg-[#F8FAFC] dark:bg-gray-950 transition-colors overflow-hidden px-4">
-      <div className="max-w-5xl w-full">
-        <div className="bg-white dark:bg-gray-900 rounded-[2rem] md:rounded-[3rem] shadow-2xl p-6 md:p-12 border border-gray-100 dark:border-gray-800 relative">
-          
-          <div className="text-center mb-8 md:mb-12">
-            <h1 className="text-3xl md:text-5xl font-black text-[#0F172A] dark:text-white mb-4 tracking-tight">
-              Ready to get started<span className="text-[#0273B1]">?</span>
-            </h1>
-            <p className="text-base md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto font-semibold">
-              Join thousands of students and employers already using our platform to build the future.
-            </p>
+  /* 1. เปลี่ยนพื้นหลังที่ Wrapper นอกสุดให้คลุมทั้งจอ (min-h-screen และ w-full) */
+  <div className="min-h-screen w-full flex items-center justify-center py-12 px-4 bg-gray-50 dark:bg-gray-900 transition-colors">
+    
+    {/* 2. ส่วนของเนื้อหาหลัก */}
+    <div className="max-w-4xl w-full">
+      
+      {/* 3. กล่อง Card ใหญ่ (เพิ่ม shadow และ border ให้ดูมีมิติ) */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 md:p-16 border border-gray-100 dark:border-gray-700 transition-colors">
+        
+        <div className="text-center mb-12">
+          <h1 className="text-3xl md:text-5xl font-bold text-gray-900 dark:text-white mb-6">
+            Ready to get started?
+          </h1>
+          <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+            Join thousands of students and employers already using our platform to build the future of finance.
+          </p>
+        </div>
+
+        {error && (
+          <div className="mb-8 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-900/30 dark:text-red-400">
+            {error}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Intern Card */}
+          <div
+            onMouseEnter={() => setHoveredRole('intern')}
+            onMouseLeave={() => setHoveredRole(null)}
+          >
+            <RoleCard
+              icon={
+                <div 
+                  className="w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300"
+                  style={{ 
+                    backgroundColor: (selectedRole === 'intern' || hoveredRole === 'intern') ? '#E3F2FD' : '#F5F5F5' 
+                  }}
+                >
+                  <svg className="w-12 h-12" style={{ color: (selectedRole === 'intern' || hoveredRole === 'intern') ? '#0273B1' : '#1C2D4F' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l9-5-9-5-9 5 9 5z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 14v7M5.176 14.248a12.078 12.078 0 01.665-6.479L12 14l-6.824-2.998a11.952 11.952 0 00-2.978 3.246zM18.824 11.002a12.078 12.078 0 01.665 6.479L12 14l6.824-2.998a11.952 11.952 0 012.978 3.246z" />
+                  </svg>
+                </div>
+              }
+              title="I'm an Intern"
+              description="Looking for internships and entry-level roles."
+              buttonText={isSubmitting ? 'Please wait...' : 'Continue as Intern'}
+              onClick={handleInternClick}
+              isSelected={selectedRole === 'intern'}
+              onCardClick={handleInternSelect}
+              isHovered={hoveredRole === 'intern'}
+            />
           </div>
 
-          {error && (
-            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700 text-center">
-              {error}
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
-            <div onMouseEnter={() => setHoveredRole('intern')} onMouseLeave={() => setHoveredRole(null)}>
-              <RoleCard
-                icon={
-                  <svg className="w-full h-full" fill="none" stroke={getIconStroke('intern')} strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 14v7" />
+          {/* Employer Card */}
+          <div
+            onMouseEnter={() => setHoveredRole('employer')}
+            onMouseLeave={() => setHoveredRole(null)}
+          >
+            <RoleCard
+              icon={
+                <div 
+                  className="w-24 h-24 rounded-full flex items-center justify-center transition-all duration-300"
+                  style={{ 
+                    backgroundColor: (selectedRole === 'employer' || hoveredRole === 'employer') ? '#E3F2FD' : '#F5F5F5' 
+                  }}
+                >
+                  <svg className="w-12 h-12" style={{ color: (selectedRole === 'employer' || hoveredRole === 'employer') ? '#0273B1' : '#1C2D4F' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
-                }
-                title="I'm an Intern"
-                description="Looking for internships and entry-level roles in finance."
-                buttonText={isSubmitting && selectedRole === 'intern' ? 'Redirecting...' : 'Continue as Intern'}
-                onClick={handleInternClick}
-                isSelected={selectedRole === 'intern'}
-                onCardClick={() => setSelectedRole('intern')}
-                isHovered={hoveredRole === 'intern'}
-              />
-            </div>
-
-            <div onMouseEnter={() => setHoveredRole('employer')} onMouseLeave={() => setHoveredRole(null)}>
-              <RoleCard
-                icon={
-                  <svg className="w-full h-full" fill="none" stroke={getIconStroke('employer')} strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 14.15v4.25c0 .414-.336.75-.75.75H4.5a.75.75 0 01-.75-.75v-4.25m16.5 0a3 3 0 00-3-3H7.125a3 3 0 00-3 3m16.5 0V10.5A2.25 2.25 0 0018 8.25h-2.25V6.75a2.25 2.25 0 00-2.25-2.25h-3a2.25 2.25 0 00-2.25 2.25v1.5H6a2.25 2.25 0 00-2.25 2.25v3.65m10.5-3.4h-4.5" />
-                  </svg>
-                }
-                title="I'm an Employer"
-                description="Looking to hire top finance talent for your firm."
-                buttonText={isSubmitting && selectedRole === 'employer' ? 'Redirecting...' : 'Continue as Employer'}
-                onClick={handleEmployerClick}
-                isSelected={selectedRole === 'employer'}
-                onCardClick={() => setSelectedRole('employer')}
-                isHovered={hoveredRole === 'employer'}
-              />
-            </div>
+                </div>
+              }
+              title="I'm an Employer"
+              description="Looking to hire top finance talent."
+              buttonText={isSubmitting ? 'Please wait...' : 'Continue as Employer'}
+              onClick={handleEmployerClick}
+              isSelected={selectedRole === 'employer'}
+              onCardClick={handleEmployerSelect}
+              isHovered={hoveredRole === 'employer'}
+            />
           </div>
         </div>
       </div>
     </div>
+  </div>
   )
 }
