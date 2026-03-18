@@ -367,24 +367,43 @@ export default function SkillsPage() {
                           </button>
                         </div>
 
-                        <button
-                          disabled={skill.attemptsUsed >= 3}
-                          onClick={() =>
-                            setTestingSkill({ id: skill.id, name: skill.name })
-                          }
-                          title={
-                            skill.attemptsUsed >= 3 && skill.nextAvailableDate
-                              ? `Next test available: ${new Date(skill.nextAvailableDate).toLocaleDateString("en-EN", { day: "numeric", month: "short", year: "numeric" })}`
-                              : "Take a skill test"
-                          }
-                          className={`px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-2xl transition-all border shadow-sm ${
-                            skill.attemptsUsed >= 3
-                              ? "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 cursor-not-allowed"
-                              : "border-blue-600 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-400 dark:hover:text-slate-950"
-                          }`}
-                        >
-                          Skill Test {Math.min(skill.attemptsUsed || 0, 3)}/3
-                        </button>
+                        <div className="flex flex-col items-end gap-2">
+                          <button
+                            disabled={skill.attemptsUsed >= 3}
+                            onClick={() =>
+                              setTestingSkill({
+                                id: skill.id,
+                                name: skill.name,
+                              })
+                            }
+                            title={
+                              skill.attemptsUsed >= 3 && skill.nextAvailableDate
+                                ? `Next test available: ${new Date(skill.nextAvailableDate).toLocaleDateString("en-EN", { day: "numeric", month: "short", year: "numeric" })}`
+                                : "Take a skill test"
+                            }
+                            className={`px-6 py-2.5 text-xs font-black uppercase tracking-widest rounded-2xl transition-all border shadow-sm ${
+                              skill.attemptsUsed >= 3
+                                ? "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-400 cursor-not-allowed"
+                                : "border-blue-600 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-400 dark:hover:text-slate-950"
+                            }`}
+                          >
+                            Skill Test {Math.min(skill.attemptsUsed || 0, 3)}/3
+                          </button>
+
+                          {skill.attemptsUsed >= 3 &&
+                            skill.nextAvailableDate && (
+                              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 tracking-wider">
+                                Available:{" "}
+                                {new Date(
+                                  skill.nextAvailableDate,
+                                ).toLocaleDateString("en-EN", {
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                })}
+                              </span>
+                            )}
+                        </div>
                       </div>
                     </div>
                   );

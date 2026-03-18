@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { apiFetch } from "@/lib/api";
 
 export interface ModalCertificate {
   id?: string;
@@ -36,6 +37,9 @@ export default function CertificatesModal({
   const [selectedSkill, setSelectedSkill] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
+  const [availableSkills, setAvailableSkills] = useState<string[]>([]);
+  const [isLoadingSkills, setIsLoadingSkills] = useState(false);
+
   useEffect(() => {
     if (editingCertificate) {
       setFormData({
@@ -54,6 +58,29 @@ export default function CertificatesModal({
     }
     setErrorMsg("");
   }, [editingCertificate, isOpen]);
+
+  useEffect(() => {
+    if (isOpen) {
+      const fetchSkills = async () => {
+        setIsLoadingSkills(true);
+        try {
+          const res = await apiFetch<{ skills: any[] }>("/api/candidates/skills");
+          
+          const skillNames = res.skills
+            .map((s: any) => s.name || s.skill?.name)
+            .filter(Boolean);
+            
+          setAvailableSkills(Array.from(new Set(skillNames)));
+        } catch (error) {
+          console.error("Failed to fetch skills:", error);
+        } finally {
+          setIsLoadingSkills(false);
+        }
+      };
+      
+      fetchSkills();
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -194,20 +221,24 @@ export default function CertificatesModal({
             </label>
             <div className="flex gap-3">
               <select
-                className="flex-1 px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-slate-900 dark:text-white font-bold appearance-none cursor-pointer"
+                className="flex-1 px-5 py-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all text-slate-900 dark:text-white font-bold appearance-none cursor-pointer disabled:opacity-50"
                 value={selectedSkill}
                 onChange={(e) => setSelectedSkill(e.target.value)}
+                disabled={isLoadingSkills}
               >
-                <option value="">Select a skill</option>
-                <option value="UI Design">UI Design</option>
-                <option value="UX Design">UX Design</option>
-                <option value="Figma">Figma</option>
-                <option value="React">React</option>
-                <option value="Tailwind">Tailwind CSS</option>
+                <option value="">
+                  {isLoadingSkills ? "Loading skills..." : "Select a skill"}
+                </option>
+                {availableSkills.map((skillName, idx) => (
+                  <option key={idx} value={skillName}>
+                    {skillName}
+                  </option>
+                ))}
               </select>
               <button
                 onClick={handleAddSkill}
-                className="px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-blue-500/20 active:scale-95"
+                disabled={!selectedSkill}
+                className="px-6 py-3.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-lg shadow-blue-500/20 active:scale-95"
               >
                 Add
               </button>
@@ -223,7 +254,7 @@ export default function CertificatesModal({
               ))}
             </div>
           </div>
-
+          
           {/* Upload File Section */}
           <div className="space-y-3">
             <label className="text-[13px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
