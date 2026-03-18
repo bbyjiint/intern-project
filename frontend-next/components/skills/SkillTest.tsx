@@ -7,6 +7,7 @@ interface SkillTestProps {
   skillId: string;
   skillName: string;
   onBack: () => void;
+  onRefresh?: () => Promise<any> | void;
 }
 
 interface Question {
@@ -32,6 +33,7 @@ export default function SkillTest({
   skillId,
   skillName,
   onBack,
+  onRefresh,
 }: SkillTestProps) {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,6 +50,9 @@ export default function SkillTest({
   const [isFinished, setIsFinished] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [testResult, setTestResult] = useState<TestResult | null>(null);
+
+  // action เป้าหมาย (เช่น กดปุ่ม Go Back ของเราเอง)
+  const [pendingAction, setPendingAction] = useState<"URL" | "BACK" | null>(null);
 
   const [isQuitModalOpen, setIsQuitModalOpen] = useState(false);
   const [timeLeft, setTimeLeft] = useState(TEST_DURATION_MINUTES * 60);
@@ -69,12 +74,14 @@ export default function SkillTest({
       );
       setTestResult(response);
       setIsFinished(true);
+
+      if (onRefresh) await onRefresh();
     } catch (error) {
       console.error("Submit error:", error);
     } finally {
       setIsSubmitting(false);
     }
-  }, [skillName, skillId, isSubmitting, isFinished]);
+  }, [skillName, skillId, isSubmitting, isFinished, onRefresh]);
 
   // Fetch Questions Logic
   useEffect(() => {
@@ -125,12 +132,136 @@ export default function SkillTest({
     return () => clearInterval(timer);
   }, [isLoading, isFinished, questions.length, submitTest, isQuitModalOpen]);
 
+  const executeQuitAndNavigate = async () => {
+    setIsQuitModalOpen(false);
+    
+    // บังคับส่งข้อสอบและรอจนกว่าจะเสร็จ
+    await submitTest(answersRef.current);
+    
+    if (pendingAction === "URL" && pendingUrl) {
+      window.location.href = pendingUrl;
+    } else {
+      // ให้ onBack() ทำงาน (กลับไปหน้า Skills) ซึ่งข้อมูลถูก Refetch ไปแล้วตอน submitTest ทำงานเสร็จ
+      onBack();
+    }
+  };
+
+  const handleReturn = async () => {
+    if (onRefresh) await onRefresh();
+    onBack(); 
+  };
+
   const confirmQuit = () => {
     setIsQuitModalOpen(false);
     submitTest(answersRef.current);
-    if (pendingUrl) window.location.href = pendingUrl;
-    else onBack();
+    
+    if (pendingUrl) {
+      window.location.href = pendingUrl;
+    } else {
+      handleReturn();
+    }
   };
+
+  // --- ระบบป้องกันการออก และ Auto-submit ขั้นเด็ดขาด ---
+  const isFinishedRef = useRef(isFinished);
+  const isLoadingRef = useRef(isLoading);
+  const hasForceSubmittedRef = useRef(false); // กันไม่ให้มันเผลอส่งซ้ำ 2 รอบ
+  
+  useEffect(() => {
+    isFinishedRef.current = isFinished;
+    isLoadingRef.current = isLoading;
+  }, [isFinished, isLoading]);
+
+  useEffect(() => {
+    const forceSubmitBeacon = () => {
+      if (isLoadingRef.current || isFinishedRef.current || hasForceSubmittedRef.current) return;
+      hasForceSubmittedRef.current = true;
+
+      const payload = JSON.stringify({
+        skillName,
+        answers: answersRef.current,
+        userSkillId: skillId,
+      });
+
+      let token = "";
+      if (typeof document !== "undefined") {
+        const match = document.cookie.match(/(^| )auth=([^;]+)/);
+        if (match) token = match[2];
+        if (!token) token = localStorage.getItem("token") || "";
+      }
+      
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+      const targetUrl = `${backendUrl}/api/candidates/skills/submit-test`;
+
+      fetch(targetUrl, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { "Authorization": `Bearer ${token}` } : {}) 
+        },
+        body: payload,
+        keepalive: true, 
+        credentials: "include",
+      }).catch(console.error);
+    };
+
+    // 2. ดัก F5 (โชว์ Pop-up มาตรฐาน)
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!isLoadingRef.current && !isFinishedRef.current) {
+        e.preventDefault();
+        e.returnValue = "If you leave now, you will lose 1 test attempt."; 
+      }
+    };
+
+    // 3. ดักตอนที่ผู้ใช้กดยืนยันว่าจะ "Refresh/ปิดแท็บ" จริงๆ
+    const handlePageHide = () => {
+      forceSubmitBeacon(); // ยิงข้อมูลก่อนหน้าจอดับ
+    };
+
+    const handleAnchorClick = (e: MouseEvent) => {
+      if (isLoadingRef.current || isFinishedRef.current || hasForceSubmittedRef.current) return;
+      const target = (e.target as HTMLElement).closest("a");
+      
+      if (target && target.href && target.href !== window.location.href && !target.target) {
+        e.preventDefault(); 
+        setPendingUrl(target.href);
+        setPendingAction("URL");
+        setIsQuitModalOpen(true);   
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    window.addEventListener("pagehide", handlePageHide); // สำคัญมากตัวนี้!
+    document.addEventListener("click", handleAnchorClick, { capture: true });
+
+    // Cleanup: ตอนเปลี่ยน Component
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.removeEventListener("pagehide", handlePageHide);
+      document.removeEventListener("click", handleAnchorClick, { capture: true });
+      
+      // ถ้าเปลี่ยนหน้าผ่าน React Router ก็ให้ส่งข้อมูลด้วย
+      forceSubmitBeacon();
+    };
+  }, [skillName, skillId]);
+
+  useEffect(() => {
+    const handlePopState = (e: PopStateEvent) => {
+      if (!isLoadingRef.current && !isFinishedRef.current && !hasForceSubmittedRef.current) {
+        // ยกเลิกการเปลี่ยนหน้าของ Browser
+        window.history.pushState(null, "", window.location.href);
+        // เปิด Modal ของเราขึ้นมาแทน
+        setPendingAction("BACK");
+        setIsQuitModalOpen(true);
+      }
+    };
+
+    // บังคับให้ History ปัจจุบันมีสถานะ เพื่อให้ event popstate ทำงาน
+    window.history.pushState(null, "", window.location.href);
+    window.addEventListener("popstate", handlePopState);
+
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   const formatTime = (seconds: number) => {
     const m = Math.floor(seconds / 60).toString().padStart(2, "0");
@@ -155,9 +286,18 @@ export default function SkillTest({
   if (isLoading) {
     return (
       <div className="w-full max-w-4xl mx-auto p-16 text-center bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 min-h-[400px] flex flex-col items-center justify-center transition-colors">
-        <div className="w-14 h-14 border-4 border-slate-200 dark:border-slate-800 border-t-blue-600 rounded-full animate-spin mb-8"></div>
+        <div className="w-14 h-14 border-4 border-slate-200 dark:border-slate-800 border-t-blue-600 dark:border-t-blue-500 rounded-full animate-spin mb-8"></div>
         <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">AI is generating your test</h2>
         <p className="text-slate-500 dark:text-slate-400">Customizing specialized questions for <strong className="text-blue-600 dark:text-blue-400">{skillName}</strong>...</p>
+      </div>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <div className="text-center p-20 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl shadow-sm transition-colors">
+        <p className="text-red-500 dark:text-red-400 mb-4 font-bold">Questions could not be loaded.</p>
+        <button onClick={handleReturn} className="text-blue-600 dark:text-blue-400 font-bold underline hover:text-blue-700 dark:hover:text-blue-300">Go Back</button>
       </div>
     );
   }
@@ -188,8 +328,8 @@ export default function SkillTest({
             ))}
           </div>
           
-          <button onClick={onBack} className="px-14 py-4.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-lg transition-all shadow-xl shadow-blue-500/25 active:scale-95">
-            DONE
+          <button onClick={handleReturn} className="px-12 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black text-lg transition-all shadow-xl shadow-blue-500/25 active:scale-95">
+            RETURN TO SKILLS
           </button>
         </div>
       </div>
