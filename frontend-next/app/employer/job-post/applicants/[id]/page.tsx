@@ -480,6 +480,7 @@ export default function ViewApplicantsPage() {
       {/* ✅ Popup — ส่ง jobPostId ให้ popup เรียก AI analysis */}
       {selectedApplicant && (
         <ApplicantProfilePopup
+          key={selectedApplicant.candidateId}
           applicant={selectedApplicant}
           profile={selectedProfile}
           jobMatch={applicantScores.get(selectedApplicant.id) || 0}

@@ -52,11 +52,10 @@ function formatDisplayDate(value?: string | null) {
   return value && value.trim() ? value : "-";
 }
 
-// ✅ เลือกสีวงกลมตามคะแนน
 function getScoreColor(score: number): string {
-  if (score >= 70) return "#22C55E"; // เขียว
-  if (score >= 50) return "#F59E0B"; // เหลือง
-  return "#EF4444";                  // แดง
+  if (score >= 70) return "#22C55E";
+  if (score >= 50) return "#F59E0B";
+  return "#EF4444";
 }
 
 export default function ApplicantCard({
@@ -68,6 +67,8 @@ export default function ApplicantCard({
   onMarkViewed,
 }: ApplicantCardProps) {
   const isLoading = score === -1;
+  const r = 20;
+  const circumference = 2 * Math.PI * r;
 
   return (
     <div className="relative flex h-full min-h-[274px] flex-col rounded-[12px] bg-white px-[20px] py-[18px] shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
@@ -102,19 +103,37 @@ export default function ApplicantCard({
           </div>
         </div>
 
-        {/* ✅ Score Circle — loading spinner หรือ % */}
+        {/* ✅ Score Circle — SVG arc เหมือน JobMatchCard */}
         {isLoading ? (
-          <div className="relative flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-full border-[3px] border-[#E5E7EB]">
-            <div className="h-[20px] w-[20px] animate-spin rounded-full border-[2px] border-[#D1D5DB] border-t-[#6B7280]" />
+          <div className="relative flex h-[52px] w-[52px] shrink-0 items-center justify-center">
+            <svg width="52" height="52" viewBox="0 0 52 52">
+              <circle cx="26" cy="26" r={r} fill="none" stroke="#E5E7EB" strokeWidth="4" />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="h-[20px] w-[20px] animate-spin rounded-full border-[2px] border-[#D1D5DB] border-t-[#6B7280]" />
+            </div>
           </div>
         ) : (
-          <div
-            className="relative flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-full"
-            style={{
-              background: `conic-gradient(${getScoreColor(score)} ${score}%, #E5E7EB ${score}% 100%)`,
-            }}
-          >
-            <div className="flex h-[38px] w-[38px] items-center justify-center rounded-full bg-white text-[11px] font-bold text-[#374151]">
+          <div className="relative h-[52px] w-[52px] shrink-0">
+            <svg width="52" height="52" viewBox="0 0 52 52">
+              <circle
+                cx="26" cy="26" r={r}
+                fill="none"
+                stroke="#E5E7EB"
+                strokeWidth="4"
+              />
+              <circle
+                cx="26" cy="26" r={r}
+                fill="none"
+                stroke={getScoreColor(score)}
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeDasharray={`${score === 100 ? circumference : (score / 100) * (circumference - 8)} ${circumference}`}
+                strokeDashoffset={0}
+                transform="rotate(-90 26 26)"
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-[#374151]">
               {score}%
             </div>
           </div>

@@ -836,6 +836,7 @@ candidatesRouter.get(
   async (req, res) => {
     const jobPostId = typeof req.query.jobPostId === "string" ? req.query.jobPostId : "";
     const candidateId = typeof req.query.candidateId === "string" ? req.query.candidateId : "";
+    const forceRefresh = req.query.refresh === "true";
 
     if (!jobPostId || !candidateId) {
       return res.status(400).json({ error: "jobPostId and candidateId are required" });
@@ -846,7 +847,7 @@ candidatesRouter.get(
       const cached = await (prisma as any).applicantAnalysisCache.findUnique({
         where: { jobPostId_candidateId: { jobPostId, candidateId } },
       });
-      if (cached) {
+      if (cached && !forceRefresh) { // ✅ เพิ่ม && !forceRefresh
         console.log(`[JobAnalysis] DB Cache HIT for ${candidateId}`);
         return res.json({ analysis: cached.analysis, cached: true });
       }
@@ -970,8 +971,10 @@ Rules:
       const rawText = result.response.text().trim().replace(/```json\n?|```\n?/g, "");
       const analysis = JSON.parse(rawText);
 
-      await (prisma as any).applicantAnalysisCache.create({
-        data: { jobPostId, candidateId, analysis },
+      await (prisma as any).applicantAnalysisCache.upsert({
+        where: { jobPostId_candidateId: { jobPostId, candidateId } },
+        update: { analysis },
+        create: { jobPostId, candidateId, analysis },
       });
 
 
