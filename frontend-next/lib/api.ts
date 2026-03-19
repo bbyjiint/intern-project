@@ -52,14 +52,6 @@ export async function apiFetch<T>(
   }
 
   if (!res.ok) {
-    // If unauthorized, redirect to login (cookie-based auth)
-    if (res.status === 401 && typeof window !== "undefined") {
-      if (!window.location.pathname.includes("/login") && !window.location.pathname.includes("/register")) {
-        console.warn("Unauthorized, redirecting to login");
-        window.location.href = "/login";
-      }
-    }
-
     // If forbidden (403), it might be a role mismatch - don't clear token immediately
     // Let the error propagate so the UI can handle it appropriately
     if (res.status === 403) {
@@ -134,10 +126,6 @@ export async function apiUploadFile<T>(
     if (res.status === 401 && token) {
       if (typeof window !== "undefined") {
         window.localStorage.removeItem("auth_token");
-        if (!window.location.pathname.includes("/login") && !window.location.pathname.includes("/register")) {
-          console.warn("Token expired or invalid, redirecting to login");
-          window.location.href = "/login";
-        }
       }
     }
 

@@ -114,6 +114,7 @@ export default function ProjectUploadModal({
           githubUrl,
           githubVerified,
           projectUrl,
+          onUpdate,
           fileUrl: uploadedFileUrl,
           fileName: uploadedFileName,
         }),

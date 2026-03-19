@@ -46,8 +46,8 @@ services:
         condition: service_healthy
     networks:
       - intern-network
-    # Generate Prisma Client and start dev server
-    command: sh -c "npm run prisma:generate && npm run dev"
+    # Ensure DB schema is in sync for local dev (new columns for bug reports, etc.)
+    command: sh -c "npx prisma db push --accept-data-loss --config=./prisma.config.ts && npm run prisma:generate && npm run dev"
 
   # Frontend (Next.js)
   frontend:

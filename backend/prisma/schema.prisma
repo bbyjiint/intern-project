@@ -613,6 +613,11 @@ model ReportedBug {
   id             String   @id @default(uuid()) @db.Uuid
   reportedUserId String   @db.Uuid
   reportedUser   User     @relation(fields: [reportedUserId], references: [id], onDelete: Cascade)
+  description    String   @db.Text
+  pageUrl        String?
+  referrerUrl    String?
+  screenshotUrl  String?
+  userAgent      String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

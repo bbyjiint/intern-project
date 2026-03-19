@@ -68,7 +68,12 @@ export default function LoginModal({ isOpen, onClose, onSignUpClick }: LoginModa
         router.push('/role-selection')
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed')
+      const status = typeof err === 'object' && err !== null && 'status' in err ? (err as any).status : undefined
+      if (status === 401) {
+        setError('Incorrect email or password')
+      } else {
+        setError(err instanceof Error ? err.message : 'Login failed')
+      }
       setIsSubmitting(false)
     }
   }

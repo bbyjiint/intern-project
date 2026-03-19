@@ -27,11 +27,6 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
   const [localSearchQuery, setLocalSearchQuery] = useState('')
   const [isBugModalOpen, setIsBugModalOpen] = useState(false);
 
-  const handleSendBugReport = async (description: string) => {
-    console.log("Bug reported:", description);
-    alert("Thank you! Your bug report has been submitted.");
-  };
-
   const resolveImageUrl = (image?: string) => {
     if (!image) return null
     if (image.startsWith('http')) return image
@@ -285,7 +280,6 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
       <ReportBugModal
         isOpen={isBugModalOpen}
         onClose={() => setIsBugModalOpen(false)}
-        onSubmit={handleSendBugReport}
       />
     </nav>
   )

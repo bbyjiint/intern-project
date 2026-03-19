@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
 import CompanyHubLogo from '@/components/CompanyHubLogo'
+import ReportBugModal from './ReportBugModal'
 
 export default function EmployerNavbar() {
   const pathname = usePathname()
@@ -17,6 +18,7 @@ export default function EmployerNavbar() {
   const [showDropdown, setShowDropdown] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const [isBugModalOpen, setIsBugModalOpen] = useState(false)
 
   // ✅ แปลง path รูปให้เป็น URL เต็ม
   const resolveImageUrl = (image?: string) => {
@@ -157,15 +159,16 @@ export default function EmployerNavbar() {
                   </span>
                 )}
               </Link>
-              <a
-                href="mailto:support@companyhub.local?subject=Bug%20Report"
+              <button
+                type="button"
+                onClick={() => setIsBugModalOpen(true)}
                 className="text-[16px] font-medium transition-colors"
                 style={{ color: '#A9B4CD' }}
                 onMouseEnter={(e) => { e.currentTarget.style.color = '#1C2D4F' }}
                 onMouseLeave={(e) => { e.currentTarget.style.color = '#A9B4CD' }}
               >
                 Report bug
-              </a>
+              </button>
             </div>
           </div>
 
@@ -320,6 +323,10 @@ export default function EmployerNavbar() {
           </div>
         </div>
       </div>
+      <ReportBugModal
+        isOpen={isBugModalOpen}
+        onClose={() => setIsBugModalOpen(false)}
+      />
     </nav>
   )
 }
