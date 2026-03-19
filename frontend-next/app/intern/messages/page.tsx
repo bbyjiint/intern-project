@@ -14,6 +14,7 @@ interface Message {
   text: string
   timestamp: Date
   isCompany: boolean
+  isEmployer?: boolean
 }
 
 interface Conversation {
@@ -27,43 +28,8 @@ interface Conversation {
   lastMessage: string
   lastMessageTime: Date
   unreadCount: number
-  messages?: Message[]
+  messages: Message[]
 }
-
-const mockConversations: Conversation[] = [
-  {
-    id: '1',
-    companyId: '1',
-    companyName: 'Trinity Securities Co., Ltd.',
-    companyInitials: 'TS',
-    companyLogo: 'TRINITY',
-    companyEmail: 'info@trinitythai.com',
-    jobTitle: 'Software Engineering Intern',
-    lastMessage: 'Thank you for the opportunity! I look for...',
-    lastMessageTime: new Date(new Date().setHours(10, 30, 0)),
-    unreadCount: 0,
-    messages: [
-      {
-        id: '1',
-        senderId: 'company1',
-        senderName: 'Trinity Securities Co., Ltd.',
-        senderInitials: 'TS',
-        text: 'Hi Sarah! Thank you so much for reaching out. I would love to learn more about this opportunity!',
-        timestamp: new Date(new Date().setHours(9, 45, 0)),
-        isCompany: true,
-      },
-      {
-        id: '2',
-        senderId: 'intern',
-        senderName: 'John Smith',
-        senderInitials: 'JS',
-        text: "Hi! I reviewed your profile and I'm impressed with your technical skills. We have an exciting position for you.",
-        timestamp: new Date(new Date().setHours(9, 0, 0)),
-        isCompany: false,
-      },
-    ],
-  }
-]
 
 function formatTime(date: Date): string {
   const now = new Date()
@@ -92,16 +58,98 @@ export default function InternMessagesPage() {
   const [newMessage, setNewMessage] = useState('')
   const [loading, setLoading] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const selectedConversationRef = useRef<Conversation | null>(null)
 
   useEffect(() => {
-    // ซิมูเลทการโหลดข้อมูล
-    const init = async () => {
-      setConversations(mockConversations)
-      setSelectedConversation(mockConversations[0])
-      setLoading(false)
+    selectedConversationRef.current = selectedConversation
+  }, [selectedConversation])
+
+  useEffect(() => {
+    const loadConversations = async () => {
+      try {
+        const userData = await apiFetch<{ user: { role: string | null } }>('/api/auth/me')
+        if (userData.user.role === 'COMPANY') {
+          router.push('/employer/messages')
+          return
+        }
+        if (!userData.user.role) {
+          router.push('/role-selection')
+          return
+        }
+
+        const data = await apiFetch<{ conversations: Conversation[] }>('/api/messages/conversations')
+        const currentSelected = selectedConversationRef.current
+        const converted = data.conversations.map((conv: any) => ({
+          ...conv,
+          lastMessageTime: new Date(conv.lastMessageTime),
+          messages: [] as Message[],
+        })) as Conversation[]
+
+        setConversations((prev) =>
+          converted.map((conv) => {
+            const existingConversation =
+              currentSelected?.id === conv.id
+                ? currentSelected
+                : prev.find((existing) => existing.id === conv.id)
+            return { ...conv, messages: existingConversation?.messages || [] }
+          })
+        )
+        if (converted.length > 0 && !selectedConversationRef.current) {
+          setSelectedConversation(converted[0])
+        }
+        setLoading(false)
+      } catch (error) {
+        console.error('Failed to load conversations:', error)
+        setLoading(false)
+      }
     }
-    init()
-  }, [])
+
+    loadConversations()
+
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        loadConversations()
+      }
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [router])
+
+  useEffect(() => {
+    if (!selectedConversation) return
+
+    const loadMessages = async () => {
+      try {
+        const data = await apiFetch<{ messages: Message[] }>(
+          `/api/messages/conversations/${selectedConversation.id}/messages`
+        )
+        const converted = data.messages.map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp),
+        }))
+
+        setSelectedConversation((current) => {
+          if (!current || current.id !== selectedConversation.id) return current
+          return { ...current, messages: converted }
+        })
+
+        setConversations((prev) =>
+          prev.map((conv) =>
+            conv.id === selectedConversation.id ? { ...conv, messages: converted, unreadCount: 0 } : conv
+          )
+        )
+      } catch (error) {
+        console.error('Failed to load messages:', error)
+      }
+    }
+
+    loadMessages()
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        loadMessages()
+      }
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [selectedConversation?.id])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -111,22 +159,49 @@ export default function InternMessagesPage() {
     conv.companyName.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedConversation) return
-    const newMsg: Message = {
-      id: Date.now().toString(),
-      senderId: 'intern',
-      senderName: 'User',
-      senderInitials: 'JS',
-      text: newMessage.trim(),
-      timestamp: new Date(),
-      isCompany: false,
+    try {
+      const data = await apiFetch<{ message: Message }>(
+        `/api/messages/conversations/${selectedConversation.id}/messages`,
+        {
+          method: 'POST',
+          body: JSON.stringify({ text: newMessage.trim() }),
+        }
+      )
+
+      const sent: Message = {
+        ...data.message,
+        timestamp: new Date((data.message as any).timestamp),
+        isCompany: false,
+      }
+
+      setConversations((prev) =>
+        prev.map((conv) =>
+          conv.id === selectedConversation.id
+            ? {
+                ...conv,
+                lastMessage: sent.text,
+                lastMessageTime: sent.timestamp,
+                messages: [...conv.messages, sent],
+              }
+            : conv
+        )
+      )
+
+      setSelectedConversation((current) => {
+        if (!current || current.id !== selectedConversation.id) return current
+        return {
+          ...current,
+          lastMessage: sent.text,
+          lastMessageTime: sent.timestamp,
+          messages: [...current.messages, sent],
+        }
+      })
+      setNewMessage('')
+    } catch (error) {
+      console.error('Failed to send message:', error)
     }
-    setSelectedConversation({
-      ...selectedConversation,
-      messages: [...(selectedConversation.messages || []), newMsg]
-    })
-    setNewMessage('')
   }
 
   return (
@@ -209,11 +284,13 @@ export default function InternMessagesPage() {
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-6 md:p-10">
                 <div className="max-w-3xl mx-auto space-y-6">
-                  {selectedConversation.messages?.map((msg) => (
-                    <div key={msg.id} className={`flex items-end gap-3 ${!msg.isCompany ? 'flex-row-reverse' : ''}`}>
-                      <div className={`flex flex-col ${!msg.isCompany ? 'items-end' : 'items-start'} max-w-[80%]`}>
+                  {selectedConversation.messages?.map((msg) => {
+                    const isCompanySender = Boolean(msg.isCompany || msg.isEmployer)
+                    return (
+                    <div key={msg.id} className={`flex items-end gap-3 ${!isCompanySender ? 'flex-row-reverse' : ''}`}>
+                      <div className={`flex flex-col ${!isCompanySender ? 'items-end' : 'items-start'} max-w-[80%]`}>
                         <div className={`px-4 py-3 rounded-2xl text-[14px] shadow-sm ${
-                          msg.isCompany 
+                          isCompanySender
                           ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-gray-100 dark:border-slate-700 rounded-bl-none' 
                           : 'bg-blue-600 text-white rounded-br-none'
                         }`}>
@@ -224,7 +301,7 @@ export default function InternMessagesPage() {
                         </span>
                       </div>
                     </div>
-                  ))}
+                  )})}
                   <div ref={messagesEndRef} />
                 </div>
               </div>
