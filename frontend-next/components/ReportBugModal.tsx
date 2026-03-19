@@ -1,16 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { apiFetch } from "@/lib/api";
 
 interface ReportBugModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (description: string) => void;
 }
 
-export default function ReportBugModal({ isOpen, onClose, onSubmit }: ReportBugModalProps) {
+export default function ReportBugModal({ isOpen, onClose }: ReportBugModalProps) {
   const [description, setDescription] = useState("");
+  const [screenshot, setScreenshot] = useState<File | null>(null);
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
 
   // ป้องกันการเลื่อนหน้าจอเบื้องหลังเมื่อ Modal เปิด
   useEffect(() => {
@@ -26,20 +29,51 @@ export default function ReportBugModal({ isOpen, onClose, onSubmit }: ReportBugM
 
   if (!isOpen) return null;
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (isSubmitting) return;
+    setSuccess(false);
+
     if (description.trim().length < 10) {
       setError("Please enter at least 10 characters to help us understand the issue.");
       return;
     }
-    onSubmit(description);
-    setDescription("");
+
+    setIsSubmitting(true);
     setError("");
-    onClose();
+
+    try {
+      const form = new FormData();
+      form.append("description", description.trim());
+      form.append("pageUrl", window.location.href);
+      form.append("referrerUrl", document.referrer || "");
+      if (screenshot) form.append("screenshot", screenshot);
+
+      await apiFetch("/api/bug-reports", {
+        method: "POST",
+        body: form,
+      });
+
+      setSuccess(true);
+      setDescription("");
+      setScreenshot(null);
+
+      // Give a moment so the user sees success, then close.
+      setTimeout(() => {
+        setSuccess(false);
+        onClose();
+      }, 600);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to submit bug report");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleClose = () => {
     setDescription("");
+    setScreenshot(null);
     setError("");
+    setSuccess(false);
     onClose();
   };
 
@@ -122,6 +156,23 @@ export default function ReportBugModal({ isOpen, onClose, onSubmit }: ReportBugM
               {description.length} characters
             </span>
           </div>
+
+          <div className="mt-4">
+            <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 ml-1">
+              Screenshot (optional)
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setScreenshot(e.target.files?.[0] ?? null)}
+              className="block w-full text-sm text-slate-700 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-slate-900 file:text-white file:font-semibold hover:file:bg-slate-800"
+            />
+            {screenshot && (
+              <p className="mt-2 text-xs text-slate-500 ml-1">
+                Selected: <span className="font-medium">{screenshot.name}</span>
+              </p>
+            )}
+          </div>
         </div>
 
         {/* Actions */}
@@ -129,8 +180,9 @@ export default function ReportBugModal({ isOpen, onClose, onSubmit }: ReportBugM
           <button
             onClick={handleSubmit}
             className="w-full py-4 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-500/25 dark:shadow-blue-900/20 active:scale-[0.98]"
+            disabled={isSubmitting}
           >
-            Submit Bug Report
+            {isSubmitting ? "Submitting..." : success ? "Submitted!" : "Submit Bug Report"}
           </button>
           <button
             onClick={handleClose}
