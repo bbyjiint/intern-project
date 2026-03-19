@@ -20,7 +20,7 @@ export interface EmployerApplicantsOverviewCardData {
 
 interface EmployerApplicantsOverviewCardProps {
   post: EmployerApplicantsOverviewCardData;
-  onView?: () => void; // ✅ เพิ่ม prop
+  onView?: () => void;
 }
 
 const workTypeStyles: Record<string, string> = {
@@ -31,14 +31,30 @@ const workTypeStyles: Record<string, string> = {
 
 export default function EmployerApplicantsOverviewCard({
   post,
-  onView, // ✅ รับ prop
+  onView,
 }: EmployerApplicantsOverviewCardProps) {
   return (
-    <div className="relative flex h-full min-h-[274px] flex-col rounded-[12px] border border-gray-100 bg-white px-[20px] py-[18px] shadow-[0_2px_10px_rgba(15,23,42,0.05)] transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
+    <div className="relative flex h-full min-h-[274px] flex-col overflow-hidden rounded-[12px] border border-gray-100 bg-white px-[20px] py-[18px] shadow-[0_2px_10px_rgba(15,23,42,0.05)] transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
       {post.isNew && (
-        <div className="absolute right-[14px] top-[-11px] rounded-[6px] bg-[#FF5A5F] px-[10px] py-[3px] text-[11px] font-semibold text-white shadow-sm">
-          1 New
-          <span className="absolute left-1/2 top-full h-0 w-0 -translate-x-1/2 border-l-[5px] border-r-[5px] border-t-[6px] border-l-transparent border-r-transparent border-t-[#FF5A5F]" />
+        <div
+          style={{
+            position: "absolute",
+            top: 14,
+            left: -30,
+            width: 110,
+            backgroundColor: "#E84040",
+            color: "white",
+            fontSize: "12px",
+            fontWeight: 700,
+            textAlign: "center",
+            padding: "5px 0",
+            transform: "rotate(-45deg)",
+            transformOrigin: "center",
+            letterSpacing: "0.5px",
+            boxShadow: "0 2px 6px rgba(232,64,64,0.4)",
+          }}
+        >
+          New
         </div>
       )}
 
@@ -128,7 +144,6 @@ export default function EmployerApplicantsOverviewCard({
           >
             View Post
           </Link>
-          {/* ✅ กด View Candidates → เรียก onView() ก่อน navigate */}
           <Link
             href={`/employer/job-post/applicants/${post.id}`}
             onClick={() => onView?.()}
