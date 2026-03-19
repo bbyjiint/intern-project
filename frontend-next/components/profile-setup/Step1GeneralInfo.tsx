@@ -4,10 +4,6 @@ import { useState, useEffect, useRef } from 'react'
 import { apiFetch } from '@/lib/api'
 import MultiSelectDropdown from '@/components/MultiSelectDropdown'
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Types
-// ─────────────────────────────────────────────────────────────────────────────
-
 interface Province {
   id: string
   name: string
@@ -37,32 +33,16 @@ interface Step1Props {
   onSkip?: () => void
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Constants
-// ─────────────────────────────────────────────────────────────────────────────
-
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-
 const DEFAULT_POSITIONS = ['HR', 'Accounting', 'Marketing', 'IT', 'Finance', 'Sales', 'Operations', 'Engineering']
-
-// ─────────────────────────────────────────────────────────────────────────────
-// AIBadge
-// ─────────────────────────────────────────────────────────────────────────────
 
 function AIBadge() {
   return (
-    <span
-      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium ml-2"
-      style={{ backgroundColor: '#EEF2FF', color: '#4338CA' }}
-    >
+    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium ml-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400">
       ✨ AI filled
     </span>
   )
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Date helpers
-// ─────────────────────────────────────────────────────────────────────────────
 
 function parseDate(val: string): { day: number; month: number; year: number } | null {
   if (!val) return null
@@ -78,10 +58,6 @@ function toDisplayDate(val: string): string {
   if (!p) return val
   return `${String(p.day).padStart(2, '0')}/${String(p.month).padStart(2, '0')}/${p.year}`
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// DayMonthYearPicker
-// ─────────────────────────────────────────────────────────────────────────────
 
 function DayMonthYearPicker({
   value,
@@ -103,10 +79,7 @@ function DayMonthYearPicker({
 
   useEffect(() => {
     const p = parseDate(value)
-    if (p) {
-      setCalYear(p.year)
-      setCalMonth(p.month)
-    }
+    if (p) { setCalYear(p.year); setCalMonth(p.month) }
   }, [value])
 
   useEffect(() => {
@@ -151,13 +124,13 @@ function DayMonthYearPicker({
           value={value ? toDisplayDate(value) : ''}
           placeholder={placeholder}
           onClick={() => { setOpen(v => !v); setView('day') }}
-          className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+          className="w-full px-4 py-3 pr-10 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
         />
         <button
           type="button"
           tabIndex={-1}
           onClick={() => { setOpen(v => !v); setView('day') }}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-slate-400 dark:hover:text-slate-200"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -167,31 +140,29 @@ function DayMonthYearPicker({
       </div>
 
       {open && (
-        <div className="absolute z-50 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4" style={{ minWidth: 280 }}>
+        <div className="absolute z-50 mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-600 rounded-lg shadow-lg p-4" style={{ minWidth: 280 }}>
           <div className="flex items-center justify-between mb-3">
-            <button type="button" onClick={prevMonth} className="p-1 rounded hover:bg-gray-100">
-              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button type="button" onClick={prevMonth} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-700">
+              <svg className="w-4 h-4 text-gray-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
             <div className="flex gap-2">
               <button type="button"
                 onClick={() => setView(v => v === 'month' ? 'day' : 'month')}
-                className="font-semibold text-sm px-2 py-1 rounded hover:bg-gray-100"
-                style={{ color: '#1C2D4F' }}
+                className="font-semibold text-sm px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-slate-700 text-[#1C2D4F] dark:text-slate-200"
               >
                 {MONTHS[calMonth - 1]}
               </button>
               <button type="button"
                 onClick={() => setView(v => v === 'year' ? 'day' : 'year')}
-                className="font-semibold text-sm px-2 py-1 rounded hover:bg-gray-100"
-                style={{ color: '#1C2D4F' }}
+                className="font-semibold text-sm px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-slate-700 text-[#1C2D4F] dark:text-slate-200"
               >
                 {calYear}
               </button>
             </div>
-            <button type="button" onClick={nextMonth} className="p-1 rounded hover:bg-gray-100">
-              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button type="button" onClick={nextMonth} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-700">
+              <svg className="w-4 h-4 text-gray-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>
@@ -202,7 +173,7 @@ function DayMonthYearPicker({
               {MONTHS.map((m, i) => (
                 <button key={m} type="button"
                   onClick={() => { setCalMonth(i + 1); setView('day') }}
-                  className="py-2 rounded-lg text-sm font-medium transition-colors"
+                  className="py-2 rounded-lg text-sm font-medium transition-colors dark:text-slate-200"
                   style={btnStyle(calMonth === i + 1)}
                   onMouseEnter={e => { if (calMonth !== i + 1) e.currentTarget.style.backgroundColor = '#E3F5FF' }}
                   onMouseLeave={e => { if (calMonth !== i + 1) e.currentTarget.style.backgroundColor = 'transparent' }}
@@ -216,7 +187,7 @@ function DayMonthYearPicker({
               {Array.from({ length: 100 }, (_, i) => today.getFullYear() - i).map(y => (
                 <button key={y} type="button"
                   onClick={() => { setCalYear(y); setView('day') }}
-                  className="py-2 rounded-lg text-sm font-medium transition-colors"
+                  className="py-2 rounded-lg text-sm font-medium transition-colors dark:text-slate-200"
                   style={btnStyle(calYear === y)}
                   onMouseEnter={e => { if (calYear !== y) e.currentTarget.style.backgroundColor = '#E3F5FF' }}
                   onMouseLeave={e => { if (calYear !== y) e.currentTarget.style.backgroundColor = 'transparent' }}
@@ -229,7 +200,7 @@ function DayMonthYearPicker({
             <>
               <div className="grid grid-cols-7 mb-1">
                 {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
-                  <div key={d} className="text-center text-xs font-medium py-1" style={{ color: '#A9B4CD' }}>{d}</div>
+                  <div key={d} className="text-center text-xs font-medium py-1 text-[#A9B4CD] dark:text-slate-500">{d}</div>
                 ))}
               </div>
               <div className="grid grid-cols-7 gap-y-1">
@@ -239,7 +210,7 @@ function DayMonthYearPicker({
                   return (
                     <button key={day} type="button"
                       onClick={() => selectDay(day)}
-                      className="w-full aspect-square rounded-full text-sm font-medium transition-colors flex items-center justify-center"
+                      className="w-full aspect-square rounded-full text-sm font-medium transition-colors flex items-center justify-center dark:text-slate-200"
                       style={btnStyle(active)}
                       onMouseEnter={e => { if (!active) e.currentTarget.style.backgroundColor = '#E3F5FF' }}
                       onMouseLeave={e => { if (!active) e.currentTarget.style.backgroundColor = 'transparent' }}
@@ -254,10 +225,6 @@ function DayMonthYearPicker({
     </div>
   )
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Step1GeneralInfo
-// ─────────────────────────────────────────────────────────────────────────────
 
 function buildFormFields(data: any): FormFields {
   const nameParts = (data.fullName || '').split(' ')
@@ -295,9 +262,7 @@ export default function Step1GeneralInfo({ data, onUpdate, onSkip }: Step1Props)
     const built = buildFormFields(data)
     setFields(built)
     const locs = data.preferredLocations || []
-    if (locs.length > 0) {
-      setSelectedProvinceIds(locs)
-    }
+    if (locs.length > 0) setSelectedProvinceIds(locs)
   }, [data])
 
   useEffect(() => {
@@ -354,20 +319,17 @@ export default function Step1GeneralInfo({ data, onUpdate, onSkip }: Step1Props)
       {/* Header */}
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h2 className="text-2xl font-bold mb-1" style={{ color: '#1C2D4F', fontWeight: 700 }}>
+          <h2 className="text-2xl font-bold mb-1 text-[#1C2D4F] dark:text-slate-100">
             Profile Information
           </h2>
-          <p className="text-sm" style={{ color: '#A9B4CD' }}>
+          <p className="text-sm text-[#A9B4CD] dark:text-slate-400">
             This step is optional — you can fill your profile information at any time.
           </p>
         </div>
         {onSkip && (
           <button
             onClick={onSkip}
-            className="flex items-center px-4 py-2 rounded-lg font-medium text-sm transition-colors"
-            style={{ border: '2px solid #0273B1', color: '#0273B1', backgroundColor: 'white' }}
-            onMouseEnter={e => { e.currentTarget.style.backgroundColor = '#F0F4F8' }}
-            onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'white' }}
+            className="flex items-center px-4 py-2 rounded-lg font-medium text-sm transition-colors border-2 border-[#0273B1] text-[#0273B1] bg-white dark:bg-slate-700 dark:text-blue-400 dark:border-blue-400 hover:bg-[#F0F4F8] dark:hover:bg-slate-600"
           >
             Skip &gt;
           </button>
@@ -376,24 +338,21 @@ export default function Step1GeneralInfo({ data, onUpdate, onSkip }: Step1Props)
 
       {/* AI Autofill Banner */}
       {data._aiAutofilled && (
-        <div
-          className="flex items-center gap-2 px-4 py-3 rounded-lg mb-5 text-sm"
-          style={{ backgroundColor: '#EEF2FF', color: '#4338CA', border: '1px solid #C7D2FE' }}
-        >
+        <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-5 text-sm bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700">
           <span className="text-base">✨</span>
           <span className="font-semibold">AI autofilled your profile</span>
-          <span style={{ color: '#6366F1' }}>— Fields marked with ✨ AI filled were read from your resume. Please review and edit if needed.</span>
+          <span className="text-indigo-500 dark:text-indigo-400">— Fields marked with ✨ AI filled were read from your resume. Please review and edit if needed.</span>
         </div>
       )}
 
       <div className="flex flex-col md:flex-row gap-6">
-        {/* Left column — form fields */}
+        {/* Left column */}
         <div className="flex-1 space-y-5">
 
           {/* Name */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
+              <label className="block text-xs font-medium mb-2 text-[#0273B1]">
                 First Name {data._aiFilled_firstName && <AIBadge />}
               </label>
               <input
@@ -401,11 +360,11 @@ export default function Step1GeneralInfo({ data, onUpdate, onSkip }: Step1Props)
                 value={fields.firstName}
                 onChange={e => handleChange('firstName', e.target.value)}
                 placeholder="Your First Name"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
+              <label className="block text-xs font-medium mb-2 text-[#0273B1]">
                 Last Name {data._aiFilled_lastName && <AIBadge />}
               </label>
               <input
@@ -413,14 +372,14 @@ export default function Step1GeneralInfo({ data, onUpdate, onSkip }: Step1Props)
                 value={fields.lastName}
                 onChange={e => handleChange('lastName', e.target.value)}
                 placeholder="Your Last Name"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
 
           {/* Gender */}
           <div>
-            <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>Gender</label>
+            <label className="block text-xs font-medium mb-2 text-[#0273B1]">Gender</label>
             <div className="flex gap-4">
               {['Male', 'Female'].map(g => (
                 <label key={g} className="flex items-center cursor-pointer">
@@ -433,7 +392,7 @@ export default function Step1GeneralInfo({ data, onUpdate, onSkip }: Step1Props)
                     className="mr-2"
                     style={{ accentColor: '#0273B1' }}
                   />
-                  <span className="text-sm" style={{ color: '#1C2D4F' }}>{g}</span>
+                  <span className="text-sm text-[#1C2D4F] dark:text-slate-300">{g}</span>
                 </label>
               ))}
             </div>
@@ -441,7 +400,7 @@ export default function Step1GeneralInfo({ data, onUpdate, onSkip }: Step1Props)
 
           {/* Date of Birth */}
           <div>
-            <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>Date of Birth</label>
+            <label className="block text-xs font-medium mb-2 text-[#0273B1]">Date of Birth</label>
             <DayMonthYearPicker
               value={fields.dateOfBirth}
               onChange={val => handleChange('dateOfBirth', val)}
@@ -450,11 +409,11 @@ export default function Step1GeneralInfo({ data, onUpdate, onSkip }: Step1Props)
 
           {/* Nationality */}
           <div>
-            <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>Nationality</label>
+            <label className="block text-xs font-medium mb-2 text-[#0273B1]">Nationality</label>
             <select
               value={fields.nationality}
               onChange={e => handleChange('nationality', e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="Thai">Thai</option>
               <option value="Other">Other</option>
@@ -463,7 +422,7 @@ export default function Step1GeneralInfo({ data, onUpdate, onSkip }: Step1Props)
 
           {/* Email */}
           <div>
-            <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
+            <label className="block text-xs font-medium mb-2 text-[#0273B1]">
               Email {data._aiFilled_email && <AIBadge />}
             </label>
             <input
@@ -471,13 +430,13 @@ export default function Step1GeneralInfo({ data, onUpdate, onSkip }: Step1Props)
               value={fields.email}
               onChange={e => handleChange('email', e.target.value)}
               placeholder="example@gmail.com"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           {/* Phone */}
           <div>
-            <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
+            <label className="block text-xs font-medium mb-2 text-[#0273B1]">
               Phone Number {data._aiFilled_phoneNumber && <AIBadge />}
             </label>
             <input
@@ -485,7 +444,7 @@ export default function Step1GeneralInfo({ data, onUpdate, onSkip }: Step1Props)
               value={fields.phoneNumber}
               onChange={e => handleChange('phoneNumber', e.target.value)}
               placeholder="e.g. 08x-xxx-xxxx"
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
@@ -497,23 +456,20 @@ export default function Step1GeneralInfo({ data, onUpdate, onSkip }: Step1Props)
               <img src={fields.photo} alt="Profile" className="w-full aspect-square object-cover rounded-lg" />
               <button
                 onClick={removePhoto}
-                className="absolute top-1 right-1 p-1 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                className="absolute top-1 right-1 p-1 bg-white dark:bg-slate-700 rounded-full shadow-md hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors"
               >
-                <svg className="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-3 h-3 text-gray-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
           ) : (
             <label className="cursor-pointer block w-32">
-              <div
-                className="w-full aspect-square rounded-lg flex flex-col items-center justify-center border-2 border-dashed transition-colors"
-                style={{ backgroundColor: '#F9FAFB', borderColor: '#E5E7EB' }}
-              >
-                <svg className="w-6 h-6 mb-1" style={{ color: '#9CA3AF' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-full aspect-square rounded-lg flex flex-col items-center justify-center border-2 border-dashed transition-colors bg-[#F9FAFB] dark:bg-slate-700 border-gray-200 dark:border-slate-600">
+                <svg className="w-6 h-6 mb-1 text-gray-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                <span className="text-xs font-medium" style={{ color: '#9CA3AF' }}>Add Picture</span>
+                <span className="text-xs font-medium text-gray-400 dark:text-slate-500">Add Picture</span>
               </div>
               <input type="file" accept="image/*" onChange={handlePhotoChange} className="hidden" />
             </label>
@@ -523,8 +479,10 @@ export default function Step1GeneralInfo({ data, onUpdate, onSkip }: Step1Props)
 
       {/* About You */}
       <div className="mt-8">
-        <label className="block text-xs font-medium mb-1" style={{ color: '#0273B1' }}>About You {data._aiFilled_aboutYou && <AIBadge />}</label>
-        <p className="text-xs mb-3" style={{ color: '#A9B4CD' }}>
+        <label className="block text-xs font-medium mb-1 text-[#0273B1]">
+          About You {data._aiFilled_aboutYou && <AIBadge />}
+        </label>
+        <p className="text-xs mb-3 text-[#A9B4CD] dark:text-slate-500">
           Add a short description highlighting your background, skills, or interests.
         </p>
         <textarea
@@ -533,18 +491,18 @@ export default function Step1GeneralInfo({ data, onUpdate, onSkip }: Step1Props)
           placeholder="Write a brief overview of yourself"
           rows={5}
           maxLength={3000}
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
         />
       </div>
 
       {/* Career Preference */}
-      <div className="mt-8 pt-8 border-t border-gray-200">
-        <h3 className="text-xl font-bold mb-6" style={{ color: '#1C2D4F', fontWeight: 700 }}>Career Preference</h3>
+      <div className="mt-8 pt-8 border-t border-gray-200 dark:border-slate-700">
+        <h3 className="text-xl font-bold mb-6 text-[#1C2D4F] dark:text-slate-100">Career Preference</h3>
 
         <div className="space-y-6">
           {/* Positions of Interest */}
           <div>
-            <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>Position(s) of Interest</label>
+            <label className="block text-xs font-medium mb-2 text-[#0273B1]">Position(s) of Interest</label>
             <MultiSelectDropdown
               options={DEFAULT_POSITIONS}
               value={fields.positionsOfInterest}
@@ -556,7 +514,7 @@ export default function Step1GeneralInfo({ data, onUpdate, onSkip }: Step1Props)
 
           {/* Preferred Locations */}
           <div>
-            <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>Preferred Location(s)</label>
+            <label className="block text-xs font-medium mb-2 text-[#0273B1]">Preferred Location(s)</label>
             <MultiSelectDropdown
               options={provinces.map(p => ({
                 value: p.id,
@@ -577,17 +535,17 @@ export default function Step1GeneralInfo({ data, onUpdate, onSkip }: Step1Props)
 
           {/* Internship Period */}
           <div>
-            <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>Internship Period</label>
+            <label className="block text-xs font-medium mb-2 text-[#0273B1]">Internship Period</label>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs mb-1 block" style={{ color: '#A9B4CD' }}>Start Date</label>
+                <label className="text-xs mb-1 block text-[#A9B4CD] dark:text-slate-500">Start Date</label>
                 <DayMonthYearPicker
                   value={fields.internshipStart}
                   onChange={val => handleChange('internshipStart', val)}
                 />
               </div>
               <div>
-                <label className="text-xs mb-1 block" style={{ color: '#A9B4CD' }}>End Date</label>
+                <label className="text-xs mb-1 block text-[#A9B4CD] dark:text-slate-500">End Date</label>
                 <DayMonthYearPicker
                   value={fields.internshipEnd}
                   onChange={val => handleChange('internshipEnd', val)}

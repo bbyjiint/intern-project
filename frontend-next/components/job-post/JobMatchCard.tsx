@@ -94,16 +94,16 @@ export default function JobMatchCard({
   };
 
   return (
-    <div className="relative flex h-full min-h-[274px] flex-col rounded-[12px] bg-white px-[20px] py-[18px] shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
+    <div className="relative flex h-full min-h-[274px] flex-col rounded-[12px] bg-white dark:bg-slate-800 px-[20px] py-[18px] shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
       {/* Header */}
       <div className="mb-[9px] flex items-start justify-between gap-2">
         <div className="flex items-start gap-[14px]">
-          <div className="flex h-[48px] w-[48px] items-center justify-center overflow-hidden rounded-full bg-[#F3F4F7]">
+          <div className="flex h-[48px] w-[48px] items-center justify-center overflow-hidden rounded-full bg-[#F3F4F7] dark:bg-slate-700">
             {renderLogo()}
           </div>
           <div className="min-w-0 pt-[1px] max-w-[150px]">
             <h3
-              className="truncate text-[15px] font-bold leading-tight text-[#111827]"
+              className="truncate text-[15px] font-bold leading-tight text-[#111827] dark:text-white"
               title={post.companyName}
             >
               {post.companyName}
@@ -116,7 +116,6 @@ export default function JobMatchCard({
 
         {/* Score ring + Bookmark */}
         <div className="flex items-center gap-2 flex-shrink-0 mt-1">
-          {/* ✅ SVG arc style */}
           <div className="relative h-[52px] w-[52px] shrink-0">
             <svg width="52" height="52" viewBox="0 0 52 52">
               <circle
@@ -140,7 +139,7 @@ export default function JobMatchCard({
                 transform="rotate(-90 26 26)"
               />
             </svg>
-            <div className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-[#374151]">
+            <div className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-[#374151] dark:text-slate-200">
               {score}%
             </div>
           </div>
@@ -148,7 +147,7 @@ export default function JobMatchCard({
           <button
             type="button"
             onClick={() => onBookmark?.(post.id, !post.isBookmarked)}
-            className={`shrink-0 pt-[2px] transition-colors ${post.isBookmarked ? "text-gray-800" : "text-gray-300"} hover:text-gray-600`}
+            className={`shrink-0 pt-[2px] transition-colors ${post.isBookmarked ? "text-gray-800 dark:text-white" : "text-gray-300 dark:text-slate-600"} hover:text-gray-600 dark:hover:text-slate-300`}
             aria-label={post.isBookmarked ? "Remove bookmark" : "Bookmark"}
           >
             <svg
@@ -169,7 +168,7 @@ export default function JobMatchCard({
       </div>
 
       {/* Job title */}
-      <h2 className="mb-[4px] min-h-[34px] text-[16px] font-bold leading-snug text-[#111827]">
+      <h2 className="mb-[4px] min-h-[34px] text-[16px] font-bold leading-snug text-[#111827] dark:text-white">
         {post.jobTitle}
       </h2>
 
@@ -186,7 +185,7 @@ export default function JobMatchCard({
         {post.positions.slice(0, 3).map((pos) => (
           <span
             key={pos}
-            className="rounded-[8px] bg-[#E5E7EB] px-[14px] py-[2px] text-[12px] font-semibold text-[#4B5563] inline-flex items-center"
+            className="rounded-[8px] bg-[#E5E7EB] dark:bg-slate-700 px-[14px] py-[2px] text-[12px] font-semibold text-[#4B5563] dark:text-slate-300 inline-flex items-center"
           >
             {pos}
           </span>
@@ -196,17 +195,17 @@ export default function JobMatchCard({
       {/* Info grid */}
       <div className="grid grid-cols-[150px_1fr] gap-y-[8px]">
         <p className="text-[12px] text-[#8B94A7]">Preferred</p>
-        <p className="text-[13px] text-[#6B7280]">
+        <p className="text-[13px] text-[#6B7280] dark:text-slate-400">
           {post.locationProvince || "-"}
         </p>
 
         <p className="text-[12px] text-[#8B94A7]">Number of applicants</p>
-        <p className="text-[13px] text-[#6B7280]">
+        <p className="text-[13px] text-[#6B7280] dark:text-slate-400">
           {post.positionsAvailable ?? "-"}
         </p>
 
         <p className="text-[12px] text-[#8B94A7]">Allowance</p>
-        <p className="text-[13px] font-semibold text-[#111827]">
+        <p className="text-[13px] font-semibold text-[#111827] dark:text-white">
           {formatAllowance(
             post.allowance,
             post.allowancePeriod,
@@ -220,14 +219,14 @@ export default function JobMatchCard({
         <button
           type="button"
           onClick={onDetail}
-          className="flex h-[34px] flex-1 items-center justify-center rounded-[8px] border border-[#D1D5DB] bg-white text-[13px] font-semibold text-[#374151] transition hover:bg-[#F9FAFB]"
+          className="flex h-[34px] flex-1 items-center justify-center rounded-[8px] border border-[#D1D5DB] dark:border-slate-600 bg-white dark:bg-slate-700 text-[13px] font-semibold text-[#374151] dark:text-slate-200 transition hover:bg-[#F9FAFB] dark:hover:bg-slate-600"
         >
           Detail
         </button>
         <button
           type="button"
           onClick={onApply}
-          className="flex h-[34px] flex-1 items-center justify-center rounded-[8px] border border-[#2563EB] bg-white text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8]"
+          className="flex h-[34px] flex-1 items-center justify-center rounded-[8px] border border-[#2563EB] bg-white dark:bg-slate-700 text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8] dark:hover:bg-slate-600"
         >
           Apply
         </button>

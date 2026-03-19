@@ -113,7 +113,6 @@ export default function Step0UploadResume({
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  // ─── AI Autofill ──────────────────────────────────────────────────────────
   const handleAnalyzeResume = async () => {
     const file = data._pendingResumeFile as File | null;
     if (!file) return;
@@ -138,39 +137,21 @@ export default function Step0UploadResume({
 
       if (!parsed) throw new Error("No data returned");
 
-      // Map AI result → formData fields
       const nameParts = (parsed.fullName || "").trim().split(" ");
       const firstName = nameParts[0] || "";
       const lastName = nameParts.slice(1).join(" ") || "";
 
       onUpdate({
-        // ── Profile ──────────────────────────────────────────────────────────
         ...(firstName && { firstName, _aiFilled_firstName: true }),
         ...(lastName  && { lastName,  _aiFilled_lastName:  true }),
-        ...(parsed.email && {
-          email: parsed.email,
-          _aiFilled_email: true,
-        }),
-        ...(parsed.phoneNumber && {
-          phoneNumber: parsed.phoneNumber,
-          _aiFilled_phoneNumber: true,
-        }),
-        // ── Bio (About You) ───────────────────────────────────────────────────
-        ...(parsed.bio && {
-          aboutYou: parsed.bio,
-          _aiFilled_aboutYou: true,
-        }),
-        // ── Education ─────────────────────────────────────────────────────────
-        ...(parsed.education?.length > 0 && {
-          education: parsed.education,
-          _aiFilled_education: true,
-        }),
-        // ── Projects ──────────────────────────────────────────────────────────
+        ...(parsed.email && { email: parsed.email, _aiFilled_email: true }),
+        ...(parsed.phoneNumber && { phoneNumber: parsed.phoneNumber, _aiFilled_phoneNumber: true }),
+        ...(parsed.bio && { aboutYou: parsed.bio, _aiFilled_aboutYou: true }),
+        ...(parsed.education?.length > 0 && { education: parsed.education, _aiFilled_education: true }),
         ...(parsed.projects?.length > 0 && {
           projects: parsed.projects.map((p: any) => ({ ...p, _aiTag: true })),
           _aiFilled_projects: true,
         }),
-        // ── Skills ────────────────────────────────────────────────────────────
         ...(parsed.skills?.length > 0 && {
           skills: parsed.skills.map((s: any) =>
             typeof s === "string"
@@ -198,31 +179,17 @@ export default function Step0UploadResume({
       {/* Header */}
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h2
-            className="text-2xl font-bold mb-1"
-            style={{ color: "#1C2D4F", fontWeight: 700 }}
-          >
+          <h2 className="text-2xl font-bold mb-1 text-[#1C2D4F] dark:text-slate-100">
             Upload Your Resume
           </h2>
-          <p className="text-sm" style={{ color: "#A9B4CD" }}>
+          <p className="text-sm text-[#A9B4CD] dark:text-slate-400">
             Upload your resume to get started. You can autofill your profile using AI or fill in manually.
           </p>
         </div>
         {onSkip && (
           <button
             onClick={onSkip}
-            className="flex items-center px-4 py-2 rounded-lg font-medium text-sm transition-colors"
-            style={{
-              border: "2px solid #0273B1",
-              color: "#0273B1",
-              backgroundColor: "white",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = "#F0F4F8";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "white";
-            }}
+            className="flex items-center px-4 py-2 rounded-lg font-medium text-sm transition-colors border-2 border-[#0273B1] text-[#0273B1] bg-white dark:bg-slate-700 dark:text-blue-400 dark:border-blue-400 hover:bg-[#F0F4F8] dark:hover:bg-slate-600"
           >
             Skip &gt;
           </button>
@@ -230,21 +197,17 @@ export default function Step0UploadResume({
       </div>
 
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-400">
           {error}
         </div>
       )}
 
-      {/* ── Drop Zone / File Selected ─────────────────────────────────────── */}
+      {/* Drop Zone / File Selected */}
       {fileSelected ? (
-        <div
-          className="border-2 border-dashed rounded-xl p-8 text-center"
-          style={{ borderColor: "#0273B1", backgroundColor: "#F0F8FF" }}
-        >
+        <div className="border-2 border-dashed rounded-xl p-8 text-center border-[#0273B1] bg-[#F0F8FF] dark:bg-blue-900/20">
           <div className="flex flex-col items-center">
             <svg
-              className="w-12 h-12 mb-3"
-              style={{ color: "#0273B1" }}
+              className="w-12 h-12 mb-3 text-[#0273B1]"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -257,38 +220,21 @@ export default function Step0UploadResume({
               />
             </svg>
             <div className="flex items-center gap-2 mb-1">
-              <svg
-                className="w-5 h-5 text-green-500"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2.5}
-                  d="M5 13l4 4L19 7"
-                />
+              <svg className="w-5 h-5 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
               </svg>
-              <p className="text-sm font-semibold" style={{ color: "#1C2D4F" }}>
+              <p className="text-sm font-semibold text-[#1C2D4F] dark:text-slate-200">
                 {resumeFile?.name || data.resumeFile || "Resume uploaded"}
               </p>
             </div>
-            <p className="text-xs mb-3" style={{ color: "#6B7280" }}>
+            <p className="text-xs mb-3 text-[#6B7280] dark:text-slate-400">
               {data._pendingResumeFile
                 ? "File selected. Press Save to upload."
                 : "File uploaded successfully."}
             </p>
             <button
               onClick={handleRemoveFile}
-              className="text-sm px-4 py-2 rounded-lg font-medium transition-colors"
-              style={{ color: "#EF4444", backgroundColor: "transparent" }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.textDecoration = "underline";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.textDecoration = "none";
-              }}
+              className="text-sm px-4 py-2 rounded-lg font-medium text-red-500 hover:underline transition-colors"
             >
               Remove and upload another
             </button>
@@ -302,90 +248,69 @@ export default function Step0UploadResume({
           onDrop={handleDrop}
           className={`border-2 border-dashed rounded-xl p-12 text-center transition-colors ${
             isDragging
-              ? "border-blue-400 bg-blue-50"
-              : "border-gray-300 bg-white"
+              ? "border-blue-400 bg-blue-50 dark:bg-blue-900/20"
+              : "border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700"
           }`}
         >
           <div className="flex flex-col items-center">
             <svg
-              className="w-12 h-12 mb-4"
-              style={{ color: "#0273B1" }}
+              className="w-12 h-12 mb-4 text-[#0273B1]"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M7 11l5-5m0 0l5 5m-5-5v12"
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 11l5-5m0 0l5 5m-5-5v12" />
             </svg>
-            <p className="text-sm font-medium mb-4" style={{ color: "#1C2D4F" }}>
+            <p className="text-sm font-medium mb-4 text-[#1C2D4F] dark:text-slate-200">
               Drag and drop your resume here, or
             </p>
             <button
               onClick={handleSelectFileClick}
               className="px-6 py-3 rounded-lg font-semibold text-sm text-white transition-colors"
               style={{ backgroundColor: "#0273B1", minWidth: "140px" }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "#025a8f";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "#0273B1";
-              }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#025a8f"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#0273B1"; }}
             >
               Select File
             </button>
-            <p className="text-xs mt-2" style={{ color: "#A9B4CD" }}>
+            <p className="text-xs mt-2 text-[#A9B4CD] dark:text-slate-500">
               PDF or DOCX format. Max size: 5 MB
             </p>
           </div>
         </div>
       )}
 
-      {/* ── AI Autofill Options ───────────────────────────────────────────── */}
+      {/* AI Autofill Options */}
       <div
-        className="mt-5 rounded-xl border p-4"
-        style={{
-          borderColor: useAI ? "#0273B1" : "#E5E7EB",
-          backgroundColor: useAI ? "#F0F8FF" : "#FAFAFA",
-          transition: "all 0.2s ease",
-        }}
+        className={`mt-5 rounded-xl border p-4 transition-all duration-200 ${
+          useAI
+            ? "border-[#0273B1] bg-[#F0F8FF] dark:bg-blue-900/20 dark:border-blue-500"
+            : "border-gray-200 dark:border-slate-600 bg-[#FAFAFA] dark:bg-slate-700"
+        }`}
       >
-        {/* Checkbox row */}
-        <label
-          htmlFor="use-ai"
-          className="flex items-center gap-3 cursor-pointer select-none"
-        >
-          <div className="relative flex items-center justify-center">
-            <input
-              type="checkbox"
-              id="use-ai"
-              checked={useAI}
-              onChange={(e) => setUseAI(e.target.checked)}
-              className="w-5 h-5 rounded border-gray-300"
-              style={{ accentColor: "#0273B1" }}
-            />
-          </div>
+        <label htmlFor="use-ai" className="flex items-center gap-3 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            id="use-ai"
+            checked={useAI}
+            onChange={(e) => setUseAI(e.target.checked)}
+            className="w-5 h-5 rounded border-gray-300"
+            style={{ accentColor: "#0273B1" }}
+          />
           <div className="flex-1">
-            <span className="text-sm font-semibold" style={{ color: "#1C2D4F" }}>
+            <span className="text-sm font-semibold text-[#1C2D4F] dark:text-slate-200">
               ✨ Use AI to analyze and autofill my profile
             </span>
-            <p className="text-xs mt-0.5" style={{ color: "#6B7280" }}>
+            <p className="text-xs mt-0.5 text-[#6B7280] dark:text-slate-400">
               AI will read your resume and fill in Profile, Education, Projects, and Skills automatically.
             </p>
           </div>
         </label>
 
-        {/* AI Action panel */}
         {useAI && (
-          <div className="mt-4 pt-4 border-t" style={{ borderColor: "#DBEAFE" }}>
+          <div className="mt-4 pt-4 border-t border-[#DBEAFE] dark:border-slate-600">
             {!fileSelected ? (
-              <div
-                className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg"
-                style={{ backgroundColor: "#FEF9C3", color: "#92400E" }}
-              >
+              <div className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-400">
                 <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                     d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
@@ -393,45 +318,33 @@ export default function Step0UploadResume({
                 Please upload a resume file first to use AI autofill.
               </div>
             ) : aiDone ? (
-              /* ── Success state ── */
               <div className="flex items-start gap-3">
-                <div
-                  className="flex items-center justify-center w-8 h-8 rounded-full shrink-0"
-                  style={{ backgroundColor: "#D1FAE5" }}
-                >
+                <div className="flex items-center justify-center w-8 h-8 rounded-full shrink-0 bg-green-100 dark:bg-green-900/30">
                   <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-green-700">
+                  <p className="text-sm font-semibold text-green-700 dark:text-green-400">
                     Profile autofilled successfully!
                   </p>
-                  <p className="text-xs text-green-600 mt-0.5">
+                  <p className="text-xs text-green-600 dark:text-green-500 mt-0.5">
                     AI has filled in your profile fields. Fields marked with{" "}
-                    <span
-                      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium"
-                      style={{ backgroundColor: "#EEF2FF", color: "#4338CA" }}
-                    >
+                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400">
                       ✨ AI filled
                     </span>{" "}
                     were autofilled. You can edit them anytime.
                   </p>
-                  <button
-                    onClick={handleAnalyzeResume}
-                    className="mt-2 text-xs underline"
-                    style={{ color: "#0273B1" }}
-                  >
+                  <button onClick={handleAnalyzeResume} className="mt-2 text-xs underline text-[#0273B1]">
                     Re-analyze resume
                   </button>
                 </div>
               </div>
             ) : (
-              /* ── Ready to analyze ── */
               <div className="flex items-center justify-between gap-4">
-                <p className="text-sm" style={{ color: "#374151" }}>
+                <p className="text-sm text-[#374151] dark:text-slate-300">
                   Ready to analyze{" "}
-                  <span className="font-medium" style={{ color: "#0273B1" }}>
+                  <span className="font-medium text-[#0273B1]">
                     {resumeFile?.name || data.resumeFile}
                   </span>
                 </p>
@@ -443,35 +356,14 @@ export default function Step0UploadResume({
                     backgroundColor: isAnalyzing ? "#93C5FD" : "#0273B1",
                     cursor: isAnalyzing ? "not-allowed" : "pointer",
                   }}
-                  onMouseEnter={(e) => {
-                    if (!isAnalyzing)
-                      e.currentTarget.style.backgroundColor = "#025a8f";
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isAnalyzing)
-                      e.currentTarget.style.backgroundColor = "#0273B1";
-                  }}
+                  onMouseEnter={(e) => { if (!isAnalyzing) e.currentTarget.style.backgroundColor = "#025a8f"; }}
+                  onMouseLeave={(e) => { if (!isAnalyzing) e.currentTarget.style.backgroundColor = "#0273B1"; }}
                 >
                   {isAnalyzing ? (
                     <>
-                      <svg
-                        className="w-4 h-4 animate-spin"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8v8H4z"
-                        />
+                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                       </svg>
                       Analyzing...
                     </>
@@ -488,39 +380,27 @@ export default function Step0UploadResume({
               </div>
             )}
 
-            {/* Loading animation */}
             {isAnalyzing && (
               <div className="mt-3">
                 <div className="flex gap-1.5 items-center mb-1.5">
-                  {["Reading resume...", "Extracting data...", "Filling profile..."].map(
-                    (label, i) => (
-                      <div key={i} className="flex items-center gap-1">
-                        <div
-                          className="w-2 h-2 rounded-full"
-                          style={{
-                            backgroundColor: "#0273B1",
-                            animation: `pulse 1.2s ease-in-out ${i * 0.3}s infinite`,
-                            opacity: 0.7,
-                          }}
-                        />
-                        <span className="text-xs" style={{ color: "#6B7280" }}>
-                          {label}
-                        </span>
-                      </div>
-                    )
-                  )}
+                  {["Reading resume...", "Extracting data...", "Filling profile..."].map((label, i) => (
+                    <div key={i} className="flex items-center gap-1">
+                      <div
+                        className="w-2 h-2 rounded-full"
+                        style={{
+                          backgroundColor: "#0273B1",
+                          animation: `pulse 1.2s ease-in-out ${i * 0.3}s infinite`,
+                          opacity: 0.7,
+                        }}
+                      />
+                      <span className="text-xs text-[#6B7280] dark:text-slate-400">{label}</span>
+                    </div>
+                  ))}
                 </div>
-                <div
-                  className="h-1.5 rounded-full overflow-hidden"
-                  style={{ backgroundColor: "#DBEAFE" }}
-                >
+                <div className="h-1.5 rounded-full overflow-hidden bg-blue-100 dark:bg-slate-600">
                   <div
-                    className="h-full rounded-full"
-                    style={{
-                      backgroundColor: "#0273B1",
-                      width: "60%",
-                      animation: "shimmer 1.5s ease-in-out infinite",
-                    }}
+                    className="h-full rounded-full bg-[#0273B1]"
+                    style={{ width: "60%", animation: "shimmer 1.5s ease-in-out infinite" }}
                   />
                 </div>
               </div>
@@ -529,9 +409,8 @@ export default function Step0UploadResume({
         )}
       </div>
 
-      {/* Keep file-only option note */}
       {fileSelected && !useAI && (
-        <p className="mt-3 text-xs" style={{ color: "#9CA3AF" }}>
+        <p className="mt-3 text-xs text-[#9CA3AF] dark:text-slate-500">
           Resume will be saved to your profile. Tick the checkbox above to autofill fields with AI.
         </p>
       )}

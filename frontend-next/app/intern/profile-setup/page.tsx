@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { apiFetch } from "@/lib/api";
 import CompanyHubLogo from "@/components/CompanyHubLogo";
+import ThemeToggle from "@/components/ThemeToggle";
 
 import Step0UploadResume from "@/components/profile-setup/Step0UploadResume";
 import Step1GeneralInfo from "@/components/profile-setup/Step1GeneralInfo";
@@ -40,7 +41,7 @@ export default function ProfileSetupPage() {
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [pendingStep, setPendingStep] = useState<number | null>(null);
 
-  const [loadKey, setLoadKey] = useState(0)
+  const [loadKey, setLoadKey] = useState(0);
   const [skillsKey, setSkillsKey] = useState(0);
 
   const [formData, setFormData] = useState({
@@ -76,8 +77,6 @@ export default function ProfileSetupPage() {
     internshipEnd: "",
   });
 
-  // ─── Auth Check ───────────────────────────────────────────────────────────
-
   useEffect(() => {
     apiFetch<{ user: { role: string | null } }>("/api/auth/me")
       .then((data) => {
@@ -85,8 +84,6 @@ export default function ProfileSetupPage() {
       })
       .catch(() => router.push("/login"));
   }, [router]);
-
-  // ─── Load Profile ─────────────────────────────────────────────────────────
 
   const loadProfile = async () => {
     try {
@@ -138,8 +135,6 @@ export default function ProfileSetupPage() {
     loadProfile();
   }, []);
 
-  // ─── Upload Resume ────────────────────────────────────────────────────────
-
   const uploadResume = async () => {
     if (!formData._pendingResumeFile) return formData.resumeUrl;
 
@@ -156,14 +151,11 @@ export default function ProfileSetupPage() {
     return data.url;
   };
 
-  // ─── Clear AI Flags (เฉพาะ step ที่ Save) ────────────────────────────────
-
   const clearAIFlags = (step: number) => {
     setFormData((prev) => {
       const cleared: any = { ...prev };
 
       if (step === 2) {
-        // General Info
         delete cleared._aiAutofilled;
         delete cleared._aiFilled_firstName;
         delete cleared._aiFilled_lastName;
@@ -171,20 +163,12 @@ export default function ProfileSetupPage() {
         delete cleared._aiFilled_phoneNumber;
         delete cleared._aiFilled_aboutYou;
       }
-
-      if (step === 3) {
-        // Education
-        delete cleared._aiFilled_education;
-      }
-
+      if (step === 3) delete cleared._aiFilled_education;
       if (step === 4) {
-        // Projects
         delete cleared._aiFilled_projects;
         cleared.projects = prev.projects.map((p: any) => ({ ...p, _aiTag: false }));
       }
-
       if (step === 5) {
-        // Skills
         delete cleared._aiFilled_skills;
         cleared.skills = prev.skills.map((s: any) => ({ ...s, _aiTag: false }));
       }
@@ -193,14 +177,11 @@ export default function ProfileSetupPage() {
     });
   };
 
-  // ─── Save Profile (แยกตาม step) ──────────────────────────────────────────
-
   const saveProfile = async () => {
     setIsSubmitting(true);
     setError(null);
 
     try {
-      // ── Step 1: Upload Resume ─────────────────────────────────────────────
       if (currentStep === 1) {
         const resumeUrl = await uploadResume();
         await apiFetch("/api/candidates/profile", {
@@ -209,7 +190,6 @@ export default function ProfileSetupPage() {
         });
       }
 
-      // ── Step 2: General Info ──────────────────────────────────────────────
       if (currentStep === 2) {
         const internshipPeriod =
           formData.internshipPeriod ||
@@ -241,7 +221,6 @@ export default function ProfileSetupPage() {
         });
       }
 
-      // ── Step 3: Education ─────────────────────────────────────────────────
       if (currentStep === 3) {
         if (educationValidatorRef.current) {
           const valid = await educationValidatorRef.current();
@@ -253,7 +232,6 @@ export default function ProfileSetupPage() {
         });
       }
 
-      // ── Step 4: Projects ──────────────────────────────────────────────────
       if (currentStep === 4) {
         if (projectsSectionRef.current) {
           const { valid, incompleteProjects } = projectsSectionRef.current.validateAll();
@@ -266,7 +244,6 @@ export default function ProfileSetupPage() {
         }
       }
 
-      // ── Step 5: Skills ────────────────────────────────────────────────────
       if (currentStep === 5) {
         const incompleteSkills = (formData.skills as any[]).filter(
           (s: any) => !s.name?.trim() || !s.category?.trim() || !s.level?.trim()
@@ -284,7 +261,6 @@ export default function ProfileSetupPage() {
         });
       }
 
-      // ── Clear AI flags เฉพาะ step ที่ Save ───────────────────────────────
       clearAIFlags(currentStep);
       if (currentStep === 5) setSkillsKey((k) => k + 1);
 
@@ -296,8 +272,6 @@ export default function ProfileSetupPage() {
       setIsSubmitting(false);
     }
   };
-
-  // ─── Create Profile ───────────────────────────────────────────────────────
 
   const handleCreateProfile = () => {
     setShowConfirmModal(true);
@@ -327,7 +301,6 @@ export default function ProfileSetupPage() {
         dateOfBirth = `${raw}T12:00:00.000Z`;
       }
 
-      // Save ทุกอย่างพร้อมกันตอน Create Profile
       await apiFetch("/api/candidates/profile", {
         method: "PUT",
         body: JSON.stringify({
@@ -356,8 +329,6 @@ export default function ProfileSetupPage() {
       setIsSubmitting(false);
     }
   };
-
-  // ─── Navigation ───────────────────────────────────────────────────────────
 
   useEffect(() => {
     setHasUnsavedChanges(false);
@@ -409,32 +380,36 @@ export default function ProfileSetupPage() {
     }
   };
 
-  // ─── Render ───────────────────────────────────────────────────────────────
-
   if (loadKey === 0) {
     return (
-      <div className="min-h-screen bg-[#F0F4F8] flex items-center justify-center">
-        <div className="text-gray-400 text-sm">Loading profile...</div>
+      <div className="min-h-screen bg-[#F0F4F8] dark:bg-slate-950 flex items-center justify-center transition-colors duration-300">
+        <div className="text-gray-400 dark:text-slate-500 text-sm">Loading profile...</div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F0F4F8]">
-      <div className="bg-white border-b">
-        <div className="layout-container layout-page-tight">
+    <div className="min-h-screen bg-[#F0F4F8] dark:bg-slate-950 transition-colors duration-300">
+      {/* Navbar */}
+      <div className="bg-white dark:bg-slate-900 border-b dark:border-slate-800 sticky top-0 z-50 transition-colors">
+        <div className="layout-container layout-page-tight flex items-center justify-between h-[76px]">
           <CompanyHubLogo href="/" />
+          <ThemeToggle />
         </div>
       </div>
 
       <div className="layout-container layout-page">
         <div className="mx-auto max-w-[800px]">
-          <div className="bg-white p-6 rounded-lg shadow mb-4">
-            <h1 className="text-3xl font-bold text-center mb-6">Start building your profile</h1>
+          {/* Progress Card */}
+          <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow mb-4 transition-colors">
+            <h1 className="text-3xl font-bold text-center mb-6 text-gray-900 dark:text-white">
+              Start building your profile
+            </h1>
             <ProgressIndicator currentStep={currentStep} totalSteps={5} />
           </div>
 
-          <div className="bg-white p-10 rounded-lg shadow">
+          {/* Main Card */}
+          <div className="bg-white dark:bg-slate-800 p-10 rounded-lg shadow transition-colors">
             {error && <div className="text-red-500 mb-4">{error}</div>}
 
             {currentStep === 1 && (
@@ -445,7 +420,6 @@ export default function ProfileSetupPage() {
                 onSkip={() => tryNavigateTo(2)}
               />
             )}
-
             {currentStep === 2 && (
               <Step1GeneralInfo
                 key={`step1-${loadKey}`}
@@ -454,7 +428,6 @@ export default function ProfileSetupPage() {
                 onSkip={() => tryNavigateTo(3)}
               />
             )}
-
             {currentStep === 3 && (
               <Step2BackgroundExperience
                 key={`step2-${loadKey}`}
@@ -464,7 +437,6 @@ export default function ProfileSetupPage() {
                 onValidate={(fn) => (educationValidatorRef.current = fn)}
               />
             )}
-
             {currentStep === 4 && (
               <ProjectsSection
                 key={`step3-${loadKey}`}
@@ -474,7 +446,6 @@ export default function ProfileSetupPage() {
                 onSkip={() => tryNavigateTo(5)}
               />
             )}
-
             {currentStep === 5 && (
               <Step3SkillsProjects
                 key={`step4-${loadKey}-${skillsKey}`}
@@ -484,11 +455,11 @@ export default function ProfileSetupPage() {
               />
             )}
 
-            <div className="flex justify-between mt-10 pt-6 border-t">
+            {/* Footer Buttons */}
+            <div className="flex justify-between mt-10 pt-6 border-t dark:border-slate-700">
               <button
                 onClick={handlePrevious}
-                className="flex items-center px-6 py-3 rounded-lg font-semibold"
-                style={{ backgroundColor: "white", border: "2px solid #0273B1", color: "#0273B1" }}
+                className="flex items-center px-6 py-3 rounded-lg font-semibold bg-white dark:bg-slate-800 border-2 border-[#0273B1] text-[#0273B1] hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors"
               >
                 Previous
               </button>
@@ -497,7 +468,7 @@ export default function ProfileSetupPage() {
                 <button
                   onClick={saveProfile}
                   disabled={isSubmitting}
-                  className="px-6 py-3 rounded-lg text-white font-semibold"
+                  className="px-6 py-3 rounded-lg text-white font-semibold transition-colors"
                   style={{ backgroundColor: "#0273B1" }}
                 >
                   {isSubmitting ? "Saving..." : "Save"}
@@ -506,8 +477,7 @@ export default function ProfileSetupPage() {
                 {currentStep < 5 ? (
                   <button
                     onClick={handleNext}
-                    className="px-6 py-3 rounded-lg border font-semibold"
-                    style={{ border: "2px solid #0273B1", color: "#0273B1" }}
+                    className="px-6 py-3 rounded-lg font-semibold border-2 border-[#0273B1] text-[#0273B1] hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors"
                   >
                     Next
                   </button>
@@ -515,10 +485,10 @@ export default function ProfileSetupPage() {
                   <button
                     onClick={handleCreateProfile}
                     disabled={isSubmitting}
-                    className="px-6 py-3 rounded-lg text-white font-semibold"
+                    className="px-6 py-3 rounded-lg text-white font-semibold transition-colors"
                     style={{ backgroundColor: "#16A34A" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#15803D" }}
-                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#16A34A" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#15803D"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#16A34A"; }}
                   >
                     Create Profile
                   </button>
@@ -529,10 +499,10 @@ export default function ProfileSetupPage() {
         </div>
       </div>
 
-      {/* Save success modal */}
+      {/* Save Success Modal */}
       {showSaveModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl px-12 py-10 max-w-lg w-full text-center">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl px-12 py-10 max-w-lg w-full text-center">
             <div className="flex justify-center mb-6">
               <div className="w-24 h-24 rounded-full border-4 border-green-200 flex items-center justify-center">
                 <svg className="w-14 h-14 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -540,16 +510,16 @@ export default function ProfileSetupPage() {
                 </svg>
               </div>
             </div>
-            <h2 className="text-3xl font-bold text-[#1C2D4F] mb-3">Saved Successfully</h2>
-            <p className="text-gray-500 text-base mb-8">
+            <h2 className="text-3xl font-bold text-[#1C2D4F] dark:text-white mb-3">Saved Successfully</h2>
+            <p className="text-gray-500 dark:text-slate-400 text-base mb-8">
               Your information has been saved. You can update your profile at any time.
             </p>
             <button
               onClick={() => setShowSaveModal(false)}
-              className="px-10 py-3 rounded-lg font-semibold text-white"
+              className="px-10 py-3 rounded-lg font-semibold text-white transition-colors"
               style={{ backgroundColor: "#0273B1" }}
-              onMouseEnter={e => { e.currentTarget.style.backgroundColor = "#025a8f" }}
-              onMouseLeave={e => { e.currentTarget.style.backgroundColor = "#0273B1" }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#025a8f"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#0273B1"; }}
             >
               OK
             </button>
@@ -557,10 +527,10 @@ export default function ProfileSetupPage() {
         </div>
       )}
 
-      {/* Confirm Create Profile modal */}
+      {/* Confirm Create Profile Modal */}
       {showConfirmModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl px-12 py-10 max-w-lg w-full text-center">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl px-12 py-10 max-w-lg w-full text-center">
             <div className="flex justify-center mb-6">
               <div className="w-24 h-24 rounded-full border-4 border-blue-200 flex items-center justify-center">
                 <svg className="w-14 h-14 text-[#0273B1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -569,23 +539,23 @@ export default function ProfileSetupPage() {
                 </svg>
               </div>
             </div>
-            <h2 className="text-3xl font-bold text-[#1C2D4F] mb-3">Create Profile?</h2>
-            <p className="text-gray-500 text-base mb-8">
+            <h2 className="text-3xl font-bold text-[#1C2D4F] dark:text-white mb-3">Create Profile?</h2>
+            <p className="text-gray-500 dark:text-slate-400 text-base mb-8">
               ยืนยันที่จะสร้างโปรไฟล์และบันทึกข้อมูลลงในบัญชีของคุณใช่ไหม?
             </p>
             <div className="flex gap-4 justify-center">
               <button
                 onClick={() => setShowConfirmModal(false)}
-                className="px-8 py-3 rounded-lg font-semibold border border-gray-300 text-gray-600 hover:bg-gray-100"
+                className="px-8 py-3 rounded-lg font-semibold border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
               >
                 ยกเลิก
               </button>
               <button
                 onClick={confirmCreateProfile}
-                className="px-8 py-3 rounded-lg font-semibold text-white"
+                className="px-8 py-3 rounded-lg font-semibold text-white transition-colors"
                 style={{ backgroundColor: "#16A34A" }}
-                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#15803D" }}
-                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#16A34A" }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#15803D"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#16A34A"; }}
               >
                 ยืนยัน
               </button>
@@ -594,10 +564,10 @@ export default function ProfileSetupPage() {
         </div>
       )}
 
-      {/* Unsaved changes modal */}
+      {/* Unsaved Changes Modal */}
       {showUnsavedModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl px-12 py-10 max-w-lg w-full text-center">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl px-12 py-10 max-w-lg w-full text-center">
             <div className="flex justify-center mb-6">
               <div className="w-24 h-24 rounded-full border-4 border-yellow-200 flex items-center justify-center">
                 <svg className="w-14 h-14 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -606,21 +576,23 @@ export default function ProfileSetupPage() {
                 </svg>
               </div>
             </div>
-            <h2 className="text-3xl font-bold text-[#1C2D4F] mb-3">Unsaved Changes</h2>
-            <p className="text-gray-500 text-base mb-8">You have unsaved changes. Continue without saving?</p>
+            <h2 className="text-3xl font-bold text-[#1C2D4F] dark:text-white mb-3">Unsaved Changes</h2>
+            <p className="text-gray-500 dark:text-slate-400 text-base mb-8">
+              You have unsaved changes. Continue without saving?
+            </p>
             <div className="flex gap-4 justify-center">
               <button
                 onClick={handleLeaveWithoutSaving}
-                className="px-8 py-3 rounded-lg font-semibold border border-gray-300 text-gray-600 hover:bg-gray-100"
+                className="px-8 py-3 rounded-lg font-semibold border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
               >
                 Leave without saving
               </button>
               <button
                 onClick={() => { setShowUnsavedModal(false); saveProfile(); }}
-                className="px-8 py-3 rounded-lg font-semibold text-white"
+                className="px-8 py-3 rounded-lg font-semibold text-white transition-colors"
                 style={{ backgroundColor: "#0273B1" }}
-                onMouseEnter={e => { e.currentTarget.style.backgroundColor = "#025a8f" }}
-                onMouseLeave={e => { e.currentTarget.style.backgroundColor = "#0273B1" }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#025a8f"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#0273B1"; }}
               >
                 Save & Continue
               </button>

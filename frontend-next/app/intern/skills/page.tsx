@@ -503,8 +503,18 @@ function EvidenceBadge({ skill }: { skill: Skill }) {
     colorClass =
       "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-500/20";
     dotClass = "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]";
-  } else if (skill.hasCertEvidence || skill.hasProjectEvidence) {
-    label = "Has Evidence";
+  } else if (skill.hasCertEvidence && skill.hasProjectEvidence) {
+    label = "Evidence by All";
+    colorClass =
+      "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-500/20";
+    dotClass = "bg-amber-500";
+  } else if (skill.hasCertEvidence) {
+    label = "Evidence by Certificate";
+    colorClass =
+      "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-500/20";
+    dotClass = "bg-amber-500";
+  } else if (skill.hasProjectEvidence) {
+    label = "Evidence by Project";
     colorClass =
       "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-100 dark:border-amber-500/20";
     dotClass = "bg-amber-500";
