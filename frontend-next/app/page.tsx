@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import Image from 'next/image'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -40,15 +39,16 @@ export default function Home() {
                   Connecting companies with top talent, and students with career-building opportunities
                 </p>
                 <div>
-                  <Link
-                    href="/login"
+                  <button
+                    type="button"
+                    onClick={() => setIsRegisterModalOpen(true)}
                     className="inline-block text-white px-8 py-3 rounded-md transition-colors font-medium text-base"
                     style={{ backgroundColor: '#0273B1' }}
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#025a8f'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0273B1'}
                   >
                     Start here
-                  </Link>
+                  </button>
                 </div>
               </div>
 
