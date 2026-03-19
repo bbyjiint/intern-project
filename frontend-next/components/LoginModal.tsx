@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { apiFetch } from '@/lib/api'
-import CompanyHubLogo from '@/components/CompanyHubLogo'
+import ThemedCompanyHubLogo from '@/components/ThemedCompanyHubLogo'
 
 interface LoginModalProps {
   isOpen: boolean
@@ -111,8 +111,11 @@ export default function LoginModal({ isOpen, onClose, onSignUpClick }: LoginModa
 
           {/* Logo */}
           <div className="mb-8">
-            <CompanyHubLogo href="/" />
+            <ThemedCompanyHubLogo href="/" />
           </div>
+        </div>
+
+        <div className="p-8">
 
           {/* Heading */}
           <h2 className="text-3xl font-black mb-2 text-slate-900 dark:text-white">

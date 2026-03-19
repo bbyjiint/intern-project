@@ -33,7 +33,7 @@ export default function Step3ContactInfo({ data, onUpdate }: Step3ContactInfoPro
 
   return (
     <div>
-      <h2 className="text-xl sm:text-2xl font-bold mb-6 sm:mb-8" style={{ color: '#0273B1', fontWeight: 700 }}>
+      <h2 className="mb-6 text-xl font-bold sm:mb-8 sm:text-2xl dark:text-white" style={{ color: '#0273B1', fontWeight: 700 }}>
         Contact Information
       </h2>
 
@@ -46,7 +46,7 @@ export default function Step3ContactInfo({ data, onUpdate }: Step3ContactInfoPro
           <div className="flex flex-col sm:flex-row gap-2">
             <select
               defaultValue="+66"
-              className="px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm font-medium w-full sm:w-auto"
+              className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-[#7f7f7f] dark:bg-[#1e1e1e] dark:text-white sm:w-auto"
               style={{ minWidth: '100px' }}
             >
               <option value="+66">+66</option>
@@ -59,7 +59,7 @@ export default function Step3ContactInfo({ data, onUpdate }: Step3ContactInfoPro
               value={formData.phoneNumber}
               onChange={(e) => handleChange('phoneNumber', e.target.value)}
               placeholder="Phone Number"
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-[#7f7f7f] dark:bg-[#1e1e1e] dark:text-white dark:placeholder:text-[#7f7f7f]"
             />
           </div>
         </div>
@@ -74,21 +74,21 @@ export default function Step3ContactInfo({ data, onUpdate }: Step3ContactInfoPro
             value={formData.email}
             onChange={(e) => handleChange('email', e.target.value)}
             placeholder="company@example.com"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-[#7f7f7f] dark:bg-[#1e1e1e] dark:text-white dark:placeholder:text-[#7f7f7f]"
           />
         </div>
 
         {/* Website URL */}
         <div>
           <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
-            Website URL <span className="text-xs font-normal" style={{ color: '#A9B4CD' }}>(Optional)</span>
+            Website URL <span className="text-xs font-normal text-[#A9B4CD] dark:text-[#7f7f7f]">(Optional)</span>
           </label>
           <input
             type="url"
             value={formData.websiteUrl}
             onChange={(e) => handleChange('websiteUrl', e.target.value)}
             placeholder="https://www.example.com"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-[#7f7f7f] dark:bg-[#1e1e1e] dark:text-white dark:placeholder:text-[#7f7f7f]"
           />
         </div>
 
@@ -102,7 +102,7 @@ export default function Step3ContactInfo({ data, onUpdate }: Step3ContactInfoPro
             value={formData.contactName}
             onChange={(e) => handleChange('contactName', e.target.value)}
             placeholder="Enter contact person name"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-[#7f7f7f] dark:bg-[#1e1e1e] dark:text-white dark:placeholder:text-[#7f7f7f]"
           />
         </div>
       </div>

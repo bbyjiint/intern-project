@@ -12,6 +12,7 @@ import CreateJobPostModal, {
   type CreateJobPostModalValues,
 } from "@/components/job-post/CreateJobPostModal";
 import { apiFetch } from "@/lib/api";
+import { useTheme } from "@/components/ThemeProvider";
 
 interface JobPost extends EmployerJobPostCardData {
   createdAt: string;
@@ -39,6 +40,7 @@ const mockJobPosts: JobPost[] = [];
 export default function JobPostPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { theme } = useTheme();
   const [searchQuery, setSearchQuery] = useState("");
   const [jobPosts, setJobPosts] = useState<JobPost[]>(mockJobPosts);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -538,31 +540,39 @@ export default function JobPostPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F6F7FB]">
+    <div
+      className="min-h-screen bg-[#F6F7FB] transition-colors dark:bg-[#121316]"
+      style={{
+        background:
+          theme === "dark"
+            ? "linear-gradient(180deg, #121316 0%, #262626 100%)"
+            : undefined,
+      }}
+    >
       <EmployerNavbar />
       <div className="flex min-h-[calc(100vh-100px)]">
         <EmployerSidebar activeItem="job-post" />
 
-        <div className="flex-1 bg-[#E6EBF4]">
+        <div className="flex-1 bg-[#E6EBF4] transition-colors dark:bg-transparent">
           <div className="layout-container layout-page">
             {jobPostActionError && (
-              <div className="mb-4 rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-[14px] text-[#B91C1C]">
+              <div className="mb-4 rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-[14px] text-[#B91C1C] dark:border-red-900/50 dark:bg-red-500/10 dark:text-red-300">
                 {jobPostActionError}
               </div>
             )}
 
             {createJobPostError && (
-              <div className="mb-4 rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-[14px] text-[#B91C1C]">
+              <div className="mb-4 rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-[14px] text-[#B91C1C] dark:border-red-900/50 dark:bg-red-500/10 dark:text-red-300">
                 {createJobPostError}
               </div>
             )}
 
             <div className="mb-[18px] flex items-start justify-between gap-6">
               <div>
-                <h1 className="text-[32px] font-bold leading-none tracking-[-0.02em] text-[#05060A]">
+                <h1 className="text-[32px] font-bold leading-none tracking-[-0.02em] text-[#05060A] dark:text-[#009df3]">
                   Your Job Posts
                 </h1>
-                <p className="mt-4 text-[14px] text-[#6B7280]">
+                <p className="mt-4 text-[14px] text-[#6B7280] dark:text-[#e5e7eb]">
                   Create, manage, and update the status of your job posts.
                 </p>
               </div>
@@ -571,7 +581,7 @@ export default function JobPostPage() {
                 <div className="relative">
                   <div className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2">
                     <svg
-                      className="h-5 w-5 text-[#6B7280]"
+                      className="h-5 w-5 text-[#6B7280] dark:text-[#686868]"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -589,14 +599,14 @@ export default function JobPostPage() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search"
-                    className="h-[38px] w-[356px] rounded-full border border-[#C9CED8] bg-white pl-[50px] pr-5 text-[14px] text-[#374151] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
+                    className="h-[38px] w-[356px] rounded-full border border-[#C9CED8] bg-white pl-[50px] pr-5 text-[14px] text-[#374151] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] dark:border-[#ececec] dark:bg-[#1e1e1e] dark:text-[#e5e7eb] dark:placeholder:text-[#7f7f7f]"
                   />
                 </div>
 
                 <button
                   type="button"
                   onClick={handleOpenCreateModal}
-                  className="flex h-[38px] items-center justify-center rounded-full border border-[#2563EB] bg-white px-6 text-[14px] font-semibold text-[#2563EB] transition hover:bg-[#EEF4FF]"
+                  className="flex h-[38px] items-center justify-center rounded-full border border-[#d1d5db] bg-white px-6 text-[14px] font-semibold text-[#2563EB] transition hover:bg-[#EEF4FF] dark:bg-[#fefefe] dark:text-black dark:hover:bg-[#fefefe]"
                 >
                   + Create Job Post
                 </button>
@@ -617,10 +627,10 @@ export default function JobPostPage() {
                   onClick={() => setActiveFilter(value)}
                   className="h-[36px] rounded-[7px] border px-6 text-[14px] font-semibold transition-colors"
                   style={{
-                    borderColor: activeFilter === value ? "#2563EB" : "#D1D5DB",
+                    borderColor: activeFilter === value ? "#2563EB" : theme === "dark" ? "#d1d5db" : "#D1D5DB",
                     backgroundColor:
-                      activeFilter === value ? "#FFFFFF" : "#F3F4F6",
-                    color: activeFilter === value ? "#2563EB" : "#111827",
+                      activeFilter === value ? "#FFFFFF" : theme === "dark" ? "#070e12" : "#F3F4F6",
+                    color: activeFilter === value ? (theme === "dark" ? "#a6a19a" : "#2563EB") : theme === "dark" ? "#e5e7eb" : "#111827",
                   }}
                 >
                   {label}
@@ -628,7 +638,7 @@ export default function JobPostPage() {
               ))}
             </div>
 
-            <p className="mb-[16px] text-[16px] font-semibold text-[#111827]">
+            <p className="mb-[16px] text-[16px] font-semibold text-[#111827] dark:text-white">
               {filteredJobPosts.length} Total Job Post
             </p>
 
@@ -646,7 +656,7 @@ export default function JobPostPage() {
             </div>
 
             {filteredJobPosts.length === 0 && (
-              <div className="rounded-[12px] bg-white px-6 py-12 text-center text-[#6B7280] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+              <div className="rounded-[12px] bg-white px-6 py-12 text-center text-[#6B7280] shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors dark:bg-[#070e12] dark:text-[#7f7f7f] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] dark:ring-1 dark:ring-[#d1d5db]">
                 No job posts found matching your search.
               </div>
             )}
@@ -656,7 +666,7 @@ export default function JobPostPage() {
 
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="w-full max-w-md rounded-[18px] bg-white p-8 shadow-xl">
+          <div className="w-full max-w-md rounded-[18px] bg-white p-8 shadow-xl transition-colors dark:bg-[#070e12] dark:shadow-[0_20px_60px_rgba(0,0,0,0.45)] dark:ring-1 dark:ring-[#e5e7eb]">
             <div className="mb-4 flex justify-center">
               <div className="relative h-16 w-16">
                 <svg className="h-16 w-16" viewBox="0 0 24 24" fill="none">
@@ -673,10 +683,10 @@ export default function JobPostPage() {
               </div>
             </div>
 
-            <h2 className="mb-3 text-center text-xl font-bold text-gray-900">
+            <h2 className="mb-3 text-center text-xl font-bold text-gray-900 dark:text-white">
               Delete this job post?
             </h2>
-            <p className="mb-6 text-center text-gray-600">
+            <p className="mb-6 text-center text-gray-600 dark:text-[#e5e7eb]">
               This action will permanently delete this job post and remove all
               associated applicants.
             </p>
@@ -684,7 +694,7 @@ export default function JobPostPage() {
             <div className="flex gap-4">
               <button
                 onClick={handleCancelDelete}
-                className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-[#d1d5db] dark:bg-[#323232] dark:text-[#e5e7eb] dark:hover:bg-[#3c3c3c]"
               >
                 Cancel
               </button>

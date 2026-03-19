@@ -81,8 +81,7 @@ export default function Step1GeneralInfo({
   return (
     <div>
       <h2
-        className="mb-8 text-[22px] font-bold leading-none"
-        style={{ color: "#23325B", fontWeight: 700 }}
+        className="mb-8 text-[22px] font-bold leading-none text-[#23325B] dark:text-white"
       >
         Company Information
       </h2>
@@ -92,8 +91,7 @@ export default function Step1GeneralInfo({
           <div className="max-w-[494px] space-y-[14px]">
             <div>
               <label
-                className="mb-[6px] block text-[14px] font-semibold"
-                style={{ color: "#253858" }}
+                className="mb-[6px] block text-[14px] font-semibold text-[#253858] dark:text-slate-200"
               >
                 Company Name<span style={{ color: "#EF4444" }}>*</span>
               </label>
@@ -102,21 +100,20 @@ export default function Step1GeneralInfo({
                 value={formData.companyName}
                 onChange={(e) => handleChange("companyName", e.target.value)}
                 placeholder="Company Name"
-                className="h-[32px] w-full rounded-[5px] border border-[#CBD5E1] bg-white px-[14px] text-[12px] text-[#1E293B] outline-none transition focus:border-[#0273B1] focus:ring-2 focus:ring-[#BFDBFE]"
+                className="h-[32px] w-full rounded-[5px] border border-[#CBD5E1] bg-white px-[14px] text-[12px] text-[#1E293B] outline-none transition focus:border-[#0273B1] focus:ring-2 focus:ring-[#BFDBFE] dark:border-[#7f7f7f] dark:bg-[#1e1e1e] dark:text-white dark:placeholder:text-[#7f7f7f]"
               />
             </div>
 
             <div>
               <label
-                className="mb-[6px] block text-[14px] font-semibold"
-                style={{ color: "#253858" }}
+                className="mb-[6px] block text-[14px] font-semibold text-[#253858] dark:text-slate-200"
               >
                 Company Size<span style={{ color: "#EF4444" }}>*</span>
               </label>
               <select
                 value={formData.companySize}
                 onChange={(e) => handleChange("companySize", e.target.value)}
-                className="h-[32px] w-full rounded-[5px] border border-[#CBD5E1] bg-white px-[14px] text-[12px] text-[#64748B] outline-none transition focus:border-[#0273B1] focus:ring-2 focus:ring-[#BFDBFE]"
+                className="h-[32px] w-full rounded-[5px] border border-[#CBD5E1] bg-white px-[14px] text-[12px] text-[#64748B] outline-none transition focus:border-[#0273B1] focus:ring-2 focus:ring-[#BFDBFE] dark:border-[#7f7f7f] dark:bg-[#1e1e1e] dark:text-[#e5e7eb]"
               >
                 <option value="">Select company size</option>
                 <option value="less-than-10">Less than 10 people</option>
@@ -130,15 +127,13 @@ export default function Step1GeneralInfo({
 
             <div>
               <label
-                className="mb-[6px] block text-[14px] font-semibold"
-                style={{ color: "#253858" }}
+                className="mb-[6px] block text-[14px] font-semibold text-[#253858] dark:text-slate-200"
               >
                 Business Type<span style={{ color: "#EF4444" }}>*</span>
               </label>
               <div className="flex flex-wrap gap-x-[30px] gap-y-2 pt-[1px]">
                 <label
-                  className="flex cursor-pointer items-center gap-[10px] text-[13px]"
-                  style={{ color: "#6B7280" }}
+                  className="flex cursor-pointer items-center gap-[10px] text-[13px] text-[#6B7280] dark:text-[#e5e7eb]"
                 >
                   <input
                     type="radio"
@@ -154,8 +149,7 @@ export default function Step1GeneralInfo({
                   <span>Private Company</span>
                 </label>
                 <label
-                  className="flex cursor-pointer items-center gap-[10px] text-[13px]"
-                  style={{ color: "#6B7280" }}
+                  className="flex cursor-pointer items-center gap-[10px] text-[13px] text-[#6B7280] dark:text-[#e5e7eb]"
                 >
                   <input
                     type="radio"
@@ -177,7 +171,7 @@ export default function Step1GeneralInfo({
           <div className="flex justify-center pt-[6px] lg:justify-end">
             {formData.companyLogo ? (
               <div className="w-[170px]">
-                <div className="overflow-hidden rounded-[4px] border border-[#E5E7EB] bg-[#F3F4F6]">
+                <div className="overflow-hidden rounded-[4px] border border-[#E5E7EB] bg-[#F3F4F6] dark:border-[#7f7f7f] dark:bg-[#1e1e1e]">
                   <img
                     src={formData.companyLogo}
                     alt="Company logo preview"
@@ -185,7 +179,7 @@ export default function Step1GeneralInfo({
                   />
                 </div>
                 <div className="mt-3 flex gap-2">
-                  <label className="cursor-pointer rounded-[8px] border border-[#0273B1] px-3 py-2 text-xs font-semibold text-[#0273B1] transition hover:bg-[#F0F4F8]">
+                  <label className="cursor-pointer rounded-[8px] border border-[#0273B1] px-3 py-2 text-xs font-semibold text-[#0273B1] transition hover:bg-[#F0F4F8] dark:text-[#0273B1] dark:hover:bg-[#0273B1]/10">
                     Change
                     <input
                       type="file"
@@ -201,7 +195,7 @@ export default function Step1GeneralInfo({
                       setFormData(updated);
                       onUpdate(updated);
                     }}
-                    className="rounded-[8px] border border-[#CBD5E1] px-3 py-2 text-xs font-semibold text-[#64748B] transition hover:bg-[#F8FAFC]"
+                    className="rounded-[8px] border border-[#CBD5E1] px-3 py-2 text-xs font-semibold text-[#64748B] transition hover:bg-[#F8FAFC] dark:border-[#7f7f7f] dark:text-[#e5e7eb] dark:hover:bg-[#1e1e1e]"
                   >
                     Remove
                   </button>
@@ -210,16 +204,14 @@ export default function Step1GeneralInfo({
             ) : (
               <label className="block cursor-pointer">
                 <div
-                  className="flex h-[170px] w-[170px] items-center justify-center rounded-[4px] border border-[#E5E7EB] text-center transition hover:bg-[#EDF2F7]"
-                  style={{ backgroundColor: "#EFF2F4" }}
+                  className="flex h-[170px] w-[170px] items-center justify-center rounded-[4px] border border-[#E5E7EB] bg-[#EFF2F4] text-center transition hover:bg-[#EDF2F7] dark:border-[#7f7f7f] dark:bg-[#1e1e1e] dark:hover:bg-[#262626]"
                 >
                   <div className="flex items-center gap-[10px]">
                     <div className="flex h-[18px] w-[18px] items-center justify-center rounded-full bg-[#0273B1] text-[14px] text-white">
                       +
                     </div>
                     <span
-                      className="text-[13px] font-semibold"
-                      style={{ color: "#334155" }}
+                      className="text-[13px] font-semibold text-[#334155] dark:text-[#e5e7eb]"
                     >
                       Add Picture
                     </span>
@@ -238,14 +230,12 @@ export default function Step1GeneralInfo({
 
         <div className="pt-[4px]">
           <label
-            className="mb-[6px] block text-[14px] font-semibold"
-            style={{ color: "#253858" }}
+            className="mb-[6px] block text-[14px] font-semibold text-[#253858] dark:text-slate-200"
           >
             Company Description<span style={{ color: "#EF4444" }}>*</span>
           </label>
           <p
-            className="mb-[8px] text-[13px] leading-[1.4]"
-            style={{ color: "#6B7280" }}
+            className="mb-[8px] text-[13px] leading-[1.4] text-[#6B7280] dark:text-[#e5e7eb]"
           >
             Provide a brief overview of your company, including industry,
             services, and key strengths.
@@ -256,7 +246,7 @@ export default function Step1GeneralInfo({
             placeholder="Describe your company, industry focus, and core services"
             rows={6}
             maxLength={2000}
-            className="min-h-[116px] w-full resize-none rounded-[5px] border border-[#CBD5E1] bg-white px-[14px] py-[10px] text-[12px] text-[#1E293B] outline-none transition focus:border-[#0273B1] focus:ring-2 focus:ring-[#BFDBFE]"
+            className="min-h-[116px] w-full resize-none rounded-[5px] border border-[#CBD5E1] bg-white px-[14px] py-[10px] text-[12px] text-[#1E293B] outline-none transition focus:border-[#0273B1] focus:ring-2 focus:ring-[#BFDBFE] dark:border-[#7f7f7f] dark:bg-[#1e1e1e] dark:text-white dark:placeholder:text-[#7f7f7f]"
           />
         </div>
       </div>

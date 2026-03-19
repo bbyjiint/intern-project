@@ -254,7 +254,7 @@ export default function Step2CompanyAddress({ data, onUpdate }: Step2CompanyAddr
 
   return (
     <div>
-      <h2 className="text-xl sm:text-2xl font-bold mb-6 sm:mb-8" style={{ color: '#0273B1', fontWeight: 700 }}>
+      <h2 className="mb-6 text-xl font-bold sm:mb-8 sm:text-2xl dark:text-white" style={{ color: '#0273B1', fontWeight: 700 }}>
         Company Address
       </h2>
 
@@ -264,7 +264,7 @@ export default function Step2CompanyAddress({ data, onUpdate }: Step2CompanyAddr
           <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
             Address Details
           </label>
-          <p className="text-xs mb-3" style={{ color: '#A9B4CD' }}>
+          <p className="text-xs mb-3 text-[#A9B4CD] dark:text-[#e5e7eb]">
             (Example: Number, Building, Street etc.)
           </p>
           <textarea
@@ -272,7 +272,7 @@ export default function Step2CompanyAddress({ data, onUpdate }: Step2CompanyAddr
             onChange={(e) => handleChange('addressDetails', e.target.value)}
             placeholder="Enter your company address details"
             rows={4}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            className="w-full resize-none rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-[#7f7f7f] dark:bg-[#1e1e1e] dark:text-white dark:placeholder:text-[#7f7f7f]"
           />
         </div>
 
@@ -282,8 +282,8 @@ export default function Step2CompanyAddress({ data, onUpdate }: Step2CompanyAddr
             Province
           </label>
           {provincesLoading ? (
-            <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 flex items-center justify-center">
-              <span className="text-gray-500 text-sm">Loading provinces...</span>
+            <div className="flex w-full items-center justify-center rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 dark:border-[#7f7f7f] dark:bg-[#1e1e1e]">
+              <span className="text-sm text-gray-500 dark:text-[#7f7f7f]">Loading provinces...</span>
             </div>
           ) : (
             <SearchableDropdown
@@ -306,12 +306,12 @@ export default function Step2CompanyAddress({ data, onUpdate }: Step2CompanyAddr
             District
           </label>
           {!formData.provinceId ? (
-            <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 flex items-center justify-center">
-              <span className="text-gray-500 text-sm">Please select a province first</span>
+            <div className="flex w-full items-center justify-center rounded-lg border border-gray-300 bg-gray-100 px-4 py-3 dark:border-[#7f7f7f] dark:bg-[#1e1e1e]">
+              <span className="text-sm text-gray-500 dark:text-[#7f7f7f]">Please select a province first</span>
             </div>
           ) : districtsLoading ? (
-            <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 flex items-center justify-center">
-              <span className="text-gray-500 text-sm">Loading districts...</span>
+            <div className="flex w-full items-center justify-center rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 dark:border-[#7f7f7f] dark:bg-[#1e1e1e]">
+              <span className="text-sm text-gray-500 dark:text-[#7f7f7f]">Loading districts...</span>
             </div>
           ) : (
             <SearchableDropdown
@@ -334,12 +334,12 @@ export default function Step2CompanyAddress({ data, onUpdate }: Step2CompanyAddr
             Sub-District
           </label>
           {!formData.districtId ? (
-            <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-100 flex items-center justify-center">
-              <span className="text-gray-500 text-sm">Please select a district first</span>
+            <div className="flex w-full items-center justify-center rounded-lg border border-gray-300 bg-gray-100 px-4 py-3 dark:border-[#7f7f7f] dark:bg-[#1e1e1e]">
+              <span className="text-sm text-gray-500 dark:text-[#7f7f7f]">Please select a district first</span>
             </div>
           ) : subdistrictsLoading ? (
-            <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 flex items-center justify-center">
-              <span className="text-gray-500 text-sm">Loading subdistricts...</span>
+            <div className="flex w-full items-center justify-center rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 dark:border-[#7f7f7f] dark:bg-[#1e1e1e]">
+              <span className="text-sm text-gray-500 dark:text-[#7f7f7f]">Loading subdistricts...</span>
             </div>
           ) : (
             <SearchableDropdown
@@ -366,16 +366,16 @@ export default function Step2CompanyAddress({ data, onUpdate }: Step2CompanyAddr
             value={formData.postcode}
             onChange={(e) => handleChange('postcode', e.target.value)}
             placeholder="Postcode (auto-filled when district is selected)"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-[#7f7f7f] dark:bg-[#1e1e1e] dark:text-white dark:placeholder:text-[#7f7f7f]"
             readOnly={!!(formData.provinceId && formData.districtId && formData.subdistrictId)}
           />
           {formData.provinceId && formData.districtId && formData.subdistrictId && (
-            <p className="text-xs mt-1" style={{ color: '#A9B4CD' }}>
+            <p className="text-xs mt-1 text-[#A9B4CD] dark:text-[#7f7f7f]">
               Postcode is automatically filled based on the selected district
             </p>
           )}
           {formData.districtId && !formData.subdistrictId && (
-            <p className="text-xs mt-1" style={{ color: '#A9B4CD' }}>
+            <p className="text-xs mt-1 text-[#A9B4CD] dark:text-[#7f7f7f]">
               Please select a subdistrict to finalize the address
             </p>
           )}

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { apiFetch } from '@/lib/api'
-import CompanyHubLogo from '@/components/CompanyHubLogo'
+import ThemedCompanyHubLogo from '@/components/ThemedCompanyHubLogo'
 
 interface RegisterModalProps {
   isOpen: boolean
@@ -103,8 +103,11 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
 
           {/* Logo */}
           <div className="mb-8">
-            <CompanyHubLogo href="/" />
+            <ThemedCompanyHubLogo href="/" />
           </div>
+        </div>
+
+        <div className="p-8">
 
           {/* Heading */}
           <div className="mb-8">

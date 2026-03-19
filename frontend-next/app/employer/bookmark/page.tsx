@@ -8,6 +8,7 @@ import CandidateCard from '@/components/CandidateCard'
 import CandidateProfileModal from '@/components/CandidateProfileModal'
 import SearchableDropdown from '@/components/SearchableDropdown'
 import { apiFetch } from '@/lib/api'
+import { useTheme } from '@/components/ThemeProvider'
 
 type Candidate = {
   id: string
@@ -50,6 +51,7 @@ function parseInternshipDates(period: string | null | undefined): { start: strin
 
 export default function BookmarkPage() {
   const router = useRouter()
+  const { theme } = useTheme()
   const [searchQuery, setSearchQuery] = useState('')
   const [position, setPosition] = useState('')
   const [academicYear, setAcademicYear] = useState('')
@@ -203,7 +205,14 @@ export default function BookmarkPage() {
   })
 
   return (
-    <div className="min-h-screen bg-[#E6EBF4]">
+    <div
+      className="min-h-screen bg-[#E6EBF4] transition-colors dark:bg-[#121316]"
+      style={{
+        background: theme === 'dark'
+          ? 'linear-gradient(180deg, #121316 0%, #262626 100%)'
+          : undefined,
+      }}
+    >
       <EmployerNavbar />
       <div className="flex">
         <EmployerSidebar activeItem="bookmark" />
@@ -211,24 +220,24 @@ export default function BookmarkPage() {
         <div className="flex-1">
           <div className="layout-container layout-page">
             {apiError && (
-              <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800">
+              <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800 dark:border-yellow-900/50 dark:bg-yellow-500/10 dark:text-yellow-300">
                 {apiError}
               </div>
             )}
 
             <div className="mb-8">
-              <h1 className="text-[32px] font-bold text-[#111827] mb-6">Bookmark</h1>
+              <h1 className="mb-6 text-[32px] font-bold text-[#111827] dark:text-[#009df3]">Bookmark</h1>
 
               {/* Filter Card */}
-              <div className="rounded-[16px] bg-white px-6 py-5 shadow-[0_2px_10px_rgba(15,23,42,0.06)]">
+              <div className="rounded-[16px] bg-white px-6 py-5 shadow-[0_2px_10px_rgba(15,23,42,0.06)] transition-colors dark:bg-[#070e12] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] dark:ring-1 dark:ring-[#e5e7eb]">
 
                 {/* Row 1: Search | Position | Academic Year */}
                 <div className="grid grid-cols-3 gap-4 mb-4">
                   <div>
-                    <label className="mb-1.5 block text-[13px] font-semibold text-[#374151]">Search</label>
+                    <label className="mb-1.5 block text-[13px] font-semibold text-[#374151] dark:text-[#e5e7eb]">Search</label>
                     <div className="relative">
                       <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
-                        <svg className="h-4 w-4 text-[#9CA3AF]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="h-4 w-4 text-[#9CA3AF] dark:text-[#686868]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                         </svg>
                       </div>
@@ -237,29 +246,29 @@ export default function BookmarkPage() {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search"
-                        className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white pl-9 pr-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
+                        className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white pl-9 pr-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] dark:border-[#ececec] dark:bg-[#1e1e1e] dark:text-[#e5e7eb] dark:placeholder:text-[#7f7f7f]"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-[13px] font-semibold text-[#374151]">Position</label>
+                    <label className="mb-1.5 block text-[13px] font-semibold text-[#374151] dark:text-[#e5e7eb]">Position</label>
                     <input
                       type="text"
                       value={position}
                       onChange={(e) => setPosition(e.target.value)}
                       placeholder="Position"
-                      className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
+                      className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] dark:border-[#ececec] dark:bg-[#1e1e1e] dark:text-[#e5e7eb] dark:placeholder:text-[#7f7f7f]"
                     />
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-[13px] font-semibold text-[#374151]">Academic Year</label>
+                    <label className="mb-1.5 block text-[13px] font-semibold text-[#374151] dark:text-[#e5e7eb]">Academic Year</label>
                     <div className="relative">
                       <select
                         value={academicYear}
                         onChange={(e) => setAcademicYear(e.target.value)}
-                        className="h-[42px] w-full appearance-none rounded-[8px] border border-[#D1D5DB] bg-white px-3 pr-9 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8]"
+                        className="h-[42px] w-full appearance-none rounded-[8px] border border-[#D1D5DB] bg-white px-3 pr-9 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8] dark:border-[#ececec] dark:bg-[#1e1e1e] dark:text-[#e5e7eb]"
                       >
                         <option value="">Year</option>
                         {ACADEMIC_YEAR_OPTIONS.map((y) => (
@@ -267,7 +276,7 @@ export default function BookmarkPage() {
                         ))}
                       </select>
                       <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
-                        <svg className="h-4 w-4 text-[#6B7280]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="h-4 w-4 text-[#6B7280] dark:text-[#686868]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                         </svg>
                       </div>
@@ -278,44 +287,44 @@ export default function BookmarkPage() {
                 {/* Row 2: Internship Period | Duration | Institution */}
                 <div className="mb-4 grid grid-cols-[1fr_16px_1fr_1fr_2fr] items-end gap-3">
                   <div>
-                    <label className="mb-1.5 block text-[13px] font-semibold text-[#374151]">Internship Period</label>
+                    <label className="mb-1.5 block text-[13px] font-semibold text-[#374151] dark:text-[#e5e7eb]">Internship Period</label>
                     <input
                       type="date"
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
-                      className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8] [color-scheme:light]"
+                      className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8] [color-scheme:light] dark:border-[#ececec] dark:bg-[#1e1e1e] dark:text-[#e5e7eb] dark:[color-scheme:dark]"
                     />
                   </div>
 
-                  <div className="flex items-center justify-center pb-[2px] text-[#9CA3AF] text-[16px]">–</div>
+                  <div className="flex items-center justify-center pb-[2px] text-[16px] text-[#9CA3AF] dark:text-[#757575]">–</div>
 
                   <div>
-                    <label className="mb-1.5 block text-[13px] font-semibold text-[#374151] invisible">End</label>
+                    <label className="invisible mb-1.5 block text-[13px] font-semibold text-[#374151] dark:text-[#e5e7eb]">End</label>
                     <input
                       type="date"
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
-                      className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8] [color-scheme:light]"
+                      className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8] [color-scheme:light] dark:border-[#ececec] dark:bg-[#1e1e1e] dark:text-[#e5e7eb] dark:[color-scheme:dark]"
                     />
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-[13px] font-semibold text-[#374151]">Duration</label>
+                    <label className="mb-1.5 block text-[13px] font-semibold text-[#374151] dark:text-[#e5e7eb]">Duration</label>
                     <input
                       type="number"
                       min="0"
                       value={duration}
                       onChange={(e) => setDuration(e.target.value)}
                       placeholder="Duration (Month)"
-                      className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8]"
+                      className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] dark:border-[#ececec] dark:bg-[#1e1e1e] dark:text-[#e5e7eb] dark:placeholder:text-[#7f7f7f]"
                     />
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-[13px] font-semibold text-[#374151]">Institution</label>
+                    <label className="mb-1.5 block text-[13px] font-semibold text-[#374151] dark:text-[#e5e7eb]">Institution</label>
                     {universitiesLoading ? (
-                      <div className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-gray-50 flex items-center px-3">
-                        <span className="text-[13px] text-[#9CA3AF]">Loading...</span>
+                      <div className="flex h-[42px] w-full items-center rounded-[8px] border border-[#D1D5DB] bg-gray-50 px-3 dark:border-[#ececec] dark:bg-[#1e1e1e]">
+                        <span className="text-[13px] text-[#9CA3AF] dark:text-[#7f7f7f]">Loading...</span>
                       </div>
                     ) : (
                       <SearchableDropdown
@@ -329,6 +338,7 @@ export default function BookmarkPage() {
                         placeholder="Select Institution Name"
                         className="w-full"
                         allOptionLabel="All Universities"
+                        variant="applicants"
                       />
                     )}
                   </div>
@@ -337,9 +347,9 @@ export default function BookmarkPage() {
                 <div className="flex justify-end">
                   <button
                     onClick={handleClearFilters}
-                    className="h-[38px] rounded-[8px] border border-[#D1D5DB] bg-white px-5 text-[13px] font-medium text-[#374151] transition hover:bg-[#F9FAFB]"
+                    className="h-[38px] rounded-[8px] border border-[#D1D5DB] bg-white px-5 text-[13px] font-medium text-[#374151] transition hover:bg-[#F9FAFB] dark:border-[#d1d5db] dark:bg-[#070e12] dark:text-[#e5e7eb] dark:hover:bg-[#323232]"
                   >
-                    Clear Filter
+                    Clear Filters
                   </button>
                 </div>
               </div>
@@ -351,8 +361,8 @@ export default function BookmarkPage() {
                 onClick={() => setSortMode('all')}
                 className={`h-[36px] rounded-[8px] border px-5 text-[14px] font-semibold transition-colors ${
                   sortMode === 'all'
-                    ? 'border-[#2563EB] bg-white text-[#2563EB]'
-                    : 'border-[#D1D5DB] bg-[#F3F4F6] text-[#111827]'
+                    ? 'border-[#2563EB] bg-white text-[#2563EB] dark:bg-[#fefefe] dark:text-black'
+                    : 'border-[#D1D5DB] bg-[#F3F4F6] text-[#111827] dark:border-[#d1d5db] dark:bg-[#070e12] dark:text-[#e5e7eb]'
                 }`}
               >
                 All
@@ -361,20 +371,20 @@ export default function BookmarkPage() {
                 onClick={() => setSortMode('latest')}
                 className={`h-[36px] rounded-[8px] border px-5 text-[14px] font-semibold transition-colors ${
                   sortMode === 'latest'
-                    ? 'border-[#2563EB] bg-white text-[#2563EB]'
-                    : 'border-[#D1D5DB] bg-[#F3F4F6] text-[#111827]'
+                    ? 'border-[#2563EB] bg-white text-[#2563EB] dark:bg-[#fefefe] dark:text-black'
+                    : 'border-[#D1D5DB] bg-[#F3F4F6] text-[#111827] dark:border-[#d1d5db] dark:bg-[#070e12] dark:text-[#e5e7eb]'
                 }`}
               >
                 Latest
               </button>
             </div>
 
-            <p className="mb-4 text-[16px] font-semibold text-[#111827]">
+            <p className="mb-4 text-[16px] font-semibold text-[#111827] dark:text-white">
               {sortedCandidates.length} Total Candidate
             </p>
 
             {sortedCandidates.length === 0 ? (
-              <div className="text-center py-10 text-gray-500">
+              <div className="rounded-[12px] bg-white px-6 py-10 text-center text-gray-500 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors dark:bg-[#070e12] dark:text-[#7f7f7f] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] dark:ring-1 dark:ring-[#d1d5db]">
                 {bookmarkedCandidates.size === 0
                   ? 'No bookmarked candidates yet. Start bookmarking candidates to see them here.'
                   : 'No candidates found matching your search criteria.'}

@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import EmployerNavbar from '@/components/EmployerNavbar'
 import EmployerSidebar from '@/components/EmployerSidebar'
 import { apiFetch } from '@/lib/api'
+import { useTheme } from '@/components/ThemeProvider'
 
 import ApplicantCard, { type Applicant } from '@/components/job-post/ApplicantCard'
 import ApplicantFilters, { type ViewTab } from '@/components/job-post/ApplicantFilters'
@@ -105,6 +106,7 @@ const mockApplicants: Applicant[] = [
 export default function ViewApplicantsPage() {
   const params = useParams()
   const router = useRouter()
+  const { theme } = useTheme()
   const jobPostId = params?.id as string
 
   const [jobPost, setJobPost] = useState<JobPost | null>(null)
@@ -368,10 +370,10 @@ export default function ViewApplicantsPage() {
   // ─── Loading / Not Found ─────────────────────────────────────────────────────
   if (loading && !jobPost) {
     return (
-      <div className="min-h-screen bg-[#F6F7FB]">
+      <div className="min-h-screen bg-[#F6F7FB] transition-colors dark:bg-[#121316]">
         <EmployerNavbar />
         <div className="flex min-h-[calc(100vh-100px)] items-center justify-center">
-          <p className="text-sm text-[#6B7280]">Loading candidates...</p>
+          <p className="text-sm text-[#6B7280] dark:text-slate-400">Loading candidates...</p>
         </div>
       </div>
     )
@@ -379,10 +381,10 @@ export default function ViewApplicantsPage() {
 
   if (!jobPost) {
     return (
-      <div className="min-h-screen bg-[#F6F7FB]">
+      <div className="min-h-screen bg-[#F6F7FB] transition-colors dark:bg-[#121316]">
         <EmployerNavbar />
         <div className="flex min-h-[calc(100vh-100px)] items-center justify-center">
-          <p className="text-sm text-[#6B7280]">Job post not found.</p>
+          <p className="text-sm text-[#6B7280] dark:text-slate-400">Job post not found.</p>
         </div>
       </div>
     )
@@ -390,19 +392,26 @@ export default function ViewApplicantsPage() {
 
   // ─── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#F6F7FB]">
+    <div
+      className="min-h-screen bg-[#F6F7FB] transition-colors dark:bg-[#121316]"
+      style={{
+        background: theme === 'dark'
+          ? 'linear-gradient(180deg, #121316 0%, #262626 100%)'
+          : undefined,
+      }}
+    >
       <EmployerNavbar />
       <div className="flex min-h-[calc(100vh-100px)]">
         <EmployerSidebar activeItem="applicants" />
 
-        <div className="flex-1 bg-[#E6EBF4]">
+        <div className="flex-1 bg-[#E6EBF4] transition-colors dark:bg-transparent">
           <div className="layout-container layout-page">
 
             {/* Header */}
             <div className="mb-[18px] flex items-start justify-between gap-6">
               <div>
-                <h1 className="text-[30px] font-bold leading-none text-black">Applicants › View Candidates</h1>
-                <p className="mt-[14px] text-[22px] font-semibold text-[#1F2937]">{jobPost.title}</p>
+                <h1 className="text-[30px] font-bold leading-none text-black dark:text-[#009df3]">Applicants › View Candidates</h1>
+                <p className="mt-[14px] text-[22px] font-semibold text-[#1F2937] dark:text-white">{jobPost.title}</p>
               </div>
               <div className="flex items-center gap-[10px] pt-3">
                 <button
@@ -411,7 +420,7 @@ export default function ViewApplicantsPage() {
                   className={`h-[34px] rounded-[6px] px-[20px] text-[13px] font-semibold transition disabled:opacity-60 ${
                     jobPost.state !== 'CLOSED'
                       ? 'bg-[#2563EB] text-white'
-                      : 'border border-[#2563EB] bg-white text-[#2563EB] hover:bg-[#F0F4F8]'
+                      : 'border border-[#2563EB] bg-white text-[#2563EB] hover:bg-[#F0F4F8] dark:bg-[#fefefe] dark:text-[#2563eb] dark:hover:bg-[#fefefe]'
                   }`}
                 >Open</button>
                 <button
@@ -420,7 +429,7 @@ export default function ViewApplicantsPage() {
                   className={`h-[34px] rounded-[6px] px-[20px] text-[13px] font-semibold transition disabled:opacity-60 ${
                     jobPost.state === 'CLOSED'
                       ? 'bg-[#2563EB] text-white'
-                      : 'border border-[#2563EB] bg-white text-[#2563EB] hover:bg-[#F0F4F8]'
+                      : 'border border-[#2563EB] bg-white text-[#2563EB] hover:bg-[#F0F4F8] dark:bg-[#fefefe] dark:text-[#2563eb] dark:hover:bg-[#fefefe]'
                   }`}
                 >Closed</button>
               </div>
@@ -469,7 +478,7 @@ export default function ViewApplicantsPage() {
             </div>
 
             {!loading && filteredApplicants.length === 0 && (
-              <div className="mt-6 rounded-[10px] bg-white px-6 py-10 text-center text-[14px] text-[#6B7280] shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
+              <div className="mt-6 rounded-[10px] bg-white px-6 py-10 text-center text-[14px] text-[#6B7280] shadow-[0_1px_2px_rgba(15,23,42,0.05)] transition-colors dark:bg-[#070e12] dark:text-[#7f7f7f] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] dark:ring-1 dark:ring-[#d1d5db]">
                 No candidates found for the selected filters.
               </div>
             )}

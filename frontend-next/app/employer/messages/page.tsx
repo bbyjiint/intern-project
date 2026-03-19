@@ -634,23 +634,23 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 transition-colors dark:bg-slate-950">
       <EmployerNavbar />
       <div className="layout-container flex h-[calc(100vh-4rem)] w-full">
         {/* Left Sidebar - Conversation List */}
-        <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
-          <div className="p-6 border-b border-gray-200">
-            <h1 className="text-2xl font-bold text-gray-900 mb-4">Messages</h1>
+        <div className="flex w-80 flex-col border-r border-gray-200 bg-white transition-colors dark:border-slate-800 dark:bg-slate-950">
+          <div className="border-b border-gray-200 p-6 dark:border-slate-800">
+            <h1 className="mb-4 text-2xl font-bold text-gray-900 dark:text-white">Messages</h1>
             <div className="relative">
               <input
                 type="text"
                 placeholder="Search conversations..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 pl-10 text-slate-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
               />
               <svg
-                className="w-5 h-5 text-gray-400 absolute left-3 top-2.5"
+                className="absolute left-3 top-2.5 h-5 w-5 text-gray-400 dark:text-slate-500"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -667,14 +667,14 @@ export default function MessagesPage() {
 
           <div className="flex-1 overflow-y-auto">
             {filteredConversations.length === 0 ? (
-              <div className="p-6 text-center text-gray-500">No conversations found</div>
+              <div className="p-6 text-center text-gray-500 dark:text-slate-400">No conversations found</div>
             ) : (
               filteredConversations.map((conv) => (
                 <div
                   key={conv.id}
                   onClick={() => handleSelectConversation(conv)}
-                  className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${
-                    selectedConversation?.id === conv.id ? 'bg-blue-50' : ''
+                  className={`cursor-pointer border-b border-gray-100 p-4 transition-colors hover:bg-gray-50 dark:border-slate-800 dark:hover:bg-slate-900 ${
+                    selectedConversation?.id === conv.id ? 'bg-blue-50 dark:bg-blue-500/10' : ''
                   }`}
                 >
                   <div className="flex items-start space-x-3">
@@ -687,13 +687,13 @@ export default function MessagesPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
-                        <h3 className="text-sm font-semibold text-gray-900 truncate">{conv.candidateName}</h3>
+                        <h3 className="truncate text-sm font-semibold text-gray-900 dark:text-white">{conv.candidateName}</h3>
                         {conv.unreadCount > 0 && (
                           <span className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0"></span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600 truncate mb-1">{conv.lastMessage}</p>
-                      <p className="text-xs text-gray-500">{formatTime(conv.lastMessageTime)}</p>
+                      <p className="mb-1 truncate text-sm text-gray-600 dark:text-slate-300">{conv.lastMessage}</p>
+                      <p className="text-xs text-gray-500 dark:text-slate-500">{formatTime(conv.lastMessageTime)}</p>
                     </div>
                   </div>
                 </div>
@@ -703,34 +703,34 @@ export default function MessagesPage() {
         </div>
 
         {/* Main Content - Chat Area */}
-        <div className="flex-1 flex flex-col bg-white">
+        <div className="flex flex-1 flex-col bg-white transition-colors dark:bg-slate-950">
           {loading ? (
-            <div className="flex-1 flex items-center justify-center text-gray-500">
+            <div className="flex flex-1 items-center justify-center text-gray-500 dark:text-slate-400">
               <div className="text-center">
-                <div className="w-16 h-16 mx-auto mb-4 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin"></div>
+                <div className="mx-auto mb-4 h-16 w-16 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600 dark:border-slate-800 dark:border-t-blue-500"></div>
                 <p className="text-lg">Loading messages...</p>
               </div>
             </div>
           ) : selectedConversation ? (
             <>
               {/* Chat Header */}
-              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <div className="flex items-center justify-between border-b border-gray-200 p-4 dark:border-slate-800">
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold">
                     {selectedConversation.candidateInitials}
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900">{selectedConversation.candidateName}</h2>
-                    <p className="text-sm text-gray-600">
+                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{selectedConversation.candidateName}</h2>
+                    <p className="text-sm text-gray-600 dark:text-slate-400">
                       {selectedConversation.candidateRole} · {selectedConversation.candidateUniversity}
                     </p>
                   </div>
                 </div>
                 <button
                   onClick={handleViewProfile}
-                  className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex items-center space-x-2 rounded-lg border border-gray-300 px-4 py-2 transition-colors hover:bg-gray-50 dark:border-slate-700 dark:hover:bg-slate-900"
                 >
-                  <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="h-4 w-4 text-gray-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -738,12 +738,12 @@ export default function MessagesPage() {
                       d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                     />
                   </svg>
-                  <span className="text-sm font-medium text-gray-700">View Profile</span>
+                  <span className="text-sm font-medium text-gray-700 dark:text-slate-300">View Profile</span>
                 </button>
               </div>
 
               {/* Messages */}
-              <div ref={chatContainerRef} className="flex-1 overflow-y-auto p-6 bg-gray-50">
+              <div ref={chatContainerRef} className="flex-1 overflow-y-auto bg-gray-50 p-6 transition-colors dark:bg-slate-900/40">
                 <div className="space-y-4">
                   {selectedConversation.messages.map((msg) => {
                     // For employer page: isEmployer/isCompany means it's from the company (current user) - should be on right
@@ -765,13 +765,13 @@ export default function MessagesPage() {
                             className={`inline-block max-w-[70%] rounded-lg px-4 py-2 ${
                               isCurrentUser
                                 ? 'bg-blue-600 text-white'
-                                : 'bg-white border border-gray-200 text-gray-900'
+                                : 'bg-white border border-gray-200 text-gray-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100'
                             }`}
                           >
                             <p className="text-sm leading-relaxed">{msg.text}</p>
                             <p
                               className={`text-xs mt-1 ${
-                                isCurrentUser ? 'text-blue-100' : 'text-gray-500'
+                                isCurrentUser ? 'text-blue-100' : 'text-gray-500 dark:text-slate-500'
                               }`}
                             >
                               {formatMessageTime(msg.timestamp)}
@@ -786,7 +786,7 @@ export default function MessagesPage() {
               </div>
 
               {/* Message Input */}
-              <div className="p-4 border-t border-gray-200 bg-white">
+              <div className="border-t border-gray-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950">
                 <div className="flex items-center space-x-4">
                   <input
                     type="text"
@@ -799,7 +799,7 @@ export default function MessagesPage() {
                       }
                     }}
                     placeholder="Type a message..."
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-slate-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
                   />
                   <button
                     onClick={handleSendMessage}
@@ -812,10 +812,10 @@ export default function MessagesPage() {
               </div>
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center text-gray-500">
+            <div className="flex flex-1 items-center justify-center text-gray-500 dark:text-slate-400">
               <div className="text-center">
                 <svg
-                  className="w-16 h-16 mx-auto mb-4 text-gray-400"
+                  className="mx-auto mb-4 h-16 w-16 text-gray-400 dark:text-slate-500"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"

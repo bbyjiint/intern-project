@@ -116,16 +116,16 @@ export default function CandidateProfileModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-[940px] rounded-[14px] bg-white px-10 pb-8 pt-7 shadow-[0_20px_60px_rgba(15,23,42,0.22)]"
+        className="relative w-full max-w-[940px] rounded-[14px] bg-white px-10 pb-8 pt-7 shadow-[0_20px_60px_rgba(15,23,42,0.22)] transition-colors dark:bg-[#070e12] dark:shadow-[0_20px_60px_rgba(0,0,0,0.45)] dark:ring-1 dark:ring-[#e5e7eb]"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute right-4 top-3 text-[#6B7280] transition-colors hover:text-[#111827]"
+          className="absolute right-4 top-3 text-[#6B7280] transition-colors hover:text-[#111827] dark:text-[#e5e7eb] dark:hover:text-white"
           aria-label="Close candidate profile"
         >
           <svg
@@ -146,7 +146,7 @@ export default function CandidateProfileModal({
         <div className="flex items-start justify-between gap-6">
           <div className="flex items-start gap-5">
             {/* Profile Image */}
-            <div className="flex h-[84px] w-[84px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#E5E7EB] text-[28px] font-semibold text-white">
+            <div className="flex h-[84px] w-[84px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#E5E7EB] text-[28px] font-semibold text-white dark:bg-[#2563eb]">
               {candidate.profileImage ? (
                 <img
                   src={candidate.profileImage}
@@ -154,19 +154,19 @@ export default function CandidateProfileModal({
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <span className="text-[#6B7280]">{candidate.initials}</span>
+                <span className="text-[#6B7280] dark:text-white">{candidate.initials}</span>
               )}
             </div>
             <div className="pt-2">
-              <h2 className="text-[18px] font-bold leading-none text-[#111827]">
+              <h2 className="text-[18px] font-bold leading-none text-[#111827] dark:text-white">
                 {candidate.name}
               </h2>
               {candidate.phoneNumber && (
-                <p className="mt-[10px] text-[12px] text-[#9CA3AF]">
+                <p className="mt-[10px] text-[12px] text-[#9CA3AF] dark:text-[#e5e7eb]">
                   Phone: {candidate.phoneNumber}
                 </p>
               )}
-              <p className="mt-[6px] text-[12px] text-[#9CA3AF]">
+              <p className="mt-[6px] text-[12px] text-[#9CA3AF] dark:text-[#e5e7eb]">
                 Email{" "}
                 {candidate.email ||
                   `${candidate.name.toLowerCase().replace(/\s+/g, ".")}@example.com`}
@@ -176,35 +176,35 @@ export default function CandidateProfileModal({
 
           <button
             onClick={handleViewFullProfile}
-            className="mt-[18px] flex h-[28px] items-center justify-center rounded-[6px] border border-[#2563EB] bg-white px-[16px] text-[12px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8]"
+            className="mt-[18px] flex h-[28px] items-center justify-center rounded-[6px] border border-[#d1d5db] bg-white px-[16px] text-[12px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8] dark:bg-[#fefefe] dark:text-black dark:hover:bg-[#fefefe]"
           >
             See Profile
           </button>
         </div>
 
-        <div className="mt-6 border-t border-[#E5E7EB] pt-6">
+        <div className="mt-6 border-t border-[#E5E7EB] pt-6 dark:border-[#e5e7eb]">
           <div>
-            <h3 className="text-[14px] font-bold text-[#344164]">About Me</h3>
-            <p className="mt-[8px] max-w-[820px] text-[12px] leading-[1.55] text-[#51617C]">
+            <h3 className="text-[14px] font-bold text-[#344164] dark:text-white">About Me</h3>
+            <p className="mt-[8px] max-w-[820px] text-[12px] leading-[1.55] text-[#51617C] dark:text-[#e5e7eb]">
               {candidate.about || "-"}
             </p>
           </div>
 
           <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-5">
             <div>
-              <h3 className="text-[14px] font-bold text-[#344164]">
+              <h3 className="text-[14px] font-bold text-[#344164] dark:text-white">
                 Education
               </h3>
-              <p className="mt-[8px] text-[12px] leading-[1.45] text-[#51617C]">
+              <p className="mt-[8px] text-[12px] leading-[1.45] text-[#51617C] dark:text-[#e5e7eb]">
                 {eduLine1}
               </p>
-              <p className="mt-[2px] text-[12px] leading-[1.45] text-[#51617C]">
+              <p className="mt-[2px] text-[12px] leading-[1.45] text-[#51617C] dark:text-[#e5e7eb]">
                 {eduLine2}
               </p>
             </div>
 
             <div>
-              <h3 className="text-[14px] font-bold text-[#344164]">
+              <h3 className="text-[14px] font-bold text-[#344164] dark:text-white">
                 Positions of Interest
               </h3>
               <div className="mt-[10px] flex flex-wrap gap-[8px]">
@@ -212,31 +212,35 @@ export default function CandidateProfileModal({
                   positionTags.slice(0, 5).map((pos, index) => (
                     <span
                       key={`${pos}-${index}`}
-                      className="rounded-[6px] bg-[#E5E7EB] px-[14px] py-[5px] text-[12px] font-semibold text-[#374151]"
+                      className={`rounded-[6px] px-[14px] py-[5px] text-[12px] font-semibold ${
+                        index === 0
+                          ? 'bg-[#E5E7EB] text-[#374151] dark:bg-[#fef3c7] dark:text-[#b45309]'
+                          : 'bg-[#E5E7EB] text-[#374151] dark:bg-[#323232] dark:text-[#e5e7eb]'
+                      }`}
                     >
                       {pos}
                     </span>
                   ))
                 ) : (
-                  <p className="text-[12px] text-[#51617C]">-</p>
+                  <p className="text-[12px] text-[#51617C] dark:text-[#7f7f7f]">-</p>
                 )}
               </div>
             </div>
 
             <div>
-              <h3 className="text-[14px] font-bold text-[#344164]">
+              <h3 className="text-[14px] font-bold text-[#344164] dark:text-white">
                 Internship Period
               </h3>
-              <p className="mt-[8px] text-[12px] leading-[1.45] text-[#51617C]">
+              <p className="mt-[8px] text-[12px] leading-[1.45] text-[#51617C] dark:text-[#e5e7eb]">
                 {candidate.internshipPeriod || "-"}
               </p>
             </div>
 
             <div>
-              <h3 className="text-[14px] font-bold text-[#344164]">
+              <h3 className="text-[14px] font-bold text-[#344164] dark:text-white">
                 Preferred Locations
               </h3>
-              <p className="mt-[8px] text-[12px] leading-[1.45] text-[#51617C]">
+              <p className="mt-[8px] text-[12px] leading-[1.45] text-[#51617C] dark:text-[#e5e7eb]">
                 {locationDisplay}
               </p>
             </div>
@@ -245,7 +249,7 @@ export default function CandidateProfileModal({
           <div className="mt-6 flex justify-end gap-[8px]">
             <button
               onClick={onClose}
-              className="flex h-[32px] items-center justify-center rounded-[6px] bg-[#E5E7EB] px-[22px] text-[12px] font-semibold text-[#6B7280] transition hover:bg-[#D1D5DB]"
+              className="flex h-[32px] items-center justify-center rounded-[6px] bg-[#E5E7EB] px-[22px] text-[12px] font-semibold text-[#6B7280] transition hover:bg-[#D1D5DB] dark:bg-[#323232] dark:text-[#e5e7eb] dark:hover:bg-[#3c3c3c]"
             >
               Back
             </button>

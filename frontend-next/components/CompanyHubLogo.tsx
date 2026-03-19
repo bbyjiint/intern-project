@@ -14,7 +14,7 @@ export default function CompanyHubLogo({
   return (
     <Link 
       href={href} 
-      className={`relative flex items-center group transition-all duration-300 ${className}.trim()`}
+      className={`relative flex items-center group transition-all duration-300 ${className}`.trim()}
     >
       <span
         className="absolute rounded-full z-0 transition-transform duration-300 group-hover:scale-125 w-6 h-6 -left-1.5 top-0.5 bg-blue-500 dark:bg-blue-600 opacity-90 dark:opacity-100 shadow-sm dark:shadow-blue-500/20"

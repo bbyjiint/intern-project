@@ -7,6 +7,7 @@ import EmployerSidebar from '@/components/EmployerSidebar'
 import SearchableDropdown from '@/components/SearchableDropdown'
 import CompanyInfoEditPopup from '@/components/CompanyInfoEditPopup'
 import { apiFetch } from '@/lib/api'
+import { useTheme } from '@/components/ThemeProvider'
 
 interface CompanyProfileData {
   companyName: string
@@ -30,6 +31,7 @@ interface CompanyProfileData {
 
 export default function EmployerProfilePage() {
   const router = useRouter()
+  const { theme } = useTheme()
   const [profileData, setProfileData] = useState<CompanyProfileData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [currentDate, setCurrentDate] = useState('')
@@ -286,10 +288,10 @@ export default function EmployerProfilePage() {
   // ─── Render states ────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 transition-colors dark:bg-[#121316]">
         <EmployerNavbar />
         <div className="flex items-center justify-center min-h-screen">
-          <p className="text-gray-600">Loading profile...</p>
+          <p className="text-gray-600 dark:text-slate-400">Loading profile...</p>
         </div>
       </div>
     )
@@ -297,11 +299,11 @@ export default function EmployerProfilePage() {
 
   if (!profileData) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 transition-colors dark:bg-[#121316]">
         <EmployerNavbar />
         <div className="layout-container layout-page">
           <div className="text-center py-10">
-            <p className="text-gray-600">No profile data found. Please complete your profile setup.</p>
+            <p className="text-gray-600 dark:text-slate-400">No profile data found. Please complete your profile setup.</p>
             <button
               onClick={() => router.push('/employer/profile-setup')}
               className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -316,34 +318,41 @@ export default function EmployerProfilePage() {
 
   // ─── Main render ──────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#F6F7FB]">
+    <div
+      className="min-h-screen bg-[#F6F7FB] transition-colors dark:bg-[#121316]"
+      style={{
+        background: theme === 'dark'
+          ? 'linear-gradient(180deg, #121316 0%, #262626 100%)'
+          : undefined,
+      }}
+    >
       <EmployerNavbar />
       <div className="flex min-h-[calc(100vh-100px)]">
         <EmployerSidebar activeItem="profile" />
 
-        <div className="flex-1 bg-[#E6EBF4]">
+        <div className="flex-1 bg-[#E6EBF4] transition-colors dark:bg-transparent">
           <div className="layout-container layout-page">
 
             {/* Welcome */}
             <div className="mb-[14px]">
-              <h1 className="mb-2 text-[32px] font-bold leading-none tracking-[-0.02em] text-[#05060A]">
+              <h1 className="mb-2 text-[32px] font-bold leading-none tracking-[-0.02em] text-[#05060A] dark:text-white">
                 Welcome, {profileData.companyName || 'Company Name'}
               </h1>
-              <p className="text-[14px] text-[#6B7280]">{currentDate}</p>
+              <p className="text-[14px] text-[#6B7280] dark:text-[#e5e7eb]">{currentDate}</p>
             </div>
 
             {error && (
-              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+              <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-500/10 dark:text-red-300">
                 {error}
               </div>
             )}
 
             {/* Company Info Card */}
-            <div className="mb-6 rounded-[14px] bg-white px-[28px] py-[22px] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+            <div className="mb-6 rounded-[14px] bg-white px-[28px] py-[22px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors dark:bg-[#070e12] dark:shadow-none dark:ring-1 dark:ring-[#e5e7eb]">
               <div className="flex items-start gap-[18px]">
                 {/* Logo */}
                 <div
-                  className="relative flex h-[94px] w-[94px] shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#F3F4F7]"
+                  className="relative flex h-[94px] w-[94px] shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#F3F4F7] dark:bg-[#121212]"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   {profileData.profileImage ? (
@@ -362,33 +371,33 @@ export default function EmployerProfilePage() {
                 <div className="flex-1 pt-[16px]">
                   <div className="mb-[26px] flex items-start justify-between gap-4">
                     <div>
-                      <h2 className="mb-1 text-[21px] font-bold leading-tight text-[#111827]">
+                      <h2 className="mb-1 text-[21px] font-bold leading-tight text-[#111827] dark:text-white">
                         {profileData.companyName || 'Company Name'}
                       </h2>
-                      <p className="text-[14px] text-[#9CA3AF]">{profileData.email || 'info@company.com'}</p>
+                      <p className="text-[14px] text-[#9CA3AF] dark:text-[#ffffff]/50">{profileData.email || 'info@company.com'}</p>
                     </div>
                     <button
                       onClick={() => setIsEditPopupOpen(true)}
-                      className="rounded-[6px] border border-[#0273B1] px-[14px] py-[6px] text-[13px] font-medium text-[#0273B1] transition-colors hover:bg-[#F0F4F8]"
+                      className="rounded-[6px] border border-[#0273B1] px-[14px] py-[6px] text-[13px] font-medium text-[#0273B1] transition-colors hover:bg-[#F0F4F8] dark:text-[#0273b1] dark:hover:bg-[#070e12]"
                     >
                       Edit
                     </button>
                   </div>
 
-                  <p className="mb-[16px] max-w-[880px] text-[13px] leading-[1.55] text-[#4B5563]">
+                  <p className="mb-[16px] max-w-[880px] text-[13px] leading-[1.55] text-[#4B5563] dark:text-[#a9b4cd]">
                     {profileData.companyDescription || '-'}
                   </p>
 
                   <div className="grid max-w-[680px] grid-cols-2 gap-10">
                     <div>
-                      <h3 className="mb-[8px] text-[17px] font-bold text-[#111827]">Business Type</h3>
-                      <p className="text-[14px] text-[#4B5563]">
+                      <h3 className="mb-[8px] text-[17px] font-bold text-[#111827] dark:text-white">Business Type</h3>
+                      <p className="text-[14px] text-[#4B5563] dark:text-[#a9b4cd]">
                         {profileData.businessType ? getBusinessTypeLabel(profileData.businessType) : '-'}
                       </p>
                     </div>
                     <div>
-                      <h3 className="mb-[8px] text-[17px] font-bold text-[#111827]">Company Size</h3>
-                      <p className="text-[14px] text-[#4B5563]">
+                      <h3 className="mb-[8px] text-[17px] font-bold text-[#111827] dark:text-white">Company Size</h3>
+                      <p className="text-[14px] text-[#4B5563] dark:text-[#a9b4cd]">
                         {profileData.companySize ? getCompanySizeLabel(profileData.companySize) : '-'}
                       </p>
                     </div>
@@ -398,34 +407,34 @@ export default function EmployerProfilePage() {
             </div>
 
             {/* Address Card */}
-            <div className="mb-6 rounded-[14px] bg-white px-[24px] py-[20px] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+            <div className="mb-6 rounded-[14px] bg-white px-[24px] py-[20px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors dark:bg-[#070e12] dark:shadow-none dark:ring-1 dark:ring-[#e5e7eb]">
               <div className="mb-5 flex items-center gap-3">
                 <span className="flex h-7 w-7 items-center justify-center text-[#2563EB]">
                   <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M12 2C8.134 2 5 5.134 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.866-3.134-7-7-7zm0 9.5A2.5 2.5 0 1112 6a2.5 2.5 0 010 5.5z" />
                   </svg>
                 </span>
-                <h2 className="text-[18px] font-bold text-[#1F2937]">Company Address</h2>
+                <h2 className="text-[18px] font-bold text-[#1F2937] dark:text-white">Company Address</h2>
               </div>
 
               <div className="mx-auto max-w-[856px] space-y-[10px]">
                 <div>
-                  <label className="mb-[6px] block text-[14px] text-[#4B5563]">Address Details</label>
+                  <label className="mb-[6px] block text-[14px] text-[#4B5563] dark:text-[#e5e7eb]">Address Details</label>
                   <textarea
                     value={addressForm.addressDetails}
                     onChange={(e) => setAddressForm((prev) => ({ ...prev, addressDetails: e.target.value }))}
                     rows={4}
-                    className="min-h-[110px] w-full resize-none rounded-[6px] border border-[#D1D5DB] px-3 py-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8]"
+                    className="min-h-[110px] w-full resize-none rounded-[6px] border border-[#D1D5DB] bg-white px-3 py-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8] dark:border-[#cbd5e1] dark:bg-[#1e1e1e] dark:text-white dark:placeholder:text-[#7f7f7f]"
                     placeholder="Enter address details (e.g., building number, street)"
                   />
                 </div>
 
                 {/* Province */}
                 <div>
-                  <label className="mb-[6px] block text-[14px] text-[#4B5563]">Province</label>
+                  <label className="mb-[6px] block text-[14px] text-[#4B5563] dark:text-[#e5e7eb]">Province</label>
                   {provincesLoading ? (
-                    <div className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] bg-gray-50 flex items-center justify-center">
-                      <span className="text-[14px] text-[#6B7280]">Loading provinces...</span>
+                    <div className="flex h-[38px] w-full items-center justify-center rounded-[6px] border border-[#D1D5DB] bg-gray-50 dark:border-[#cbd5e1] dark:bg-[#1e1e1e]">
+                      <span className="text-[14px] text-[#6B7280] dark:text-[#7f7f7f]">Loading provinces...</span>
                     </div>
                   ) : (
                     <SearchableDropdown
@@ -451,14 +460,14 @@ export default function EmployerProfilePage() {
 
                 {/* District */}
                 <div>
-                  <label className="mb-[6px] block text-[14px] text-[#4B5563]">District</label>
+                  <label className="mb-[6px] block text-[14px] text-[#4B5563] dark:text-[#e5e7eb]">District</label>
                   {!addressForm.provinceId ? (
-                    <div className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] bg-gray-100 flex items-center justify-center">
-                      <span className="text-[14px] text-[#6B7280]">Please select a province first</span>
+                    <div className="flex h-[38px] w-full items-center justify-center rounded-[6px] border border-[#D1D5DB] bg-gray-100 dark:border-[#cbd5e1] dark:bg-[#1e1e1e]">
+                      <span className="text-[14px] text-[#6B7280] dark:text-[#7f7f7f]">Please select a province first</span>
                     </div>
                   ) : districtsLoading ? (
-                    <div className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] bg-gray-50 flex items-center justify-center">
-                      <span className="text-[14px] text-[#6B7280]">Loading districts...</span>
+                    <div className="flex h-[38px] w-full items-center justify-center rounded-[6px] border border-[#D1D5DB] bg-gray-50 dark:border-[#cbd5e1] dark:bg-[#1e1e1e]">
+                      <span className="text-[14px] text-[#6B7280] dark:text-[#7f7f7f]">Loading districts...</span>
                     </div>
                   ) : (
                     <SearchableDropdown
@@ -483,14 +492,14 @@ export default function EmployerProfilePage() {
 
                 {/* Subdistrict */}
                 <div>
-                  <label className="mb-[6px] block text-[14px] text-[#4B5563]">Subdistrict</label>
+                  <label className="mb-[6px] block text-[14px] text-[#4B5563] dark:text-[#e5e7eb]">Subdistrict</label>
                   {!addressForm.districtId ? (
-                    <div className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] bg-gray-100 flex items-center justify-center">
-                      <span className="text-[14px] text-[#6B7280]">Please select a district first</span>
+                    <div className="flex h-[38px] w-full items-center justify-center rounded-[6px] border border-[#D1D5DB] bg-gray-100 dark:border-[#cbd5e1] dark:bg-[#1e1e1e]">
+                      <span className="text-[14px] text-[#6B7280] dark:text-[#7f7f7f]">Please select a district first</span>
                     </div>
                   ) : subdistrictsLoading ? (
-                    <div className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] bg-gray-50 flex items-center justify-center">
-                      <span className="text-[14px] text-[#6B7280]">Loading subdistricts...</span>
+                    <div className="flex h-[38px] w-full items-center justify-center rounded-[6px] border border-[#D1D5DB] bg-gray-50 dark:border-[#cbd5e1] dark:bg-[#1e1e1e]">
+                      <span className="text-[14px] text-[#6B7280] dark:text-[#7f7f7f]">Loading subdistricts...</span>
                     </div>
                   ) : (
                     <SearchableDropdown
@@ -509,17 +518,17 @@ export default function EmployerProfilePage() {
 
                 {/* Postal Code */}
                 <div>
-                  <label className="mb-[6px] block text-[14px] text-[#4B5563]">Postal Code</label>
+                  <label className="mb-[6px] block text-[14px] text-[#4B5563] dark:text-[#e5e7eb]">Postal Code</label>
                   <input
                     type="text"
                     value={addressForm.postcode}
                     onChange={(e) => setAddressForm((prev) => ({ ...prev, postcode: e.target.value }))}
-                    className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8] bg-gray-50"
+                    className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] bg-gray-50 px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8] dark:border-[#cbd5e1] dark:bg-[#1e1e1e] dark:text-white dark:placeholder:text-[#7f7f7f]"
                     placeholder="Auto-filled when district is selected"
                     readOnly={!!(addressForm.provinceId && addressForm.districtId && addressForm.subdistrictId)}
                   />
                   {addressForm.provinceId && addressForm.districtId && addressForm.subdistrictId && (
-                    <p className="mt-1 text-xs text-[#6B7280]">Postal code is automatically filled based on the selected district</p>
+                    <p className="mt-1 text-xs text-[#6B7280] dark:text-[#7f7f7f]">Postal code is automatically filled based on the selected district</p>
                   )}
                 </div>
 
@@ -536,59 +545,59 @@ export default function EmployerProfilePage() {
             </div>
 
             {/* Contact Card */}
-            <div className="rounded-[14px] bg-white px-[24px] py-[20px] shadow-[0_1px_2px_rgba(15,23,42,0.04)]">
+            <div className="rounded-[14px] bg-white px-[24px] py-[20px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors dark:bg-[#070e12] dark:shadow-none dark:ring-1 dark:ring-[#e5e7eb]">
               <div className="mb-5 flex items-center gap-3">
                 <span className="flex h-7 w-7 items-center justify-center text-[#2563EB]">
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.4} d="M3 5a2 2 0 012-2h2.28a2 2 0 011.897 1.368l.62 1.86a2 2 0 01-.45 2.046l-1.27 1.27a16 16 0 006.656 6.656l1.27-1.27a2 2 0 012.046-.45l1.86.62A2 2 0 0121 16.72V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                   </svg>
                 </span>
-                <h2 className="text-[18px] font-bold text-[#1F2937]">Contact Information</h2>
+                <h2 className="text-[18px] font-bold text-[#1F2937] dark:text-white">Contact Information</h2>
               </div>
 
               <div className="mx-auto max-w-[856px] space-y-[10px]">
                 <div>
-                  <label className="mb-[6px] block text-[14px] text-[#4B5563]">Phone Number</label>
+                  <label className="mb-[6px] block text-[14px] text-[#4B5563] dark:text-[#e5e7eb]">Phone Number</label>
                   <div className="flex gap-[10px]">
-                    <select className="h-[38px] w-[64px] rounded-[6px] border border-[#D1D5DB] bg-white px-3 text-[14px] text-[#374151] outline-none">
+                    <select className="h-[38px] w-[64px] rounded-[6px] border border-[#D1D5DB] bg-white px-3 text-[14px] text-[#374151] outline-none dark:border-[#cbd5e1] dark:bg-[#1e1e1e] dark:text-white">
                       <option value="+66">+66</option>
                     </select>
                     <input
                       type="text"
                       value={contactForm.phoneNumber}
                       onChange={(e) => setContactForm((prev) => ({ ...prev, phoneNumber: e.target.value }))}
-                      className="h-[38px] flex-1 rounded-[6px] border border-[#D1D5DB] px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8]"
+                      className="h-[38px] flex-1 rounded-[6px] border border-[#D1D5DB] px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8] dark:border-[#cbd5e1] dark:bg-[#1e1e1e] dark:text-white dark:placeholder:text-[#7f7f7f]"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-[6px] block text-[14px] text-[#4B5563]">Email</label>
+                  <label className="mb-[6px] block text-[14px] text-[#4B5563] dark:text-[#e5e7eb]">Email</label>
                   <input
                     type="email"
                     value={contactForm.email}
                     onChange={(e) => setContactForm((prev) => ({ ...prev, email: e.target.value }))}
-                    className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8]"
+                    className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8] dark:border-[#cbd5e1] dark:bg-[#1e1e1e] dark:text-white dark:placeholder:text-[#7f7f7f]"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-[6px] block text-[14px] text-[#4B5563]">Website URL</label>
+                  <label className="mb-[6px] block text-[14px] text-[#4B5563] dark:text-[#e5e7eb]">Website URL</label>
                   <input
                     type="text"
                     value={contactForm.websiteUrl}
                     onChange={(e) => setContactForm((prev) => ({ ...prev, websiteUrl: e.target.value }))}
-                    className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8]"
+                    className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8] dark:border-[#cbd5e1] dark:bg-[#1e1e1e] dark:text-white dark:placeholder:text-[#7f7f7f]"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-[6px] block text-[14px] text-[#4B5563]">Contact Name</label>
+                  <label className="mb-[6px] block text-[14px] text-[#4B5563] dark:text-[#e5e7eb]">Contact Name</label>
                   <input
                     type="text"
                     value={contactForm.contactName}
                     onChange={(e) => setContactForm((prev) => ({ ...prev, contactName: e.target.value }))}
-                    className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8]"
+                    className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8] dark:border-[#cbd5e1] dark:bg-[#1e1e1e] dark:text-white dark:placeholder:text-[#7f7f7f]"
                   />
                 </div>
 

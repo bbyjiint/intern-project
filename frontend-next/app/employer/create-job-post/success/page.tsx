@@ -8,11 +8,11 @@ export default function JobPostSuccessPage() {
   const router = useRouter()
 
   return (
-    <div className="min-h-screen" style={{ background: 'linear-gradient(to bottom, #E3F2FD 0%, #FFFFFF 300px)' }}>
+    <div className="min-h-screen transition-colors dark:bg-slate-950" style={{ background: 'linear-gradient(to bottom, #E3F2FD 0%, #FFFFFF 300px)' }}>
       <EmployerNavbar />
       
       <div className="layout-container py-16">
-        <div className="mx-auto max-w-2xl bg-white rounded-lg shadow-md p-12 text-center">
+        <div className="mx-auto max-w-2xl rounded-lg bg-white p-12 text-center shadow-md transition-colors dark:bg-slate-900 dark:shadow-none dark:ring-1 dark:ring-slate-800">
           {/* Success Icon */}
           <div className="flex justify-center mb-6">
             <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center">
@@ -23,7 +23,7 @@ export default function JobPostSuccessPage() {
           </div>
           
           {/* Success Message */}
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">
+          <h2 className="mb-6 text-2xl font-bold text-gray-900 dark:text-white">
             Your job post has been posted.
           </h2>
           

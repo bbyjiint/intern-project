@@ -23,16 +23,16 @@ export default function EmployerProgressIndicator({ currentStep, totalSteps }: E
                 <div
                   className="flex h-10 w-10 items-center justify-center rounded-full border-2 text-sm font-semibold leading-none transition-colors"
                   style={{
-                    backgroundColor: isActive || isCompleted ? '#0273B1' : '#F8FAFC',
-                    borderColor: isActive || isCompleted ? '#0273B1' : '#D1D5DB',
-                    color: isActive || isCompleted ? '#FFFFFF' : '#94A3B8',
+                    backgroundColor: isActive || isCompleted ? '#0273B1' : 'transparent',
+                    borderColor: isActive || isCompleted ? '#0273B1' : '#E5E5E5',
+                    color: isActive || isCompleted ? '#FFFFFF' : '#E5E5E5',
                   }}
                 >
                   {step.number}
                 </div>
                 <span
                   className="mt-1.5 max-w-[100px] text-[10px] font-medium leading-tight"
-                  style={{ color: isActive || isCompleted ? '#111827' : '#9CA3AF' }}
+                  style={{ color: isActive || isCompleted ? '#0273B1' : '#E5E5E5' }}
                 >
                   {step.label}
                 </span>
@@ -44,7 +44,7 @@ export default function EmployerProgressIndicator({ currentStep, totalSteps }: E
                   style={{
                     background: isCompleted
                       ? 'repeating-linear-gradient(to right, #0273B1 0, #0273B1 8px, transparent 8px, transparent 16px)'
-                      : 'repeating-linear-gradient(to right, #E5E7EB 0, #E5E7EB 8px, transparent 8px, transparent 16px)'
+                      : 'repeating-linear-gradient(to right, #E5E5E5 0, #E5E5E5 8px, transparent 8px, transparent 16px)'
                   }}
                 />
               )}

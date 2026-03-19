@@ -71,7 +71,7 @@ export default function ApplicantCard({
   const circumference = 2 * Math.PI * r;
 
   return (
-    <div className="relative flex h-full min-h-[274px] flex-col rounded-[12px] bg-white px-[20px] py-[18px] shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
+    <div className="relative flex h-full min-h-[274px] flex-col rounded-[12px] bg-white px-[20px] py-[18px] shadow-[0_2px_10px_rgba(15,23,42,0.05)] transition-colors dark:bg-[#070e12] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] dark:ring-1 dark:ring-[#d1d5db]">
       {applicant.status === "new" && (
         <div className="absolute right-[74px] top-[-11px] flex h-[24px] items-center rounded-[4px] bg-[#FB5F5F] px-[10px] text-[11px] font-semibold text-white shadow-[0_8px_20px_rgba(251,95,95,0.2)]">
           1 New
@@ -89,15 +89,15 @@ export default function ApplicantCard({
               className="h-[54px] w-[54px] flex-shrink-0 rounded-full object-cover"
             />
           ) : (
-            <div className="flex h-[54px] w-[54px] flex-shrink-0 items-center justify-center rounded-full bg-[#3B82F6] text-[24px] font-semibold text-white">
+            <div className="flex h-[54px] w-[54px] flex-shrink-0 items-center justify-center rounded-full bg-[#2563eb] text-[24px] font-semibold text-white">
               {applicant.initials}
             </div>
           )}
           <div className="min-w-0 pt-[2px]">
-            <h3 className="truncate text-[18px] font-bold leading-tight text-[#111827]">
+            <h3 className="truncate text-[18px] font-bold leading-tight text-[#111827] dark:text-white">
               {applicant.name}
             </h3>
-            <p className="mt-[4px] truncate text-[12px] text-[#8B94A7]">
+            <p className="mt-[4px] truncate text-[12px] text-[#8B94A7] dark:text-[#e5e7eb]">
               {applicant.email}
             </p>
           </div>
@@ -142,24 +142,24 @@ export default function ApplicantCard({
 
       {/* Info grid */}
       <div className="mt-[18px] grid grid-cols-[132px_1fr] gap-y-[10px] text-[12px]">
-        <p className="text-[#7C869A]">Intern Period</p>
-        <p className="font-semibold text-[#111827]">
+        <p className="text-[#7C869A] dark:text-[#7f7f7f]">Intern Period</p>
+        <p className="font-semibold text-[#111827] dark:text-white">
           {formatInternshipPeriod(applicant.internshipPeriod)}
         </p>
-        <p className="text-[#7C869A]">Institution</p>
-        <p className="font-semibold text-[#111827]">
+        <p className="text-[#7C869A] dark:text-[#7f7f7f]">Institution</p>
+        <p className="font-semibold text-[#111827] dark:text-white">
           {formatDisplayDate(applicant.institution)}
         </p>
-        <p className="text-[#7C869A]">Academic Year</p>
-        <p className="font-semibold text-[#111827]">
+        <p className="text-[#7C869A] dark:text-[#7f7f7f]">Academic Year</p>
+        <p className="font-semibold text-[#111827] dark:text-white">
           {formatDisplayDate(applicant.academicYear)}
         </p>
-        <p className="text-[#7C869A]">Field of Study</p>
-        <p className="font-semibold text-[#111827]">
+        <p className="text-[#7C869A] dark:text-[#7f7f7f]">Field of Study</p>
+        <p className="font-semibold text-[#111827] dark:text-white">
           {formatDisplayDate(applicant.fieldOfStudy)}
         </p>
-        <p className="text-[#7C869A]">Preferred</p>
-        <p className="font-semibold text-[#111827]">
+        <p className="text-[#7C869A] dark:text-[#7f7f7f]">Preferred</p>
+        <p className="font-semibold text-[#111827] dark:text-white">
           {applicant.preferredLocations?.length
             ? applicant.preferredLocations.join(", ")
             : "-"}
@@ -173,10 +173,14 @@ export default function ApplicantCard({
           : applicant.skills
         )
           .slice(0, 3)
-          .map((item) => (
+          .map((item, index) => (
             <span
               key={item}
-              className="rounded-[8px] bg-[#E5E7EB] px-[14px] py-[2px] text-[12px] font-semibold text-[#374151] inline-flex items-center"
+              className={`inline-flex items-center rounded-[8px] px-[14px] py-[2px] text-[12px] font-semibold ${
+                index === 0
+                  ? 'bg-[#E5E7EB] text-[#374151] dark:bg-[#fef3c7] dark:text-[#b45309]'
+                  : 'bg-[#E5E7EB] text-[#374151] dark:bg-[#323232] dark:text-[#e5e7eb]'
+              }`}
             >
               {item}
             </span>
@@ -185,13 +189,13 @@ export default function ApplicantCard({
 
       {/* Footer */}
       <div className="mt-auto flex items-center justify-between pt-[12px]">
-        <p className="text-[12px] text-[#C2C8D3]">{applicant.appliedDate}</p>
+        <p className="text-[12px] text-[#C2C8D3] dark:text-[#e5e7eb]">{applicant.appliedDate}</p>
         <div className="flex items-center gap-[6px]">
           <button
             type="button"
             onClick={onMessage}
             disabled={isMessaging}
-            className="flex h-[34px] items-center justify-center rounded-[8px] border border-[#2563EB] bg-white px-[18px] text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8] disabled:opacity-60"
+            className="flex h-[34px] items-center justify-center rounded-[8px] border border-[#d1d5db] bg-white px-[18px] text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8] disabled:opacity-60 dark:border-[#d1d5db] dark:bg-[#fffefe] dark:text-black dark:hover:bg-[#fefefe]"
           >
             {isMessaging ? "Loading..." : "Message"}
           </button>
@@ -201,7 +205,7 @@ export default function ApplicantCard({
               onMarkViewed?.();
               onViewProfile();
             }}
-            className="flex h-[34px] items-center justify-center rounded-[8px] border border-[#2563EB] bg-white px-[18px] text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8]"
+            className="flex h-[34px] items-center justify-center rounded-[8px] border border-[#d1d5db] bg-white px-[18px] text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8] dark:border-[#d1d5db] dark:bg-[#fffefe] dark:text-black dark:hover:bg-[#fefefe]"
           >
             View Profile
           </button>

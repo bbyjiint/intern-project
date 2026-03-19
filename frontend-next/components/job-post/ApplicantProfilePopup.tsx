@@ -266,22 +266,17 @@ export default function ApplicantProfilePopup({
       onClick={onClose}
     >
       <div
-        className="relative max-h-[92vh] w-full max-w-[940px] overflow-y-auto rounded-[18px] bg-white px-[32px] py-[24px] shadow-[0_20px_60px_rgba(15,23,42,0.18)]"
+        className="relative max-h-[92vh] w-full max-w-[940px] overflow-y-auto rounded-[18px] bg-white px-[32px] py-[24px] shadow-[0_20px_60px_rgba(15,23,42,0.18)] transition-colors dark:bg-slate-950 dark:shadow-none dark:ring-1 dark:ring-slate-800"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close */}
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-[16px] top-[14px] text-[#4B5563] transition hover:text-[#111827]"
+          className="absolute right-[16px] top-[14px] text-[#4B5563] transition hover:text-[#111827] dark:text-slate-400 dark:hover:text-white"
           aria-label="Close"
         >
-          <svg
-            className="h-5 w-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
+          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -306,17 +301,17 @@ export default function ApplicantProfilePopup({
               </div>
             )}
             <div className="pt-[6px]">
-              <h2 className="text-[22px] font-bold leading-none text-black">
+              <h2 className="text-[22px] font-bold leading-none text-black dark:text-white">
                 {displayName}
               </h2>
-              <p className="mt-[8px] text-[13px] text-[#97A0AF]">
+              <p className="mt-[8px] text-[13px] text-[#97A0AF] dark:text-slate-400">
                 Phone: {displayPhone}
               </p>
-              <p className="mt-[4px] text-[13px] text-[#97A0AF]">
+              <p className="mt-[4px] text-[13px] text-[#97A0AF] dark:text-slate-400">
                 Email {displayEmail}
               </p>
               {isLoading && (
-                <p className="mt-[6px] text-[12px] text-[#6B7280]">
+                <p className="mt-[6px] text-[12px] text-[#6B7280] dark:text-slate-400">
                   Loading profile...
                 </p>
               )}
@@ -325,35 +320,35 @@ export default function ApplicantProfilePopup({
           <button
             type="button"
             onClick={() => goToProfile()}
-            className="mt-[10px] flex h-[36px] items-center justify-center rounded-[8px] border border-[#2563EB] bg-white px-[16px] text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#EFF6FF]"
+            className="mt-[10px] flex h-[36px] items-center justify-center rounded-[8px] border border-[#2563EB] bg-white px-[16px] text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#EFF6FF] dark:bg-slate-900 dark:text-blue-400 dark:hover:bg-blue-500/10"
           >
             See Profile
           </button>
         </div>
 
         {/* Body */}
-        <div className="mt-[20px] border-t border-[#E5E7EB] pt-[18px]">
+        <div className="mt-[20px] border-t border-[#E5E7EB] pt-[18px] dark:border-slate-800">
           <div>
-            <h3 className="text-[14px] font-bold text-[#344164]">About Me</h3>
-            <p className="mt-[6px] text-[13px] leading-[1.5] text-[#51617C]">
+            <h3 className="text-[14px] font-bold text-[#344164] dark:text-slate-200">About Me</h3>
+            <p className="mt-[6px] text-[13px] leading-[1.5] text-[#51617C] dark:text-slate-400">
               {about}
             </p>
           </div>
 
           <div className="mt-[18px] grid grid-cols-2 gap-x-[32px] gap-y-[16px]">
             <div>
-              <h3 className="text-[14px] font-bold text-[#344164]">
+              <h3 className="text-[14px] font-bold text-[#344164] dark:text-slate-200">
                 Education
               </h3>
-              <p className="mt-[6px] text-[13px] leading-[1.45] text-[#51617C]">
+              <p className="mt-[6px] text-[13px] leading-[1.45] text-[#51617C] dark:text-slate-400">
                 {educationLine1}
               </p>
-              <p className="mt-[2px] text-[13px] leading-[1.45] text-[#51617C]">
+              <p className="mt-[2px] text-[13px] leading-[1.45] text-[#51617C] dark:text-slate-400">
                 {educationLine2 || "-"}
               </p>
             </div>
             <div>
-              <h3 className="text-[14px] font-bold text-[#344164]">
+              <h3 className="text-[14px] font-bold text-[#344164] dark:text-slate-200">
                 Positions of Interest
               </h3>
               <div className="mt-[8px] flex flex-wrap gap-[6px]">
@@ -361,29 +356,29 @@ export default function ApplicantProfilePopup({
                   positions.map((p) => (
                     <span
                       key={p}
-                      className="rounded-[6px] bg-[#E5E7EB] px-[12px] py-[4px] text-[12px] font-semibold text-[#374151]"
+                      className="rounded-[6px] bg-[#E5E7EB] px-[12px] py-[4px] text-[12px] font-semibold text-[#374151] dark:bg-slate-800 dark:text-slate-300"
                     >
                       {p}
                     </span>
                   ))
                 ) : (
-                  <p className="text-[13px] text-[#51617C]">-</p>
+                  <p className="text-[13px] text-[#51617C] dark:text-slate-400">-</p>
                 )}
               </div>
             </div>
             <div>
-              <h3 className="text-[14px] font-bold text-[#344164]">
+              <h3 className="text-[14px] font-bold text-[#344164] dark:text-slate-200">
                 Internship Period
               </h3>
-              <p className="mt-[6px] text-[13px] leading-[1.45] text-[#51617C]">
+              <p className="mt-[6px] text-[13px] leading-[1.45] text-[#51617C] dark:text-slate-400">
                 {internshipPeriod}
               </p>
             </div>
             <div>
-              <h3 className="text-[14px] font-bold text-[#344164]">
+              <h3 className="text-[14px] font-bold text-[#344164] dark:text-slate-200">
                 Preferred Locations
               </h3>
-              <p className="mt-[6px] text-[13px] leading-[1.45] text-[#51617C]">
+              <p className="mt-[6px] text-[13px] leading-[1.45] text-[#51617C] dark:text-slate-400">
                 {locations.length > 0 ? locations.join(", ") : "-"}
               </p>
             </div>
@@ -399,21 +394,20 @@ export default function ApplicantProfilePopup({
           </div>
 
           {/* AI Job Match Section */}
-          <div className="mt-[20px] rounded-[12px] border border-[#E5E7EB] bg-[#F9FAFB] px-[20px] py-[16px]">
+          <div className="mt-[20px] rounded-[12px] border border-[#E5E7EB] bg-[#F9FAFB] px-[20px] py-[16px] dark:border-slate-800 dark:bg-slate-900/60">
             <div className="mb-[14px] flex items-center justify-between">
               <div className="flex items-center gap-[6px]">
                 <span className="text-[13px] font-bold text-[#2563EB]">AI</span>
-                <h3 className="text-[13px] font-bold text-[#1F2937]">
+                <h3 className="text-[13px] font-bold text-[#1F2937] dark:text-slate-200">
                   Job Match Section
                 </h3>
-                <span className="text-[14px] text-[#6B7280]">✦</span>
+                <span className="text-[14px] text-[#6B7280] dark:text-slate-400">✦</span>
               </div>
-              {/* ✅ ปุ่ม Re-analyze ที่ดูดีขึ้น */}
               <button
                 type="button"
                 onClick={handleReanalyze}
                 disabled={aiLoading}
-                className="flex items-center gap-[4px] rounded-[6px] border border-[#2563EB] bg-white px-[10px] py-[4px] text-[11px] font-semibold text-[#2563EB] transition hover:bg-[#EFF6FF] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex items-center gap-[4px] rounded-[6px] border border-[#2563EB] bg-white px-[10px] py-[4px] text-[11px] font-semibold text-[#2563EB] transition hover:bg-[#EFF6FF] disabled:cursor-not-allowed disabled:opacity-50 dark:bg-slate-900 dark:text-blue-400 dark:hover:bg-blue-500/10"
               >
                 <svg
                   className={`h-[11px] w-[11px] ${aiLoading ? "animate-spin" : ""}`}
@@ -444,40 +438,37 @@ export default function ApplicantProfilePopup({
 
             {aiAnalysis && !aiLoading && (
               <div className="space-y-[10px] text-[12px]">
-                {/* Position */}
                 <div className="grid grid-cols-[90px_1fr] items-center gap-x-[12px]">
-                  <span className="text-[#6B7280]">Position</span>
+                  <span className="text-[#6B7280] dark:text-slate-400">Position</span>
                   <div className="flex items-center gap-[8px]">
                     <CheckIcon matched={aiAnalysis.position.matched} />
-                    <span className="text-[#374151]">
+                    <span className="text-[#374151] dark:text-slate-200">
                       {aiAnalysis.position.label}
                     </span>
                   </div>
                 </div>
 
-                {/* Education */}
                 <div className="grid grid-cols-[90px_1fr] items-center gap-x-[12px]">
-                  <span className="text-[#6B7280]">Education</span>
+                  <span className="text-[#6B7280] dark:text-slate-400">Education</span>
                   <div className="flex items-center justify-between gap-[8px]">
                     <div className="flex items-center gap-[8px]">
                       <CheckIcon matched={aiAnalysis.education.matched} />
-                      <span className="text-[#374151]">
+                      <span className="text-[#374151] dark:text-slate-200">
                         {aiAnalysis.education.label}
                       </span>
                     </div>
                     <button
                       type="button"
                       onClick={() => goToProfile("education")}
-                      className="shrink-0 text-[11px] text-[#2563EB] hover:underline"
+                      className="shrink-0 text-[11px] text-[#2563EB] hover:underline dark:text-blue-400"
                     >
                       &gt;&gt; Go to Profile to see file
                     </button>
                   </div>
                 </div>
 
-                {/* Skills */}
                 <div className="grid grid-cols-[90px_1fr] items-start gap-x-[12px]">
-                  <span className="pt-[2px] text-[#6B7280]">Skills</span>
+                  <span className="pt-[2px] text-[#6B7280] dark:text-slate-400">Skills</span>
                   <div className="flex flex-col gap-[6px]">
                     {aiAnalysis.skills.map((skill, i) => (
                       <div
@@ -486,13 +477,13 @@ export default function ApplicantProfilePopup({
                       >
                         <div className="flex items-center gap-[8px]">
                           <CheckIcon matched={skill.matched} />
-                          <span className="text-[#374151]">{skill.label}</span>
+                          <span className="text-[#374151] dark:text-slate-200">{skill.label}</span>
                         </div>
                         {i === aiAnalysis.skills.length - 1 && (
                           <button
                             type="button"
                             onClick={() => goToProfile("skills")}
-                            className="shrink-0 text-[11px] text-[#2563EB] hover:underline"
+                            className="shrink-0 text-[11px] text-[#2563EB] hover:underline dark:text-blue-400"
                           >
                             &gt;&gt; Go to Profile to see more Skill
                           </button>
@@ -502,20 +493,19 @@ export default function ApplicantProfilePopup({
                   </div>
                 </div>
 
-                {/* Project */}
                 <div className="grid grid-cols-[90px_1fr] items-center gap-x-[12px]">
-                  <span className="text-[#6B7280]">Project</span>
+                  <span className="text-[#6B7280] dark:text-slate-400">Project</span>
                   <div className="flex items-center justify-between gap-[8px]">
                     <div className="flex items-center gap-[8px]">
                       <CheckIcon matched={aiAnalysis.project.matched} />
-                      <span className="text-[#374151]">
+                      <span className="text-[#374151] dark:text-slate-200">
                         {aiAnalysis.project.label}
                       </span>
                     </div>
                     <button
                       type="button"
                       onClick={() => goToProfile("projects")}
-                      className="shrink-0 text-[11px] text-[#2563EB] hover:underline"
+                      className="shrink-0 text-[11px] text-[#2563EB] hover:underline dark:text-blue-400"
                     >
                       &gt;&gt; Go to Profile to see file
                     </button>
@@ -532,13 +522,12 @@ export default function ApplicantProfilePopup({
           </div>
 
           {/* AI Insight */}
-          <div className="mt-[12px] rounded-[12px] border border-[#E5E7EB] bg-[#F9FAFB] px-[20px] py-[16px]">
+          <div className="mt-[12px] rounded-[12px] border border-[#E5E7EB] bg-[#F9FAFB] px-[20px] py-[16px] dark:border-slate-800 dark:bg-slate-900/60">
             <div className="mb-[10px] flex items-center gap-[6px]">
               <span className="text-[13px] font-bold text-[#2563EB]">AI</span>
-              <h3 className="text-[13px] font-bold text-[#1F2937]">Insight</h3>
+              <h3 className="text-[13px] font-bold text-[#1F2937] dark:text-slate-200">Insight</h3>
               <span className="text-[14px]">🔒</span>
             </div>
-
             {(aiLoading || (isLoading && !aiAnalysis)) && (
               <div className="space-y-[6px]">
                 {[200, 160, 180].map((w, i) => (
@@ -556,7 +545,7 @@ export default function ApplicantProfilePopup({
                 {aiAnalysis.insight.map((line, i) => (
                   <p
                     key={i}
-                    className="text-[12px] leading-[1.6] text-[#51617C]"
+                    className="text-[12px] leading-[1.6] text-[#51617C] dark:text-slate-400"
                   >
                     {line}
                   </p>
@@ -576,7 +565,7 @@ export default function ApplicantProfilePopup({
             <button
               type="button"
               onClick={onClose}
-              className="flex h-[36px] items-center justify-center rounded-[8px] border border-[#D1D5DB] bg-white px-[20px] text-[13px] font-semibold text-[#374151] transition hover:bg-[#F9FAFB]"
+              className="flex h-[36px] items-center justify-center rounded-[8px] border border-[#D1D5DB] bg-white px-[20px] text-[13px] font-semibold text-[#374151] transition hover:bg-[#F9FAFB] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
             >
               Back
             </button>
@@ -584,7 +573,7 @@ export default function ApplicantProfilePopup({
               <button
                 type="button"
                 onClick={onDecline}
-                className="flex h-[36px] items-center justify-center rounded-[8px] border border-[#EF4444] bg-white px-[20px] text-[13px] font-semibold text-[#EF4444] transition hover:bg-[#FEF2F2]"
+                className="flex h-[36px] items-center justify-center rounded-[8px] border border-[#EF4444] bg-white px-[20px] text-[13px] font-semibold text-[#EF4444] transition hover:bg-[#FEF2F2] dark:bg-slate-900 dark:hover:bg-red-500/10"
               >
                 Decline
               </button>

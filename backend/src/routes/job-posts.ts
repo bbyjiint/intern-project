@@ -5,6 +5,27 @@ import { randomUUID } from "crypto";
 
 export const jobPostsRouter = Router();
 
+const jobPostBaseSelect = {
+  id: true,
+  companyId: true,
+  jobTitle: true,
+  locationProvince: true,
+  positionsAvailable: true,
+  gpa: true,
+  workplaceType: true,
+  allowance: true,
+  allowancePeriod: true,
+  noAllowance: true,
+  jobDescription: true,
+  jobSpecification: true,
+  state: true,
+  createdAt: true,
+  updatedAt: true,
+  positions: true,
+  workingDaysHours: true,
+  locationProvinceId: true,
+} as const;
+
 function relativeDateLabel(date: Date): string {
   const now = new Date();
   const diffMs = Math.abs(now.getTime() - date.getTime());
@@ -167,7 +188,8 @@ jobPostsRouter.post("/job-posts", requireAuth, requireRole("COMPANY"), async (re
     // Return the created job post with related data
     const createdJobPost = await prisma.jobPost.findUnique({
       where: { id: jobPost.id },
-      include: {
+      select: {
+        ...jobPostBaseSelect,
         ScreeningQuestions: {
           include: {
             Choices: {
@@ -182,7 +204,6 @@ jobPostsRouter.post("/job-posts", requireAuth, requireRole("COMPANY"), async (re
             logoURL: true,
           },
         },
-        LocationProvince: { select: { name: true } },
       },
     });
 
@@ -205,7 +226,8 @@ jobPostsRouter.get("/job-posts/public", async (req, res) => {
       where: {
         state: "PUBLISHED", // Only show published job posts
       },
-      include: {
+      select: {
+        ...jobPostBaseSelect,
         Company: {
           select: {
             companyName: true,
@@ -214,7 +236,6 @@ jobPostsRouter.get("/job-posts/public", async (req, res) => {
             User: { select: { email: true } },
           },
         },
-        LocationProvince: { select: { name: true } },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -245,7 +266,7 @@ jobPostsRouter.get("/job-posts/public", async (req, res) => {
         companyName,
         companyEmail: post.Company?.CompanyEmails?.[0]?.email || post.Company?.User?.email || "",
         companyLogo,
-        location: (post as any).LocationProvince?.name || post.locationProvince || "Location not specified",
+        location: post.locationProvince || "Location not specified",
         workType: formatWorkplaceType(post.workplaceType),
         positionsAvailable: post.positionsAvailable || 0,
         positions: Array.isArray(post.positions) ? post.positions : [],
@@ -273,7 +294,8 @@ jobPostsRouter.get("/job-posts/public/:id", async (req, res) => {
         id,
         state: "PUBLISHED",
       },
-      include: {
+      select: {
+        ...jobPostBaseSelect,
         Company: {
           include: {
             User: { select: { email: true } },
@@ -284,7 +306,6 @@ jobPostsRouter.get("/job-posts/public/:id", async (req, res) => {
             Subdistrict: { select: { name: true } },
           },
         },
-        LocationProvince: { select: { name: true } }, // ✅ เพิ่มบรรทัดนี้
       },
     });
 
@@ -321,7 +342,7 @@ jobPostsRouter.get("/job-posts/public/:id", async (req, res) => {
         companyEmail,
         companyLogo,
         workplaceType: jobPost.workplaceType,        // ✅ ส่ง raw enum ไปด้วย
-        positions: Array.isArray(jobPost.positions) ? jobPost.positions : [], // ✅ เพิ่ม
+        positions: Array.isArray(jobPost.positions) ? jobPost.positions : [],
         workType: formatWorkplaceType(jobPost.workplaceType),
         roleType: "Internship",
         positionsAvailable: jobPost.positionsAvailable || 1,
@@ -331,8 +352,8 @@ jobPostsRouter.get("/job-posts/public/:id", async (req, res) => {
         allowance: jobPost.noAllowance ? null : (jobPost.allowance || null),  // ✅ ส่งตัวเลข
         allowancePeriod: jobPost.allowancePeriod || null,                      // ✅ เพิ่ม
         noAllowance: jobPost.noAllowance,                                      // ✅ เพิ่ม
-        location: (jobPost as any).LocationProvince?.name || jobPost.locationProvince || "Location not specified", // ✅ แก้
-        workingDaysHours: jobPost.workingDaysHours || "Not specified",         // ✅ แก้จาก hardcode
+        location: jobPost.locationProvince || "Location not specified",
+        workingDaysHours: jobPost.workingDaysHours || "Not specified",
         companyDescription: jobPost.Company?.about || "No company description available.",
         contactPhone: jobPost.Company?.CompanyPhones[0]?.phone || "Not specified",
         contactDepartment: jobPost.Company?.recruiterName || "Hiring Team",
@@ -363,15 +384,13 @@ jobPostsRouter.get("/job-posts", requireAuth, requireRole("COMPANY"), async (req
 
     const jobPosts = await prisma.jobPost.findMany({
       where: { companyId: companyProfile.id },
-      include: {
+      select: {
+        ...jobPostBaseSelect,
         ScreeningQuestions: {
           include: {
             Choices: { orderBy: { order: "asc" } },
           },
           orderBy: { order: "asc" },
-        },
-        LocationProvince: {
-          select: { name: true },
         },
       },
       orderBy: { createdAt: "desc" },
@@ -406,7 +425,8 @@ jobPostsRouter.get("/job-posts/:id", requireAuth, requireRole("COMPANY"), async 
         id,
         companyId: companyProfile.id, // Ensure the job post belongs to the company
       },
-      include: {
+      select: {
+        ...jobPostBaseSelect,
         ScreeningQuestions: {
           include: {
             Choices: {
@@ -421,7 +441,6 @@ jobPostsRouter.get("/job-posts/:id", requireAuth, requireRole("COMPANY"), async 
             logoURL: true,
           },
         },
-        LocationProvince: { select: { name: true } },
       },
     });
 
@@ -507,12 +526,6 @@ jobPostsRouter.put("/job-posts/:id", requireAuth, requireRole("COMPANY"), async 
     const updateData: any = {};
     if (jobTitle !== undefined) updateData.jobTitle = jobTitle;
     if (locationProvince !== undefined) updateData.locationProvince = locationProvince;
-    if (positionsAvailable !== undefined) {
-      updateData.positionsAvailable =
-        positionsAvailable !== null && positionsAvailable !== ""
-          ? Number(positionsAvailable)
-          : null;
-    }
     if (gpa !== undefined) {
       updateData.gpa = typeof gpa === "string" && gpa.trim() ? gpa.trim() : null;
     }
@@ -530,6 +543,12 @@ jobPostsRouter.put("/job-posts/:id", requireAuth, requireRole("COMPANY"), async 
     if (state !== undefined) {
       updateData.state = stateMap[state] || state; // Use mapped state if available, otherwise use the provided value
     }
+    if (positionsAvailable !== undefined) {
+      updateData.positionsAvailable =
+        positionsAvailable !== null && positionsAvailable !== ""
+          ? Number(positionsAvailable)
+          : null;
+    }
     if (req.body.positions !== undefined) updateData.positions = Array.isArray(req.body.positions) ? req.body.positions : []
     if (req.body.workingDaysHours !== undefined) updateData.workingDaysHours = req.body.workingDaysHours || null
     if (req.body.preferredLocation !== undefined) updateData.locationProvinceId = req.body.preferredLocation || null
@@ -537,6 +556,7 @@ jobPostsRouter.put("/job-posts/:id", requireAuth, requireRole("COMPANY"), async 
     const updatedJobPost = await prisma.jobPost.update({
       where: { id },
       data: updateData,
+      select: jobPostBaseSelect,
     });
 
     // Update screening questions if provided
@@ -590,7 +610,8 @@ jobPostsRouter.put("/job-posts/:id", requireAuth, requireRole("COMPANY"), async 
 
     const result = await prisma.jobPost.findUnique({
       where: { id },
-      include: {
+      select: {
+        ...jobPostBaseSelect,
         ScreeningQuestions: {
           include: {
             Choices: {
@@ -605,7 +626,6 @@ jobPostsRouter.put("/job-posts/:id", requireAuth, requireRole("COMPANY"), async 
             logoURL: true,
           },
         },
-        LocationProvince: { select: { name: true } },
       },
     });
 
@@ -642,6 +662,7 @@ jobPostsRouter.delete("/job-posts/:id", requireAuth, requireRole("COMPANY"), asy
         id,
         companyId: companyProfile.id,
       },
+      select: { id: true },
     });
 
     if (!jobPost) {
@@ -676,6 +697,7 @@ jobPostsRouter.patch("/job-posts/:id", requireAuth, requireRole("COMPANY"), asyn
 
     const existingJobPost = await prisma.jobPost.findFirst({
       where: { id, companyId: companyProfile.id },
+      select: { id: true },
     });
     if (!existingJobPost) return res.status(404).json({ error: "Job post not found" });
 
@@ -692,6 +714,7 @@ jobPostsRouter.patch("/job-posts/:id", requireAuth, requireRole("COMPANY"), asyn
     const updated = await prisma.jobPost.update({
       where: { id },
       data: updateData,
+      select: jobPostBaseSelect,
     });
 
     return res.json({ success: true, jobPost: updated });

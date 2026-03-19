@@ -4,7 +4,8 @@ import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
-import CompanyHubLogo from '@/components/CompanyHubLogo'
+import ThemedCompanyHubLogo from '@/components/ThemedCompanyHubLogo'
+import ThemeToggle from '@/components/ThemeToggle'
 import ReportBugModal from './ReportBugModal'
 
 export default function EmployerNavbar() {
@@ -17,8 +18,8 @@ export default function EmployerNavbar() {
   const [profileData, setProfileData] = useState<any>(null)
   const [showDropdown, setShowDropdown] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
-  const dropdownRef = useRef<HTMLDivElement>(null)
   const [isBugModalOpen, setIsBugModalOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   // ✅ แปลง path รูปให้เป็น URL เต็ม
   const resolveImageUrl = (image?: string) => {
@@ -130,27 +131,29 @@ export default function EmployerNavbar() {
   }
 
   return (
-    <nav className="border-b border-[#E5E7EB] bg-white">
+    <nav className="sticky top-0 z-50 border-b border-slate-200 bg-white transition-colors dark:border-[#eff3fa] dark:bg-[#121212]">
       <div className="layout-container">
         <div className="flex h-[100px] items-center justify-between">
           <div className="flex items-center gap-10">
-            <CompanyHubLogo href="/employer/dashboard" />
+            <ThemedCompanyHubLogo href="/employer/dashboard" />
             <div className="hidden md:flex items-center gap-10">
               <Link
                 href="/employer/find-candidates"
-                className="text-[16px] font-medium transition-colors"
-                style={{ color: isFindCandidatesPage ? '#1C2D4F' : '#A9B4CD' }}
-                onMouseEnter={(e) => { if (!isFindCandidatesPage) e.currentTarget.style.color = '#1C2D4F' }}
-                onMouseLeave={(e) => { if (!isFindCandidatesPage) e.currentTarget.style.color = '#A9B4CD' }}
+                className={`text-[16px] font-medium transition-colors ${
+                  isFindCandidatesPage
+                    ? 'text-[#1C2D4F] dark:text-white'
+                    : 'text-[#A9B4CD] hover:text-[#1C2D4F] dark:text-[#A9B4CD] dark:hover:text-white'
+                }`}
               >
                 Find Candidates
               </Link>
               <Link
                 href="/employer/messages"
-                className="relative text-[16px] font-medium transition-colors"
-                style={{ color: isMessagesPage ? '#1C2D4F' : '#A9B4CD' }}
-                onMouseEnter={(e) => { if (!isMessagesPage) e.currentTarget.style.color = '#1C2D4F' }}
-                onMouseLeave={(e) => { if (!isMessagesPage) e.currentTarget.style.color = '#A9B4CD' }}
+                className={`relative text-[16px] font-medium transition-colors ${
+                  isMessagesPage
+                    ? 'text-[#1C2D4F] dark:text-white'
+                    : 'text-[#A9B4CD] hover:text-[#1C2D4F] dark:text-[#A9B4CD] dark:hover:text-white'
+                }`}
               >
                 Message
                 {unreadCount > 0 && (
@@ -162,10 +165,7 @@ export default function EmployerNavbar() {
               <button
                 type="button"
                 onClick={() => setIsBugModalOpen(true)}
-                className="text-[16px] font-medium transition-colors"
-                style={{ color: '#A9B4CD' }}
-                onMouseEnter={(e) => { e.currentTarget.style.color = '#1C2D4F' }}
-                onMouseLeave={(e) => { e.currentTarget.style.color = '#A9B4CD' }}
+                className="text-[16px] font-medium text-[#A9B4CD] transition-colors hover:text-[#1C2D4F] dark:text-[#94a3b8] dark:hover:text-white"
               >
                 Report bug
               </button>
@@ -173,19 +173,11 @@ export default function EmployerNavbar() {
           </div>
 
           <div className="flex items-center gap-4">
+            <ThemeToggle />
             <button
               type="button"
               onClick={handleOpenCreateJobPost}
-              className="flex items-center space-x-2 rounded-[10px] px-4 py-2.5 text-sm font-semibold transition-colors"
-              style={{ backgroundColor: '#E3F5FF', color: '#0273B1' }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#0273B1'
-                e.currentTarget.style.color = '#FFFFFF'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#E3F5FF'
-                e.currentTarget.style.color = '#0273B1'
-              }}
+              className="flex items-center space-x-2 rounded-[10px] bg-[#E3F5FF] px-4 py-2.5 text-sm font-semibold text-[#0273B1] transition-colors hover:bg-[#0273B1] hover:text-white dark:bg-[#bababa] dark:text-[#0273b1] dark:hover:bg-[#a9a9a9] dark:hover:text-[#0273b1]"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -196,14 +188,14 @@ export default function EmployerNavbar() {
             <div className="relative" ref={dropdownRef}>
               <div className="flex items-center gap-3">
                 <div className="hidden text-right md:block">
-                  <div className="text-sm font-semibold text-gray-900">
+                  <div className="text-sm font-semibold text-slate-900 dark:text-white">
                     {displayName}
                   </div>
                 </div>
                 <div className="relative h-12 w-12">
                   <Link
                     href="/employer/profile"
-                    className="block h-12 w-12 overflow-hidden rounded-full bg-[#F4F4FA] cursor-pointer"
+                    className="block h-12 w-12 cursor-pointer overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"
                   >
                     {/* ✅ รูปโปรไฟล์หรือ initials */}
                     {profileImageUrl ? (
@@ -235,14 +227,14 @@ export default function EmployerNavbar() {
 
                   {/* Dropdown indicator */}
                   <button
-                    className="absolute bottom-0 right-0 z-10 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-[#E5E7EB] cursor-pointer transition-colors hover:bg-[#D1D5DB]"
+                    className="absolute bottom-0 right-0 z-10 flex h-[18px] w-[18px] cursor-pointer items-center justify-center rounded-full bg-slate-200 transition-colors hover:bg-slate-300 dark:bg-[#D9D9D9] dark:hover:bg-[#cfcfcf]"
                     onClick={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
                       setShowDropdown(!showDropdown)
                     }}
                   >
-                    <svg className="w-2.5 h-2.5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="h-2.5 w-2.5 text-slate-600 dark:text-[#525252]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
@@ -251,20 +243,20 @@ export default function EmployerNavbar() {
 
               {/* Dropdown Menu */}
               {showDropdown && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                <div className="absolute right-0 z-50 mt-2 w-48 rounded-lg border border-slate-200 bg-white py-2 shadow-lg dark:border-slate-700 dark:bg-slate-900">
                   <Link
                     href="/employer/profile"
-                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
                     onClick={() => setShowDropdown(false)}
                   >
-                    <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="mr-3 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
                     Profile
                   </Link>
                   <Link
                     href="/employer/dashboard"
-                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
                     onClick={() => setShowDropdown(false)}
                   >
                     <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -274,7 +266,7 @@ export default function EmployerNavbar() {
                   </Link>
                   <Link
                     href="/employer/job-post"
-                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
                     onClick={() => setShowDropdown(false)}
                   >
                     <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -284,7 +276,7 @@ export default function EmployerNavbar() {
                   </Link>
                   <Link
                     href="/employer/bookmark"
-                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    className="flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
                     onClick={() => setShowDropdown(false)}
                   >
                     <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -292,7 +284,7 @@ export default function EmployerNavbar() {
                     </svg>
                     Bookmark
                   </Link>
-                  <div className="border-t border-gray-200 my-1"></div>
+                  <div className="my-1 border-t border-slate-200 dark:border-slate-700"></div>
                   <button
                     onClick={() => {
                       ;(async () => {
@@ -310,7 +302,7 @@ export default function EmployerNavbar() {
                         }
                       })()
                     }}
-                    className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    className="flex w-full items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800"
                   >
                     <svg className="w-4 h-4 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />

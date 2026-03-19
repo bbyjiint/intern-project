@@ -147,12 +147,12 @@ export default function EmployerViewPostPage() {
 
   if (!jobPost) {
     return (
-      <div className="min-h-screen bg-[#F4F7FA]">
+      <div className="min-h-screen bg-[#F4F7FA] transition-colors dark:bg-slate-950">
         <EmployerNavbar />
         <div className="flex">
           <EmployerSidebar activeItem="applicants" />
           <div className="flex flex-1 items-center justify-center">
-            <p className="text-sm text-[#6B7280]">{error || "Loading job post..."}</p>
+            <p className="text-sm text-[#6B7280] dark:text-slate-400">{error || "Loading job post..."}</p>
           </div>
         </div>
       </div>
@@ -168,7 +168,7 @@ export default function EmployerViewPostPage() {
   const workType = formatWorkType(jobPost.workplaceType);
 
   return (
-    <div className="min-h-screen bg-[#F4F7FA]">
+    <div className="min-h-screen bg-[#F4F7FA] transition-colors dark:bg-slate-950">
       <EmployerNavbar />
       <div className="flex">
         <EmployerSidebar activeItem="applicants" />
@@ -176,15 +176,15 @@ export default function EmployerViewPostPage() {
         <div className="flex-1">
           <div className="layout-container layout-page">
             {/* Header */}
-            <h1 className="mb-[20px] text-[24px] font-bold text-[#05060A]">
+            <h1 className="mb-[20px] text-[24px] font-bold text-[#05060A] dark:text-white">
               Applicants &gt; View Post
             </h1>
 
             <div className="flex flex-col lg:flex-row gap-6 items-start">
               {/* LEFT COLUMN */}
-              <div className="flex-[2] bg-white rounded-2xl shadow-sm border border-gray-100 p-8 lg:p-10 w-full">
+              <div className="w-full flex-[2] rounded-2xl border border-gray-100 bg-white p-8 shadow-sm transition-colors dark:border-slate-800 dark:bg-slate-900 dark:shadow-none lg:p-10">
                 {/* Date */}
-                <div className="flex items-center text-gray-500 mb-4">
+                <div className="mb-4 flex items-center text-gray-500 dark:text-slate-400">
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                       d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -193,10 +193,10 @@ export default function EmployerViewPostPage() {
                 </div>
 
                 {/* Title & Company */}
-                <h2 className="text-[28px] font-extrabold text-black mb-1">
+                <h2 className="mb-1 text-[28px] font-extrabold text-black dark:text-white">
                   {jobPost.jobTitle || "Untitled Job Post"}
                 </h2>
-                <p className="text-gray-500 mb-6">
+                <p className="mb-6 text-gray-500 dark:text-slate-400">
                   {companyProfile?.companyName || jobPost.Company?.companyName || "Company Name"}
                 </p>
 
@@ -210,7 +210,7 @@ export default function EmployerViewPostPage() {
                   </span>
                   {Array.isArray(jobPost.positions) && jobPost.positions.length > 0
                     ? jobPost.positions.map((pos) => (
-                        <span key={pos} className="rounded-[5px] bg-[#E5E7EB] px-[14px] py-[5px] text-[12px] font-semibold text-[#4B5563]">
+                        <span key={pos} className="rounded-[5px] bg-[#E5E7EB] px-[14px] py-[5px] text-[12px] font-semibold text-[#4B5563] dark:bg-slate-800 dark:text-slate-300">
                           {pos}
                         </span>
                       ))
@@ -218,49 +218,49 @@ export default function EmployerViewPostPage() {
                 </div>
 
                 {/* Positions Available */}
-                <h3 className="text-lg font-bold text-black mb-8">
+                <h3 className="mb-8 text-lg font-bold text-black dark:text-white">
                   Number of positions available: {jobPost.positionsAvailable ?? "-"}
                 </h3>
 
                 {/* Job Description */}
                 <div className="mb-8">
-                  <h3 className="text-[17px] font-bold text-black mb-3">Job description</h3>
+                  <h3 className="mb-3 text-[17px] font-bold text-black dark:text-white">Job description</h3>
                   {renderLines(jobPost.jobDescription)}
                 </div>
 
                 {/* Qualifications */}
                 <div className="mb-8">
-                  <h3 className="text-[17px] font-bold text-black mb-3">Applicant qualifications</h3>
+                  <h3 className="mb-3 text-[17px] font-bold text-black dark:text-white">Applicant qualifications</h3>
                   {renderLines(jobPost.jobSpecification)}
                 </div>
 
                 {/* Other Details */}
                 <div className="space-y-6 mb-12">
                   <div>
-                    <h3 className="text-[17px] font-bold text-black mb-1">GPA</h3>
-                    <p className="text-gray-600 text-[15px]">{jobPost.gpa || "Not specified"}</p>
+                    <h3 className="mb-1 text-[17px] font-bold text-black dark:text-white">GPA</h3>
+                    <p className="text-[15px] text-gray-600 dark:text-slate-300">{jobPost.gpa || "Not specified"}</p>
                   </div>
                   <div>
-                    <h3 className="text-[17px] font-bold text-black mb-1">Allowance</h3>
-                    <p className="text-gray-600 text-[15px]">{formatAllowance(jobPost)}</p>
+                    <h3 className="mb-1 text-[17px] font-bold text-black dark:text-white">Allowance</h3>
+                    <p className="text-[15px] text-gray-600 dark:text-slate-300">{formatAllowance(jobPost)}</p>
                   </div>
                   <div>
-                    <h3 className="text-[17px] font-bold text-black mb-1">Preferred Location</h3>
-                    <p className="text-gray-600 text-[15px]">
+                    <h3 className="mb-1 text-[17px] font-bold text-black dark:text-white">Preferred Location</h3>
+                    <p className="text-[15px] text-gray-600 dark:text-slate-300">
                       {jobPost.LocationProvince?.name || jobPost.locationProvince || "-"}
                     </p>
                   </div>
                   <div>
-                    <h3 className="text-[17px] font-bold text-black mb-1">Working Days &amp; Hours</h3>
-                    <p className="text-gray-600 text-[15px]">{jobPost.workingDaysHours || "Not specified"}</p>
+                    <h3 className="mb-1 text-[17px] font-bold text-black dark:text-white">Working Days &amp; Hours</h3>
+                    <p className="text-[15px] text-gray-600 dark:text-slate-300">{jobPost.workingDaysHours || "Not specified"}</p>
                   </div>
                 </div>
 
                 {/* Back Button */}
-                <div className="flex justify-end border-t pt-8">
+                <div className="flex justify-end border-t pt-8 dark:border-slate-800">
                   <button
                     onClick={() => router.back()}
-                    className="px-6 py-2 rounded-lg border-2 border-[#2563EB] text-[#2563EB] font-bold hover:bg-blue-50 transition-colors"
+                    className="rounded-lg border-2 border-[#2563EB] px-6 py-2 font-bold text-[#2563EB] transition-colors hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-500/10"
                   >
                     Back
                   </button>
@@ -268,12 +268,12 @@ export default function EmployerViewPostPage() {
               </div>
 
               {/* RIGHT COLUMN */}
-              <div className="flex-[1] bg-white rounded-2xl shadow-sm border border-gray-100 p-8 w-full lg:sticky lg:top-8">
-                <h2 className="text-xl font-extrabold text-black text-center mb-6">Job Poster</h2>
+              <div className="w-full flex-[1] rounded-2xl border border-gray-100 bg-white p-8 shadow-sm transition-colors dark:border-slate-800 dark:bg-slate-900 dark:shadow-none lg:sticky lg:top-8">
+                <h2 className="mb-6 text-center text-xl font-extrabold text-black dark:text-white">Job Poster</h2>
 
                 {/* Logo */}
                 <div className="flex justify-center mb-6">
-                  <div className="w-24 h-24 bg-[#F8F9FA] border border-gray-100 rounded-full flex items-center justify-center shadow-sm overflow-hidden">
+                  <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border border-gray-100 bg-[#F8F9FA] shadow-sm dark:border-slate-800 dark:bg-slate-800">
                     {companyLogo && companyLogo.startsWith("http") ? (
                       <img src={companyLogo} alt={companyProfile?.companyName || "Company"} className="w-full h-full object-cover" />
                     ) : (
@@ -286,28 +286,28 @@ export default function EmployerViewPostPage() {
 
                 {/* Company Name & Email */}
                 <div className="text-center mb-6">
-                  <h3 className="text-lg font-bold text-black">
+                  <h3 className="text-lg font-bold text-black dark:text-white">
                     {companyProfile?.companyName || jobPost.Company?.companyName || "-"}
                   </h3>
-                  <p className="text-sm text-gray-500">{companyProfile?.email || "-"}</p>
+                  <p className="text-sm text-gray-500 dark:text-slate-400">{companyProfile?.email || "-"}</p>
                 </div>
 
-                <p className="text-sm text-gray-600 leading-relaxed mb-8 text-left px-2">
+                <p className="mb-8 px-2 text-left text-sm leading-relaxed text-gray-600 dark:text-slate-300">
                   {companyProfile?.companyDescription || "-"}
                 </p>
 
                 {/* Contact Info */}
                 <div className="mb-8">
-                  <h4 className="text-[15px] font-bold text-black mb-4">Contact Information</h4>
+                  <h4 className="mb-4 text-[15px] font-bold text-black dark:text-white">Contact Information</h4>
                   <div className="space-y-3">
-                    <div className="flex items-center text-gray-600 text-sm">
+                    <div className="flex items-center text-sm text-gray-600 dark:text-slate-300">
                       <svg className="w-5 h-5 text-[#2563EB] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                           d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                       </svg>
                       {companyProfile?.phoneNumber || "-"}
                     </div>
-                    <div className="flex items-center text-gray-600 text-sm">
+                    <div className="flex items-center text-sm text-gray-600 dark:text-slate-300">
                       <svg className="w-5 h-5 text-[#2563EB] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
                           d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -319,9 +319,9 @@ export default function EmployerViewPostPage() {
 
                 {/* Address & Map */}
                 <div>
-                  <h4 className="text-[15px] font-bold text-black mb-2">Address</h4>
-                  <p className="text-sm text-gray-600 leading-relaxed mb-4">{fullAddress || "-"}</p>
-                  <div className="w-full h-48 bg-gray-200 rounded-xl overflow-hidden border border-gray-200">
+                  <h4 className="mb-2 text-[15px] font-bold text-black dark:text-white">Address</h4>
+                  <p className="mb-4 text-sm leading-relaxed text-gray-600 dark:text-slate-300">{fullAddress || "-"}</p>
+                  <div className="h-48 w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-200 dark:border-slate-800 dark:bg-slate-800">
                     {fullAddress ? (
                       <iframe
                         title="Company location"
@@ -333,7 +333,7 @@ export default function EmployerViewPostPage() {
                         referrerPolicy="no-referrer-when-downgrade"
                       />
                     ) : (
-                      <div className="flex h-full items-center justify-center text-sm text-gray-500">
+                      <div className="flex h-full items-center justify-center text-sm text-gray-500 dark:text-slate-400">
                         Map not available
                       </div>
                     )}

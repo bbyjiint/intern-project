@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import ThemeToggle from './ThemeToggle'
-import CompanyHubLogo from './CompanyHubLogo'
+import ThemedCompanyHubLogo from './ThemedCompanyHubLogo'
 
 interface NavbarProps {
   onLoginClick?: () => void
@@ -20,10 +20,10 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
   }
 
   return (
-    <nav className="bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 transition-colors">
+    <nav className="border-b border-gray-100 bg-white transition-colors dark:border-[#eff3fa] dark:bg-[#121212]">
       <div className="layout-container">
         <div className="flex justify-between items-center h-20">
-          <CompanyHubLogo href="/" />
+          <ThemedCompanyHubLogo href="/" />
           <div className="hidden md:flex items-center space-x-6">
             <Link
               href="/"

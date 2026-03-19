@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { apiFetch } from '@/lib/api'
-import CompanyHubLogo from '@/components/CompanyHubLogo'
+import ThemedCompanyHubLogo from '@/components/ThemedCompanyHubLogo'
 import ReportBugModal from './ReportBugModal'
 import ThemeToggle from './ThemeToggle' // 1. Import ThemeToggle
 
@@ -134,7 +134,7 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
 
           {/* LEFT SECTION */}
           <div className="flex items-center gap-12 xl:gap-20">
-            <CompanyHubLogo href="/intern/profile" />
+            <ThemedCompanyHubLogo href="/intern/profile" />
             <div className="hidden md:flex items-center gap-8">
               <Link
                 href="/intern/find-companies"

@@ -705,12 +705,12 @@ export default function EmployerCandidateProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 transition-colors dark:bg-slate-950">
         <EmployerNavbar />
         <div className="flex min-h-[calc(100vh-100px)] items-center justify-center">
           <div className="text-center">
-            <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600" />
-            <p className="text-gray-500">Loading profile...</p>
+            <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600 dark:border-slate-800 dark:border-t-blue-500" />
+            <p className="text-gray-500 dark:text-slate-400">Loading profile...</p>
           </div>
         </div>
       </div>
@@ -719,21 +719,21 @@ export default function EmployerCandidateProfilePage() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 transition-colors dark:bg-slate-950">
         <EmployerNavbar />
         <div className="flex min-h-[calc(100vh-100px)] items-center justify-center">
-          <p className="text-gray-500">Profile not found.</p>
+          <p className="text-gray-500 dark:text-slate-400">Profile not found.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#E6EBF4]">
+    <div className="min-h-screen bg-[#E6EBF4] transition-colors dark:bg-slate-950">
       <EmployerNavbar />
       <div className="mx-auto max-w-4xl px-4 py-8">
         {/* Profile Header */}
-        <div className="mb-6 flex items-start gap-5 rounded-xl border border-gray-100 bg-white p-6 shadow-sm">
+        <div className="mb-6 flex items-start gap-5 rounded-xl border border-gray-100 bg-white p-6 shadow-sm transition-colors dark:border-slate-800 dark:bg-slate-900 dark:shadow-none">
           {profile.profileImage ? (
             <img
               src={profile.profileImage}
@@ -746,21 +746,21 @@ export default function EmployerCandidateProfilePage() {
             </div>
           )}
           <div className="flex-1 pt-1">
-            <h1 className="text-2xl font-bold text-gray-900">
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
               {profile.fullName}
             </h1>
             {profile.phoneNumber && (
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
                 Phone: {profile.phoneNumber}
               </p>
             )}
             {profile.email && (
-              <p className="mt-0.5 text-sm text-gray-500">
+              <p className="mt-0.5 text-sm text-gray-500 dark:text-slate-400">
                 Email: {profile.email}
               </p>
             )}
             {profile.bio && (
-              <p className="mt-3 text-sm leading-relaxed text-gray-600">
+              <p className="mt-3 text-sm leading-relaxed text-gray-600 dark:text-slate-300">
                 {profile.bio}
               </p>
             )}
@@ -770,7 +770,7 @@ export default function EmployerCandidateProfilePage() {
                 {profile.preferredPositions?.map((p) => (
                   <span
                     key={p}
-                    className="rounded-lg bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600"
+                    className="rounded-lg bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-600 dark:bg-blue-500/10 dark:text-blue-400"
                   >
                     {p}
                   </span>
@@ -778,7 +778,7 @@ export default function EmployerCandidateProfilePage() {
                 {profile.preferredLocations?.map((l) => (
                   <span
                     key={l}
-                    className="rounded-lg bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600"
+                    className="rounded-lg bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-600 dark:bg-slate-800 dark:text-slate-300"
                   >
                     {l}
                   </span>
@@ -814,7 +814,7 @@ export default function EmployerCandidateProfilePage() {
           <button
             type="button"
             onClick={() => router.back()}
-            className="rounded-lg border border-gray-300 bg-white px-6 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50"
+            className="rounded-lg border border-gray-300 bg-white px-6 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
           >
             Back
           </button>
