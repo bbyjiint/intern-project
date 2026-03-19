@@ -131,28 +131,28 @@ export default function EmployerNavbar() {
   }
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-slate-200 bg-white transition-colors dark:border-[#eff3fa] dark:bg-[#121212]">
+    <nav className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 sticky top-0 z-50 transition-colors">
       <div className="layout-container">
-        <div className="flex h-[100px] items-center justify-between">
-          <div className="flex items-center gap-10">
+        <div className="flex h-[76px] items-center justify-between">
+          <div className="flex items-center gap-12 xl:gap-20">
             <ThemedCompanyHubLogo href="/employer/dashboard" />
-            <div className="hidden md:flex items-center gap-10">
+            <div className="hidden md:flex items-center gap-8">
               <Link
                 href="/employer/find-candidates"
-                className={`text-[16px] font-medium transition-colors ${
-                  isFindCandidatesPage
-                    ? 'text-[#1C2D4F] dark:text-white'
-                    : 'text-[#A9B4CD] hover:text-[#1C2D4F] dark:text-[#A9B4CD] dark:hover:text-white'
+                className={`font-semibold text-[15px] transition-colors ${
+                  isFindCandidatesPage 
+                  ? 'text-[#0273B1]' 
+                  : 'text-[#94A3B8] dark:text-gray-400 hover:text-[#0273B1] dark:hover:text-[#0273B1]'
                 }`}
               >
                 Find Candidates
               </Link>
               <Link
                 href="/employer/messages"
-                className={`relative text-[16px] font-medium transition-colors ${
-                  isMessagesPage
-                    ? 'text-[#1C2D4F] dark:text-white'
-                    : 'text-[#A9B4CD] hover:text-[#1C2D4F] dark:text-[#A9B4CD] dark:hover:text-white'
+                className={`font-semibold text-[15px] transition-colors relative ${
+                  isMessagesPage 
+                  ? 'text-[#0273B1]' 
+                  : 'text-[#94A3B8] dark:text-gray-400 hover:text-[#0273B1] dark:hover:text-[#0273B1]'
                 }`}
               >
                 Message
@@ -165,19 +165,19 @@ export default function EmployerNavbar() {
               <button
                 type="button"
                 onClick={() => setIsBugModalOpen(true)}
-                className="text-[16px] font-medium text-[#A9B4CD] transition-colors hover:text-[#1C2D4F] dark:text-[#94a3b8] dark:hover:text-white"
+                className="font-semibold text-[15px] transition-colors text-[#A9B4CD] dark:text-gray-500 hover:text-[#0273B1] dark:hover:text-[#0273B1]"
               >
                 Report bug
               </button>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-6">
             <ThemeToggle />
             <button
               type="button"
               onClick={handleOpenCreateJobPost}
-              className="flex items-center space-x-2 rounded-[10px] bg-[#E3F5FF] px-4 py-2.5 text-sm font-semibold text-[#0273B1] transition-colors hover:bg-[#0273B1] hover:text-white dark:bg-[#bababa] dark:text-[#0273b1] dark:hover:bg-[#a9a9a9] dark:hover:text-[#0273b1]"
+              className="flex items-center space-x-2 rounded-[10px] bg-[#E3F5FF] px-4 py-2.5 text-sm font-semibold text-[#0273B1] transition-colors hover:bg-[#0273B1] hover:text-white dark:bg-gray-800 dark:text-white dark:hover:bg-[#0273B1]"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -186,23 +186,17 @@ export default function EmployerNavbar() {
             </button>
 
             <div className="relative" ref={dropdownRef}>
-              <div className="flex items-center gap-3">
-                <div className="hidden text-right md:block">
-                  <div className="text-sm font-semibold text-slate-900 dark:text-white">
-                    {displayName}
-                  </div>
-                </div>
-                <div className="relative h-12 w-12">
+              <div className="relative cursor-pointer" onClick={() => setShowDropdown(!showDropdown)}>
+                <div className="w-11 h-11 rounded-full overflow-hidden border border-gray-200 dark:border-gray-700">
                   <Link
                     href="/employer/profile"
-                    className="block h-12 w-12 cursor-pointer overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"
+                    className="block h-full w-full bg-slate-100 dark:bg-slate-800"
                   >
-                    {/* ✅ รูปโปรไฟล์หรือ initials */}
                     {profileImageUrl ? (
                       <img
                         src={profileImageUrl}
                         alt="Profile"
-                        className="h-12 w-12 rounded-full object-cover"
+                        className="h-full w-full object-cover"
                         onError={(e) => {
                           e.currentTarget.style.display = 'none'
                           const parent = e.currentTarget.parentElement
@@ -225,19 +219,11 @@ export default function EmployerNavbar() {
                     )}
                   </Link>
 
-                  {/* Dropdown indicator */}
-                  <button
-                    className="absolute bottom-0 right-0 z-10 flex h-[18px] w-[18px] cursor-pointer items-center justify-center rounded-full bg-slate-200 transition-colors hover:bg-slate-300 dark:bg-[#D9D9D9] dark:hover:bg-[#cfcfcf]"
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
-                      setShowDropdown(!showDropdown)
-                    }}
-                  >
-                    <svg className="h-2.5 w-2.5 text-slate-600 dark:text-[#525252]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="absolute bottom-0 right-0 w-4 h-4 bg-[#E2E8F0] dark:bg-gray-700 border-2 border-white dark:border-gray-900 rounded-full flex items-center justify-center shadow-sm">
+                    <svg className="w-2.5 h-2.5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
                     </svg>
-                  </button>
+                  </div>
                 </div>
               </div>
 

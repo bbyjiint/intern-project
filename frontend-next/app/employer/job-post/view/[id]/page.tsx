@@ -182,7 +182,7 @@ export default function EmployerViewPostPage() {
 
             <div className="flex flex-col lg:flex-row gap-6 items-start">
               {/* LEFT COLUMN */}
-              <div className="w-full flex-[2] rounded-2xl border border-gray-100 bg-white p-8 shadow-sm transition-colors dark:border-slate-800 dark:bg-slate-900 dark:shadow-none lg:p-10">
+              <div className="w-full flex-[2] rounded-2xl border border-gray-100 bg-white p-8 shadow-sm transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-none lg:p-10">
                 {/* Date */}
                 <div className="mb-4 flex items-center text-gray-500 dark:text-slate-400">
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -210,7 +210,7 @@ export default function EmployerViewPostPage() {
                   </span>
                   {Array.isArray(jobPost.positions) && jobPost.positions.length > 0
                     ? jobPost.positions.map((pos) => (
-                        <span key={pos} className="rounded-[5px] bg-[#E5E7EB] px-[14px] py-[5px] text-[12px] font-semibold text-[#4B5563] dark:bg-slate-800 dark:text-slate-300">
+                        <span key={pos} className="rounded-[5px] bg-[#E5E7EB] px-[14px] py-[5px] text-[12px] font-semibold text-[#4B5563] dark:bg-gray-700 dark:text-slate-200">
                           {pos}
                         </span>
                       ))
@@ -257,7 +257,7 @@ export default function EmployerViewPostPage() {
                 </div>
 
                 {/* Back Button */}
-                <div className="flex justify-end border-t pt-8 dark:border-slate-800">
+                <div className="flex justify-end border-t pt-8 dark:border-gray-700">
                   <button
                     onClick={() => router.back()}
                     className="rounded-lg border-2 border-[#2563EB] px-6 py-2 font-bold text-[#2563EB] transition-colors hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-500/10"
@@ -268,12 +268,12 @@ export default function EmployerViewPostPage() {
               </div>
 
               {/* RIGHT COLUMN */}
-              <div className="w-full flex-[1] rounded-2xl border border-gray-100 bg-white p-8 shadow-sm transition-colors dark:border-slate-800 dark:bg-slate-900 dark:shadow-none lg:sticky lg:top-8">
+              <div className="w-full flex-[1] rounded-2xl border border-gray-100 bg-white p-8 shadow-sm transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-none lg:sticky lg:top-8">
                 <h2 className="mb-6 text-center text-xl font-extrabold text-black dark:text-white">Job Poster</h2>
 
                 {/* Logo */}
                 <div className="flex justify-center mb-6">
-                  <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border border-gray-100 bg-[#F8F9FA] shadow-sm dark:border-slate-800 dark:bg-slate-800">
+                  <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border border-gray-100 bg-[#F8F9FA] shadow-sm dark:border-gray-700 dark:bg-gray-700">
                     {companyLogo && companyLogo.startsWith("http") ? (
                       <img src={companyLogo} alt={companyProfile?.companyName || "Company"} className="w-full h-full object-cover" />
                     ) : (
@@ -321,7 +321,7 @@ export default function EmployerViewPostPage() {
                 <div>
                   <h4 className="mb-2 text-[15px] font-bold text-black dark:text-white">Address</h4>
                   <p className="mb-4 text-sm leading-relaxed text-gray-600 dark:text-slate-300">{fullAddress || "-"}</p>
-                  <div className="h-48 w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-200 dark:border-slate-800 dark:bg-slate-800">
+                  <div className="h-48 w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-200 dark:border-gray-700 dark:bg-gray-700">
                     {fullAddress ? (
                       <iframe
                         title="Company location"

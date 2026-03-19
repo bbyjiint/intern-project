@@ -119,7 +119,7 @@
 
   /* Dark mode for navigation links */
   .dark .nav-link {
-    color: #A9B4CD;
+    color: #B0B8C1;
   }
 
   .dark .nav-link:hover {
@@ -127,7 +127,7 @@
   }
 
   .dark .nav-link-active {
-    color: #0273B1;
+    color: #2F80ED;
   }
 
   /* Navigation Button */
@@ -141,11 +141,11 @@
   }
 
   .dark .nav-button {
-    background-color: #0273B1;
+    background-color: #2F80ED;
   }
 
   .dark .nav-button:hover {
-    background-color: var(--color-primary-hover);
+    background-color: #1C6ED5;
   }
 
   .nav-button:hover {

@@ -71,7 +71,7 @@ export default function ApplicantCard({
   const circumference = 2 * Math.PI * r;
 
   return (
-    <div className="relative flex h-full min-h-[274px] flex-col rounded-[12px] bg-white px-[20px] py-[18px] shadow-[0_2px_10px_rgba(15,23,42,0.05)] transition-colors dark:bg-[#070e12] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] dark:ring-1 dark:ring-[#d1d5db]">
+    <div className="relative flex h-full min-h-[274px] flex-col rounded-[12px] border border-gray-100 bg-white px-[20px] py-[18px] shadow-[0_2px_10px_rgba(15,23,42,0.05)] transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
       {applicant.status === "new" && (
         <div className="absolute right-[74px] top-[-11px] flex h-[24px] items-center rounded-[4px] bg-[#FB5F5F] px-[10px] text-[11px] font-semibold text-white shadow-[0_8px_20px_rgba(251,95,95,0.2)]">
           1 New
@@ -179,7 +179,7 @@ export default function ApplicantCard({
               className={`inline-flex items-center rounded-[8px] px-[14px] py-[2px] text-[12px] font-semibold ${
                 index === 0
                   ? 'bg-[#E5E7EB] text-[#374151] dark:bg-[#fef3c7] dark:text-[#b45309]'
-                  : 'bg-[#E5E7EB] text-[#374151] dark:bg-[#323232] dark:text-[#e5e7eb]'
+                  : 'bg-[#E5E7EB] text-[#374151] dark:bg-gray-700 dark:text-slate-200'
               }`}
             >
               {item}
@@ -195,7 +195,7 @@ export default function ApplicantCard({
             type="button"
             onClick={onMessage}
             disabled={isMessaging}
-            className="flex h-[34px] items-center justify-center rounded-[8px] border border-[#d1d5db] bg-white px-[18px] text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8] disabled:opacity-60 dark:border-[#d1d5db] dark:bg-[#fffefe] dark:text-black dark:hover:bg-[#fefefe]"
+            className="flex h-[34px] items-center justify-center rounded-[8px] border border-[#d1d5db] bg-white px-[18px] text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8] disabled:opacity-60 dark:border-gray-600 dark:bg-gray-900/50 dark:text-blue-400 dark:hover:bg-gray-700"
           >
             {isMessaging ? "Loading..." : "Message"}
           </button>
@@ -205,7 +205,7 @@ export default function ApplicantCard({
               onMarkViewed?.();
               onViewProfile();
             }}
-            className="flex h-[34px] items-center justify-center rounded-[8px] border border-[#d1d5db] bg-white px-[18px] text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8] dark:border-[#d1d5db] dark:bg-[#fffefe] dark:text-black dark:hover:bg-[#fefefe]"
+            className="flex h-[34px] items-center justify-center rounded-[8px] border border-[#d1d5db] bg-white px-[18px] text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8] dark:border-gray-600 dark:bg-gray-900/50 dark:text-blue-400 dark:hover:bg-gray-700"
           >
             View Profile
           </button>

@@ -8,7 +8,6 @@ import CandidateCard from '@/components/CandidateCard'
 import CandidateProfileModal from '@/components/CandidateProfileModal'
 import SearchableDropdown from '@/components/SearchableDropdown'
 import { apiFetch } from '@/lib/api'
-import { useTheme } from '@/components/ThemeProvider'
 
 type Candidate = {
   id: string
@@ -51,7 +50,6 @@ function parseInternshipDates(period: string | null | undefined): { start: strin
 
 export default function BookmarkPage() {
   const router = useRouter()
-  const { theme } = useTheme()
   const [searchQuery, setSearchQuery] = useState('')
   const [position, setPosition] = useState('')
   const [academicYear, setAcademicYear] = useState('')
@@ -205,20 +203,13 @@ export default function BookmarkPage() {
   })
 
   return (
-    <div
-      className="min-h-screen bg-[#E6EBF4] transition-colors dark:bg-[#121316]"
-      style={{
-        background: theme === 'dark'
-          ? 'linear-gradient(180deg, #121316 0%, #262626 100%)'
-          : undefined,
-      }}
-    >
+    <div className="min-h-screen bg-[#E6EBF4] dark:bg-gray-950 flex flex-col transition-colors duration-300">
       <EmployerNavbar />
-      <div className="flex">
+      <div className="flex flex-1">
         <EmployerSidebar activeItem="bookmark" />
 
-        <div className="flex-1">
-          <div className="layout-container layout-page">
+        <div className="layout-container layout-page flex-1 overflow-y-auto">
+          <div className="py-8">
             {apiError && (
               <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800 dark:border-yellow-900/50 dark:bg-yellow-500/10 dark:text-yellow-300">
                 {apiError}
@@ -226,10 +217,10 @@ export default function BookmarkPage() {
             )}
 
             <div className="mb-8">
-              <h1 className="mb-6 text-[32px] font-bold text-[#111827] dark:text-[#009df3]">Bookmark</h1>
+              <h1 className="mb-6 text-[32px] font-bold text-[#111827] dark:text-white">Bookmark</h1>
 
               {/* Filter Card */}
-              <div className="rounded-[16px] bg-white px-6 py-5 shadow-[0_2px_10px_rgba(15,23,42,0.06)] transition-colors dark:bg-[#070e12] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] dark:ring-1 dark:ring-[#e5e7eb]">
+              <div className="rounded-[16px] border border-gray-100 bg-white px-6 py-5 shadow-[0_2px_10px_rgba(15,23,42,0.06)] transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-none">
 
                 {/* Row 1: Search | Position | Academic Year */}
                 <div className="grid grid-cols-3 gap-4 mb-4">
@@ -246,7 +237,7 @@ export default function BookmarkPage() {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Search"
-                        className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white pl-9 pr-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] dark:border-[#ececec] dark:bg-[#1e1e1e] dark:text-[#e5e7eb] dark:placeholder:text-[#7f7f7f]"
+                        className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white pl-9 pr-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-gray-500"
                       />
                     </div>
                   </div>
@@ -258,7 +249,7 @@ export default function BookmarkPage() {
                       value={position}
                       onChange={(e) => setPosition(e.target.value)}
                       placeholder="Position"
-                      className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] dark:border-[#ececec] dark:bg-[#1e1e1e] dark:text-[#e5e7eb] dark:placeholder:text-[#7f7f7f]"
+                      className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-gray-500"
                     />
                   </div>
 
@@ -268,7 +259,7 @@ export default function BookmarkPage() {
                       <select
                         value={academicYear}
                         onChange={(e) => setAcademicYear(e.target.value)}
-                        className="h-[42px] w-full appearance-none rounded-[8px] border border-[#D1D5DB] bg-white px-3 pr-9 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8] dark:border-[#ececec] dark:bg-[#1e1e1e] dark:text-[#e5e7eb]"
+                        className="h-[42px] w-full appearance-none rounded-[8px] border border-[#D1D5DB] bg-white px-3 pr-9 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8] dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                       >
                         <option value="">Year</option>
                         {ACADEMIC_YEAR_OPTIONS.map((y) => (
@@ -292,7 +283,7 @@ export default function BookmarkPage() {
                       type="date"
                       value={startDate}
                       onChange={(e) => setStartDate(e.target.value)}
-                      className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8] [color-scheme:light] dark:border-[#ececec] dark:bg-[#1e1e1e] dark:text-[#e5e7eb] dark:[color-scheme:dark]"
+                      className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8] [color-scheme:light] dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:[color-scheme:dark]"
                     />
                   </div>
 
@@ -304,7 +295,7 @@ export default function BookmarkPage() {
                       type="date"
                       value={endDate}
                       onChange={(e) => setEndDate(e.target.value)}
-                      className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8] [color-scheme:light] dark:border-[#ececec] dark:bg-[#1e1e1e] dark:text-[#e5e7eb] dark:[color-scheme:dark]"
+                      className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8] [color-scheme:light] dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:[color-scheme:dark]"
                     />
                   </div>
 
@@ -316,15 +307,15 @@ export default function BookmarkPage() {
                       value={duration}
                       onChange={(e) => setDuration(e.target.value)}
                       placeholder="Duration (Month)"
-                      className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] dark:border-[#ececec] dark:bg-[#1e1e1e] dark:text-[#e5e7eb] dark:placeholder:text-[#7f7f7f]"
+                      className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-gray-500"
                     />
                   </div>
 
                   <div>
                     <label className="mb-1.5 block text-[13px] font-semibold text-[#374151] dark:text-[#e5e7eb]">Institution</label>
                     {universitiesLoading ? (
-                      <div className="flex h-[42px] w-full items-center rounded-[8px] border border-[#D1D5DB] bg-gray-50 px-3 dark:border-[#ececec] dark:bg-[#1e1e1e]">
-                        <span className="text-[13px] text-[#9CA3AF] dark:text-[#7f7f7f]">Loading...</span>
+                      <div className="flex h-[42px] w-full items-center rounded-[8px] border border-[#D1D5DB] bg-gray-50 px-3 dark:border-slate-700 dark:bg-slate-800">
+                        <span className="text-[13px] text-[#9CA3AF] dark:text-gray-500">Loading...</span>
                       </div>
                     ) : (
                       <SearchableDropdown
@@ -347,7 +338,7 @@ export default function BookmarkPage() {
                 <div className="flex justify-end">
                   <button
                     onClick={handleClearFilters}
-                    className="h-[38px] rounded-[8px] border border-[#D1D5DB] bg-white px-5 text-[13px] font-medium text-[#374151] transition hover:bg-[#F9FAFB] dark:border-[#d1d5db] dark:bg-[#070e12] dark:text-[#e5e7eb] dark:hover:bg-[#323232]"
+                    className="h-[38px] rounded-[8px] border border-[#D1D5DB] bg-white px-5 text-[13px] font-medium text-[#374151] transition hover:bg-[#F9FAFB] dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-200 dark:hover:bg-gray-700"
                   >
                     Clear Filters
                   </button>
@@ -361,8 +352,8 @@ export default function BookmarkPage() {
                 onClick={() => setSortMode('all')}
                 className={`h-[36px] rounded-[8px] border px-5 text-[14px] font-semibold transition-colors ${
                   sortMode === 'all'
-                    ? 'border-[#2563EB] bg-white text-[#2563EB] dark:bg-[#fefefe] dark:text-black'
-                    : 'border-[#D1D5DB] bg-[#F3F4F6] text-[#111827] dark:border-[#d1d5db] dark:bg-[#070e12] dark:text-[#e5e7eb]'
+                    ? 'border-[#2563EB] bg-white text-[#2563EB] dark:bg-white dark:text-[#2563EB]'
+                    : 'border-[#D1D5DB] bg-[#F3F4F6] text-[#111827] dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-200'
                 }`}
               >
                 All
@@ -371,8 +362,8 @@ export default function BookmarkPage() {
                 onClick={() => setSortMode('latest')}
                 className={`h-[36px] rounded-[8px] border px-5 text-[14px] font-semibold transition-colors ${
                   sortMode === 'latest'
-                    ? 'border-[#2563EB] bg-white text-[#2563EB] dark:bg-[#fefefe] dark:text-black'
-                    : 'border-[#D1D5DB] bg-[#F3F4F6] text-[#111827] dark:border-[#d1d5db] dark:bg-[#070e12] dark:text-[#e5e7eb]'
+                    ? 'border-[#2563EB] bg-white text-[#2563EB] dark:bg-white dark:text-[#2563EB]'
+                    : 'border-[#D1D5DB] bg-[#F3F4F6] text-[#111827] dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-200'
                 }`}
               >
                 Latest
@@ -384,7 +375,7 @@ export default function BookmarkPage() {
             </p>
 
             {sortedCandidates.length === 0 ? (
-              <div className="rounded-[12px] bg-white px-6 py-10 text-center text-gray-500 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors dark:bg-[#070e12] dark:text-[#7f7f7f] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] dark:ring-1 dark:ring-[#d1d5db]">
+              <div className="rounded-[12px] border border-gray-100 bg-white px-6 py-10 text-center text-gray-500 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
                 {bookmarkedCandidates.size === 0
                   ? 'No bookmarked candidates yet. Start bookmarking candidates to see them here.'
                   : 'No candidates found matching your search criteria.'}

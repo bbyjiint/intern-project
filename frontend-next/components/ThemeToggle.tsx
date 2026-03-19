@@ -16,7 +16,7 @@ export default function ThemeToggle() {
   if (!mounted) {
     return (
       <button
-        className="p-2 rounded-lg transition-colors"
+        className="flex h-10 w-10 items-center justify-center rounded-lg transition-colors"
         aria-label="Toggle theme"
         disabled
       >
@@ -28,13 +28,13 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="p-2 rounded-lg transition-colors hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-900"
+      className="flex h-10 w-10 items-center justify-center rounded-lg border border-transparent transition-colors hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:border-[#223A57] dark:bg-[#10273F] dark:text-white dark:hover:bg-[#223A57] dark:focus:ring-offset-[#0B1C2C]"
       aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
     >
       {theme === 'light' ? (
         // Moon icon for dark mode
         <svg
-          className="w-5 h-5 text-gray-700 dark:text-gray-300"
+          className="h-4 w-4 text-gray-700 dark:text-[#8A94A6]"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -50,7 +50,7 @@ export default function ThemeToggle() {
       ) : (
         // Sun icon for light mode
         <svg
-          className="w-5 h-5 text-gray-700 dark:text-gray-300"
+          className="h-4 w-4 text-gray-700 dark:text-[#8A94A6]"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"

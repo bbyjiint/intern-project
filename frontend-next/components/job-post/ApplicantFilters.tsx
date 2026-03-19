@@ -59,7 +59,7 @@ export default function ApplicantFilters({
   return (
     <>
       {/* Filter Card */}
-      <div className="mb-[16px] rounded-[16px] bg-white px-6 py-5 shadow-[0_2px_10px_rgba(15,23,42,0.06)] transition-colors dark:bg-[#070e12] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] dark:ring-1 dark:ring-[#d1d5db]">
+      <div className="mb-[16px] rounded-[16px] border border-gray-100 bg-white px-6 py-5 shadow-[0_2px_10px_rgba(15,23,42,0.06)] transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-none">
         {/* Row 1: Search | Position | Academic Year */}
         <div className="mb-4 grid grid-cols-3 gap-4">
           <div>
@@ -75,7 +75,7 @@ export default function ApplicantFilters({
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
                 placeholder="Search"
-                className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white pl-9 pr-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] dark:border-[#ececec] dark:bg-[#1e1e1e] dark:text-[#e5e7eb] dark:placeholder:text-[#7f7f7f]"
+                className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white pl-9 pr-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] dark:border-gray-700 dark:bg-gray-900/50 dark:text-white dark:placeholder:text-gray-500"
               />
             </div>
           </div>
@@ -86,7 +86,7 @@ export default function ApplicantFilters({
               <select
                 value={positionFilter}
                 onChange={(e) => onPositionChange(e.target.value)}
-                className="h-[42px] w-full appearance-none rounded-[8px] border border-[#D1D5DB] bg-white px-3 pr-9 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8] dark:border-[#ececec] dark:bg-[#1e1e1e] dark:text-[#e5e7eb]"
+                className="h-[42px] w-full appearance-none rounded-[8px] border border-[#D1D5DB] bg-white px-3 pr-9 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8] dark:border-gray-700 dark:bg-gray-900/50 dark:text-white"
               >
                 <option value="">Position</option>
                 {positionOptions.map((p) => <option key={p} value={p}>{p}</option>)}
@@ -105,7 +105,7 @@ export default function ApplicantFilters({
               <select
                 value={academicYearFilter}
                 onChange={(e) => onAcademicYearChange(e.target.value)}
-                className="h-[42px] w-full appearance-none rounded-[8px] border border-[#D1D5DB] bg-white px-3 pr-9 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8] dark:border-[#ececec] dark:bg-[#1e1e1e] dark:text-[#e5e7eb]"
+                className="h-[42px] w-full appearance-none rounded-[8px] border border-[#D1D5DB] bg-white px-3 pr-9 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8] dark:border-gray-700 dark:bg-gray-900/50 dark:text-white"
               >
                 <option value="">Year</option>
                 {ACADEMIC_YEAR_OPTIONS.map((y) => <option key={y} value={y}>{y}</option>)}
@@ -127,7 +127,7 @@ export default function ApplicantFilters({
               type="date"
               value={internshipStartFilter}
               onChange={(e) => onInternshipStartChange(e.target.value)}
-              className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8] [color-scheme:light] dark:border-[#ececec] dark:bg-[#1e1e1e] dark:text-[#e5e7eb] dark:[color-scheme:dark]"
+              className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8] [color-scheme:light] dark:border-gray-700 dark:bg-gray-900/50 dark:text-white dark:[color-scheme:dark]"
             />
           </div>
           <div className="flex items-center justify-center pb-[2px] text-[16px] text-[#9CA3AF] dark:text-[#757575]">–</div>
@@ -137,7 +137,7 @@ export default function ApplicantFilters({
               type="date"
               value={internshipEndFilter}
               onChange={(e) => onInternshipEndChange(e.target.value)}
-              className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8] [color-scheme:light] dark:border-[#ececec] dark:bg-[#1e1e1e] dark:text-[#e5e7eb] dark:[color-scheme:dark]"
+              className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8] [color-scheme:light] dark:border-gray-700 dark:bg-gray-900/50 dark:text-white dark:[color-scheme:dark]"
             />
           </div>
           <div>
@@ -147,14 +147,14 @@ export default function ApplicantFilters({
               value={durationFilter}
               onChange={(e) => onDurationChange(e.target.value)}
               placeholder="Duration (Month)"
-              className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] dark:border-[#ececec] dark:bg-[#1e1e1e] dark:text-[#e5e7eb] dark:placeholder:text-[#7f7f7f]"
+              className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] dark:border-gray-700 dark:bg-gray-900/50 dark:text-white dark:placeholder:text-gray-500"
             />
           </div>
           <div>
             <label className="mb-1.5 block text-[13px] font-semibold text-[#374151] dark:text-[#e5e7eb]">Institution</label>
             {universitiesLoading ? (
-              <div className="flex h-[42px] w-full items-center rounded-[8px] border border-[#D1D5DB] bg-gray-50 px-3 dark:border-[#ececec] dark:bg-[#1e1e1e]">
-                <span className="text-[13px] text-[#9CA3AF] dark:text-[#7f7f7f]">Loading...</span>
+              <div className="flex h-[42px] w-full items-center rounded-[8px] border border-[#D1D5DB] bg-gray-50 px-3 dark:border-gray-700 dark:bg-gray-900/50">
+                <span className="text-[13px] text-[#9CA3AF] dark:text-gray-500">Loading...</span>
               </div>
             ) : (
               <SearchableDropdown
@@ -178,7 +178,7 @@ export default function ApplicantFilters({
           <button
             type="button"
             onClick={onClearFilters}
-            className="h-[38px] rounded-[8px] border border-[#D1D5DB] bg-white px-5 text-[13px] font-medium text-[#374151] transition hover:bg-[#F9FAFB] dark:border-[#ECE8E1] dark:bg-[#070e12] dark:text-[#e5e7eb] dark:hover:bg-[#323232]"
+            className="h-[38px] rounded-[8px] border border-[#D1D5DB] bg-white px-5 text-[13px] font-medium text-[#374151] transition hover:bg-[#F9FAFB] dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-200 dark:hover:bg-gray-700"
           >
             Clear Filters
           </button>
@@ -194,8 +194,8 @@ export default function ApplicantFilters({
             onClick={() => onTabChange(tab.key)}
             className={`min-w-[85px] rounded-[6px] border px-[18px] py-[8px] text-[12px] font-semibold transition ${
               activeTab === tab.key
-                ? 'border-[#2563EB] bg-white text-[#2563EB] dark:bg-[#fefefe] dark:text-[#a6a19a]'
-                : 'border-[#CBD5E1] bg-white text-[#374151] hover:bg-[#F8FAFC] dark:border-[#d1d5db] dark:bg-[#070e12] dark:text-[#e5e7eb] dark:hover:bg-[#323232]'
+                ? 'border-[#2563EB] bg-white text-[#2563EB] dark:bg-white dark:text-[#2563EB]'
+                : 'border-[#CBD5E1] bg-white text-[#374151] hover:bg-[#F8FAFC] dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-200 dark:hover:bg-gray-700'
             }`}
           >
             {tab.label}

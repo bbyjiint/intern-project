@@ -12,7 +12,7 @@ export default function Home() {
   const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false)
 
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-[#121316] transition-colors">
+    <div className="min-h-screen flex flex-col bg-white dark:bg-[#0B1C2C] transition-colors">
       <Navbar onLoginClick={() => setIsLoginModalOpen(true)} />
       <LoginModal 
         isOpen={isLoginModalOpen} 
@@ -26,26 +26,26 @@ export default function Home() {
       />
       <main className="flex-grow">
         {/* Hero Section */}
-        <section className="bg-white py-16 transition-colors dark:bg-[#121316] lg:py-24">
+        <section className="bg-white py-16 transition-colors dark:bg-[#0B1C2C] lg:py-20">
           <div className="layout-container">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
+            <div className="grid grid-cols-1 items-center gap-16 lg:grid-cols-2 lg:gap-24">
               {/* Left Side - Text Content */}
-              <div className="space-y-6 lg:space-y-8">
-                <p className="text-lg lg:text-xl text-[#A9B4CD] transition-colors dark:text-[#0273b1]">Welcome...</p>
-                <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold leading-[1.1] text-[#1C2D4F] dark:text-white transition-colors">
+              <div className="space-y-6 lg:max-w-[460px] lg:space-y-8">
+                <p className="text-lg text-[#A9B4CD] transition-colors dark:text-[#8A94A6] lg:text-[28px] lg:leading-none">Welcome...</p>
+                <h1 className="text-4xl font-bold leading-[1.05] text-[#1C2D4F] transition-colors dark:text-white lg:text-[62px]">
                   Your future start here
                 </h1>
-                <p className="max-w-xl text-base leading-relaxed text-[#A9B4CD] transition-colors dark:text-[#8ca2c0] lg:text-lg">
+                <p className="max-w-[430px] text-base leading-relaxed text-[#A9B4CD] transition-colors dark:text-[#B0B8C1] lg:text-[18px]">
                   Connecting companies with top talent, and students with career-building opportunities
                 </p>
                 <div>
                   <button
                     type="button"
                     onClick={() => setIsRegisterModalOpen(true)}
-                    className="inline-block text-white px-8 py-3 rounded-md transition-colors font-medium text-base"
-                    style={{ backgroundColor: '#0273B1' }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#025a8f'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#0273B1'}
+                    className="inline-flex min-w-[105px] items-center justify-center rounded-md px-6 py-3 text-sm font-medium text-white transition-colors"
+                    style={{ backgroundColor: '#2F80ED' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1C6ED5'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2F80ED'}
                   >
                     Start here
                   </button>
@@ -53,8 +53,8 @@ export default function Home() {
               </div>
 
               {/* Right Side - MacBook Image */}
-              <div className="flex justify-end items-center">
-                <div className="w-full max-w-4xl">
+              <div className="flex items-center justify-end">
+                <div className="w-full max-w-[520px] lg:max-w-[560px]">
                   <Image
                     src="/15_ Macbook Pro Mockup Front view.png"
                     alt="MacBook Pro Mockup"

@@ -20,11 +20,11 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
   }
 
   return (
-    <nav className="border-b border-gray-100 bg-white transition-colors dark:border-[#eff3fa] dark:bg-[#121212]">
+    <nav className="border-b border-gray-100 bg-white transition-colors dark:border-[#223A57] dark:bg-[#0B1C2C]">
       <div className="layout-container">
         <div className="flex justify-between items-center h-20">
           <ThemedCompanyHubLogo href="/" />
-          <div className="hidden md:flex items-center space-x-6">
+          <div className="hidden items-center space-x-6 md:flex">
             <Link
               href="/"
               className={`nav-link ${isActive('/') ? 'nav-link-active' : ''}`}
@@ -46,13 +46,13 @@ export default function Navbar({ onLoginClick }: NavbarProps) {
             <ThemeToggle />
             <button
               onClick={onLoginClick}
-              className="nav-button"
+              className="nav-button px-5 py-2.5 text-xs font-semibold tracking-wide"
             >
               LOG IN
             </button>
           </div>
           {/* Mobile menu with theme toggle */}
-          <div className="md:hidden flex items-center space-x-4">
+          <div className="flex items-center space-x-4 md:hidden">
             <ThemeToggle />
             <button
               onClick={onLoginClick}

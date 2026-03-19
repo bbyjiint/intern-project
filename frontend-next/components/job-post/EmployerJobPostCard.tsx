@@ -38,10 +38,10 @@ export default function EmployerJobPostCard({
   isTogglePending = false,
 }: EmployerJobPostCardProps) {
   return (
-    <div className="flex h-full min-h-[274px] flex-col rounded-[12px] bg-white px-[20px] py-[18px] shadow-[0_2px_10px_rgba(15,23,42,0.05)] transition-colors dark:bg-[#070e12] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] dark:ring-1 dark:ring-[#e5e7eb]">
+    <div className="flex h-full min-h-[274px] flex-col rounded-[12px] border border-gray-100 bg-white px-[20px] py-[18px] shadow-[0_2px_10px_rgba(15,23,42,0.05)] transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
       <div className="mb-[9px] flex items-start justify-between gap-4">
         <div className="flex items-start gap-[14px]">
-          <div className="flex h-[48px] w-[48px] items-center justify-center overflow-hidden rounded-full bg-[#F3F4F7] dark:bg-[#D9D9D9]/30">
+          <div className="flex h-[48px] w-[48px] items-center justify-center overflow-hidden rounded-full bg-[#F3F4F7] dark:bg-gray-700">
             {post.companyLogoImage ? (
               <img
                 src={post.companyLogoImage}
@@ -89,7 +89,7 @@ export default function EmployerJobPostCard({
             className={`inline-flex items-center rounded-[8px] px-[14px] py-[2px] text-[12px] font-semibold ${
               pos === post.positions[0]
                 ? "bg-[#E5E7EB] text-[#4B5563] dark:bg-[#fef3c7] dark:text-[#b45309]"
-                : "bg-[#E5E7EB] text-[#4B5563] dark:bg-[#323232] dark:text-[#e5e7eb]"
+                : "bg-[#E5E7EB] text-[#4B5563] dark:bg-gray-700 dark:text-slate-200"
             }`}
           >
             {pos}
@@ -97,7 +97,7 @@ export default function EmployerJobPostCard({
         ))}
         {post.positions.length > 3 && (
           <span
-            className="group relative cursor-default rounded-[8px] bg-[#E5E7EB] px-[14px] py-[5px] text-[12px] font-semibold text-[#4B5563] dark:bg-[#323232] dark:text-[#e5e7eb]"
+            className="group relative cursor-default rounded-[8px] bg-[#E5E7EB] px-[14px] py-[5px] text-[12px] font-semibold text-[#4B5563] dark:bg-gray-700 dark:text-slate-200"
             title={post.positions.slice(3).join(", ")}
           >
             ...
@@ -129,7 +129,7 @@ export default function EmployerJobPostCard({
             className="peer sr-only"
             aria-label={post.isOpen ? "Open post" : "Closed post"}
           />
-          <div className="h-[24px] w-[44px] rounded-full bg-[#D1D5DB] transition-colors duration-200 peer-checked:bg-[#2563EB] peer-disabled:cursor-not-allowed peer-disabled:opacity-60 dark:bg-[#323232]" />
+          <div className="h-[24px] w-[44px] rounded-full bg-[#D1D5DB] transition-colors duration-200 peer-checked:bg-[#2563EB] peer-disabled:cursor-not-allowed peer-disabled:opacity-60 dark:bg-gray-700" />
           <div className="absolute left-[2px] top-[2px] h-[20px] w-[20px] rounded-full bg-white shadow-[0_1px_3px_rgba(15,23,42,0.18)] transition-transform duration-200 peer-checked:translate-x-5" />
         </label>
 
@@ -157,7 +157,7 @@ export default function EmployerJobPostCard({
           <button
             type="button"
             onClick={onEdit}
-            className="flex h-[34px] items-center justify-center rounded-[8px] border border-[#d1d5db] bg-white px-[18px] text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8] dark:bg-[#fefefe] dark:text-black dark:hover:bg-[#fefefe]"
+            className="flex h-[34px] items-center justify-center rounded-[8px] border border-[#d1d5db] bg-white px-[18px] text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8] dark:border-gray-600 dark:bg-gray-900/50 dark:text-blue-400 dark:hover:bg-gray-700"
           >
             Edit Post
           </button>

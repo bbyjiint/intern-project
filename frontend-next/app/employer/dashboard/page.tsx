@@ -8,7 +8,6 @@ import EmployerApplicantsOverviewCard, {
   type EmployerApplicantsOverviewCardData,
 } from "@/components/job-post/EmployerApplicantsOverviewCard";
 import { apiFetch } from "@/lib/api";
-import { useTheme } from "@/components/ThemeProvider";
 
 interface JobPost extends EmployerApplicantsOverviewCardData {
   createdAt: string;
@@ -41,7 +40,6 @@ function setViewedAt(id: string) {
 
 export default function EmployerDashboardPage() {
   const router = useRouter();
-  const { theme } = useTheme();
   const [activeFilter, setActiveFilter] = useState<"all" | "new" | "latest">("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [jobPosts, setJobPosts] = useState<JobPost[]>([]);
@@ -207,20 +205,13 @@ export default function EmployerDashboardPage() {
   }, [jobPosts, searchQuery, activeFilter, viewedAt]);
 
   return (
-    <div
-      className="min-h-screen bg-[#F6F7FB] transition-colors dark:bg-[#121316]"
-      style={{
-        background: theme === "dark"
-          ? "linear-gradient(180deg, #121316 0%, #262626 100%)"
-          : undefined,
-      }}
-    >
+    <div className="min-h-screen bg-[#E6EBF4] dark:bg-gray-950 flex flex-col transition-colors duration-300">
       <EmployerNavbar />
-      <div className="flex">
+      <div className="flex flex-1">
         <EmployerSidebar activeItem="applicants" />
 
-        <div className="flex-1 bg-[#E6EBF4] transition-colors dark:bg-transparent">
-          <div className="layout-container layout-page">
+        <div className="layout-container layout-page flex-1 overflow-y-auto">
+          <div className="py-8">
             {apiError && (
               <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800 dark:border-yellow-900/50 dark:bg-yellow-500/10 dark:text-yellow-300">
                 {apiError}
@@ -229,10 +220,10 @@ export default function EmployerDashboardPage() {
 
             <div className="mb-[18px] flex items-start justify-between gap-6">
               <div>
-                <h1 className="text-[32px] font-bold leading-none tracking-[-0.02em] text-[#05060A] dark:text-[#009df3]">
+                <h1 className="text-[32px] font-bold leading-none tracking-[-0.02em] text-[#05060A] dark:text-white">
                   Applicants
                 </h1>
-                <p className="mt-4 text-[14px] text-[#6B7280] dark:text-[#e5e7eb]">
+                <p className="mt-4 text-[14px] text-[#6B7280] dark:text-gray-400">
                   View and manage your job posts and track applicants for each position.
                 </p>
               </div>
@@ -248,7 +239,7 @@ export default function EmployerDashboardPage() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search"
-                    className="h-[38px] w-[356px] rounded-full border border-[#C9CED8] bg-white pl-[50px] pr-5 text-[14px] text-[#374151] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] dark:border-[#ececec] dark:bg-[#1e1e1e] dark:text-[#e5e7eb] dark:placeholder:text-[#7f7f7f]"
+                    className="h-[38px] w-[356px] rounded-full border border-[#C9CED8] bg-white pl-[50px] pr-5 text-[14px] text-[#374151] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-gray-500"
                 />
               </div>
             </div>
@@ -264,12 +255,11 @@ export default function EmployerDashboardPage() {
                 <button
                   key={value}
                   onClick={() => setActiveFilter(value)}
-                  className="h-[36px] rounded-[7px] border px-6 text-[14px] font-semibold transition-colors"
-                  style={{
-                    borderColor: activeFilter === value ? "#2563EB" : (theme === "dark" ? "#d1d5db" : "#D1D5DB"),
-                    backgroundColor: activeFilter === value ? "#FFFFFF" : (theme === "dark" ? "#070e12" : "#F3F4F6"),
-                    color: activeFilter === value ? (theme === "dark" ? "#a6a19a" : "#2563EB") : (theme === "dark" ? "#e5e7eb" : "#111827"),
-                  }}
+                  className={`h-[36px] rounded-[7px] border px-6 text-[14px] font-semibold transition-colors ${
+                    activeFilter === value
+                      ? 'border-[#2563EB] bg-white text-[#2563EB] dark:bg-white dark:text-[#2563EB]'
+                      : 'border-[#D1D5DB] bg-[#F3F4F6] text-[#111827] hover:bg-[#E5E7EB] dark:border-slate-700 dark:bg-slate-900 dark:text-gray-200 dark:hover:bg-slate-800'
+                  }`}
                 >
                   {label}
                 </button>
@@ -281,7 +271,7 @@ export default function EmployerDashboardPage() {
             </p>
 
             {filteredJobPosts.length === 0 && (
-              <div className="rounded-[12px] bg-white px-6 py-12 text-center text-[#6B7280] shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors dark:bg-[#070e12] dark:text-[#7f7f7f] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] dark:ring-1 dark:ring-[#d1d5db]">
+              <div className="rounded-[12px] border border-gray-100 bg-white px-6 py-12 text-center text-[#6B7280] shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400">
                 No job posts found matching your search.
               </div>
             )}

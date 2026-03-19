@@ -85,7 +85,7 @@ export default function CandidateCard({
 
   return (
     <div
-      className="relative flex h-full min-h-[274px] flex-col rounded-[12px] bg-white px-[20px] py-[18px] shadow-[0_2px_10px_rgba(15,23,42,0.05)] transition-colors dark:bg-[#070e12] dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)] dark:ring-1 dark:ring-[#e5e7eb]"
+      className="relative flex h-full min-h-[274px] flex-col rounded-[12px] border border-gray-100 bg-white px-[20px] py-[18px] shadow-[0_2px_10px_rgba(15,23,42,0.05)] transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]"
       onClick={onClick}
     >
       <button
@@ -156,14 +156,14 @@ export default function CandidateCard({
             className={`inline-flex items-center rounded-[8px] px-[14px] py-[2px] text-[12px] font-semibold ${
               index === 0
                 ? 'bg-[#E5E7EB] text-[#4B5563] dark:bg-[#fef3c7] dark:text-[#b45309]'
-                : 'bg-[#E5E7EB] text-[#4B5563] dark:bg-[#323232] dark:text-[#e5e7eb]'
+                : 'bg-[#E5E7EB] text-[#4B5563] dark:bg-gray-700 dark:text-slate-200'
             }`}
           >
             {tag}
           </span>
         ))}
         {tags.length > 3 && (
-          <span className="inline-flex items-center rounded-[8px] bg-[#E5E7EB] px-[14px] py-[2px] text-[12px] font-semibold text-[#4B5563] dark:bg-[#323232] dark:text-[#e5e7eb]">
+          <span className="inline-flex items-center rounded-[8px] bg-[#E5E7EB] px-[14px] py-[2px] text-[12px] font-semibold text-[#4B5563] dark:bg-gray-700 dark:text-slate-200">
             +{tags.length - 3} more
           </span>
         )}
@@ -177,7 +177,7 @@ export default function CandidateCard({
             type="button"
             onClick={handleMessage}
             disabled={!id || isMessaging}
-            className="flex h-[34px] items-center justify-center rounded-[8px] border border-[#d1d5db] bg-white px-[18px] text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8] disabled:opacity-60 dark:bg-[#fefefe] dark:text-black dark:hover:bg-[#fefefe]"
+            className="flex h-[34px] items-center justify-center rounded-[8px] border border-[#d1d5db] bg-white px-[18px] text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8] disabled:opacity-60 dark:border-gray-600 dark:bg-gray-900/50 dark:text-blue-400 dark:hover:bg-gray-700"
           >
             {isMessaging ? 'Loading...' : 'Message'}
           </button>
@@ -187,7 +187,7 @@ export default function CandidateCard({
               event.stopPropagation()
               onClick?.()
             }}
-            className="flex h-[34px] items-center justify-center rounded-[8px] border border-[#d1d5db] bg-white px-[18px] text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8] dark:bg-[#fefefe] dark:text-black dark:hover:bg-[#fefefe]"
+            className="flex h-[34px] items-center justify-center rounded-[8px] border border-[#d1d5db] bg-white px-[18px] text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8] dark:border-gray-600 dark:bg-gray-900/50 dark:text-blue-400 dark:hover:bg-gray-700"
           >
             View Profile
           </button>

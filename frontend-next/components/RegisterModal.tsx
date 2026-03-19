@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { apiFetch } from '@/lib/api'
-import ThemedCompanyHubLogo from '@/components/ThemedCompanyHubLogo'
+import CompanyHubLogo from '@/components/CompanyHubLogo'
 
 interface RegisterModalProps {
   isOpen: boolean
@@ -38,7 +38,7 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
   // ------------------------------------
 
   const startOAuth = (provider: 'google' | 'line') => {
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5001'
     const returnTo = `${window.location.origin}/role-selection`
     window.location.href = `${apiBase}/api/auth/${provider}/start?returnTo=${encodeURIComponent(returnTo)}`
   }
@@ -103,7 +103,7 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
 
           {/* Logo */}
           <div className="mb-8">
-            <ThemedCompanyHubLogo href="/" />
+            <CompanyHubLogo href="/" />
           </div>
         </div>
 

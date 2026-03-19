@@ -120,7 +120,7 @@ export default function CandidateProfileModal({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-[940px] rounded-[14px] bg-white px-10 pb-8 pt-7 shadow-[0_20px_60px_rgba(15,23,42,0.22)] transition-colors dark:bg-[#070e12] dark:shadow-[0_20px_60px_rgba(0,0,0,0.45)] dark:ring-1 dark:ring-[#e5e7eb]"
+        className="relative w-full max-w-[940px] rounded-[14px] border border-gray-100 bg-white px-10 pb-8 pt-7 shadow-[0_20px_60px_rgba(15,23,42,0.22)] transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-[0_20px_60px_rgba(0,0,0,0.45)]"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -176,7 +176,7 @@ export default function CandidateProfileModal({
 
           <button
             onClick={handleViewFullProfile}
-            className="mt-[18px] flex h-[28px] items-center justify-center rounded-[6px] border border-[#d1d5db] bg-white px-[16px] text-[12px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8] dark:bg-[#fefefe] dark:text-black dark:hover:bg-[#fefefe]"
+            className="mt-[18px] flex h-[28px] items-center justify-center rounded-[6px] border border-[#d1d5db] bg-white px-[16px] text-[12px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8] dark:border-gray-600 dark:bg-gray-900/50 dark:text-blue-400 dark:hover:bg-gray-700"
           >
             See Profile
           </button>
@@ -215,7 +215,7 @@ export default function CandidateProfileModal({
                       className={`rounded-[6px] px-[14px] py-[5px] text-[12px] font-semibold ${
                         index === 0
                           ? 'bg-[#E5E7EB] text-[#374151] dark:bg-[#fef3c7] dark:text-[#b45309]'
-                          : 'bg-[#E5E7EB] text-[#374151] dark:bg-[#323232] dark:text-[#e5e7eb]'
+                          : 'bg-[#E5E7EB] text-[#374151] dark:bg-gray-700 dark:text-slate-200'
                       }`}
                     >
                       {pos}
@@ -249,7 +249,7 @@ export default function CandidateProfileModal({
           <div className="mt-6 flex justify-end gap-[8px]">
             <button
               onClick={onClose}
-              className="flex h-[32px] items-center justify-center rounded-[6px] bg-[#E5E7EB] px-[22px] text-[12px] font-semibold text-[#6B7280] transition hover:bg-[#D1D5DB] dark:bg-[#323232] dark:text-[#e5e7eb] dark:hover:bg-[#3c3c3c]"
+              className="flex h-[32px] items-center justify-center rounded-[6px] bg-[#E5E7EB] px-[22px] text-[12px] font-semibold text-[#6B7280] transition hover:bg-[#D1D5DB] dark:bg-gray-700 dark:text-slate-200 dark:hover:bg-gray-600"
             >
               Back
             </button>

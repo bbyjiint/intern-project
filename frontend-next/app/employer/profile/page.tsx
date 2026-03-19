@@ -7,7 +7,6 @@ import EmployerSidebar from '@/components/EmployerSidebar'
 import SearchableDropdown from '@/components/SearchableDropdown'
 import CompanyInfoEditPopup from '@/components/CompanyInfoEditPopup'
 import { apiFetch } from '@/lib/api'
-import { useTheme } from '@/components/ThemeProvider'
 
 interface CompanyProfileData {
   companyName: string
@@ -31,7 +30,6 @@ interface CompanyProfileData {
 
 export default function EmployerProfilePage() {
   const router = useRouter()
-  const { theme } = useTheme()
   const [profileData, setProfileData] = useState<CompanyProfileData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [currentDate, setCurrentDate] = useState('')
@@ -288,7 +286,7 @@ export default function EmployerProfilePage() {
   // ─── Render states ────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 transition-colors dark:bg-[#121316]">
+      <div className="min-h-screen bg-[#E6EBF4] dark:bg-gray-950 flex flex-col transition-colors duration-300">
         <EmployerNavbar />
         <div className="flex items-center justify-center min-h-screen">
           <p className="text-gray-600 dark:text-slate-400">Loading profile...</p>
@@ -299,7 +297,7 @@ export default function EmployerProfilePage() {
 
   if (!profileData) {
     return (
-      <div className="min-h-screen bg-gray-50 transition-colors dark:bg-[#121316]">
+      <div className="min-h-screen bg-[#E6EBF4] dark:bg-gray-950 flex flex-col transition-colors duration-300">
         <EmployerNavbar />
         <div className="layout-container layout-page">
           <div className="text-center py-10">
@@ -318,27 +316,20 @@ export default function EmployerProfilePage() {
 
   // ─── Main render ──────────────────────────────────────────────────────────────
   return (
-    <div
-      className="min-h-screen bg-[#F6F7FB] transition-colors dark:bg-[#121316]"
-      style={{
-        background: theme === 'dark'
-          ? 'linear-gradient(180deg, #121316 0%, #262626 100%)'
-          : undefined,
-      }}
-    >
+    <div className="min-h-screen bg-[#E6EBF4] dark:bg-gray-950 flex flex-col transition-colors duration-300">
       <EmployerNavbar />
-      <div className="flex min-h-[calc(100vh-100px)]">
+      <div className="flex flex-1">
         <EmployerSidebar activeItem="profile" />
 
-        <div className="flex-1 bg-[#E6EBF4] transition-colors dark:bg-transparent">
-          <div className="layout-container layout-page">
+        <div className="layout-container layout-page flex-1 overflow-y-auto">
+          <div className="mx-auto max-w-4xl py-8">
 
             {/* Welcome */}
             <div className="mb-[14px]">
               <h1 className="mb-2 text-[32px] font-bold leading-none tracking-[-0.02em] text-[#05060A] dark:text-white">
                 Welcome, {profileData.companyName || 'Company Name'}
               </h1>
-              <p className="text-[14px] text-[#6B7280] dark:text-[#e5e7eb]">{currentDate}</p>
+              <p className="text-[14px] text-[#6B7280] dark:text-gray-400">{currentDate}</p>
             </div>
 
             {error && (
@@ -348,11 +339,11 @@ export default function EmployerProfilePage() {
             )}
 
             {/* Company Info Card */}
-            <div className="mb-6 rounded-[14px] bg-white px-[28px] py-[22px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors dark:bg-[#070e12] dark:shadow-none dark:ring-1 dark:ring-[#e5e7eb]">
+            <div className="mb-6 rounded-[14px] border border-gray-100 bg-white px-[28px] py-[22px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-none">
               <div className="flex items-start gap-[18px]">
                 {/* Logo */}
                 <div
-                  className="relative flex h-[94px] w-[94px] shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#F3F4F7] dark:bg-[#121212]"
+                  className="relative flex h-[94px] w-[94px] shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#F3F4F7] dark:bg-gray-700"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   {profileData.profileImage ? (
@@ -374,30 +365,30 @@ export default function EmployerProfilePage() {
                       <h2 className="mb-1 text-[21px] font-bold leading-tight text-[#111827] dark:text-white">
                         {profileData.companyName || 'Company Name'}
                       </h2>
-                      <p className="text-[14px] text-[#9CA3AF] dark:text-[#ffffff]/50">{profileData.email || 'info@company.com'}</p>
+                      <p className="text-[14px] text-[#9CA3AF] dark:text-gray-400">{profileData.email || 'info@company.com'}</p>
                     </div>
                     <button
                       onClick={() => setIsEditPopupOpen(true)}
-                      className="rounded-[6px] border border-[#0273B1] px-[14px] py-[6px] text-[13px] font-medium text-[#0273B1] transition-colors hover:bg-[#F0F4F8] dark:text-[#0273b1] dark:hover:bg-[#070e12]"
+                      className="rounded-[6px] border border-[#0273B1] px-[14px] py-[6px] text-[13px] font-medium text-[#0273B1] transition-colors hover:bg-[#F0F4F8] dark:border-blue-400 dark:text-blue-400 dark:hover:bg-gray-700"
                     >
                       Edit
                     </button>
                   </div>
 
-                  <p className="mb-[16px] max-w-[880px] text-[13px] leading-[1.55] text-[#4B5563] dark:text-[#a9b4cd]">
+                  <p className="mb-[16px] max-w-[880px] text-[13px] leading-[1.55] text-[#4B5563] dark:text-gray-300">
                     {profileData.companyDescription || '-'}
                   </p>
 
                   <div className="grid max-w-[680px] grid-cols-2 gap-10">
                     <div>
                       <h3 className="mb-[8px] text-[17px] font-bold text-[#111827] dark:text-white">Business Type</h3>
-                      <p className="text-[14px] text-[#4B5563] dark:text-[#a9b4cd]">
+                      <p className="text-[14px] text-[#4B5563] dark:text-gray-300">
                         {profileData.businessType ? getBusinessTypeLabel(profileData.businessType) : '-'}
                       </p>
                     </div>
                     <div>
                       <h3 className="mb-[8px] text-[17px] font-bold text-[#111827] dark:text-white">Company Size</h3>
-                      <p className="text-[14px] text-[#4B5563] dark:text-[#a9b4cd]">
+                      <p className="text-[14px] text-[#4B5563] dark:text-gray-300">
                         {profileData.companySize ? getCompanySizeLabel(profileData.companySize) : '-'}
                       </p>
                     </div>
@@ -407,7 +398,7 @@ export default function EmployerProfilePage() {
             </div>
 
             {/* Address Card */}
-            <div className="mb-6 rounded-[14px] bg-white px-[24px] py-[20px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors dark:bg-[#070e12] dark:shadow-none dark:ring-1 dark:ring-[#e5e7eb]">
+            <div className="mb-6 rounded-[14px] border border-gray-100 bg-white px-[24px] py-[20px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-none">
               <div className="mb-5 flex items-center gap-3">
                 <span className="flex h-7 w-7 items-center justify-center text-[#2563EB]">
                   <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -424,7 +415,7 @@ export default function EmployerProfilePage() {
                     value={addressForm.addressDetails}
                     onChange={(e) => setAddressForm((prev) => ({ ...prev, addressDetails: e.target.value }))}
                     rows={4}
-                    className="min-h-[110px] w-full resize-none rounded-[6px] border border-[#D1D5DB] bg-white px-3 py-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8] dark:border-[#cbd5e1] dark:bg-[#1e1e1e] dark:text-white dark:placeholder:text-[#7f7f7f]"
+                    className="min-h-[110px] w-full resize-none rounded-[6px] border border-[#D1D5DB] bg-white px-3 py-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8] dark:border-gray-700 dark:bg-gray-900/50 dark:text-white dark:placeholder:text-gray-500"
                     placeholder="Enter address details (e.g., building number, street)"
                   />
                 </div>
@@ -433,7 +424,7 @@ export default function EmployerProfilePage() {
                 <div>
                   <label className="mb-[6px] block text-[14px] text-[#4B5563] dark:text-[#e5e7eb]">Province</label>
                   {provincesLoading ? (
-                    <div className="flex h-[38px] w-full items-center justify-center rounded-[6px] border border-[#D1D5DB] bg-gray-50 dark:border-[#cbd5e1] dark:bg-[#1e1e1e]">
+                    <div className="flex h-[38px] w-full items-center justify-center rounded-[6px] border border-[#D1D5DB] bg-gray-50 dark:border-gray-700 dark:bg-gray-900/50">
                       <span className="text-[14px] text-[#6B7280] dark:text-[#7f7f7f]">Loading provinces...</span>
                     </div>
                   ) : (
@@ -462,11 +453,11 @@ export default function EmployerProfilePage() {
                 <div>
                   <label className="mb-[6px] block text-[14px] text-[#4B5563] dark:text-[#e5e7eb]">District</label>
                   {!addressForm.provinceId ? (
-                    <div className="flex h-[38px] w-full items-center justify-center rounded-[6px] border border-[#D1D5DB] bg-gray-100 dark:border-[#cbd5e1] dark:bg-[#1e1e1e]">
+                    <div className="flex h-[38px] w-full items-center justify-center rounded-[6px] border border-[#D1D5DB] bg-gray-100 dark:border-gray-700 dark:bg-gray-900/50">
                       <span className="text-[14px] text-[#6B7280] dark:text-[#7f7f7f]">Please select a province first</span>
                     </div>
                   ) : districtsLoading ? (
-                    <div className="flex h-[38px] w-full items-center justify-center rounded-[6px] border border-[#D1D5DB] bg-gray-50 dark:border-[#cbd5e1] dark:bg-[#1e1e1e]">
+                    <div className="flex h-[38px] w-full items-center justify-center rounded-[6px] border border-[#D1D5DB] bg-gray-50 dark:border-gray-700 dark:bg-gray-900/50">
                       <span className="text-[14px] text-[#6B7280] dark:text-[#7f7f7f]">Loading districts...</span>
                     </div>
                   ) : (
@@ -494,11 +485,11 @@ export default function EmployerProfilePage() {
                 <div>
                   <label className="mb-[6px] block text-[14px] text-[#4B5563] dark:text-[#e5e7eb]">Subdistrict</label>
                   {!addressForm.districtId ? (
-                    <div className="flex h-[38px] w-full items-center justify-center rounded-[6px] border border-[#D1D5DB] bg-gray-100 dark:border-[#cbd5e1] dark:bg-[#1e1e1e]">
+                    <div className="flex h-[38px] w-full items-center justify-center rounded-[6px] border border-[#D1D5DB] bg-gray-100 dark:border-gray-700 dark:bg-gray-900/50">
                       <span className="text-[14px] text-[#6B7280] dark:text-[#7f7f7f]">Please select a district first</span>
                     </div>
                   ) : subdistrictsLoading ? (
-                    <div className="flex h-[38px] w-full items-center justify-center rounded-[6px] border border-[#D1D5DB] bg-gray-50 dark:border-[#cbd5e1] dark:bg-[#1e1e1e]">
+                    <div className="flex h-[38px] w-full items-center justify-center rounded-[6px] border border-[#D1D5DB] bg-gray-50 dark:border-gray-700 dark:bg-gray-900/50">
                       <span className="text-[14px] text-[#6B7280] dark:text-[#7f7f7f]">Loading subdistricts...</span>
                     </div>
                   ) : (
@@ -523,7 +514,7 @@ export default function EmployerProfilePage() {
                     type="text"
                     value={addressForm.postcode}
                     onChange={(e) => setAddressForm((prev) => ({ ...prev, postcode: e.target.value }))}
-                    className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] bg-gray-50 px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8] dark:border-[#cbd5e1] dark:bg-[#1e1e1e] dark:text-white dark:placeholder:text-[#7f7f7f]"
+                    className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] bg-gray-50 px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8] dark:border-gray-700 dark:bg-gray-900/50 dark:text-white dark:placeholder:text-gray-500"
                     placeholder="Auto-filled when district is selected"
                     readOnly={!!(addressForm.provinceId && addressForm.districtId && addressForm.subdistrictId)}
                   />
@@ -545,7 +536,7 @@ export default function EmployerProfilePage() {
             </div>
 
             {/* Contact Card */}
-            <div className="rounded-[14px] bg-white px-[24px] py-[20px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors dark:bg-[#070e12] dark:shadow-none dark:ring-1 dark:ring-[#e5e7eb]">
+            <div className="rounded-[14px] border border-gray-100 bg-white px-[24px] py-[20px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-none">
               <div className="mb-5 flex items-center gap-3">
                 <span className="flex h-7 w-7 items-center justify-center text-[#2563EB]">
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -559,14 +550,14 @@ export default function EmployerProfilePage() {
                 <div>
                   <label className="mb-[6px] block text-[14px] text-[#4B5563] dark:text-[#e5e7eb]">Phone Number</label>
                   <div className="flex gap-[10px]">
-                    <select className="h-[38px] w-[64px] rounded-[6px] border border-[#D1D5DB] bg-white px-3 text-[14px] text-[#374151] outline-none dark:border-[#cbd5e1] dark:bg-[#1e1e1e] dark:text-white">
+                    <select className="h-[38px] w-[64px] rounded-[6px] border border-[#D1D5DB] bg-white px-3 text-[14px] text-[#374151] outline-none dark:border-gray-700 dark:bg-gray-900/50 dark:text-white">
                       <option value="+66">+66</option>
                     </select>
                     <input
                       type="text"
                       value={contactForm.phoneNumber}
                       onChange={(e) => setContactForm((prev) => ({ ...prev, phoneNumber: e.target.value }))}
-                      className="h-[38px] flex-1 rounded-[6px] border border-[#D1D5DB] px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8] dark:border-[#cbd5e1] dark:bg-[#1e1e1e] dark:text-white dark:placeholder:text-[#7f7f7f]"
+                      className="h-[38px] flex-1 rounded-[6px] border border-[#D1D5DB] px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8] dark:border-gray-700 dark:bg-gray-900/50 dark:text-white dark:placeholder:text-gray-500"
                     />
                   </div>
                 </div>
@@ -577,7 +568,7 @@ export default function EmployerProfilePage() {
                     type="email"
                     value={contactForm.email}
                     onChange={(e) => setContactForm((prev) => ({ ...prev, email: e.target.value }))}
-                    className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8] dark:border-[#cbd5e1] dark:bg-[#1e1e1e] dark:text-white dark:placeholder:text-[#7f7f7f]"
+                    className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8] dark:border-gray-700 dark:bg-gray-900/50 dark:text-white dark:placeholder:text-gray-500"
                   />
                 </div>
 
@@ -587,7 +578,7 @@ export default function EmployerProfilePage() {
                     type="text"
                     value={contactForm.websiteUrl}
                     onChange={(e) => setContactForm((prev) => ({ ...prev, websiteUrl: e.target.value }))}
-                    className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8] dark:border-[#cbd5e1] dark:bg-[#1e1e1e] dark:text-white dark:placeholder:text-[#7f7f7f]"
+                    className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8] dark:border-gray-700 dark:bg-gray-900/50 dark:text-white dark:placeholder:text-gray-500"
                   />
                 </div>
 
@@ -597,7 +588,7 @@ export default function EmployerProfilePage() {
                     type="text"
                     value={contactForm.contactName}
                     onChange={(e) => setContactForm((prev) => ({ ...prev, contactName: e.target.value }))}
-                    className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8] dark:border-[#cbd5e1] dark:bg-[#1e1e1e] dark:text-white dark:placeholder:text-[#7f7f7f]"
+                    className="h-[38px] w-full rounded-[6px] border border-[#D1D5DB] px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8] dark:border-gray-700 dark:bg-gray-900/50 dark:text-white dark:placeholder:text-gray-500"
                   />
                 </div>
 

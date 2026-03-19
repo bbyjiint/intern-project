@@ -71,8 +71,8 @@ export default function EmployerSidebar({ activeItem }: EmployerSidebarProps) {
   const currentItem = activeItem ?? inferActiveItem(pathname)
 
   return (
-    <div className="min-h-screen w-64 shrink-0 border-r border-slate-200 bg-white pt-8 transition-colors dark:border-[#e5e7eb] dark:bg-[#070e12]">
-      <div className="px-6 space-y-2">
+    <div className="w-64 bg-white dark:bg-slate-900 min-h-screen pt-8 border-r border-slate-200 dark:border-slate-800 shrink-0 transition-colors">
+      <div className="px-4 space-y-1.5">
         {items.map((item) => {
           const isActive = currentItem === item.id
 
@@ -80,14 +80,14 @@ export default function EmployerSidebar({ activeItem }: EmployerSidebarProps) {
             <Link
               key={item.id}
               href={item.href}
-              className={`flex items-center space-x-3 rounded-lg px-4 py-3 transition-colors ${
+              className={`group w-full px-4 py-3 rounded-xl flex items-center space-x-3 transition-all duration-200 ${
                 isActive
-                  ? 'bg-[#0273B1] text-white'
-                  : 'text-[#1C2D4F] hover:text-[#0273B1] hover:bg-slate-100 dark:text-[#7f7f7f] dark:hover:bg-white dark:hover:text-[#333333]'
+                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                  : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-blue-600 dark:hover:text-blue-400'
               }`}
             >
-              <span className={isActive ? 'text-white' : 'text-slate-400 dark:text-[#7f7f7f]'}>{item.icon}</span>
-              <span className="font-medium">{item.label}</span>
+              <span className={isActive ? 'text-white' : 'text-slate-400 dark:text-slate-500 group-hover:text-blue-500'}>{item.icon}</span>
+              <span className="font-bold tracking-tight">{item.label}</span>
             </Link>
           )
         })}

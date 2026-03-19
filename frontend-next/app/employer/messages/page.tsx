@@ -634,11 +634,11 @@ export default function MessagesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 transition-colors dark:bg-slate-950">
+    <div className="min-h-screen bg-[#E6EBF4] dark:bg-gray-950 flex flex-col transition-colors duration-300">
       <EmployerNavbar />
-      <div className="layout-container flex h-[calc(100vh-4rem)] w-full">
+      <div className="layout-container flex h-[calc(100vh-4rem)] w-full py-6">
         {/* Left Sidebar - Conversation List */}
-        <div className="flex w-80 flex-col border-r border-gray-200 bg-white transition-colors dark:border-slate-800 dark:bg-slate-950">
+        <div className="flex w-80 flex-col rounded-l-2xl border border-r-0 border-gray-200 bg-white transition-colors dark:border-slate-800 dark:bg-slate-900">
           <div className="border-b border-gray-200 p-6 dark:border-slate-800">
             <h1 className="mb-4 text-2xl font-bold text-gray-900 dark:text-white">Messages</h1>
             <div className="relative">
@@ -647,7 +647,7 @@ export default function MessagesPage() {
                 placeholder="Search conversations..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 pl-10 text-slate-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 pl-10 text-slate-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-gray-500"
               />
               <svg
                 className="absolute left-3 top-2.5 h-5 w-5 text-gray-400 dark:text-slate-500"
@@ -673,8 +673,8 @@ export default function MessagesPage() {
                 <div
                   key={conv.id}
                   onClick={() => handleSelectConversation(conv)}
-                  className={`cursor-pointer border-b border-gray-100 p-4 transition-colors hover:bg-gray-50 dark:border-slate-800 dark:hover:bg-slate-900 ${
-                    selectedConversation?.id === conv.id ? 'bg-blue-50 dark:bg-blue-500/10' : ''
+                  className={`cursor-pointer border-b border-gray-100 p-4 transition-colors hover:bg-gray-50 dark:border-slate-800 dark:hover:bg-slate-800 ${
+                    selectedConversation?.id === conv.id ? 'bg-blue-50 dark:bg-slate-800' : ''
                   }`}
                 >
                   <div className="flex items-start space-x-3">
@@ -703,7 +703,7 @@ export default function MessagesPage() {
         </div>
 
         {/* Main Content - Chat Area */}
-        <div className="flex flex-1 flex-col bg-white transition-colors dark:bg-slate-950">
+        <div className="flex flex-1 flex-col rounded-r-2xl border border-gray-200 bg-white transition-colors dark:border-slate-800 dark:bg-slate-900">
           {loading ? (
             <div className="flex flex-1 items-center justify-center text-gray-500 dark:text-slate-400">
               <div className="text-center">
@@ -728,7 +728,7 @@ export default function MessagesPage() {
                 </div>
                 <button
                   onClick={handleViewProfile}
-                  className="flex items-center space-x-2 rounded-lg border border-gray-300 px-4 py-2 transition-colors hover:bg-gray-50 dark:border-slate-700 dark:hover:bg-slate-900"
+                  className="flex items-center space-x-2 rounded-lg border border-gray-300 px-4 py-2 transition-colors hover:bg-gray-50 dark:border-slate-700 dark:hover:bg-slate-800"
                 >
                   <svg className="h-4 w-4 text-gray-600 dark:text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
@@ -743,7 +743,7 @@ export default function MessagesPage() {
               </div>
 
               {/* Messages */}
-              <div ref={chatContainerRef} className="flex-1 overflow-y-auto bg-gray-50 p-6 transition-colors dark:bg-slate-900/40">
+              <div ref={chatContainerRef} className="flex-1 overflow-y-auto bg-gray-50 p-6 transition-colors dark:bg-gray-950">
                 <div className="space-y-4">
                   {selectedConversation.messages.map((msg) => {
                     // For employer page: isEmployer/isCompany means it's from the company (current user) - should be on right
@@ -765,7 +765,7 @@ export default function MessagesPage() {
                             className={`inline-block max-w-[70%] rounded-lg px-4 py-2 ${
                               isCurrentUser
                                 ? 'bg-blue-600 text-white'
-                                : 'bg-white border border-gray-200 text-gray-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100'
+                                : 'bg-white border border-gray-200 text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white'
                             }`}
                           >
                             <p className="text-sm leading-relaxed">{msg.text}</p>
@@ -786,7 +786,7 @@ export default function MessagesPage() {
               </div>
 
               {/* Message Input */}
-              <div className="border-t border-gray-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-950">
+              <div className="border-t border-gray-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
                 <div className="flex items-center space-x-4">
                   <input
                     type="text"
@@ -799,7 +799,7 @@ export default function MessagesPage() {
                       }
                     }}
                     placeholder="Type a message..."
-                    className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-slate-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500"
+                    className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-slate-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-gray-500"
                   />
                   <button
                     onClick={handleSendMessage}
