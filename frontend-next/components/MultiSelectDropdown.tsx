@@ -27,15 +27,11 @@ export default function MultiSelectDropdown({
   const [searchQuery, setSearchQuery] = useState("");
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // ป้องกัน value เป็น undefined
   const safeValue = value ?? [];
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsOpen(false);
         setSearchQuery("");
       }
@@ -44,18 +40,15 @@ export default function MultiSelectDropdown({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const getOptionValue = (option: Option): string => {
-    return typeof option === "string" ? option : option.value;
-  };
+  const getOptionValue = (option: Option): string =>
+    typeof option === "string" ? option : option.value;
 
-  const getOptionLabel = (option: Option): string => {
-    return typeof option === "string" ? option : option.label;
-  };
+  const getOptionLabel = (option: Option): string =>
+    typeof option === "string" ? option : option.label;
 
-  const filteredOptions = options.filter((option) => {
-    const label = getOptionLabel(option).toLowerCase();
-    return label.includes(searchQuery.toLowerCase().trim());
-  });
+  const filteredOptions = options.filter((option) =>
+    getOptionLabel(option).toLowerCase().includes(searchQuery.toLowerCase().trim())
+  );
 
   const handleToggle = (option: Option) => {
     const optionValue = getOptionValue(option);
@@ -83,19 +76,19 @@ export default function MultiSelectDropdown({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-left flex items-center justify-between bg-white min-h-[44px]"
+        className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-left flex items-center justify-between bg-white dark:bg-slate-700 min-h-[44px] transition-colors"
       >
         <div className="flex-1 flex flex-wrap gap-2">
           {safeValue.length > 0 ? (
             safeValue.map((selected) => (
               <span
                 key={selected}
-                className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded text-sm"
+                className="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded text-sm"
               >
                 {getSelectedLabel(selected)}
                 <span
                   onClick={(e) => handleRemove(selected, e)}
-                  className="hover:bg-blue-100 rounded-full p-0.5 cursor-pointer"
+                  className="hover:bg-blue-100 dark:hover:bg-blue-800 rounded-full p-0.5 cursor-pointer"
                 >
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -104,11 +97,11 @@ export default function MultiSelectDropdown({
               </span>
             ))
           ) : (
-            <span className="text-gray-500">{placeholder}</span>
+            <span className="text-gray-500 dark:text-slate-400">{placeholder}</span>
           )}
         </div>
         <svg
-          className={`w-5 h-5 text-gray-400 transition-transform flex-shrink-0 ml-2 ${isOpen ? "transform rotate-180" : ""}`}
+          className={`w-5 h-5 text-gray-400 dark:text-slate-400 transition-transform flex-shrink-0 ml-2 ${isOpen ? "rotate-180" : ""}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -118,14 +111,14 @@ export default function MultiSelectDropdown({
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-hidden">
-          <div className="p-2 border-b border-gray-200">
+        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg shadow-lg max-h-60 overflow-hidden">
+          <div className="p-2 border-b border-gray-200 dark:border-slate-600">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               autoFocus
             />
           </div>
@@ -140,13 +133,17 @@ export default function MultiSelectDropdown({
                     key={optionValue}
                     type="button"
                     onClick={() => handleToggle(option)}
-                    className={`w-full px-4 py-2 text-left hover:bg-gray-100 transition-colors flex items-center gap-2 ${
-                      isSelected ? "bg-blue-50 text-blue-600 font-medium" : "text-gray-900"
+                    className={`w-full px-4 py-2 text-left transition-colors flex items-center gap-2 ${
+                      isSelected
+                        ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-300 font-medium"
+                        : "text-gray-900 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-600"
                     }`}
                   >
                     <div
-                      className={`w-4 h-4 border-2 rounded flex items-center justify-center ${
-                        isSelected ? "border-blue-600 bg-blue-600" : "border-gray-300"
+                      className={`w-4 h-4 border-2 rounded flex items-center justify-center flex-shrink-0 ${
+                        isSelected
+                          ? "border-blue-600 bg-blue-600"
+                          : "border-gray-300 dark:border-slate-500"
                       }`}
                     >
                       {isSelected && (
@@ -160,16 +157,14 @@ export default function MultiSelectDropdown({
                 );
               })
             ) : (
-              <div className="px-4 py-2 text-gray-500 text-sm">No options found</div>
+              <div className="px-4 py-2 text-gray-500 dark:text-slate-400 text-sm">No options found</div>
             )}
           </div>
         </div>
       )}
 
       {helperText && (
-        <p className="text-xs mt-1" style={{ color: "#A9B4CD" }}>
-          {helperText}
-        </p>
+        <p className="text-xs mt-1 text-[#A9B4CD] dark:text-slate-500">{helperText}</p>
       )}
     </div>
   );

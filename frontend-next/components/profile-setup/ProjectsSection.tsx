@@ -53,10 +53,7 @@ interface Project {
 
 function AIBadge() {
   return (
-    <span
-      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium ml-2"
-      style={{ backgroundColor: "#EEF2FF", color: "#4338CA" }}
-    >
+    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium ml-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400">
       ✨ AI filled
     </span>
   );
@@ -157,7 +154,7 @@ function MonthYearPicker({
 
   const borderCls = hasError
     ? "border-red-500 ring-1 ring-red-400"
-    : "border-gray-300";
+    : "border-gray-300 dark:border-slate-600";
 
   return (
     <div ref={wrapRef} className="relative">
@@ -169,13 +166,13 @@ function MonthYearPicker({
           onChange={(e) => setInputVal(e.target.value)}
           onBlur={(e) => commitInput(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && commitInput(inputVal)}
-          className={`w-full px-4 py-3 pr-10 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${borderCls}`}
+          className={`w-full px-4 py-3 pr-10 border rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${borderCls}`}
         />
         <button
           type="button"
           tabIndex={-1}
           onClick={() => setOpen((v) => !v)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
@@ -185,16 +182,16 @@ function MonthYearPicker({
       </div>
 
       {open && (
-        <div className="absolute z-50 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg p-4" style={{ minWidth: 260 }}>
+        <div className="absolute z-50 mt-1 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg shadow-lg p-4" style={{ minWidth: 260 }}>
           <div className="flex items-center justify-between mb-3">
-            <button type="button" onClick={() => setCalYear((y) => y - 1)} className="p-1 rounded hover:bg-gray-100">
-              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button type="button" onClick={() => setCalYear((y) => y - 1)} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-600">
+              <svg className="w-4 h-4 text-gray-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
             </button>
-            <span className="font-semibold text-sm" style={{ color: "#1C2D4F" }}>{calYear}</span>
-            <button type="button" onClick={() => setCalYear((y) => y + 1)} className="p-1 rounded hover:bg-gray-100">
-              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <span className="font-semibold text-sm text-[#1C2D4F] dark:text-slate-200">{calYear}</span>
+            <button type="button" onClick={() => setCalYear((y) => y + 1)} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-600">
+              <svg className="w-4 h-4 text-gray-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
               </svg>
             </button>
@@ -205,10 +202,11 @@ function MonthYearPicker({
               const isSelected = p && p.month === i + 1 && p.year === calYear;
               return (
                 <button key={name} type="button" onClick={() => selectMonth(i)}
-                  className="py-2 rounded-lg text-sm font-medium transition-colors"
-                  style={{ backgroundColor: isSelected ? "#0273B1" : "transparent", color: isSelected ? "#fff" : "#1C2D4F" }}
-                  onMouseEnter={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = "#E3F5FF"; }}
-                  onMouseLeave={(e) => { if (!isSelected) e.currentTarget.style.backgroundColor = "transparent"; }}
+                  className={`py-2 rounded-lg text-sm font-medium transition-colors ${
+                    isSelected
+                      ? "bg-[#0273B1] text-white"
+                      : "text-[#1C2D4F] dark:text-slate-200 hover:bg-[#E3F5FF] dark:hover:bg-slate-600"
+                  }`}
                 >{name}</button>
               );
             })}
@@ -237,7 +235,6 @@ const ProjectsSection = forwardRef<ProjectsSectionHandle, ProjectsSectionProps>(
       projectsRef.current = projects;
     }, [projects]);
 
-    // Sync from parent only once when real DB data arrives
     const initializedRef = useRef(false);
     useEffect(() => {
       if (initializedRef.current) return;
@@ -251,8 +248,6 @@ const ProjectsSection = forwardRef<ProjectsSectionHandle, ProjectsSectionProps>(
       projectsRef.current = normalised;
       initializedRef.current = true;
     }, [data.projects]);
-
-    // ── syncToDb ─────────────────────────────────────────────────────────────
 
     useImperativeHandle(ref, () => ({
       validateAll: () => {
@@ -312,8 +307,6 @@ const ProjectsSection = forwardRef<ProjectsSectionHandle, ProjectsSectionProps>(
       },
     }));
 
-    // ── Local CRUD ────────────────────────────────────────────────────────────
-
     const notifyParent = (updated: Project[]) => {
       const visible = updated.filter((p) => p._status !== "deleted");
       onUpdate({ projects: visible });
@@ -330,7 +323,7 @@ const ProjectsSection = forwardRef<ProjectsSectionHandle, ProjectsSectionProps>(
         ...project,
         id: `local-${Date.now()}`,
         _status: "new",
-        _aiTag: false, // manually added = no AI tag
+        _aiTag: false,
       };
       applyProjects([newProject, ...projects]);
       setShowForm(false);
@@ -354,7 +347,6 @@ const ProjectsSection = forwardRef<ProjectsSectionHandle, ProjectsSectionProps>(
     const handleDelete = (index: number) => {
       if (!confirm("Are you sure you want to delete this project?")) return;
       setIncompleteWarnings([]);
-      setIncompleteWarnings([]);
       const existing = projects[index];
       let updated: Project[];
 
@@ -371,7 +363,6 @@ const ProjectsSection = forwardRef<ProjectsSectionHandle, ProjectsSectionProps>(
       .map((p, i) => ({ p, i }))
       .filter(({ p }) => p._status !== "deleted");
 
-    // Count AI-tagged projects
     const aiProjectCount = visibleProjects.filter(({ p }) => p._aiTag).length;
 
     return (
@@ -379,38 +370,32 @@ const ProjectsSection = forwardRef<ProjectsSectionHandle, ProjectsSectionProps>(
         {/* Header */}
         <div className="flex justify-between items-start mb-6">
           <div>
-            <h2 className="text-2xl font-bold mb-1" style={{ color: "#1C2D4F", fontWeight: 700 }}>
+            <h2 className="text-2xl font-bold mb-1 text-[#1C2D4F] dark:text-slate-100">
               Projects
             </h2>
-            <p className="text-sm" style={{ color: "#A9B4CD" }}>
+            <p className="text-sm text-[#A9B4CD] dark:text-slate-400">
               This step is optional — you can fill your profile information at any time.
             </p>
           </div>
           {onSkip && (
             <button
               onClick={onSkip}
-              className="flex items-center px-4 py-2 rounded-lg font-medium text-sm transition-colors"
-              style={{ border: "2px solid #0273B1", color: "#0273B1", backgroundColor: "white" }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#F0F4F8"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "white"; }}
+              className="flex items-center px-4 py-2 rounded-lg font-medium text-sm transition-colors border-2 border-[#0273B1] text-[#0273B1] bg-white dark:bg-slate-700 dark:text-blue-400 dark:border-blue-400 hover:bg-[#F0F4F8] dark:hover:bg-slate-600"
             >
               Skip &gt;
             </button>
           )}
         </div>
 
-        {/* Incomplete Projects Warning Banner */}
+        {/* Incomplete Warning Banner */}
         {incompleteWarnings.length > 0 && (
-          <div
-            className="flex items-start gap-3 px-4 py-3 rounded-lg mb-5 text-sm"
-            style={{ backgroundColor: "#FEF2F2", border: "1px solid #FECACA" }}
-          >
+          <div className="flex items-start gap-3 px-4 py-3 rounded-lg mb-5 text-sm bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
             <span className="text-base mt-0.5">⚠️</span>
             <div>
-              <p className="font-semibold" style={{ color: "#DC2626" }}>
+              <p className="font-semibold text-red-600 dark:text-red-400">
                 กรุณาแก้ไขหรือลบ project ที่ข้อมูลไม่ครบ ก่อนบันทึก
               </p>
-              <ul className="mt-1 list-disc list-inside" style={{ color: "#EF4444" }}>
+              <ul className="mt-1 list-disc list-inside text-red-500 dark:text-red-400">
                 {incompleteWarnings.map((name, i) => (
                   <li key={i} className="text-xs">{name} — ต้องมี ชื่อ, role, วันที่, description, related skills</li>
                 ))}
@@ -421,16 +406,13 @@ const ProjectsSection = forwardRef<ProjectsSectionHandle, ProjectsSectionProps>(
 
         {/* AI Autofill Banner */}
         {data._aiFilled_projects && aiProjectCount > 0 && (
-          <div
-            className="flex items-start gap-3 px-4 py-3 rounded-lg mb-5 text-sm"
-            style={{ backgroundColor: "#EEF2FF", border: "1px solid #C7D2FE" }}
-          >
+          <div className="flex items-start gap-3 px-4 py-3 rounded-lg mb-5 text-sm bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700">
             <span className="text-base mt-0.5">✨</span>
             <div>
-              <p className="font-semibold" style={{ color: "#4338CA" }}>
+              <p className="font-semibold text-indigo-700 dark:text-indigo-300">
                 AI autofilled {aiProjectCount} project{aiProjectCount > 1 ? "s" : ""} from your resume
               </p>
-              <p className="mt-0.5" style={{ color: "#6366F1" }}>
+              <p className="mt-0.5 text-indigo-500 dark:text-indigo-400">
                 Please review each project and edit if needed. Projects marked with ✨ AI filled were read from your resume.
               </p>
             </div>
@@ -468,10 +450,7 @@ const ProjectsSection = forwardRef<ProjectsSectionHandle, ProjectsSectionProps>(
           {!showForm && editingIndex === null && (
             <button
               onClick={() => setShowForm(true)}
-              className="w-full py-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-colors"
-              style={{ border: "2px dashed #0273B1", color: "#0273B1", backgroundColor: "white" }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#F0F8FF"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "white"; }}
+              className="w-full py-3 rounded-lg font-semibold text-sm flex items-center justify-center gap-2 transition-colors border-2 border-dashed border-[#0273B1] dark:border-blue-400 text-[#0273B1] dark:text-blue-400 bg-white dark:bg-transparent hover:bg-[#F0F8FF] dark:hover:bg-slate-700/50"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -504,28 +483,26 @@ function ProjectCard({
   const dateRange = [project.startDate, project.endDate].filter(Boolean).join(" - ");
 
   return (
-    <div className="border border-gray-200 rounded-lg p-5 bg-white">
-      {/* Title row with AI badge */}
+    <div className="border border-gray-200 dark:border-slate-700 rounded-lg p-5 bg-white dark:bg-slate-800">
       <div className="flex items-center flex-wrap gap-1 mb-1">
-        <h4 className="font-bold text-base" style={{ color: "#1C2D4F" }}>
+        <h4 className="font-bold text-base text-[#1C2D4F] dark:text-slate-100">
           {project.name || "Project Name"} — {project.role || "Role"}
         </h4>
         {project._aiTag && <AIBadge />}
       </div>
 
-      <p className="text-sm mb-3" style={{ color: "#6B7280" }}>
+      <p className="text-sm mb-3 text-gray-500 dark:text-slate-400">
         Role: {project.role || "—"}{dateRange ? ` | ${dateRange}` : ""}
       </p>
       {project.description && (
-        <p className="text-sm mb-4" style={{ color: "#1C2D4F", lineHeight: "1.6" }}>
+        <p className="text-sm mb-4 text-[#1C2D4F] dark:text-slate-300 leading-relaxed">
           {project.description}
         </p>
       )}
       {skills.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-4">
           {skills.map((skill, i) => (
-            <span key={i} className="px-3 py-1 rounded-full text-sm font-medium"
-              style={{ backgroundColor: "#E3F5FF", color: "#0273B1" }}>
+            <span key={i} className="px-3 py-1 rounded-full text-sm font-medium bg-[#E3F5FF] dark:bg-blue-900/30 text-[#0273B1] dark:text-blue-400">
               {skill}
             </span>
           ))}
@@ -533,16 +510,10 @@ function ProjectCard({
       )}
       <div className="flex justify-end gap-2">
         <button onClick={onDelete}
-          className="px-5 py-2 rounded-lg text-sm font-semibold transition-colors"
-          style={{ backgroundColor: "white", border: "1.5px solid #D1D5DB", color: "#374151" }}
-          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#F3F4F6"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "white"; }}
+          className="px-5 py-2 rounded-lg text-sm font-semibold transition-colors bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-600"
         >Delete</button>
         <button onClick={onEdit}
-          className="px-5 py-2 rounded-lg text-sm font-semibold text-white transition-colors"
-          style={{ backgroundColor: "#0273B1" }}
-          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#025a8f"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#0273B1"; }}
+          className="px-5 py-2 rounded-lg text-sm font-semibold text-white transition-colors bg-[#0273B1] hover:bg-[#025a8f]"
         >Edit</button>
       </div>
     </div>
@@ -608,17 +579,24 @@ function ProjectForm({
   };
 
   const fieldBorder = (key: string) =>
-    errors[key] ? "border-red-500 ring-1 ring-red-400" : "border-gray-300";
+    errors[key]
+      ? "border-red-500 ring-1 ring-red-400"
+      : "border-gray-300 dark:border-slate-600";
+
+  const labelColor = (key: string) =>
+    errors[key]
+      ? "text-red-500"
+      : "text-[#0273B1] dark:text-blue-400";
 
   return (
-    <div className="border border-gray-200 rounded-lg p-6 bg-white">
-      <h4 className="text-lg font-bold mb-4" style={{ color: "#1C2D4F" }}>
+    <div className="border border-gray-200 dark:border-slate-700 rounded-lg p-6 bg-white dark:bg-slate-800">
+      <h4 className="text-lg font-bold mb-4 text-[#1C2D4F] dark:text-slate-100">
         {isEditing ? "Edit Project" : "Add Project"}
         {isEditing && project?._aiTag && <AIBadge />}
       </h4>
 
       {Object.values(errors).some(Boolean) && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mb-4 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-400">
           Please fill in all required fields highlighted in red.
         </div>
       )}
@@ -626,36 +604,36 @@ function ProjectForm({
       <div className="space-y-4">
         {/* Name */}
         <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: errors.name ? "#EF4444" : "#0273B1" }}>
+          <label className={`block text-xs font-medium mb-2 ${labelColor("name")}`}>
             Project Name{errors.name && " *"}
           </label>
           <input type="text" placeholder="Project Name" value={fields.name}
             onChange={(e) => set("name", e.target.value)}
-            className={`w-full px-4 py-3 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${fieldBorder("name")}`}
+            className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${fieldBorder("name")}`}
           />
         </div>
 
         {/* Role */}
         <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: errors.role ? "#EF4444" : "#0273B1" }}>
+          <label className={`block text-xs font-medium mb-2 ${labelColor("role")}`}>
             Role{errors.role && " *"}
           </label>
           <input type="text" placeholder="e.g. Web Developer" value={fields.role}
             onChange={(e) => set("role", e.target.value)}
-            className={`w-full px-4 py-3 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${fieldBorder("role")}`}
+            className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 ${fieldBorder("role")}`}
           />
         </div>
 
         {/* Dates */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium mb-2" style={{ color: errors.startDate ? "#EF4444" : "#0273B1" }}>
+            <label className={`block text-xs font-medium mb-2 ${labelColor("startDate")}`}>
               Start Date{errors.startDate && " *"}
             </label>
             <MonthYearPicker value={fields.startDate} onChange={(v) => set("startDate", v)} hasError={errors.startDate} />
           </div>
           <div>
-            <label className="block text-xs font-medium mb-2" style={{ color: errors.endDate ? "#EF4444" : "#0273B1" }}>
+            <label className={`block text-xs font-medium mb-2 ${labelColor("endDate")}`}>
               End Date{errors.endDate && " *"}
             </label>
             <MonthYearPicker value={fields.endDate} onChange={(v) => set("endDate", v)} hasError={errors.endDate} />
@@ -664,47 +642,45 @@ function ProjectForm({
 
         {/* Description */}
         <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: errors.description ? "#EF4444" : "#0273B1" }}>
+          <label className={`block text-xs font-medium mb-2 ${labelColor("description")}`}>
             Description{errors.description && " *"}
           </label>
           <textarea placeholder="Description about your project" value={fields.description}
             onChange={(e) => set("description", e.target.value)}
             rows={4}
-            className={`w-full px-4 py-3 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${fieldBorder("description")}`}
+            className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none ${fieldBorder("description")}`}
           />
         </div>
 
         {/* Skills */}
         <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: errors.relatedSkills ? "#EF4444" : "#0273B1" }}>Related Skills{errors.relatedSkills && " *"}</label>
+          <label className={`block text-xs font-medium mb-2 ${labelColor("relatedSkills")}`}>
+            Related Skills{errors.relatedSkills && " *"}
+          </label>
           <div className="flex gap-2">
             <div className="relative flex-1">
               <select value={selectedSkill} onChange={(e) => setSelectedSkill(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none pr-10"
+                className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none pr-10"
               >
                 <option value="">Select skill</option>
                 {SKILL_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
               </select>
-              <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none"
+              <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-slate-400 pointer-events-none"
                 fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
               </svg>
             </div>
             <button onClick={handleAddSkill}
-              className="px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
-              style={{ backgroundColor: "#E3F5FF", color: "#0273B1" }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#0273B1"; e.currentTarget.style.color = "#fff"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#E3F5FF"; e.currentTarget.style.color = "#0273B1"; }}
+              className="px-4 py-2 rounded-lg text-sm font-semibold transition-colors bg-[#E3F5FF] dark:bg-blue-900/30 text-[#0273B1] dark:text-blue-400 hover:bg-[#0273B1] dark:hover:bg-blue-600 hover:text-white"
             >Add</button>
           </div>
           {errors.relatedSkills && (
-            <p className="text-xs mt-1" style={{ color: "#EF4444" }}>กรุณาเพิ่มอย่างน้อย 1 skill</p>
+            <p className="text-xs mt-1 text-red-500 dark:text-red-400">กรุณาเพิ่มอย่างน้อย 1 skill</p>
           )}
           {fields.relatedSkills.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3">
               {fields.relatedSkills.map((skill, i) => (
-                <span key={i} className="flex items-center px-3 py-1 rounded-full text-sm font-medium"
-                  style={{ backgroundColor: "#E3F5FF", color: "#0273B1" }}>
+                <span key={i} className="flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#E3F5FF] dark:bg-blue-900/30 text-[#0273B1] dark:text-blue-400">
                   {skill}
                   <button onClick={() => handleRemoveSkill(skill)} className="ml-2 hover:opacity-60">×</button>
                 </span>
@@ -716,16 +692,10 @@ function ProjectForm({
         {/* Actions */}
         <div className="flex justify-end gap-2 pt-2">
           <button onClick={onCancel}
-            className="px-5 py-2 rounded-lg font-semibold text-sm transition-colors"
-            style={{ backgroundColor: "#F3F4F6", color: "#1C2D4F" }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#E5E7EB"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#F3F4F6"; }}
+            className="px-5 py-2 rounded-lg font-semibold text-sm transition-colors bg-gray-100 dark:bg-slate-700 text-[#1C2D4F] dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600"
           >Cancel</button>
           <button onClick={handleSubmit}
-            className="px-5 py-2 rounded-lg font-semibold text-sm text-white transition-colors"
-            style={{ backgroundColor: "#0273B1" }}
-            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#025a8f"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#0273B1"; }}
+            className="px-5 py-2 rounded-lg font-semibold text-sm text-white transition-colors bg-[#0273B1] hover:bg-[#025a8f]"
           >{isEditing ? "Save Changes" : "Add Project"}</button>
         </div>
       </div>

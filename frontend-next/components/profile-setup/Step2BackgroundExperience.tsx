@@ -42,10 +42,7 @@ interface EducationFormHandle {
 
 function AIBadge() {
   return (
-    <span
-      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium ml-2"
-      style={{ backgroundColor: "#EEF2FF", color: "#4338CA" }}
-    >
+    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium ml-2 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400">
       ✨ AI filled
     </span>
   );
@@ -109,13 +106,10 @@ export default function Step2BackgroundExperience({
       {/* Header */}
       <div className="flex justify-between items-start mb-6">
         <div>
-          <h2
-            className="text-2xl font-bold mb-1"
-            style={{ color: "#1C2D4F", fontWeight: 700 }}
-          >
+          <h2 className="text-2xl font-bold mb-1 text-[#1C2D4F] dark:text-slate-100">
             Education
           </h2>
-          <p className="text-sm" style={{ color: "#A9B4CD" }}>
+          <p className="text-sm text-[#A9B4CD] dark:text-slate-400">
             This step is optional — you can add education information at any time.
           </p>
         </div>
@@ -123,12 +117,7 @@ export default function Step2BackgroundExperience({
         {onSkip && (
           <button
             onClick={onSkip}
-            className="flex items-center px-4 py-2 rounded-lg font-medium text-sm"
-            style={{
-              border: "2px solid #0273B1",
-              color: "#0273B1",
-              backgroundColor: "white",
-            }}
+            className="flex items-center px-4 py-2 rounded-lg font-medium text-sm transition-colors border-2 border-[#0273B1] text-[#0273B1] bg-white dark:bg-slate-700 dark:text-blue-400 dark:border-blue-400 hover:bg-[#F0F4F8] dark:hover:bg-slate-600"
           >
             Skip &gt;
           </button>
@@ -137,18 +126,17 @@ export default function Step2BackgroundExperience({
 
       {/* AI Autofill Banner */}
       {data._aiFilled_education && (
-        <div
-          className="flex items-center gap-2 px-4 py-3 rounded-lg mb-5 text-sm"
-          style={{ backgroundColor: "#EEF2FF", color: "#4338CA", border: "1px solid #C7D2FE" }}
-        >
+        <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-5 text-sm bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700">
           <span className="text-base">✨</span>
           <span className="font-semibold">AI autofilled your education</span>
-          <span style={{ color: "#6366F1" }}>— Fields marked with ✨ AI filled were read from your resume. Please review and edit if needed.</span>
+          <span className="text-indigo-500 dark:text-indigo-400">
+            — Fields marked with ✨ AI filled were read from your resume. Please review and edit if needed.
+          </span>
         </div>
       )}
 
       {/* Form */}
-      <div className="border border-gray-200 rounded-lg p-6">
+      <div className="border border-gray-200 dark:border-slate-700 rounded-lg p-6">
         <EducationForm
           ref={educationFormRef}
           education={education[0] || null}
@@ -179,215 +167,214 @@ const YEAR_OF_STUDY_OPTIONS = [
   "Graduate",
 ];
 
-const EducationForm = forwardRef<
-  EducationFormHandle,
-  {
-    education: EducationData | null;
-    isAiFilled?: boolean;
-    onSave: (edu: EducationData) => void;
-    onFieldChange: (edu: EducationData) => void;
-  }
->(function EducationForm({ education, isAiFilled, onSave, onFieldChange }, ref) {
-  const [fields, setFields] = useState({
-    educationLevel: education?.educationLevel || "",
-    institution: education?.university || "",
-    degree: education?.degree || "",
-    fieldOfStudy: education?.fieldOfStudy || "",
-    yearOfStudy: education?.yearOfStudy || "",
-    gpa: education?.gpa != null ? String(education.gpa) : "",
-    isCurrent: education?.isCurrent || false,
-  });
+type EducationFormProps = {
+  education: EducationData | null;
+  isAiFilled?: boolean;
+  onSave: (edu: EducationData) => void;
+  onFieldChange: (edu: EducationData) => void;
+};
 
-  const [errors, setErrors] = useState<Record<string, boolean>>({});
-  const [universities, setUniversities] = useState<
-    { name: string; thname?: string }[]
-  >([]);
-  const [universitiesLoading, setUniversitiesLoading] = useState(false);
-
-  useEffect(() => {
-    if (!education) return;
-    setFields({
-      educationLevel: education.educationLevel || "",
-      institution: education.university || "",
-      degree: education.degree || "",
-      fieldOfStudy: education.fieldOfStudy || "",
-      yearOfStudy: education.yearOfStudy || "",
-      gpa: education.gpa != null ? String(education.gpa) : "",
-      isCurrent: education.isCurrent || false,
+const EducationForm = forwardRef<EducationFormHandle, EducationFormProps>(
+  function EducationForm({ education, isAiFilled, onSave, onFieldChange }, ref) {
+    const [fields, setFields] = useState({
+      educationLevel: education?.educationLevel || "",
+      institution: education?.university || "",
+      degree: education?.degree || "",
+      fieldOfStudy: education?.fieldOfStudy || "",
+      yearOfStudy: education?.yearOfStudy || "",
+      gpa: education?.gpa != null ? String(education.gpa) : "",
+      isCurrent: education?.isCurrent || false,
     });
-  }, [education]);
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      setUniversitiesLoading(true);
-      try {
-        const data = await apiFetch<{ universities: any[] }>("/api/universities");
-        if (!cancelled) setUniversities(data.universities || []);
-      } catch {
-        if (!cancelled) setUniversities([]);
-      } finally {
-        if (!cancelled) setUniversitiesLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, []);
+    const [errors, setErrors] = useState<Record<string, boolean>>({});
+    const [universities, setUniversities] = useState<{ name: string; thname?: string }[]>([]);
+    const [universitiesLoading, setUniversitiesLoading] = useState(false);
 
-  const updateField = (key: string, value: any) => {
-    const updated = { ...fields, [key]: value };
-    setFields(updated);
-    if (errors[key]) setErrors((prev) => ({ ...prev, [key]: false }));
-    onFieldChange(toPayload(updated));
-  };
+    useEffect(() => {
+      if (!education) return;
+      setFields({
+        educationLevel: education.educationLevel || "",
+        institution: education.university || "",
+        degree: education.degree || "",
+        fieldOfStudy: education.fieldOfStudy || "",
+        yearOfStudy: education.yearOfStudy || "",
+        gpa: education.gpa != null ? String(education.gpa) : "",
+        isCurrent: education.isCurrent || false,
+      });
+    }, [education]);
 
-  const toPayload = (f: typeof fields): EducationData => ({
-    educationLevel: f.educationLevel,
-    university: f.institution,
-    degree: f.degree,
-    fieldOfStudy: f.fieldOfStudy,
-    yearOfStudy: f.yearOfStudy,
-    gpa: f.gpa,
-    isCurrent: f.isCurrent,
-  });
+    useEffect(() => {
+      let cancelled = false;
+      (async () => {
+        setUniversitiesLoading(true);
+        try {
+          const data = await apiFetch<{ universities: any[] }>("/api/universities");
+          if (!cancelled) setUniversities(data.universities || []);
+        } catch {
+          if (!cancelled) setUniversities([]);
+        } finally {
+          if (!cancelled) setUniversitiesLoading(false);
+        }
+      })();
+      return () => { cancelled = true; };
+    }, []);
 
-  const validate = (): boolean => {
-    const newErrors: Record<string, boolean> = {};
-    if (!fields.educationLevel) newErrors.educationLevel = true;
-    if (!fields.institution) newErrors.institution = true;
-    if (!fields.degree) newErrors.degree = true;
-    if (!fields.fieldOfStudy) newErrors.fieldOfStudy = true;
-    if (!fields.yearOfStudy) newErrors.yearOfStudy = true;
-    if (!fields.gpa) newErrors.gpa = true;
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+    const updateField = (key: string, value: any) => {
+      const updated = { ...fields, [key]: value };
+      setFields(updated);
+      if (errors[key]) setErrors((prev) => ({ ...prev, [key]: false }));
+      onFieldChange(toPayload(updated));
+    };
 
-  useImperativeHandle(ref, () => ({
-    validate,
-    submit: async () => {
-      if (!validate()) return false;
-      onSave(toPayload(fields));
-      return true;
-    },
-  }));
+    const toPayload = (f: typeof fields): EducationData => ({
+      educationLevel: f.educationLevel,
+      university: f.institution,
+      degree: f.degree,
+      fieldOfStudy: f.fieldOfStudy,
+      yearOfStudy: f.yearOfStudy,
+      gpa: f.gpa,
+      isCurrent: f.isCurrent,
+    });
 
-  const borderClass = (key: string) =>
-    errors[key]
-      ? "border-red-500 ring-1 ring-red-400"
-      : "border-gray-300";
+    const validate = (): boolean => {
+      const newErrors: Record<string, boolean> = {};
+      if (!fields.educationLevel) newErrors.educationLevel = true;
+      if (!fields.institution) newErrors.institution = true;
+      if (!fields.degree) newErrors.degree = true;
+      if (!fields.fieldOfStudy) newErrors.fieldOfStudy = true;
+      if (!fields.yearOfStudy) newErrors.yearOfStudy = true;
+      if (!fields.gpa) newErrors.gpa = true;
+      setErrors(newErrors);
+      return Object.keys(newErrors).length === 0;
+    };
 
-  return (
-    <div className="space-y-5">
-      {/* Error banner */}
-      {Object.values(errors).some(Boolean) && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          Please fill in all required fields highlighted in red.
-        </div>
-      )}
+    useImperativeHandle(ref, () => ({
+      validate,
+      submit: async () => {
+        if (!validate()) return false;
+        onSave(toPayload(fields));
+        return true;
+      },
+    }));
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Education Level */}
-        <div>
-          <label className="block text-xs font-medium mb-2 text-gray-700">
-            Education Level
-          </label>
-          <select
-            value={fields.educationLevel}
-            onChange={(e) => updateField("educationLevel", e.target.value)}
-            className={`w-full px-4 py-3 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 ${borderClass("educationLevel")}`}
-          >
-            <option value="">Select education level</option>
-            {EDUCATION_LEVELS.map((level) => (
-              <option key={level} value={level}>
-                {level}
-              </option>
-            ))}
-          </select>
-        </div>
+    const borderClass = (key: string) =>
+      errors[key]
+        ? "border-red-500 ring-1 ring-red-400"
+        : "border-gray-300 dark:border-slate-600";
 
-        {/* Institution Name */}
-        <div>
-          <label className="block text-xs font-medium mb-2 text-gray-700">
-            Institution Name {isAiFilled && <AIBadge />}
-          </label>
-          {universitiesLoading ? (
-            <div className="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm text-gray-400">
-              Loading...
-            </div>
-          ) : (
-            <div className={errors.institution ? "rounded-lg ring-1 ring-red-500" : ""}>
-              <SearchableDropdown
-                options={universities.map((uni) => ({
-                  value: uni.name,
-                  label: uni.thname ? `${uni.name} (${uni.thname})` : uni.name,
-                }))}
-                value={fields.institution}
-                onChange={(value) => updateField("institution", value)}
-                placeholder="Select Institution"
-                className="w-full"
-              />
-            </div>
-          )}
-        </div>
+    return (
+      <div className="space-y-5">
+        {/* Error banner */}
+        {Object.values(errors).some(Boolean) && (
+          <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-400">
+            Please fill in all required fields highlighted in red.
+          </div>
+        )}
 
-        {/* Degree */}
-        <div>
-          <label className="block text-xs font-medium mb-2 text-gray-700">
-            Degree {isAiFilled && <AIBadge />}
-          </label>
-          <input
-            value={fields.degree}
-            onChange={(e) => updateField("degree", e.target.value)}
-            placeholder="e.g. Bachelor of Science"
-            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${borderClass("degree")}`}
-          />
-        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Education Level */}
+          <div>
+            <label className="block text-xs font-medium mb-2 text-gray-700 dark:text-slate-300">
+              Education Level
+            </label>
+            <select
+              value={fields.educationLevel}
+              onChange={(e) => updateField("educationLevel", e.target.value)}
+              className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-400 ${borderClass("educationLevel")}`}
+            >
+              <option value="">Select education level</option>
+              {EDUCATION_LEVELS.map((level) => (
+                <option key={level} value={level}>
+                  {level}
+                </option>
+              ))}
+            </select>
+          </div>
 
-        {/* Field of Study */}
-        <div>
-          <label className="block text-xs font-medium mb-2 text-gray-700">
-            Field of Study {isAiFilled && <AIBadge />}
-          </label>
-          <input
-            value={fields.fieldOfStudy}
-            onChange={(e) => updateField("fieldOfStudy", e.target.value)}
-            placeholder="e.g. Computer Science"
-            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${borderClass("fieldOfStudy")}`}
-          />
-        </div>
+          {/* Institution Name */}
+          <div>
+            <label className="block text-xs font-medium mb-2 text-gray-700 dark:text-slate-300">
+              Institution Name {isAiFilled && <AIBadge />}
+            </label>
+            {universitiesLoading ? (
+              <div className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg text-sm text-gray-400 dark:text-slate-500 bg-white dark:bg-slate-700">
+                Loading...
+              </div>
+            ) : (
+              <div className={errors.institution ? "rounded-lg ring-1 ring-red-500" : ""}>
+                <SearchableDropdown
+                  options={universities.map((uni: { name: string; thname?: string }) => ({
+                    value: uni.name,
+                    label: uni.thname ? `${uni.name} (${uni.thname})` : uni.name,
+                  }))}
+                  value={fields.institution}
+                  onChange={(value) => updateField("institution", value)}
+                  placeholder="Select Institution"
+                  className="w-full"
+                />
+              </div>
+            )}
+          </div>
 
-        {/* Year of Study */}
-        <div>
-          <label className="block text-xs font-medium mb-2 text-gray-700">
-            Year of Study
-          </label>
-          <select
-            value={fields.yearOfStudy}
-            onChange={(e) => updateField("yearOfStudy", e.target.value)}
-            className={`w-full px-4 py-3 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-400 ${borderClass("yearOfStudy")}`}
-          >
-            <option value="">Select year of study</option>
-            {YEAR_OF_STUDY_OPTIONS.map((year) => (
-              <option key={year} value={year}>
-                {year}
-              </option>
-            ))}
-          </select>
-        </div>
+          {/* Degree */}
+          <div>
+            <label className="block text-xs font-medium mb-2 text-gray-700 dark:text-slate-300">
+              Degree {isAiFilled && <AIBadge />}
+            </label>
+            <input
+              value={fields.degree}
+              onChange={(e) => updateField("degree", e.target.value)}
+              placeholder="e.g. Bachelor of Science"
+              className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 ${borderClass("degree")}`}
+            />
+          </div>
 
-        {/* GPA */}
-        <div>
-          <label className="block text-xs font-medium mb-2 text-gray-700">
-            GPA (Current) {isAiFilled && <AIBadge />}
-          </label>
-          <input
-            value={fields.gpa}
-            onChange={(e) => updateField("gpa", e.target.value)}
-            placeholder="e.g. 3.50"
-            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 ${borderClass("gpa")}`}
-          />
+          {/* Field of Study */}
+          <div>
+            <label className="block text-xs font-medium mb-2 text-gray-700 dark:text-slate-300">
+              Field of Study {isAiFilled && <AIBadge />}
+            </label>
+            <input
+              value={fields.fieldOfStudy}
+              onChange={(e) => updateField("fieldOfStudy", e.target.value)}
+              placeholder="e.g. Computer Science"
+              className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 ${borderClass("fieldOfStudy")}`}
+            />
+          </div>
+
+          {/* Year of Study */}
+          <div>
+            <label className="block text-xs font-medium mb-2 text-gray-700 dark:text-slate-300">
+              Year of Study
+            </label>
+            <select
+              value={fields.yearOfStudy}
+              onChange={(e) => updateField("yearOfStudy", e.target.value)}
+              className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-400 ${borderClass("yearOfStudy")}`}
+            >
+              <option value="">Select year of study</option>
+              {YEAR_OF_STUDY_OPTIONS.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* GPA */}
+          <div>
+            <label className="block text-xs font-medium mb-2 text-gray-700 dark:text-slate-300">
+              GPA (Current) {isAiFilled && <AIBadge />}
+            </label>
+            <input
+              value={fields.gpa}
+              onChange={(e) => updateField("gpa", e.target.value)}
+              placeholder="e.g. 3.50"
+              className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 ${borderClass("gpa")}`}
+            />
+          </div>
         </div>
       </div>
-    </div>
-  );
-});
+    );
+  }
+);

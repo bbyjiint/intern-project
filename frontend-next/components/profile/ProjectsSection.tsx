@@ -227,12 +227,12 @@ export default function ProjectsSection({ projects, onRefresh }: { projects: Pro
       )}
 
       {/* Modals ที่รับ props ต่อไป (ต้องตรวจสอบตัว Modal ลูกด้วยว่ารองรับ Dark mode หรือยัง) */}
-      <ProjectUploadModal isOpen={isUploadOpen} onClose={() => setIsUploadOpen(false)} project={selectedProject} onRefresh={onRefresh} />
+      <ProjectUploadModal isOpen={isUploadOpen} onClose={() => setIsUploadOpen(false)} project={selectedProject} onRefresh={onRefresh} onUpdate={() => onRefresh?.()} />
       <ProjectsModal 
         isOpen={isModalOpen} 
         onClose={() => { setIsModalOpen(false); setEditingProject(null); }} 
         onSave={async (projectData) => {
-          const payload = { ...projectData, startDate: parseToISODate(projectData.startDate || ""), endDate: parseToISODate(projectData.endDate || ""), githubUrl: "", projectUrl: "", fileUrl: "", fileName: "" };
+          const payload = { ...projectData, startDate: parseToISODate(projectData.startDate || ""), endDate: parseToISODate(projectData.endDate || ""), githubUrl: "", projectUrl: "", fileUrl: "", fileName: ""};
           const method = editingProject?.id ? "PUT" : "POST";
           const url = editingProject?.id ? `/api/candidates/projects/${editingProject.id}` : "/api/candidates/projects";
           await apiFetch(url, { method, body: JSON.stringify(payload) });

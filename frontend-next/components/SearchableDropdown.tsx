@@ -54,13 +54,13 @@ export default function SearchableDropdown({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-left flex items-center justify-between focus:outline-none focus:border-[#94A3B8]"
+        className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] dark:border-slate-600 bg-white dark:bg-slate-700 px-3 text-left flex items-center justify-between focus:outline-none focus:border-[#94A3B8] dark:focus:border-slate-400"
       >
-        <span className={`text-[13px] truncate ${value === '' ? 'text-[#9CA3AF]' : 'text-[#111827]'}`}>
+        <span className={`text-[13px] truncate ${value === '' ? 'text-[#9CA3AF] dark:text-slate-400' : 'text-[#111827] dark:text-slate-200'}`}>
           {displayValue}
         </span>
         <svg
-          className={`ml-2 h-4 w-4 shrink-0 text-[#6B7280] transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`ml-2 h-4 w-4 shrink-0 text-[#6B7280] dark:text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -70,14 +70,14 @@ export default function SearchableDropdown({
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-[#D1D5DB] rounded-[8px] shadow-lg max-h-60 overflow-hidden">
-          <div className="p-2 border-b border-[#E5E7EB]">
+        <div className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-700 border border-[#D1D5DB] dark:border-slate-600 rounded-[8px] shadow-lg max-h-60 overflow-hidden">
+          <div className="p-2 border-b border-[#E5E7EB] dark:border-slate-600">
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={placeholder}
-              className="w-full rounded-[6px] border border-[#D1D5DB] px-3 py-2 text-[13px] outline-none focus:border-[#94A3B8]"
+              className="w-full rounded-[6px] border border-[#D1D5DB] dark:border-slate-500 bg-white dark:bg-slate-600 text-[#111827] dark:text-slate-200 placeholder-[#9CA3AF] dark:placeholder-slate-400 px-3 py-2 text-[13px] outline-none focus:border-[#94A3B8] dark:focus:border-slate-400"
               autoFocus
             />
           </div>
@@ -86,8 +86,10 @@ export default function SearchableDropdown({
               <button
                 type="button"
                 onClick={() => handleSelect('')}
-                className={`w-full px-4 py-2 text-left text-[13px] hover:bg-[#F3F4F6] transition-colors ${
-                  value === '' ? 'bg-[#EFF6FF] text-[#2563EB] font-medium' : 'text-[#111827]'
+                className={`w-full px-4 py-2 text-left text-[13px] transition-colors ${
+                  value === ''
+                    ? 'bg-[#EFF6FF] dark:bg-blue-900/30 text-[#2563EB] dark:text-blue-400 font-medium'
+                    : 'text-[#111827] dark:text-slate-200 hover:bg-[#F3F4F6] dark:hover:bg-slate-600'
                 }`}
               >
                 {allOptionLabel}
@@ -104,8 +106,10 @@ export default function SearchableDropdown({
                     key={option.value}
                     type="button"
                     onClick={() => handleSelect(option.value)}
-                    className={`w-full px-4 py-2 text-left text-[13px] hover:bg-[#F3F4F6] transition-colors ${
-                      value === option.value ? 'bg-[#EFF6FF] text-[#2563EB] font-medium' : 'text-[#111827]'
+                    className={`w-full px-4 py-2 text-left text-[13px] transition-colors ${
+                      value === option.value
+                        ? 'bg-[#EFF6FF] dark:bg-blue-900/30 text-[#2563EB] dark:text-blue-400 font-medium'
+                        : 'text-[#111827] dark:text-slate-200 hover:bg-[#F3F4F6] dark:hover:bg-slate-600'
                     }`}
                   >
                     <div className="flex items-center gap-2">
@@ -113,8 +117,8 @@ export default function SearchableDropdown({
                       {option.code && (
                         <span className={`text-xs px-2 py-0.5 rounded ${
                           codeMatches && !labelMatches
-                            ? 'bg-blue-100 text-blue-700 font-medium'
-                            : 'bg-gray-100 text-gray-600'
+                            ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-400 font-medium'
+                            : 'bg-gray-100 dark:bg-slate-500 text-gray-600 dark:text-slate-300'
                         }`}>
                           {option.code}
                         </span>
@@ -124,7 +128,7 @@ export default function SearchableDropdown({
                 )
               })
             ) : (
-              <div className="px-4 py-2 text-[13px] text-[#9CA3AF]">No results found</div>
+              <div className="px-4 py-2 text-[13px] text-[#9CA3AF] dark:text-slate-400">No results found</div>
             )}
           </div>
         </div>

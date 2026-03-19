@@ -75,13 +75,13 @@ const renderLines = (text?: string | string[] | null) => {
         .split("\n")
         .map((l) => l.trim())
         .filter(Boolean);
-  if (!lines.length) return <p className="text-gray-600 text-[15px]">-</p>;
+  if (!lines.length) return <p className="text-gray-600 dark:text-slate-400 text-[15px]">-</p>;
   return (
     <ul className="space-y-2">
       {lines.map((line, i) => (
         <li
           key={i}
-          className="text-gray-600 text-[15px] leading-relaxed flex items-start"
+          className="text-gray-600 dark:text-slate-400 text-[15px] leading-relaxed flex items-start"
         >
           <span className="mr-2">-</span>
           <span>{line.startsWith("-") ? line.slice(1).trim() : line}</span>
@@ -122,7 +122,6 @@ export default function JobDetailPage() {
           `/api/job-posts/public/${jobId}`,
         );
         setJob(response.jobPost);
-        // check ว่าเคย apply ไปแล้วหรือยัง
         try {
           const appResp = await apiFetch<{ applications: any[] }>(
             "/api/intern/applications",
@@ -175,10 +174,10 @@ export default function JobDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#E6EBF4] flex flex-col">
+      <div className="min-h-screen bg-[#E6EBF4] dark:bg-slate-950 flex flex-col">
         <InternNavbar />
         <div className="flex flex-1 items-center justify-center">
-          <div className="w-12 h-12 border-4 border-gray-200 border-t-blue-600 rounded-full animate-spin" />
+          <div className="w-12 h-12 border-4 border-gray-200 dark:border-slate-700 border-t-blue-600 rounded-full animate-spin" />
         </div>
       </div>
     );
@@ -186,10 +185,10 @@ export default function JobDetailPage() {
 
   if (!job) {
     return (
-      <div className="min-h-screen bg-[#F4F7FA] flex flex-col">
+      <div className="min-h-screen bg-[#F4F7FA] dark:bg-slate-950 flex flex-col">
         <InternNavbar />
         <div className="flex flex-1 items-center justify-center px-6">
-          <div className="rounded-xl bg-white px-6 py-8 text-center shadow-sm border border-gray-100 text-gray-600">
+          <div className="rounded-xl bg-white dark:bg-slate-800 px-6 py-8 text-center shadow-sm border border-gray-100 dark:border-slate-700 text-gray-600 dark:text-slate-400">
             {loadError || "Job not found"}
           </div>
         </div>
@@ -200,23 +199,23 @@ export default function JobDetailPage() {
   const workType = formatWorkType(job.workplaceType);
 
   return (
-    <div className="min-h-screen bg-[#F4F7FA] flex flex-col">
+    <div className="min-h-screen bg-[#F4F7FA] dark:bg-slate-950 flex flex-col transition-colors duration-300">
       <InternNavbar />
 
       <div className="layout-container layout-page">
         {/* Back Button */}
         <button
           onClick={() => router.back()}
-          className="text-gray-600 font-bold text-[15px] mb-6 hover:text-black transition-colors"
+          className="text-gray-600 dark:text-slate-400 font-bold text-[15px] mb-6 hover:text-black dark:hover:text-white transition-colors"
         >
           &lt;&lt; Back
         </button>
 
         <div className="flex flex-col lg:flex-row gap-6 items-start">
           {/* LEFT COLUMN */}
-          <div className="flex-[2] bg-white rounded-2xl shadow-sm border border-gray-100 p-8 lg:p-10 w-full">
+          <div className="flex-[2] bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-8 lg:p-10 w-full">
             {/* Date */}
-            <div className="flex items-center text-gray-500 mb-4">
+            <div className="flex items-center text-gray-500 dark:text-slate-400 mb-4">
               <svg
                 className="w-4 h-4 mr-2"
                 fill="none"
@@ -236,10 +235,10 @@ export default function JobDetailPage() {
             </div>
 
             {/* Title & Company */}
-            <h1 className="text-[28px] font-extrabold text-black mb-1">
+            <h1 className="text-[28px] font-extrabold text-black dark:text-white mb-1">
               {job.jobTitle || "Untitled Job Post"}
             </h1>
-            <p className="text-gray-500 mb-6">{job.companyName || "-"}</p>
+            <p className="text-gray-500 dark:text-slate-400 mb-6">{job.companyName || "-"}</p>
 
             {/* Tags */}
             <div className="flex flex-wrap gap-2 mb-8">
@@ -255,7 +254,7 @@ export default function JobDetailPage() {
                 ? job.positions.map((pos) => (
                     <span
                       key={pos}
-                      className="rounded-[5px] bg-[#E5E7EB] px-[14px] py-[5px] text-[12px] font-semibold text-[#4B5563]"
+                      className="rounded-[5px] bg-[#E5E7EB] dark:bg-slate-700 px-[14px] py-[5px] text-[12px] font-semibold text-[#4B5563] dark:text-slate-300"
                     >
                       {pos}
                     </span>
@@ -264,13 +263,13 @@ export default function JobDetailPage() {
             </div>
 
             {/* Positions Available */}
-            <h3 className="text-lg font-bold text-black mb-8">
+            <h3 className="text-lg font-bold text-black dark:text-white mb-8">
               Number of positions available: {job.positionsAvailable ?? "-"}
             </h3>
 
             {/* Job Description */}
             <div className="mb-8">
-              <h3 className="text-[17px] font-bold text-black mb-3">
+              <h3 className="text-[17px] font-bold text-black dark:text-white mb-3">
                 Job description
               </h3>
               {renderLines(job.jobDescription)}
@@ -278,7 +277,7 @@ export default function JobDetailPage() {
 
             {/* Applicant Qualifications */}
             <div className="mb-8">
-              <h3 className="text-[17px] font-bold text-black mb-3">
+              <h3 className="text-[17px] font-bold text-black dark:text-white mb-3">
                 Applicant qualifications
               </h3>
               {renderLines(job.qualifications)}
@@ -287,49 +286,49 @@ export default function JobDetailPage() {
             {/* Other Details */}
             <div className="space-y-6 mb-12">
               <div>
-                <h3 className="text-[17px] font-bold text-black mb-1">GPA</h3>
-                <p className="text-gray-600 text-[15px]">
+                <h3 className="text-[17px] font-bold text-black dark:text-white mb-1">GPA</h3>
+                <p className="text-gray-600 dark:text-slate-400 text-[15px]">
                   {job.gpa || "Not specified"}
                 </p>
               </div>
               <div>
-                <h3 className="text-[17px] font-bold text-black mb-1">
+                <h3 className="text-[17px] font-bold text-black dark:text-white mb-1">
                   Allowance
                 </h3>
-                <p className="text-gray-600 text-[15px]">
+                <p className="text-gray-600 dark:text-slate-400 text-[15px]">
                   {formatAllowance(job)}
                 </p>
               </div>
               <div>
-                <h3 className="text-[17px] font-bold text-black mb-1">
+                <h3 className="text-[17px] font-bold text-black dark:text-white mb-1">
                   Preferred Location
                 </h3>
-                <p className="text-gray-600 text-[15px]">
+                <p className="text-gray-600 dark:text-slate-400 text-[15px]">
                   {job.location || "Location not specified"}
                 </p>
               </div>
               <div>
-                <h3 className="text-[17px] font-bold text-black mb-1">
+                <h3 className="text-[17px] font-bold text-black dark:text-white mb-1">
                   Working Days &amp; Hours
                 </h3>
-                <p className="text-gray-600 text-[15px]">
+                <p className="text-gray-600 dark:text-slate-400 text-[15px]">
                   {job.workingDaysHours || "Not specified"}
                 </p>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-4 border-t pt-8 justify-end">
+            <div className="flex gap-4 border-t border-gray-100 dark:border-slate-700 pt-8 justify-end">
               <button
                 onClick={() => router.back()}
-                className="px-6 py-2 rounded-lg border-2 border-[#2563EB] text-[#2563EB] font-bold hover:bg-blue-50 transition-colors"
+                className="px-6 py-2 rounded-lg border-2 border-[#2563EB] text-[#2563EB] font-bold hover:bg-blue-50 dark:hover:bg-blue-950 transition-colors"
               >
                 Back
               </button>
               <button
                 onClick={() => void handleApply()}
                 disabled={isApplying || hasApplied || job.state === "CLOSED"}
-                className="px-6 py-2 rounded-lg bg-[#2563EB] text-white font-bold hover:bg-blue-700 shadow-md shadow-blue-200 transition-colors disabled:cursor-not-allowed disabled:bg-[#E5E7EB] disabled:shadow-none disabled:text-[#9CA3AF]"
+                className="px-6 py-2 rounded-lg bg-[#2563EB] text-white font-bold hover:bg-blue-700 shadow-md shadow-blue-200 dark:shadow-none transition-colors disabled:cursor-not-allowed disabled:bg-[#E5E7EB] dark:disabled:bg-slate-700 disabled:shadow-none disabled:text-[#9CA3AF] dark:disabled:text-slate-500"
               >
                 {job.state === "CLOSED"
                   ? "Position closed"
@@ -345,8 +344,8 @@ export default function JobDetailPage() {
               <div
                 className={`mt-4 rounded-lg px-4 py-3 text-sm ${
                   hasApplied
-                    ? "bg-[#EFF6FF] text-[#1D4ED8]"
-                    : "bg-[#FEF2F2] text-[#B91C1C]"
+                    ? "bg-[#EFF6FF] dark:bg-blue-950 text-[#1D4ED8] dark:text-blue-300"
+                    : "bg-[#FEF2F2] dark:bg-red-950 text-[#B91C1C] dark:text-red-400"
                 }`}
               >
                 {applyMessage}
@@ -355,14 +354,14 @@ export default function JobDetailPage() {
           </div>
 
           {/* RIGHT COLUMN */}
-          <div className="flex-[1] bg-white rounded-2xl shadow-sm border border-gray-100 p-8 w-full sticky top-8">
-            <h2 className="text-xl font-extrabold text-black text-center mb-6">
+          <div className="flex-[1] bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-8 w-full sticky top-8">
+            <h2 className="text-xl font-extrabold text-black dark:text-white text-center mb-6">
               Job Poster
             </h2>
 
             {/* Logo */}
             <div className="flex justify-center mb-6">
-              <div className="w-24 h-24 bg-[#F8F9FA] border border-gray-100 rounded-full flex items-center justify-center shadow-sm overflow-hidden">
+              <div className="w-24 h-24 bg-[#F8F9FA] dark:bg-slate-700 border border-gray-100 dark:border-slate-600 rounded-full flex items-center justify-center shadow-sm overflow-hidden">
                 {job.companyLogo && job.companyLogo.startsWith("http") ? (
                   <img
                     src={job.companyLogo}
@@ -379,23 +378,23 @@ export default function JobDetailPage() {
 
             {/* Company Name & Email */}
             <div className="text-center mb-6">
-              <h3 className="text-lg font-bold text-black">
+              <h3 className="text-lg font-bold text-black dark:text-white">
                 {job.companyName || "-"}
               </h3>
-              <p className="text-sm text-gray-500">{job.companyEmail || "-"}</p>
+              <p className="text-sm text-gray-500 dark:text-slate-400">{job.companyEmail || "-"}</p>
             </div>
 
-            <p className="text-sm text-gray-600 leading-relaxed mb-8 text-left px-2">
+            <p className="text-sm text-gray-600 dark:text-slate-400 leading-relaxed mb-8 text-left px-2">
               {job.companyDescription || "-"}
             </p>
 
             {/* Contact Info */}
             <div className="mb-8">
-              <h4 className="text-[15px] font-bold text-black mb-4">
+              <h4 className="text-[15px] font-bold text-black dark:text-white mb-4">
                 Contact Information
               </h4>
               <div className="space-y-3">
-                <div className="flex items-center text-gray-600 text-sm">
+                <div className="flex items-center text-gray-600 dark:text-slate-400 text-sm">
                   <svg
                     className="w-5 h-5 text-[#2563EB] mr-3"
                     fill="none"
@@ -411,7 +410,7 @@ export default function JobDetailPage() {
                   </svg>
                   {job.contactPhone || "-"}
                 </div>
-                <div className="flex items-center text-gray-600 text-sm">
+                <div className="flex items-center text-gray-600 dark:text-slate-400 text-sm">
                   <svg
                     className="w-5 h-5 text-[#2563EB] mr-3"
                     fill="none"
@@ -432,11 +431,11 @@ export default function JobDetailPage() {
 
             {/* Address & Map */}
             <div>
-              <h4 className="text-[15px] font-bold text-black mb-2">Address</h4>
-              <p className="text-sm text-gray-600 leading-relaxed mb-4">
+              <h4 className="text-[15px] font-bold text-black dark:text-white mb-2">Address</h4>
+              <p className="text-sm text-gray-600 dark:text-slate-400 leading-relaxed mb-4">
                 {job.address || "-"}
               </p>
-              <div className="w-full h-48 bg-gray-200 rounded-xl overflow-hidden border border-gray-200">
+              <div className="w-full h-48 bg-gray-200 dark:bg-slate-700 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-600">
                 {job.mapEmbedUrl ? (
                   <iframe
                     src={job.mapEmbedUrl}
@@ -448,7 +447,7 @@ export default function JobDetailPage() {
                     referrerPolicy="no-referrer-when-downgrade"
                   />
                 ) : (
-                  <div className="flex h-full items-center justify-center text-sm text-gray-500">
+                  <div className="flex h-full items-center justify-center text-sm text-gray-500 dark:text-slate-400">
                     Map not available
                   </div>
                 )}
