@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { apiFetch } from "@/lib/api";
 import SearchableDropdown from "@/components/SearchableDropdown";
+import { POSITION_OPTIONS } from "@/constants/positionOptions";
 
 export interface CreateJobPostModalValues {
   jobTitle: string;
@@ -42,30 +43,6 @@ const initialValues: CreateJobPostModalValues = {
   jobSpecification: "",
 };
 
-// Common positions list
-const POSITION_OPTIONS = [
-  "Frontend Developer",
-  "Backend Developer",
-  "Full Stack Developer",
-  "Software Engineer",
-  "Data Scientist",
-  "Data Analyst",
-  "AI Developer",
-  "Machine Learning Engineer",
-  "DevOps Engineer",
-  "UI/UX Designer",
-  "Product Manager",
-  "Business Analyst",
-  "Marketing Intern",
-  "HR Intern",
-  "Finance Intern",
-  "Accounting Intern",
-  "Graphic Designer",
-  "Content Writer",
-  "Digital Marketing",
-  "Sales Intern",
-];
-
 export default function CreateJobPostModal({
   isOpen,
   isSubmitting,
@@ -81,6 +58,7 @@ export default function CreateJobPostModal({
   >([]);
   const [provincesLoading, setProvincesLoading] = useState(false);
   const [showPositionsDropdown, setShowPositionsDropdown] = useState(false);
+  const [positionSearchQuery, setPositionSearchQuery] = useState("");
   const positionsDropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -102,6 +80,7 @@ export default function CreateJobPostModal({
         !positionsDropdownRef.current.contains(event.target as Node)
       ) {
         setShowPositionsDropdown(false);
+        setPositionSearchQuery("");
       }
     }
 
@@ -111,6 +90,10 @@ export default function CreateJobPostModal({
         document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [showPositionsDropdown]);
+
+  const filteredPositionOptions = POSITION_OPTIONS.filter((position) =>
+    position.toLowerCase().includes(positionSearchQuery.toLowerCase().trim())
+  );
 
   const loadProvinces = async () => {
     setProvincesLoading(true);
@@ -386,20 +369,35 @@ export default function CreateJobPostModal({
               </button>
               {showPositionsDropdown && (
                 <div className="absolute z-10 mt-1 max-h-[200px] w-full overflow-y-auto rounded-[8px] border border-[#CBD5E1] bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800">
-                  {POSITION_OPTIONS.map((position) => (
-                    <label
-                      key={position}
-                      className="flex cursor-pointer items-center gap-2 px-3 py-2 text-[13px] text-[#111827] hover:bg-[#F3F4F6] dark:text-white dark:hover:bg-gray-700"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={values.positions.includes(position)}
-                        onChange={() => togglePosition(position)}
-                        className="h-4 w-4 rounded border-[#CBD5E1] text-[#2563EB] focus:ring-[#2563EB] dark:border-gray-700"
-                      />
-                      <span>{position}</span>
-                    </label>
-                  ))}
+                  <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-[#CBD5E1] px-3 py-2 z-10">
+                    <input
+                      type="text"
+                      value={positionSearchQuery}
+                      onChange={(e) => setPositionSearchQuery(e.target.value)}
+                      placeholder="Search position..."
+                      className="w-full h-[34px] rounded-[6px] border border-[#CBD5E1] bg-white px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] dark:border-gray-700 dark:bg-gray-900/50 dark:text-white dark:placeholder:text-gray-500"
+                    />
+                  </div>
+                  {filteredPositionOptions.length > 0 ? (
+                    filteredPositionOptions.map((position) => (
+                      <label
+                        key={position}
+                        className="flex cursor-pointer items-center gap-2 px-3 py-2 text-[13px] text-[#111827] hover:bg-[#F3F4F6] dark:text-white dark:hover:bg-gray-700"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={values.positions.includes(position)}
+                          onChange={() => togglePosition(position)}
+                          className="h-4 w-4 rounded border-[#CBD5E1] text-[#2563EB] focus:ring-[#2563EB] dark:border-gray-700"
+                        />
+                        <span>{position}</span>
+                      </label>
+                    ))
+                  ) : (
+                    <div className="px-3 py-2 text-[13px] text-[#9CA3AF] dark:text-gray-400">
+                      No positions found
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -82,21 +82,15 @@ export default function ApplicantFilters({
 
           <div>
             <label className="mb-1.5 block text-[13px] font-semibold text-[#374151] dark:text-[#e5e7eb]">Position</label>
-            <div className="relative">
-              <select
-                value={positionFilter}
-                onChange={(e) => onPositionChange(e.target.value)}
-                className="h-[42px] w-full appearance-none rounded-[8px] border border-[#D1D5DB] bg-white px-3 pr-9 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8] dark:border-gray-700 dark:bg-gray-900/50 dark:text-white"
-              >
-                <option value="">Position</option>
-                {positionOptions.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select>
-              <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
-                <svg className="h-4 w-4 text-[#6B7280] dark:text-[#686868]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
-            </div>
+            <SearchableDropdown
+              options={positionOptions.map((p) => ({ value: p, label: p }))}
+              value={positionFilter}
+              onChange={onPositionChange}
+              placeholder="Search position..."
+              className="w-full"
+              allOptionLabel="Position"
+              variant="applicants"
+            />
           </div>
 
           <div>

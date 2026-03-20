@@ -9,6 +9,7 @@ import CandidateProfileModal from '@/components/CandidateProfileModal'
 import SearchableDropdown from '@/components/SearchableDropdown'
 import LoadingSpinner from '@/components/LoadingSpinner'
 import { apiFetch } from '@/lib/api'
+import { POSITION_OPTIONS } from '@/constants/positionOptions'
 
 const mockCandidates = [
   {
@@ -203,6 +204,8 @@ export default function FindCandidatesPage() {
   const candidates = useMemo(() => {
     return apiCandidates && apiCandidates.length > 0 ? apiCandidates : mockCandidates
   }, [apiCandidates])
+  // Use a stable master list so dropdown options are consistent.
+  const positionOptions = POSITION_OPTIONS
 
   const handleBookmark = async (e: React.MouseEvent, candidateId: string) => {
     e.stopPropagation()
@@ -247,7 +250,7 @@ export default function FindCandidatesPage() {
 
     // Position
     const matchesPosition = !position ||
-      candidate.role.toLowerCase().includes(position.toLowerCase())
+      String(candidate.role || '').toLowerCase() === position.toLowerCase()
 
     // Academic Year
     const matchesAcademicYear = !academicYear ||
@@ -334,12 +337,14 @@ export default function FindCandidatesPage() {
                   {/* Position */}
                   <div>
                     <label className="mb-1.5 block text-[13px] font-semibold text-[#374151] dark:text-[#e5e7eb]">Position</label>
-                    <input
-                      type="text"
+                    <SearchableDropdown
+                      options={positionOptions.map((p) => ({ value: p, label: p }))}
                       value={position}
-                      onChange={(e) => setPosition(e.target.value)}
+                      onChange={setPosition}
                       placeholder="Position"
-                      className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] dark:border-gray-700 dark:bg-gray-900/50 dark:text-white dark:placeholder:text-gray-500"
+                      className="w-full"
+                      allOptionLabel="All Positions"
+                      variant="applicants"
                     />
                   </div>
 

@@ -12,6 +12,7 @@ import ApplicantProfilePopup, {
   type CandidateProfile,
   calculateProfileCompletion,
 } from '@/components/job-post/ApplicantProfilePopup'
+import { POSITION_OPTIONS } from '@/constants/positionOptions'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -217,9 +218,7 @@ export default function ViewApplicantsPage() {
     return map
   }, [applicants, jobPost, aiScores])
 
-  const positionOptions = useMemo(() =>
-    Array.from(new Set(applicants.flatMap((a) => a.preferredPositions || []).filter(Boolean))),
-    [applicants])
+  const positionOptions = useMemo(() => POSITION_OPTIONS, [])
 
   const filteredApplicants = useMemo(() => {
     const q = normalizeText(searchQuery)

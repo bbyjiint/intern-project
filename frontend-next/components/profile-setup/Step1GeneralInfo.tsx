@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { apiFetch } from '@/lib/api'
 import MultiSelectDropdown from '@/components/MultiSelectDropdown'
+import { POSITION_OPTIONS } from '@/constants/positionOptions'
 
 interface Province {
   id: string
@@ -34,7 +35,6 @@ interface Step1Props {
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-const DEFAULT_POSITIONS = ['HR', 'Accounting', 'Marketing', 'IT', 'Finance', 'Sales', 'Operations', 'Engineering']
 
 function AIBadge() {
   return (
@@ -504,7 +504,7 @@ export default function Step1GeneralInfo({ data, onUpdate, onSkip }: Step1Props)
           <div>
             <label className="block text-xs font-medium mb-2 text-[#0273B1]">Position(s) of Interest</label>
             <MultiSelectDropdown
-              options={DEFAULT_POSITIONS}
+              options={POSITION_OPTIONS}
               value={fields.positionsOfInterest}
               onChange={selected => handleChange('positionsOfInterest', selected)}
               placeholder="Select one or more positions (e.g., HR, Accounting)"

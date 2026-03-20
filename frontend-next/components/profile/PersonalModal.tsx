@@ -4,16 +4,13 @@ import { useState, useEffect, useRef } from "react";
 import { ProfileData } from "@/hooks/useProfile";
 import { apiFetch } from "@/lib/api";
 import MultiSelectDropdown from "@/components/MultiSelectDropdown";
+import { POSITION_OPTIONS } from "@/constants/positionOptions";
 
 interface Province {
   id: string;
   name: string;
   thname: string | null;
 }
-
-const DEFAULT_POSITIONS = [
-  "HR", "Accounting", "Marketing", "IT", "Finance", "Sales", "Operations", "Engineering",
-];
 
 interface PersonalModalProps {
   isOpen: boolean;
@@ -248,7 +245,7 @@ export default function PersonalModal({
               <div>
                 <label className={labelClass}>Position(s) of Interest<span className="text-red-500">*</span></label>
                 <MultiSelectDropdown
-                  options={DEFAULT_POSITIONS.map(p => ({ value: p, label: p }))}
+                  options={POSITION_OPTIONS.map((p) => ({ value: p, label: p }))}
                   value={formData.positionsOfInterest ?? []}
                   onChange={(s) => setFormData({ ...formData, positionsOfInterest: s })}
                   placeholder="Select positions"
