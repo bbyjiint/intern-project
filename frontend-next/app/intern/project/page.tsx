@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import InternNavbar from "@/components/InternNavbar";
-import Sidebar from "@/components/InternSidebar";
+import InternSidebar from "@/components/InternSidebar";
 import { apiFetch } from "@/lib/api";
 import ProjectsModal, { ProjectData } from "@/components/profile/ProjectsModal";
 import ProjectUploadModal from "@/components/profile/ProjectUploadModal";
-import { useProfile } from "@/hooks/useProfile";
+import { useProfile, Project } from "@/hooks/useProfile";
 import { Github, Globe, FileText, Trash2, Plus, Search } from "lucide-react";
 
 interface UIProject {
@@ -32,67 +31,82 @@ interface UIProject {
   endDate?: string | null;
 }
 
-const MONTH_NAMES = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
+// --- 1. Delete Confirmation Modal ---
+interface DeleteModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  projectName: string;
+  isDeleting: boolean;
+}
 
+function DeleteConfirmationModal({ isOpen, onClose, onConfirm, projectName, isDeleting }: DeleteModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md transition-opacity">
+      <div className="relative bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl max-w-sm w-full p-8 text-center border border-slate-100 dark:border-slate-800 animate-in fade-in zoom-in duration-200">
+        <div className="w-20 h-20 bg-rose-50 dark:bg-rose-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+          <Trash2 size={32} className="text-rose-600 dark:text-rose-400" />
+        </div>
+        <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-3 tracking-tight">Delete Project?</h3>
+        <p className="text-slate-500 dark:text-slate-400 font-medium mb-8">
+          Are you sure you want to delete <b className="text-slate-900 dark:text-slate-200">"{projectName}"</b>? This action cannot be undone.
+        </p>
+        <div className="flex gap-4">
+          <button
+            disabled={isDeleting}
+            onClick={onClose}
+            className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white rounded-2xl font-black text-xs uppercase tracking-widest disabled:opacity-50"
+          >
+            Cancel
+          </button>
+          <button
+            disabled={isDeleting}
+            onClick={onConfirm}
+            className="flex-1 py-4 bg-rose-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-rose-600/20 active:scale-95 transition-all disabled:opacity-50 flex items-center justify-center"
+          >
+            {isDeleting ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : "Delete"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- 2. Helper Functions ---
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 function parseToISODate(displayDate: string) {
   if (!displayDate) return undefined;
   const [monthStr, year] = displayDate.split(" ");
-  const mIndex = MONTH_NAMES.findIndex(
-    (m) => m.toLowerCase() === monthStr.toLowerCase(),
-  );
-  if (mIndex !== -1 && year)
-    return new Date(parseInt(year), mIndex, 1).toISOString();
+  const mIndex = MONTH_NAMES.findIndex((m) => m.toLowerCase() === monthStr.toLowerCase());
+  if (mIndex !== -1 && year) return new Date(parseInt(year), mIndex, 1).toISOString();
   return undefined;
 }
-
 function formatDisplayDate(isoString?: string | null) {
   if (!isoString) return "";
   const d = new Date(isoString);
-  return isNaN(d.getTime())
-    ? ""
-    : `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
+  return isNaN(d.getTime()) ? "" : `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+// --- Main Component ---
 export default function ProjectPage() {
-  const router = useRouter();
   const { profileData, refetch, isLoading: profileLoading } = useProfile();
-
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [projects, setProjects] = useState<UIProject[]>([]);
   const [filterTab, setFilterTab] = useState<"All" | "No File Uploaded" | "File Uploaded">("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [currentProject, setCurrentProject] = useState<ProjectData | null>(null);
+  const [currentProject, setCurrentProject] = useState<(ProjectData & { fileUrl?: string; fileName?: string; githubUrl?: string; projectUrl?: string }) | null>(null);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [projectToUpload, setProjectToUpload] = useState<UIProject | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [projectToDelete, setProjectToDelete] = useState<{ id: string; title: string; } | null>(null);
+  const [projectToDelete, setProjectToDelete] = useState<{ id: string; title: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    const isAnyModalOpen =
-      isModalOpen || isUploadModalOpen || isDeleteModalOpen;
-    if (isAnyModalOpen) {
-      const scrollY = window.scrollY;
-      document.body.style.cssText = `position: fixed; top: -${scrollY}px; width: 100%; overflow: hidden;`;
-    } else {
-      const scrollY = document.body.style.top;
-      document.body.style.cssText = "";
-      if (scrollY) window.scrollTo(0, parseInt(scrollY || "0") * -1);
-    }
+    const isAnyModalOpen = isModalOpen || isUploadModalOpen || isDeleteModalOpen;
+    document.body.style.overflow = isAnyModalOpen ? "hidden" : "auto";
   }, [isModalOpen, isUploadModalOpen, isDeleteModalOpen]);
 
   useEffect(() => {
@@ -100,6 +114,11 @@ export default function ProjectPage() {
       const mapped = profileData.projects.map((p: any) => {
         const sd = formatDisplayDate(p.startDate);
         const ed = formatDisplayDate(p.endDate);
+        
+        // ดึง URL และ Name ให้รองรับกรณีที่ Backend คืนค่ามาเป็น Object ซ้อนกัน (ป้องกันบั๊ก)
+        const fileUrl = p.fileUrl || p.file?.url || p.files?.[0]?.url;
+        const fileName = p.fileName || p.file?.name || p.files?.[0]?.name;
+
         return {
           id: p.id,
           title: p.name,
@@ -107,16 +126,14 @@ export default function ProjectPage() {
           period: sd && ed ? `${sd} - ${ed}` : sd || ed || "No date",
           description: p.description || "",
           skills: p.relatedSkills || p.skills || [],
-          uploadStatus: (p.fileUrl ? "File Uploaded" : "No File Uploaded") as
-            | "No File Uploaded"
-            | "File Uploaded",
+          uploadStatus: (fileUrl ? "File Uploaded" : "No File Uploaded") as "No File Uploaded" | "File Uploaded",
           githubLinked: !!p.githubUrl,
           projectLinked: !!p.projectUrl,
-          fileUploaded: !!p.fileUrl,
+          fileUploaded: !!fileUrl,
           githubUrl: p.githubUrl,
           projectUrl: p.projectUrl,
-          fileUrl: p.fileUrl,
-          fileName: p.fileName,
+          fileUrl: fileUrl,
+          fileName: fileName,
           rawStartDate: p.startDate,
           rawEndDate: p.endDate,
         };
@@ -128,18 +145,16 @@ export default function ProjectPage() {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const userData = await apiFetch<{ user: { role: string | null } }>(
-          "/api/auth/me",
-        );
-        if (userData.user.role === "COMPANY") router.push("/employer/profile");
-        else if (!userData.user.role) router.push("/role-selection");
+        const userData = await apiFetch<{ user: { role: string | null } }>("/api/auth/me");
+        if (userData.user.role === "COMPANY") window.location.href = "/employer/profile";
+        else if (!userData.user.role) window.location.href = "/role-selection";
         else setIsAuthLoading(false);
       } catch {
         setIsAuthLoading(false);
       }
     };
     checkAuth();
-  }, [router]);
+  }, []);
 
   const filteredProjects = useMemo(() => {
     return projects.filter((p) => {
@@ -159,33 +174,11 @@ export default function ProjectPage() {
     );
   }
 
-  const handleSave = async (project: ProjectData) => {
-    try {
-      if (project.id) {
-        await apiFetch(`/api/candidates/projects/${project.id}`, {
-          method: "PUT",
-          body: JSON.stringify(project),
-        });
-      } else {
-        await apiFetch("/api/candidates/projects", {
-          method: "POST",
-          body: JSON.stringify(project),
-        });
-      }
-      await refetch();
-      setIsModalOpen(false);
-    } catch (error) {
-      console.error("Failed to save project:", error);
-    }
-  };
-
   const handleDeleteExecute = async () => {
     if (!projectToDelete) return;
     setIsDeleting(true);
     try {
-      await apiFetch(`/api/candidates/projects/${projectToDelete.id}`, {
-        method: "DELETE",
-      });
+      await apiFetch(`/api/candidates/projects/${projectToDelete.id}`, { method: "DELETE" });
       await refetch();
       setIsDeleteModalOpen(false);
       setProjectToDelete(null);
@@ -200,15 +193,13 @@ export default function ProjectPage() {
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col transition-colors duration-300">
       <InternNavbar />
       <div className="flex flex-1">
-        <Sidebar />
-        <div className="layout-container layout-page flex-1 overflow-y-auto p-6 lg:p-10">
+        <InternSidebar />
+        <main className="flex-1 overflow-y-auto p-6 lg:p-10">
           
           {/* Header Section */}
           <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-10 gap-6">
             <div>
-              <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-                Projects
-              </h1>
+              <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">Projects</h1>
               <p className="text-base font-medium text-slate-500 dark:text-slate-400 mt-2">
                 Manage and showcase your professional experience.
               </p>
@@ -285,36 +276,18 @@ export default function ProjectPage() {
                 </p>
 
                 <p className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] mb-4">
-                  Project Assets
+                  Project Credibility
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                  <ProjectLink
-                    label="Github Repository"
-                    active={project.githubLinked}
-                    url={project.githubUrl}
-                    icon={<Github size={24} />}
-                  />
-                  <ProjectLink
-                    label="Live Demo"
-                    active={project.projectLinked}
-                    url={project.projectUrl}
-                    icon={<Globe size={24} />}
-                  />
-                  <ProjectLink
-                    label="Documentation"
-                    active={project.fileUploaded}
-                    url={project.fileUrl}
-                    icon={<FileText size={24} />}
-                  />
+                  <ProjectLink label="Github Repository" active={project.githubLinked} url={project.githubUrl} icon={<Github size={24} />} />
+                  <ProjectLink label="Live Demo" active={project.projectLinked} url={project.projectUrl} icon={<Globe size={24} />} />
+                  <ProjectLink label="Documentation" active={project.fileUploaded} url={project.fileUrl} icon={<FileText size={24} />} />
                 </div>
 
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-t border-slate-100 dark:border-slate-800 pt-6">
                   <div className="flex flex-wrap gap-2">
                     {project.skills.map((skill, idx) => (
-                      <span
-                        key={idx}
-                        className="px-4 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-xs font-black rounded-lg border border-blue-100 dark:border-blue-800"
-                      >
+                      <span key={idx} className="px-4 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-xs font-black rounded-lg border border-blue-100 dark:border-blue-800">
                         {skill}
                       </span>
                     ))}
@@ -347,18 +320,19 @@ export default function ProjectPage() {
                     <button
                       className="px-5 py-2.5 bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 font-bold rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
                       onClick={() => {
-                        const [startDate = "", endDate = ""] = project.period.split(" - ");
                         setCurrentProject({
                           id: project.id,
                           name: project.title,
                           role: project.role,
-                          startDate: startDate.trim(),
-                          endDate: endDate.trim(),
+                          startDate: formatDisplayDate(project.rawStartDate), 
+                          endDate: formatDisplayDate(project.rawEndDate),
                           description: project.description,
                           relatedSkills: project.skills,
                           githubUrl: project.githubUrl,
                           projectUrl: project.projectUrl,
-                        });
+                          fileUrl: project.fileUrl, 
+                          fileName: project.fileName
+                        } as any);
                         setIsModalOpen(true);
                       }}
                     >
@@ -369,15 +343,40 @@ export default function ProjectPage() {
               </div>
             ))}
           </div>
-        </div>
+
+        </main>
       </div>
 
       {/* Modals */}
       <ProjectsModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        onSave={handleSave}
         editingProject={currentProject}
+        onSave={async (projectData: any) => {
+          // แก้บั๊กที่ล้าง URL ທิ้ง! -> ให้เก็บค่าเดิมไว้ถ้ามี
+          const payload = { 
+            ...projectData, 
+            startDate: parseToISODate(projectData.startDate || ""), 
+            endDate: parseToISODate(projectData.endDate || "") 
+          };
+          
+          // ถ้ากำลังแก้ไข และของเดิมมีไฟล์อยู่ ห้ามเขียนทับด้วย String ว่างเด็ดขาด
+          if (currentProject?.fileUrl) payload.fileUrl = currentProject.fileUrl;
+          if (currentProject?.fileName) payload.fileName = currentProject.fileName;
+          if (currentProject?.githubUrl && !payload.githubUrl) payload.githubUrl = currentProject.githubUrl;
+          if (currentProject?.projectUrl && !payload.projectUrl) payload.projectUrl = currentProject.projectUrl;
+
+          const method = currentProject?.id ? "PUT" : "POST";
+          const url = currentProject?.id ? `/api/candidates/projects/${currentProject.id}` : "/api/candidates/projects";
+          
+          try {
+            await apiFetch(url, { method, body: JSON.stringify(payload) });
+            await refetch();
+            setIsModalOpen(false);
+          } catch (e) {
+            alert("Failed to save project");
+          }
+        }}
       />
       <ProjectUploadModal
         isOpen={isUploadModalOpen}
@@ -386,29 +385,13 @@ export default function ProjectPage() {
         onUpdate={refetch}
         onRefresh={refetch}
       />
-
-      {/* Delete Confirmation */}
-      {isDeleteModalOpen && (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-          <div className="relative bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl max-w-sm w-full p-8 text-center border border-slate-100 dark:border-slate-800">
-            <div className="w-20 h-20 bg-rose-50 dark:bg-rose-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Trash2 size={32} className="text-rose-600 dark:text-rose-400" />
-            </div>
-            <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-3 tracking-tight">Delete Project?</h3>
-            <p className="text-slate-500 dark:text-slate-400 font-medium mb-8">
-              Confirm deletion of <b className="text-slate-900 dark:text-slate-200">{projectToDelete?.title}</b>? This cannot be undone.
-            </p>
-            <div className="flex gap-4">
-              <button onClick={() => setIsDeleteModalOpen(false)} className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white rounded-2xl font-black text-xs uppercase tracking-widest transition-all">
-                Keep it
-              </button>
-              <button onClick={handleDeleteExecute} disabled={isDeleting} className="flex-1 py-4 bg-rose-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest shadow-lg shadow-rose-600/20 transition-all active:scale-95 disabled:opacity-60">
-                {isDeleting ? "Deleting..." : "Delete"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeleteExecute}
+        projectName={projectToDelete?.title || ""}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 }
@@ -426,7 +409,7 @@ function Badge({ status }: { status: string }) {
       }`}
     >
       <div className={`w-1.5 h-1.5 rounded-full ${isUploaded ? "bg-emerald-500" : "bg-blue-500 animate-pulse"}`} />
-      {isUploaded ? "Verified Assets" : "Pending Files"}
+      {isUploaded ? "File Uploaded" : "No File Uploaded"}
     </span>
   );
 }
@@ -434,7 +417,7 @@ function Badge({ status }: { status: string }) {
 function ProjectLink({ label, active, url, icon }: { label: string; active: boolean; url?: string; icon: React.ReactNode; }) {
   return (
     <a
-      href={active ? url : undefined}
+      href={active && url ? url : undefined}
       target="_blank"
       rel="noopener noreferrer"
       className={`flex items-center gap-4 px-5 py-4 rounded-2xl border transition-all duration-300 ${

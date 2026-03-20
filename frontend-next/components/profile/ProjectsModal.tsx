@@ -14,6 +14,8 @@ export interface ProjectData {
   relatedSkills: string[]
   githubUrl?: string
   projectUrl?: string
+  fileUrl?: string; 
+  fileName?: string;  
 }
 
 interface ProjectsModalProps {
@@ -211,12 +213,32 @@ export default function ProjectsModal({ isOpen, onClose, onSave, editingProject 
   }
 
   const handleSubmit = () => {
+    // 1. ตรวจสอบฟิลด์ที่จำเป็น
     if (!formData.name.trim() || !formData.role?.trim() || !formData.startDate?.trim() || !formData.endDate?.trim() || !formData.description?.trim()) {
       setErrorMsg('Please fill in all required fields.'); return
     }
+    
+    // 2. ตรวจสอบว่าต้องมีอย่างน้อย 1 ทักษะ
     if (formData.relatedSkills.length === 0) {
       setErrorMsg('Please add at least one related skill.'); return
     }
+
+    // 3. แปลงวันที่และเช็คความถูกต้อง (Start Date <= End Date)
+    const parsedStart = parseDateValue(formData.startDate || '');
+    const parsedEnd = parseDateValue(formData.endDate || '');
+
+    if (parsedStart && parsedEnd) {
+      // เทียบปี
+      if (parsedStart.year > parsedEnd.year) {
+        setErrorMsg('Start Date cannot be after End Date.'); return
+      }
+      // ถ้าปีเท่ากัน ให้เทียบเดือน
+      if (parsedStart.year === parsedEnd.year && parsedStart.month > parsedEnd.month) {
+        setErrorMsg('Start Date cannot be after End Date.'); return
+      }
+    }
+
+    // ผ่านทุกเงื่อนไข ก็ให้ Save ได้ตามปกติ
     onSave({ ...formData, startDate: toDisplayDate(formData.startDate || ''), endDate: toDisplayDate(formData.endDate || '') })
     onClose()
   }

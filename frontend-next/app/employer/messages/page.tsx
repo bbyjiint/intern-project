@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import EmployerNavbar from '@/components/EmployerNavbar'
 import CandidateProfileModal from '@/components/CandidateProfileModal'
@@ -29,254 +29,6 @@ interface Conversation {
   unreadCount: number
   messages: Message[]
 }
-
-const mockCandidates = [
-  {
-    id: '1',
-    name: 'John Smith',
-    role: 'Software Engineering Intern',
-    university: 'UC Berkeley',
-    major: 'Engineering',
-    graduationDate: 'Jan 2024',
-    skills: ['Python', 'JavaScript', 'React', 'Node.js'],
-    initials: 'JS',
-    email: 'john.smith@company.com',
-    about: 'Passionate software engineering intern focused on full-stack development. Eager to learn modern web technologies and contribute to impactful projects.',
-  },
-  {
-    id: '2',
-    name: 'Emily Chen',
-    role: 'Data Science Intern',
-    university: 'Stanford University',
-    major: 'Data Science',
-    graduationDate: 'Jun 2024',
-    skills: ['Python', 'R', 'Machine Learning', 'Pandas'],
-    initials: 'EC',
-    email: 'emily.chen@company.com',
-    about: 'Data science intern with strong analytical skills and experience in statistical modeling. Passionate about turning data into actionable insights.',
-  },
-  {
-    id: '3',
-    name: 'Michael Rodriguez',
-    role: 'Product Management Intern',
-    university: 'MIT',
-    major: 'Business',
-    graduationDate: 'May 2024',
-    skills: ['Product Strategy', 'Analytics', 'User Research'],
-    initials: 'MR',
-    email: 'michael.rodriguez@company.com',
-    about: 'Product management intern with a passion for building user-centric products.',
-  },
-  {
-    id: '4',
-    name: 'Sarah Kim',
-    role: 'UX Design Intern',
-    university: 'Stanford University',
-    major: 'Design',
-    graduationDate: 'Apr 2024',
-    skills: ['Adobe XD', 'UI Design', 'Wireframing', 'Figma'],
-    initials: 'SK',
-    email: 'sarah.kim@company.com',
-    about: 'Creative UX design intern focused on creating intuitive and user-friendly interfaces.',
-  },
-  {
-    id: '5',
-    name: 'David Liu',
-    role: 'Software Engineering Intern',
-    university: 'UCLA',
-    major: 'Engineering',
-    graduationDate: 'Jan 2025',
-    skills: ['Java', 'Spring Boot', 'AWS', 'Docker'],
-    initials: 'DL',
-    email: 'david.liu@company.com',
-    about: 'Software engineering intern specializing in backend development and cloud infrastructure.',
-  },
-]
-
-const mockConversations: Conversation[] = [
-  {
-    id: '1',
-    candidateId: '1',
-    candidateName: 'John Smith',
-    candidateInitials: 'JS',
-    candidateRole: 'Software Engineering Intern',
-    candidateUniversity: 'UC Berkeley',
-    lastMessage: 'Thank you for the opportunity! I look forward to discussing this further.',
-    lastMessageTime: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-    unreadCount: 0,
-    messages: [
-      {
-        id: '1',
-        senderId: 'employer',
-        senderName: 'Sarah Johnson',
-        senderInitials: 'SJ',
-        text: 'Hi John! I reviewed your profile and I\'m impressed with your technical skills and projects. We have an exciting Software Engineering Intern position that I think would be a great fit for you.',
-        timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000),
-        isEmployer: true,
-      },
-      {
-        id: '2',
-        senderId: '1',
-        senderName: 'John Smith',
-        senderInitials: 'JS',
-        text: 'Hi Sarah! Thank you so much for reaching out. I would love to learn more about this opportunity!',
-        timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000 + 45 * 60 * 1000),
-        isEmployer: false,
-      },
-      {
-        id: '3',
-        senderId: 'employer',
-        senderName: 'Sarah Johnson',
-        senderInitials: 'SJ',
-        text: 'Great! The role focuses on full-stack development with our Engineering team. You\'d be working on our core platform using React, Node.js, and PostgreSQL. Would you be available for a quick phone screen this week?',
-        timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000),
-        isEmployer: true,
-      },
-      {
-        id: '4',
-        senderId: '1',
-        senderName: 'John Smith',
-        senderInitials: 'JS',
-        text: 'That sounds perfect! I\'m particularly interested in full-stack development. I\'m available Thursday or Friday afternoon. What time works best for you?',
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000 + 15 * 60 * 1000),
-        isEmployer: false,
-      },
-      {
-        id: '5',
-        senderId: '1',
-        senderName: 'John Smith',
-        senderInitials: 'JS',
-        text: 'Thank you for the opportunity! I look forward to discussing this further.',
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        isEmployer: false,
-      },
-    ],
-  },
-  {
-    id: '2',
-    candidateId: '2',
-    candidateName: 'Emily Chen',
-    candidateInitials: 'EC',
-    candidateRole: 'Data Science Intern',
-    candidateUniversity: 'Stanford University',
-    lastMessage: 'When would be a good time to discuss the details?',
-    lastMessageTime: new Date(Date.now() - 5 * 60 * 60 * 1000 + 15 * 60 * 1000),
-    unreadCount: 1,
-    messages: [
-      {
-        id: '6',
-        senderId: 'employer',
-        senderName: 'Sarah Johnson',
-        senderInitials: 'SJ',
-        text: 'Hi Emily! I saw your profile and I think you\'d be a great fit for our Data Science Intern position.',
-        timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000),
-        isEmployer: true,
-      },
-      {
-        id: '7',
-        senderId: '2',
-        senderName: 'Emily Chen',
-        senderInitials: 'EC',
-        text: 'When would be a good time to discuss the details?',
-        timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000 + 15 * 60 * 1000),
-        isEmployer: false,
-      },
-    ],
-  },
-  {
-    id: '3',
-    candidateId: '3',
-    candidateName: 'Michael Rodriguez',
-    candidateInitials: 'MR',
-    candidateRole: 'Product Management Intern',
-    candidateUniversity: 'MIT',
-    lastMessage: 'Sounds great! See you on Friday.',
-    lastMessageTime: new Date(Date.now() - 24 * 60 * 60 * 1000),
-    unreadCount: 0,
-    messages: [
-      {
-        id: '8',
-        senderId: 'employer',
-        senderName: 'Sarah Johnson',
-        senderInitials: 'SJ',
-        text: 'Hi Michael! Are you still interested in the Product Management Intern role?',
-        timestamp: new Date(Date.now() - 25 * 60 * 60 * 1000),
-        isEmployer: true,
-      },
-      {
-        id: '9',
-        senderId: '3',
-        senderName: 'Michael Rodriguez',
-        senderInitials: 'MR',
-        text: 'Sounds great! See you on Friday.',
-        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000),
-        isEmployer: false,
-      },
-    ],
-  },
-  {
-    id: '4',
-    candidateId: '4',
-    candidateName: 'Sarah Kim',
-    candidateInitials: 'SK',
-    candidateRole: 'UX Design Intern',
-    candidateUniversity: 'Stanford University',
-    lastMessage: 'I\'ve updated my portfolio as requested. Let me know what you think!',
-    lastMessageTime: new Date(Date.now() - 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000),
-    unreadCount: 1,
-    messages: [
-      {
-        id: '10',
-        senderId: 'employer',
-        senderName: 'Sarah Johnson',
-        senderInitials: 'SJ',
-        text: 'Hi Sarah! Could you please update your portfolio with your latest projects?',
-        timestamp: new Date(Date.now() - 25 * 60 * 60 * 1000),
-        isEmployer: true,
-      },
-      {
-        id: '11',
-        senderId: '4',
-        senderName: 'Sarah Kim',
-        senderInitials: 'SK',
-        text: 'I\'ve updated my portfolio as requested. Let me know what you think!',
-        timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000 + 2 * 60 * 60 * 1000),
-        isEmployer: false,
-      },
-    ],
-  },
-  {
-    id: '5',
-    candidateId: '5',
-    candidateName: 'David Liu',
-    candidateInitials: 'DL',
-    candidateRole: 'Software Engineering Intern',
-    candidateUniversity: 'UCLA',
-    lastMessage: 'Thank you for your time today!',
-    lastMessageTime: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-    unreadCount: 0,
-    messages: [
-      {
-        id: '12',
-        senderId: 'employer',
-        senderName: 'Sarah Johnson',
-        senderInitials: 'SJ',
-        text: 'Hi David! Thank you for your interest in our Software Engineering Intern position.',
-        timestamp: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000),
-        isEmployer: true,
-      },
-      {
-        id: '13',
-        senderId: '5',
-        senderName: 'David Liu',
-        senderInitials: 'DL',
-        text: 'Thank you for your time today!',
-        timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-        isEmployer: false,
-      },
-    ],
-  },
-]
 
 function formatTime(date: Date): string {
   const now = new Date()
@@ -310,7 +62,7 @@ function formatMessageTime(date: Date): string {
   return `${displayHours}:${minutes.toString().padStart(2, '0')} ${ampm}`
 }
 
-export default function MessagesPage() {
+function MessagesContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const targetConversationId = searchParams.get('conversationId')
@@ -318,7 +70,7 @@ export default function MessagesPage() {
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [newMessage, setNewMessage] = useState('')
-  const [selectedCandidate, setSelectedCandidate] = useState<typeof mockCandidates[0] | null>(null)
+  const [selectedCandidate, setSelectedCandidate] = useState<any | null>(null)
   const [loading, setLoading] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const chatContainerRef = useRef<HTMLDivElement>(null)
@@ -404,7 +156,7 @@ export default function MessagesPage() {
           if (targetConversation) {
             setSelectedConversation((prev) =>
               prev?.id === targetConversation.id
-                ? { ...targetConversation, messages: prev.messages }
+                ? { ...targetConversation, messages: prev?.messages }
                 : targetConversation
             )
           } else if (!selectedConversationRef.current) {
@@ -432,7 +184,7 @@ export default function MessagesPage() {
                 const prev = prevConversations.find(c => c.id === conv.id)
                 const preservedMessages =
                   currentSelected?.id === conv.id
-                    ? currentSelected.messages
+                    ? currentSelected?.messages
                     : prev?.messages || []
 
                 return {
@@ -450,7 +202,7 @@ export default function MessagesPage() {
                     prev?.id === updated.id
                       ? {
                           ...updated,
-                          messages: prev.messages,
+                          messages: prev?.messages,
                         }
                       : prev
                   )
@@ -842,5 +594,17 @@ export default function MessagesPage() {
         />
       )}
     </div>
+  )
+}
+
+export default function MessagesPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-1 items-center justify-center min-h-[calc(100vh-4rem)] w-full">
+        <div className="w-12 h-12 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin dark:border-slate-800 dark:border-t-blue-500"></div>
+      </div>
+    }>
+      <MessagesContent />
+    </Suspense>
   )
 }

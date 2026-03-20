@@ -1,24 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
-interface TranscriptUploadModalProps {
-  isOpen: boolean
-  onClose: () => void
-  educationId: string
-  onUploaded?: () => void
-  onNeedEdit?: () => void
-}
+export type VerificationStep = 'upload' | 'success' | 'mismatch' | 'error'
 
-type Step = 'upload' | 'analyzing' | 'success' | 'mismatch' | 'error'
-
-interface MismatchField {
+export interface MismatchField {
   field: string
   profile: string
   transcript: string
 }
 
-interface VerifyResult {
+export interface VerifyResult {
   verified: boolean
   extractedData?: Record<string, string>
   mismatches?: MismatchField[]
@@ -26,71 +18,38 @@ interface VerifyResult {
   message?: string
 }
 
+interface TranscriptUploadModalProps {
+  isOpen: boolean
+  onClose: () => void
+  step: VerificationStep
+  result?: VerifyResult | null
+  onStartVerification?: (file: File) => void
+  onNeedEdit?: () => void
+  onRetry?: () => void
+  onSuccessConfirm?: () => void
+}
+
 export default function TranscriptUploadModal({
   isOpen,
   onClose,
-  educationId,
-  onUploaded,
+  step,
+  result,
+  onStartVerification,
   onNeedEdit,
+  onRetry,
+  onSuccessConfirm
 }: TranscriptUploadModalProps) {
   const [file, setFile] = useState<File | null>(null)
   const [isDragging, setIsDragging] = useState(false)
-  const [step, setStep] = useState<Step>('upload')
-  const [result, setResult] = useState<VerifyResult | null>(null)
+
+  // เคลียร์ไฟล์ทุกครั้งที่เปิด Modal หน้า Upload ใหม่
+  useEffect(() => {
+    if (isOpen && step === 'upload') {
+      setFile(null);
+    }
+  }, [isOpen, step]);
 
   if (!isOpen) return null
-
-  const reset = () => {
-    setFile(null)
-    setStep('upload')
-    setResult(null)
-  }
-
-  const handleClose = () => {
-    if (step === 'analyzing') return
-    reset()
-    onClose()
-  }
-
-  const handleVerify = async () => {
-    if (!file) return
-    setStep('analyzing')
-
-    try {
-      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001'
-      const formData = new FormData()
-      formData.append('file', file)
-
-      const res = await fetch(
-        `${API_BASE_URL}/api/candidates/education/${educationId}/transcript`,
-        { method: 'POST', credentials: 'include', body: formData }
-      )
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.message || 'Upload failed')
-      }
-
-      const data: VerifyResult = await res.json()
-      setResult(data)
-      setStep(data.verified ? 'success' : 'mismatch')
-    } catch (err: any) {
-      setResult({ verified: false, message: err.message || 'An unexpected error occurred' })
-      setStep('error')
-    }
-  }
-
-  const handleConfirm = () => {
-    onUploaded?.()
-    reset()
-    onClose()
-  }
-
-  const handleGoEdit = () => {
-    onNeedEdit?.()
-    reset()
-    onClose()
-  }
 
   const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(true) }
   const handleDragLeave = (e: React.DragEvent) => { e.preventDefault(); setIsDragging(false) }
@@ -99,17 +58,22 @@ export default function TranscriptUploadModal({
     if (e.dataTransfer.files?.[0]) setFile(e.dataTransfer.files[0])
   }
 
+  const handleStart = () => {
+    if (file && onStartVerification) {
+      onStartVerification(file);
+    }
+  }
+
   return (
     <div
       className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 transition-all"
-      onClick={handleClose}
+      onClick={onClose}
     >
       <div
         className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-100 dark:border-slate-800 transition-colors"
         onClick={(e) => e.stopPropagation()}
       >
-
-        {/* ── UPLOAD ── */}
+        {/* ── UPLOAD STEP ── */}
         {step === 'upload' && (
           <>
             <div className="flex justify-between items-start p-8 pb-6">
@@ -119,7 +83,7 @@ export default function TranscriptUploadModal({
                   Upload your transcript to verify your education information.
                 </p>
               </div>
-              <button onClick={handleClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all">
+              <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-all">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -172,43 +136,23 @@ export default function TranscriptUploadModal({
 
             <div className="flex justify-end gap-3 px-8 pb-8">
               <button
-                onClick={handleClose}
+                onClick={onClose}
                 className="px-6 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-black text-xs uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
               >
                 Cancel
               </button>
               <button
-                onClick={handleVerify}
+                onClick={handleStart}
                 disabled={!file}
                 className="px-8 py-3 rounded-xl bg-blue-600 text-white font-black text-xs uppercase tracking-widest hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-600/20"
               >
-                Start Verification
+                Upload & Verify
               </button>
             </div>
           </>
         )}
 
-        {/* ── ANALYZING ── */}
-        {step === 'analyzing' && (
-          <div className="flex flex-col items-center justify-center py-20 px-8 text-center">
-            <div className="relative w-24 h-24 mb-8">
-              <div className="absolute inset-0 rounded-full border-4 border-blue-100 dark:border-blue-900/30" />
-              <div className="absolute inset-0 rounded-full border-4 border-blue-600 border-t-transparent animate-spin" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                <svg className="w-10 h-10 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-            </div>
-            <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-3 tracking-tight">AI is Analyzing...</h3>
-            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium max-w-sm leading-relaxed">
-              We're comparing your transcript data with your profile info. This will take just a few seconds.
-            </p>
-          </div>
-        )}
-
-        {/* ── SUCCESS ── */}
+        {/* ── SUCCESS STEP ── */}
         {step === 'success' && (
           <>
             <div className="flex flex-col items-center pt-16 pb-6 px-8 text-center transition-all animate-in fade-in zoom-in duration-300">
@@ -238,17 +182,14 @@ export default function TranscriptUploadModal({
             )}
 
             <div className="flex justify-center px-8 pb-10">
-              <button
-                onClick={handleConfirm}
-                className="px-12 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl transition-all shadow-xl shadow-emerald-500/20 uppercase tracking-widest text-xs"
-              >
+              <button onClick={onSuccessConfirm} className="px-12 py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl transition-all shadow-xl shadow-emerald-500/20 uppercase tracking-widest text-xs">
                 Close & Done
               </button>
             </div>
           </>
         )}
 
-        {/* ── MISMATCH ── */}
+        {/* ── MISMATCH STEP ── */}
         {step === 'mismatch' && (
           <>
             <div className="flex flex-col items-center pt-12 pb-4 px-8 text-center animate-in slide-in-from-bottom-4 duration-300">
@@ -289,23 +230,17 @@ export default function TranscriptUploadModal({
             </div>
 
             <div className="flex justify-center gap-3 px-8 pb-10">
-              <button
-                onClick={reset}
-                className="px-6 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-black text-xs uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
-              >
+              <button onClick={onRetry} className="px-6 py-3 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-black text-xs uppercase tracking-widest hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
                 Retry File
               </button>
-              <button
-                onClick={handleGoEdit}
-                className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl transition-all shadow-lg shadow-blue-500/20 uppercase tracking-widest text-xs"
-              >
+              <button onClick={onNeedEdit} className="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-xl transition-all shadow-lg shadow-blue-500/20 uppercase tracking-widest text-xs">
                 Edit My Profile
               </button>
             </div>
           </>
         )}
 
-        {/* ── ERROR ── */}
+        {/* ── ERROR STEP ── */}
         {step === 'error' && (
           <div className="animate-in fade-in duration-300">
             <div className="flex flex-col items-center pt-16 pb-8 px-8 text-center">
@@ -316,20 +251,16 @@ export default function TranscriptUploadModal({
               </div>
               <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-3">Upload Failed</h3>
               <p className="text-slate-500 dark:text-slate-400 text-sm font-medium max-w-xs leading-relaxed">
-                {result?.message || 'We encountered an error processing your file. Please check your connection and try again.'}
+                {result?.message || 'We encountered an error processing your file. Please try again.'}
               </p>
             </div>
             <div className="flex justify-center px-8 pb-10">
-              <button
-                onClick={reset}
-                className="px-10 py-3.5 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-xl transition-all shadow-xl shadow-rose-500/20 uppercase tracking-widest text-xs"
-              >
+              <button onClick={onRetry} className="px-10 py-3.5 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-xl transition-all shadow-xl shadow-rose-500/20 uppercase tracking-widest text-xs">
                 Try Again
               </button>
             </div>
           </div>
         )}
-
       </div>
     </div>
   )

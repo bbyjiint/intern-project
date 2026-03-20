@@ -7,6 +7,13 @@ export type AuthUser = {
   role: "CANDIDATE" | "COMPANY";
 };
 
+export function getToken(): string | null {
+  if (typeof window !== "undefined") {
+    return window.localStorage.getItem("auth_token");
+  }
+  return null;
+}
+
 export async function apiFetch<T>(
   path: string,
   init: RequestInit = {}

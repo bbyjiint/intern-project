@@ -115,6 +115,8 @@ export default function ProjectsSection({ projects, onRefresh }: { projects: Pro
       relatedSkills: project.skills || (project as any).relatedSkills || [],
       githubUrl: (project as any).githubUrl,
       projectUrl: (project as any).projectUrl,
+      fileUrl: (project as any).fileUrl,
+      fileName: (project as any).fileName,
     });
     setIsModalOpen(true);
   };
@@ -151,7 +153,7 @@ export default function ProjectsSection({ projects, onRefresh }: { projects: Pro
                 <div className="absolute top-8 right-8">
                   <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black tracking-wider uppercase border ${hasAnyFile ? "bg-green-50 dark:bg-green-900/10 text-green-600 dark:text-green-400 border-green-100 dark:border-green-900/30" : "bg-blue-50 dark:bg-blue-900/10 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-900/30"}`}>
                     <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${hasAnyFile ? "bg-green-500" : "bg-blue-500"}`} />
-                    {hasAnyFile ? "File Uploaded" : "No Files"}
+                    {hasAnyFile ? "File Uploaded" : "No File Uploaded"}
                   </div>
                 </div>
 
@@ -226,13 +228,24 @@ export default function ProjectsSection({ projects, onRefresh }: { projects: Pro
         </div>
       )}
 
-      {/* Modals ที่รับ props ต่อไป (ต้องตรวจสอบตัว Modal ลูกด้วยว่ารองรับ Dark mode หรือยัง) */}
+      {/* Modals */}
       <ProjectUploadModal isOpen={isUploadOpen} onClose={() => setIsUploadOpen(false)} project={selectedProject} onRefresh={onRefresh} onUpdate={() => onRefresh?.()} />
       <ProjectsModal 
         isOpen={isModalOpen} 
         onClose={() => { setIsModalOpen(false); setEditingProject(null); }} 
-        onSave={async (projectData) => {
-          const payload = { ...projectData, startDate: parseToISODate(projectData.startDate || ""), endDate: parseToISODate(projectData.endDate || ""), githubUrl: "", projectUrl: "", fileUrl: "", fileName: ""};
+        onSave={async (projectData: any) => {
+          const payload: any = { 
+            ...projectData, 
+            startDate: parseToISODate(projectData.startDate || ""), 
+            endDate: parseToISODate(projectData.endDate || "") 
+          };
+          
+          // ป้องกันการลบข้อมูล URL เดิมหากเป็นการ Edit
+          if (editingProject?.fileUrl) payload.fileUrl = editingProject.fileUrl;
+          if (editingProject?.fileName) payload.fileName = editingProject.fileName;
+          if (editingProject?.githubUrl && !payload.githubUrl) payload.githubUrl = editingProject.githubUrl;
+          if (editingProject?.projectUrl && !payload.projectUrl) payload.projectUrl = editingProject.projectUrl;
+
           const method = editingProject?.id ? "PUT" : "POST";
           const url = editingProject?.id ? `/api/candidates/projects/${editingProject.id}` : "/api/candidates/projects";
           await apiFetch(url, { method, body: JSON.stringify(payload) });

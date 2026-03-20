@@ -12,6 +12,16 @@ interface EducationSectionProps {
   onRefresh?: () => void;
 }
 
+// --- Types for Verification ---
+type VerificationStep = 'upload' | 'success' | 'mismatch' | 'error';
+interface VerifyResult {
+  verified: boolean;
+  extractedData?: Record<string, string>;
+  mismatches?: any[];
+  error?: string;
+  message?: string;
+}
+
 export default function EducationSection({
   education,
   onAdd,
@@ -20,7 +30,16 @@ export default function EducationSection({
 }: EducationSectionProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEducation, setEditingEducation] = useState<Education | null>(null);
-  const [uploadEduId, setUploadEduId] = useState<string | null>(null);
+  
+  // --- Verification States ---
+  const [verifyingEduId, setVerifyingEduId] = useState<string | null>(null);
+  const [verifyState, setVerifyState] = useState<{
+    isOpen: boolean;
+    eduId: string | null;
+    step: VerificationStep;
+    result: VerifyResult | null;
+  }>({ isOpen: false, eduId: null, step: 'upload', result: null });
+
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
@@ -45,11 +64,11 @@ export default function EducationSection({
   };
 
   useEffect(() => {
-    document.body.style.overflow = isModalOpen ? "hidden" : "auto";
+    document.body.style.overflow = isModalOpen || verifyState.isOpen || deleteModal.isOpen ? "hidden" : "auto";
     return () => {
       document.body.style.overflow = "auto";
     };
-  }, [isModalOpen]);
+  }, [isModalOpen, verifyState.isOpen, deleteModal.isOpen]);
 
   const handleDelete = async (id: string) => {
     try {
@@ -65,6 +84,64 @@ export default function EducationSection({
     const edu = education.find((e) => e.id === eduId) || null;
     setEditingEducation(edu);
     setIsModalOpen(true);
+  };
+
+  // --- ฟังก์ชันหลักสำหรับยิง API อัปโหลดและตรวจสอบ Transcript ---
+  const executeVerification = async (file: File, eduId: string) => {
+    // ปิด Modal ทันทีแล้วให้ Card แสดงสถานะ Loading (Spinner)
+    setVerifyState(prev => ({ ...prev, isOpen: false }));
+    setVerifyingEduId(eduId);
+
+    try {
+      const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001';
+      const formData = new FormData();
+      formData.append('file', file);
+
+      // ใช้ native fetch เพื่อส่ง FormData
+      let token = "";
+      if (typeof document !== "undefined") {
+        const match = document.cookie.match(/(^| )auth=([^;]+)/);
+        if (match) token = match[2];
+        if (!token) token = localStorage.getItem("token") || "";
+      }
+
+      const res = await fetch(`${API_BASE_URL}/api/candidates/education/${eduId}/transcript`, {
+        method: 'POST',
+        credentials: "include",
+        headers: { ...(token ? { "Authorization": `Bearer ${token}` } : {}) },
+        body: formData
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Upload failed');
+      }
+
+      const data: VerifyResult = await res.json();
+      
+      // เมื่อเสร็จแล้ว เปิด Modal โชว์ผลลัพธ์ (ผ่าน หรือ ไม่ตรง)
+      setVerifyState({
+        isOpen: true,
+        eduId,
+        step: data.verified ? 'success' : 'mismatch',
+        result: data
+      });
+
+      if (data.verified) {
+        onRefresh?.(); // รีเฟรชหน้าเพื่อเอา Badge เขียวขึ้น
+      }
+
+    } catch (err: any) {
+      // เปิด Modal โชว์ Error
+      setVerifyState({
+        isOpen: true,
+        eduId,
+        step: 'error',
+        result: { verified: false, message: err.message || 'An unexpected error occurred' }
+      });
+    } finally {
+      setVerifyingEduId(null); // เอา Spinner บนการ์ดออก
+    }
   };
 
   return (
@@ -103,6 +180,7 @@ export default function EducationSection({
         <div className="space-y-5">
           {education.map((edu) => {
             const isVerified = (edu as any).isVerified === true;
+            const isVerifying = verifyingEduId === edu.id;
 
             return (
               <div
@@ -166,19 +244,24 @@ export default function EducationSection({
 
                 {/* ── Action Buttons ── */}
                 <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-gray-50 dark:border-gray-800">
-                  {!isVerified && (
-                    <button
-                      onClick={() => setDeleteModal({ isOpen: true, id: edu.id })}
-                      className="p-2.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
-                      title="Delete"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </button>
-                  )}
+                  {/* ปุ่ม Delete เอาออกจากเงื่อนไข !isVerified ให้สามารถลบได้ตลอดเวลา */}
+                  <button
+                    onClick={() => setDeleteModal({ isOpen: true, id: edu.id })}
+                    className="p-2.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
+                    title="Delete"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
 
-                  {isVerified ? (
+                  {/* ปุ่มแสดงสถานะ (Loading/View/Upload) */}
+                  {isVerifying ? (
+                    <div className="flex items-center gap-2 px-5 py-2 text-blue-600 dark:text-blue-400 font-bold text-sm bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800/50 shadow-sm animate-pulse">
+                      <div className="w-4 h-4 border-2 border-blue-600 dark:border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                      AI is verifying...
+                    </div>
+                  ) : isVerified ? (
                     <button
                       className="px-5 py-2 border-2 border-blue-600 dark:border-blue-500 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl text-sm font-black transition-all"
                       onClick={() => {
@@ -191,7 +274,7 @@ export default function EducationSection({
                   ) : (
                     <button
                       className="px-5 py-2 border-2 border-blue-600 dark:border-blue-500 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl text-sm font-black transition-all"
-                      onClick={() => setUploadEduId(edu.id)}
+                      onClick={() => setVerifyState({ isOpen: true, eduId: edu.id, step: 'upload', result: null })}
                     >
                       Upload Transcript
                     </button>
@@ -224,18 +307,26 @@ export default function EducationSection({
         onSave={() => onRefresh?.()}
       />
 
-      {uploadEduId && (
-        <TranscriptUploadModal
-          isOpen={!!uploadEduId}
-          educationId={uploadEduId}
-          onClose={() => setUploadEduId(null)}
-          onUploaded={() => {
-            setUploadEduId(null);
-            onRefresh?.();
-          }}
-          onNeedEdit={() => handleNeedEdit(uploadEduId!)}
-        />
-      )}
+      {/* ── เรียกใช้ Modal ใหม่ โดยส่ง Props เข้าไป ── */}
+      <TranscriptUploadModal
+        isOpen={verifyState.isOpen}
+        step={verifyState.step}
+        result={verifyState.result}
+        onClose={() => setVerifyState(prev => ({ ...prev, isOpen: false }))}
+        onStartVerification={(file) => {
+          if (verifyState.eduId) {
+            executeVerification(file, verifyState.eduId);
+          }
+        }}
+        onRetry={() => setVerifyState(prev => ({ ...prev, step: 'upload' }))}
+        onNeedEdit={() => {
+          if (verifyState.eduId) {
+            handleNeedEdit(verifyState.eduId);
+            setVerifyState(prev => ({ ...prev, isOpen: false }));
+          }
+        }}
+        onSuccessConfirm={() => setVerifyState(prev => ({ ...prev, isOpen: false }))}
+      />
 
       {/* Delete Confirmation (Dark Mode Optimized) */}
       {deleteModal.isOpen && (

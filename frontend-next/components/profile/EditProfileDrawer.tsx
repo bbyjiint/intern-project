@@ -120,7 +120,6 @@ export default function EditProfileDrawer({
             department: exp?.department || '',
             startDate: exp?.startDate || '',
             endDate: exp?.endDate || '',
-            manager: exp?.manager || '',
             description: exp?.description || '',
           })
         } else {
@@ -279,7 +278,6 @@ export default function EditProfileDrawer({
             startDate: formData.startDate,
             endDate: formData.endDate,
             isCurrent: !formData.endDate,
-            manager: formData.manager,
             description: formData.description,
           })
         }

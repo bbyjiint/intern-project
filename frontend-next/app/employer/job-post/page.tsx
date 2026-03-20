@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import EmployerNavbar from "@/components/EmployerNavbar";
@@ -36,7 +36,7 @@ interface EditJobPostDetails {
 
 const mockJobPosts: JobPost[] = [];
 
-export default function JobPostPage() {
+function JobPostContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [searchQuery, setSearchQuery] = useState("");
@@ -707,5 +707,19 @@ export default function JobPostPage() {
         onSubmit={handleCreateJobPost}
       />
     </div>
+  );
+}
+
+export default function JobPostPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-1 items-center justify-center min-h-[80vh] w-full">
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600 dark:border-slate-800 dark:border-t-blue-500"></div>
+        </div>
+      }
+    >
+      <JobPostContent />
+    </Suspense>
   );
 }

@@ -550,7 +550,7 @@ export default function EmployerProfilePage() {
                 <div>
                   <label className="mb-[6px] block text-[14px] text-[#4B5563] dark:text-[#e5e7eb]">Phone Number</label>
                   <div className="flex gap-[10px]">
-                    <select className="h-[38px] w-[64px] rounded-[6px] border border-[#D1D5DB] bg-white px-3 text-[14px] text-[#374151] outline-none dark:border-gray-700 dark:bg-gray-900/50 dark:text-white">
+                    <select className="h-[38px] w-[80px] rounded-[6px] border border-[#D1D5DB] bg-white px-3 text-[14px] text-[#374151] outline-none dark:border-gray-700 dark:bg-gray-900/50 dark:text-white">
                       <option value="+66">+66</option>
                     </select>
                     <input
