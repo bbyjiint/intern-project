@@ -347,7 +347,7 @@ export default function EmployerProfilePage() {
                   onClick={() => fileInputRef.current?.click()}
                 >
                   {profileData.profileImage ? (
-                    <img src={profileData.profileImage} alt="Profile" className="h-[70px] w-[70px] object-contain" />
+                    <img src={profileData.profileImage} alt="Profile" className="h-[94px] w-[94px] rounded-full object-cover" />
                   ) : (
                     <div className="flex h-[70px] w-[70px] items-center justify-center rounded-md bg-[#0273B1]">
                       <span className="text-lg font-semibold text-white">

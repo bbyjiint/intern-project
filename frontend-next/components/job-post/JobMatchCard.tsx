@@ -82,7 +82,7 @@ export default function JobMatchCard({
         <img
           src={post.companyLogo}
           alt={post.companyName}
-          className="h-[31px] w-[31px] rounded-[4px] object-contain"
+          className="h-[48px] w-[48px] rounded-full object-cover"
         />
       );
     }
