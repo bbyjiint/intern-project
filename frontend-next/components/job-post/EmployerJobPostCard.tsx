@@ -46,7 +46,7 @@ export default function EmployerJobPostCard({
               <img
                 src={post.companyLogoImage}
                 alt={post.companyName}
-                className="h-[31px] w-[31px] rounded-[4px] object-contain"
+                className="h-[48px] w-[48px] rounded-full object-cover"
               />
             ) : (
               <div className="flex h-[31px] w-[31px] items-center justify-center rounded-[4px] bg-[#23356E] text-[9px] font-bold text-white">

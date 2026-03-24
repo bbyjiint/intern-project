@@ -59,7 +59,7 @@ function DeleteConfirmationModal({
   );
 }
 
-// --- 2. Helper Functions (คงเดิม) ---
+// --- 2. Helper Functions ---
 const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 function parseToISODate(displayDate: string) {
   if (!displayDate) return undefined;
@@ -197,15 +197,21 @@ export default function ProjectsSection({ projects, onRefresh }: { projects: Pro
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                     </button>
+                    {/* --- ปุ่ม Upload / Files (ปรับเป็นสีฟ้า) --- */}
                     <button
                       onClick={() => handleOpenUpload(project)}
-                      className={`flex-1 sm:flex-none px-5 py-2 rounded-xl text-sm font-black transition-all border-2 ${hasAnyFile ? "border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/10" : "border-gray-200 dark:border-gray-700 text-gray-400"}`}
+                      className={`flex-1 sm:flex-none px-5 py-2 rounded-xl text-sm font-black transition-all border-2 ${
+                        hasAnyFile 
+                        ? "border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-500/20" 
+                        : "border-blue-100 dark:border-blue-900/30 text-blue-300 dark:text-blue-700 cursor-not-allowed"
+                      }`}
                     >
                       {hasAnyFile ? "Files" : "Upload"}
                     </button>
+                    {/* --- ปุ่ม Edit (ปรับเป็นสีฟ้า) --- */}
                     <button
                       onClick={() => handleEditClick(project)}
-                      className="flex-1 sm:flex-none px-5 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:bg-gray-800 dark:hover:bg-gray-100 rounded-xl text-sm font-black transition-all"
+                      className="flex-1 sm:flex-none px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-black transition-all shadow-md shadow-blue-500/20"
                     >
                       Edit
                     </button>
@@ -240,7 +246,6 @@ export default function ProjectsSection({ projects, onRefresh }: { projects: Pro
             endDate: parseToISODate(projectData.endDate || "") 
           };
           
-          // ป้องกันการลบข้อมูล URL เดิมหากเป็นการ Edit
           if (editingProject?.fileUrl) payload.fileUrl = editingProject.fileUrl;
           if (editingProject?.fileName) payload.fileName = editingProject.fileName;
           if (editingProject?.githubUrl && !payload.githubUrl) payload.githubUrl = editingProject.githubUrl;

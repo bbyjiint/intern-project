@@ -133,6 +133,7 @@ messagesRouter.get('/conversations', requireAuth, async (req: AuthedRequest, res
             companyId: conv.companyId,
             companyName: conv.Company.companyName,
             companyInitials: initialsFromName(conv.Company.companyName),
+            companyLogo: conv.Company.logoURL ?? null,
             lastMessage: lastMessage?.text || '',
             lastMessageTime: lastMessage?.createdAt || conv.createdAt,
             unreadCount,

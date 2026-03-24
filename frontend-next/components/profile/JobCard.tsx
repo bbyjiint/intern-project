@@ -1,4 +1,4 @@
-'use client'
+"use client";
 
 import React from "react";
 
@@ -48,7 +48,7 @@ export default function JobCard({
         <img
           src={job.companyLogo}
           alt={job.companyName}
-          className="h-[31px] w-[31px] rounded-[4px] object-contain"
+          className="h-[48px] w-[48px] rounded-full object-cover"
         />
       );
     }
@@ -107,9 +107,9 @@ export default function JobCard({
                 onBookmarkClick(job.id);
               }}
               className={`shrink-0 p-1 rounded-full transition-colors ${
-                job.isBookmarked 
-                ? "text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/30" 
-                : "text-slate-300 dark:text-slate-600 hover:text-slate-400 dark:hover:text-slate-500"
+                job.isBookmarked
+                  ? "text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-900/30"
+                  : "text-slate-300 dark:text-slate-600 hover:text-slate-400 dark:hover:text-slate-500"
               }`}
             >
               <svg
@@ -145,7 +145,9 @@ export default function JobCard({
         </span>
         {(job.positions && job.positions.length > 0
           ? job.positions
-          : job.roleType ? [job.roleType] : []
+          : job.roleType
+            ? [job.roleType]
+            : []
         )
           .slice(0, 3)
           .map((pos) => (
@@ -160,13 +162,23 @@ export default function JobCard({
 
       {/* Details Grid */}
       <div className="grid grid-cols-[130px_1fr] gap-y-[10px] items-baseline">
-        <span className="text-[12px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider">Location</span>
-        <span className="text-[13px] font-medium text-slate-700 dark:text-slate-300">{job.location}</span>
-        
-        <span className="text-[12px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider">Applicants</span>
-        <span className="text-[13px] font-medium text-slate-700 dark:text-slate-300">{job.applicants} Persons</span>
-        
-        <span className="text-[12px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider">Allowance</span>
+        <span className="text-[12px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+          Location
+        </span>
+        <span className="text-[13px] font-medium text-slate-700 dark:text-slate-300">
+          {job.location}
+        </span>
+
+        <span className="text-[12px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+          Applicants
+        </span>
+        <span className="text-[13px] font-medium text-slate-700 dark:text-slate-300">
+          {job.applicants} Persons
+        </span>
+
+        <span className="text-[12px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+          Allowance
+        </span>
         <span className="text-[14px] font-bold text-sky-700 dark:text-sky-400 italic">
           {job.allowance}
         </span>
@@ -176,8 +188,18 @@ export default function JobCard({
       {job.timeAgo && (
         <div className="mt-auto flex justify-end pt-[14px] border-t border-slate-50 dark:border-slate-700/50">
           <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500 flex items-center gap-1">
-            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              className="w-3 h-3"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             {job.timeAgo}
           </span>

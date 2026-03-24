@@ -40,15 +40,17 @@ function formatTime(date: Date): string {
   return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
 }
 
-const CompanyLogo = () => (
+const CompanyLogo = ({ logo, name }: { logo?: string; name?: string }) => (
   <div className="w-10 h-10 rounded-full border border-gray-200 dark:border-slate-700 flex items-center justify-center overflow-hidden bg-gray-50 dark:bg-slate-800 flex-shrink-0">
-    <div className="w-7 h-7 relative flex items-end justify-center">
-      <div className="absolute inset-0 bg-[#1C2D4F]" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }}></div>
-      <div className="absolute inset-[2.5px] bg-[#E31837]" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }}></div>
-      <span className="text-[4px] font-bold text-white z-10 mb-0.5 uppercase">TRINITY</span>
-    </div>
+    {logo ? (
+      <img src={logo} alt={name} className="w-10 h-10 rounded-full object-cover" />
+    ) : (
+      <span className="text-sm font-bold text-white bg-[#1C2D4F] w-full h-full flex items-center justify-center">
+        {name?.substring(0, 2).toUpperCase() || 'CO'}
+      </span>
+    )}
   </div>
-);
+)
 
 export default function InternMessagesPage() {
   const router = useRouter()
@@ -248,7 +250,7 @@ export default function InternMessagesPage() {
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    <CompanyLogo />
+                    <CompanyLogo logo={conv.companyLogo} name={conv.companyName} />
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-center mb-0.5">
                         <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 truncate">{conv.companyName}</h3>
@@ -271,7 +273,7 @@ export default function InternMessagesPage() {
               {/* Header */}
               <div className="h-20 px-8 border-b border-gray-200 dark:border-slate-800 bg-white dark:bg-slate-900 flex items-center justify-between z-10">
                 <div className="flex items-center gap-4">
-                  <CompanyLogo />
+                  <CompanyLogo logo={selectedConversation.companyLogo} name={selectedConversation.companyName} />
                   <div>
                     <h2 className="text-base font-bold text-slate-900 dark:text-white leading-tight">{selectedConversation.companyName}</h2>
                     <p className="text-xs text-green-500 font-medium flex items-center gap-1">
