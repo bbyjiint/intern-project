@@ -632,7 +632,6 @@ model JobMatchCache {
   updatedAt   DateTime @updatedAt
 
   Profile CandidateProfile @relation(fields: [candidateId], references: [id], onDelete: Cascade)
-
   @@unique([candidateId])
   @@index([candidateId])
   
@@ -662,3 +661,4 @@ model ApplicantAnalysisCache {
   @@unique([jobPostId, candidateId])
   @@index([candidateId])
 }
+

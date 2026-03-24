@@ -22,20 +22,17 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  // --- ส่วนที่แก้ไข: ล็อคการเลื่อนหน้าจอ ---
+  // --- ส่วนเดิม: ล็อคการเลื่อนหน้าจอ ---
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden'
     } else {
       document.body.style.overflow = 'unset'
     }
-
-    // คืนค่าปกติเมื่อ Component ถูก Unmount
     return () => {
       document.body.style.overflow = 'unset'
     }
   }, [isOpen])
-  // ------------------------------------
 
   const startOAuth = (provider: 'google' | 'line') => {
     const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5001'
@@ -49,7 +46,6 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
     e.preventDefault()
     setError(null)
 
-    // ตรวจสอบรหัสผ่านเบื้องต้น
     if (password !== confirmPassword) {
       setError('Passwords do not match')
       return
@@ -86,50 +82,52 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 transition-all"
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 transition-all"
       onClick={handleBackdropClick}
     >
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto relative border border-transparent dark:border-gray-800 transition-colors duration-200">
-        <div className="p-8">
-          {/* Close Button */}
+      {/* Modal Container: มือถือเด้งจากล่าง / Desktop อยู่ตรงกลาง */}
+      <div className="bg-white dark:bg-gray-900 rounded-t-[2.5rem] sm:rounded-2xl shadow-2xl max-w-md w-full max-h-[92vh] overflow-y-auto relative border border-transparent dark:border-gray-800 transition-all duration-300 animate-in fade-in slide-in-from-bottom-10 sm:slide-in-from-bottom-0">
+        
+        {/* Header Section */}
+        <div className="p-6 sm:p-8 pb-0 sm:pb-0">
+          {/* Close Button: ปรับให้กดง่ายขึ้นในมือถือ */}
           <button
             onClick={onClose}
-            className="absolute top-6 right-6 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+            className="absolute top-5 right-5 p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors bg-gray-100 dark:bg-gray-800 rounded-full sm:bg-transparent"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
 
           {/* Logo */}
-          <div className="mb-8">
+          <div className="mb-6 sm:mb-8 flex justify-center sm:justify-start">
             <CompanyHubLogo href="/" />
           </div>
-        </div>
-
-        <div className="p-8">
 
           {/* Heading */}
-          <div className="mb-8">
-            <h2 className="text-3xl font-black text-slate-900 dark:text-white">
+          <div className="text-center sm:text-left">
+            <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
               Join Us
             </h2>
-            <p className="text-slate-500 dark:text-slate-400 mt-2 font-medium">
+            <p className="text-slate-500 dark:text-slate-400 mt-2 font-medium text-sm sm:text-base">
               Create an account to get started
             </p>
           </div>
+        </div>
 
+        <div className="p-6 sm:p-8 pt-6 sm:pt-8">
           {/* Register Form */}
-          <form className="space-y-5" onSubmit={handleSubmit}>
+          <form className="space-y-4 sm:space-y-5" onSubmit={handleSubmit}>
             {error && (
-              <div className="rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 px-4 py-3 text-sm font-bold text-red-700 dark:text-red-400">
+              <div className="rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800 px-4 py-3 text-xs sm:text-sm font-bold text-red-700 dark:text-red-400 animate-pulse">
                 {error}
               </div>
             )}
 
             {/* Email Input */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 ml-1">
+              <label className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 ml-1">
                 Email Address
               </label>
               <div className="relative group">
@@ -144,14 +142,14 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@company.com"
                   required
-                  className="block w-full pl-12 pr-4 py-3.5 border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                  className="block w-full pl-11 pr-4 py-3 sm:py-3.5 border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-slate-900 dark:text-white text-sm sm:text-base focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 />
               </div>
             </div>
 
             {/* Password Input */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 ml-1">
+              <label className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 ml-1">
                 Password
               </label>
               <div className="relative group">
@@ -166,12 +164,12 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="block w-full pl-12 pr-12 py-3.5 border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                  className="block w-full pl-11 pr-11 py-3 sm:py-3.5 border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-slate-900 dark:text-white text-sm sm:text-base focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400"
                 >
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     {showPassword ? (
@@ -186,7 +184,7 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
 
             {/* Confirm Password Input */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 ml-1">
+              <label className="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 ml-1">
                 Confirm Password
               </label>
               <div className="relative group">
@@ -201,12 +199,12 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  className="block w-full pl-12 pr-12 py-3.5 border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-slate-900 dark:text-white font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                  className="block w-full pl-11 pr-11 py-3 sm:py-3.5 border border-gray-300 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-800 text-slate-900 dark:text-white text-sm sm:text-base focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400"
                 >
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     {showConfirmPassword ? (
@@ -223,14 +221,14 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full text-white py-3.5 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg active:scale-[0.98] shadow-blue-500/20 mt-2"
+              className="w-full text-white py-3.5 sm:py-4 rounded-xl font-bold transition-all disabled:opacity-50 shadow-lg active:scale-[0.98] text-sm sm:text-base mt-2"
               style={{ backgroundColor: '#0273B1' }}
             >
               {isSubmitting ? 'Creating Account...' : 'Sign Up'}
             </button>
 
             {/* Login Link */}
-            <p className="text-center text-sm font-bold text-slate-600 dark:text-slate-400">
+            <p className="text-center text-xs sm:text-sm font-bold text-slate-600 dark:text-slate-400 mt-2">
               Already have an account?{' '}
               <button
                 type="button"
@@ -242,31 +240,31 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
             </p>
 
             {/* Divider */}
-            <div className="relative my-8">
+            <div className="relative py-4">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-200 dark:border-gray-800"></div>
               </div>
-              <div className="relative flex justify-center text-xs">
-                <span className="px-3 bg-white dark:bg-gray-900 text-gray-500 font-bold uppercase tracking-widest">Or sign up with</span>
+              <div className="relative flex justify-center text-[10px]">
+                <span className="px-3 bg-white dark:bg-gray-900 text-gray-400 font-bold uppercase tracking-widest">Or sign up with</span>
               </div>
             </div>
 
             {/* Social Login Buttons */}
-            <div className="grid grid-cols-1 gap-3">
+            <div className="flex flex-col gap-3">
               <button
                 type="button"
-                className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-slate-900 dark:text-white py-3 rounded-xl font-bold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all flex items-center justify-center space-x-3 shadow-sm"
+                className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-slate-900 dark:text-white py-3 rounded-xl font-bold hover:bg-gray-50 flex items-center justify-center gap-3 transition-all shadow-sm"
                 onClick={() => startOAuth('line')}
               >
-                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                <svg className="w-5 h-5 text-[#00B900]" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.27l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.281.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.086.766.062 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
                 </svg>
-                <span className="uppercase tracking-wide text-xs">Register with LINE</span>
+                <span className="uppercase tracking-wide text-[10px] sm:text-xs">Register with LINE</span>
               </button>
 
               <button
                 type="button"
-                className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 text-slate-900 dark:text-white py-3 rounded-xl font-bold hover:bg-gray-50 dark:hover:bg-gray-700 transition-all flex items-center justify-center space-x-3 shadow-sm"
+                className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-slate-900 dark:text-white py-3 rounded-xl font-bold hover:bg-gray-50 flex items-center justify-center gap-3 transition-all shadow-sm"
                 onClick={() => startOAuth('google')}
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -275,7 +273,7 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
                   <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
                   <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                 </svg>
-                <span className="uppercase tracking-wide text-xs">Register with GOOGLE</span>
+                <span className="uppercase tracking-wide text-[10px] sm:text-xs">Register with GOOGLE</span>
               </button>
             </div>
           </form>
