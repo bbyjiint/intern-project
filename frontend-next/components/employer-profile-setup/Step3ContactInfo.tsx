@@ -15,7 +15,6 @@ export default function Step3ContactInfo({ data, onUpdate }: Step3ContactInfoPro
     contactName: data.contactName || '',
   })
 
-  // Sync formData when data prop changes (e.g., when profile data is loaded from API)
   useEffect(() => {
     setFormData({
       phoneNumber: data.phoneNumber || '',
@@ -31,22 +30,24 @@ export default function Step3ContactInfo({ data, onUpdate }: Step3ContactInfoPro
     onUpdate(updated)
   }
 
+  const inputClass = "w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-3 text-[13px] text-[#1E293B] dark:text-slate-200 placeholder:text-gray-400 dark:placeholder:text-slate-400 outline-none transition focus:border-[#0273B1] focus:ring-2 focus:ring-[#BFDBFE]"
+
   return (
     <div>
-      <h2 className="mb-6 text-xl font-bold sm:mb-8 sm:text-2xl dark:text-white" style={{ color: '#0273B1', fontWeight: 700 }}>
+      <h2 className="mb-6 text-xl font-bold sm:mb-8 sm:text-2xl text-[#0273B1] dark:text-white">
         Contact Information
       </h2>
 
       <div className="space-y-6">
         {/* Phone Number */}
         <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
+          <label className="block text-xs font-medium mb-2 text-[#0273B1]">
             Phone Number
           </label>
           <div className="flex flex-col sm:flex-row gap-2">
             <select
               defaultValue="+66"
-              className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-[#7f7f7f] dark:bg-[#1e1e1e] dark:text-white sm:w-auto"
+              className="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-3 text-sm font-medium text-[#1E293B] dark:text-slate-200 outline-none transition focus:border-[#0273B1] focus:ring-2 focus:ring-[#BFDBFE] sm:w-auto"
               style={{ minWidth: '100px' }}
             >
               <option value="+66">+66</option>
@@ -59,14 +60,14 @@ export default function Step3ContactInfo({ data, onUpdate }: Step3ContactInfoPro
               value={formData.phoneNumber}
               onChange={(e) => handleChange('phoneNumber', e.target.value)}
               placeholder="Phone Number"
-              className="flex-1 rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-[#7f7f7f] dark:bg-[#1e1e1e] dark:text-white dark:placeholder:text-[#7f7f7f]"
+              className={`flex-1 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-3 text-[13px] text-[#1E293B] dark:text-slate-200 placeholder:text-gray-400 dark:placeholder:text-slate-400 outline-none transition focus:border-[#0273B1] focus:ring-2 focus:ring-[#BFDBFE]`}
             />
           </div>
         </div>
 
         {/* Email */}
         <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
+          <label className="block text-xs font-medium mb-2 text-[#0273B1]">
             Email
           </label>
           <input
@@ -74,27 +75,28 @@ export default function Step3ContactInfo({ data, onUpdate }: Step3ContactInfoPro
             value={formData.email}
             onChange={(e) => handleChange('email', e.target.value)}
             placeholder="company@example.com"
-            className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-[#7f7f7f] dark:bg-[#1e1e1e] dark:text-white dark:placeholder:text-[#7f7f7f]"
+            className={inputClass}
           />
         </div>
 
         {/* Website URL */}
         <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
-            Website URL <span className="text-xs font-normal text-[#A9B4CD] dark:text-[#7f7f7f]">(Optional)</span>
+          <label className="block text-xs font-medium mb-2 text-[#0273B1]">
+            Website URL{' '}
+            <span className="text-xs font-normal text-[#A9B4CD] dark:text-slate-500">(Optional)</span>
           </label>
           <input
             type="url"
             value={formData.websiteUrl}
             onChange={(e) => handleChange('websiteUrl', e.target.value)}
             placeholder="https://www.example.com"
-            className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-[#7f7f7f] dark:bg-[#1e1e1e] dark:text-white dark:placeholder:text-[#7f7f7f]"
+            className={inputClass}
           />
         </div>
 
         {/* Contact Name */}
         <div>
-          <label className="block text-xs font-medium mb-2" style={{ color: '#0273B1' }}>
+          <label className="block text-xs font-medium mb-2 text-[#0273B1]">
             Contact Name
           </label>
           <input
@@ -102,7 +104,7 @@ export default function Step3ContactInfo({ data, onUpdate }: Step3ContactInfoPro
             value={formData.contactName}
             onChange={(e) => handleChange('contactName', e.target.value)}
             placeholder="Enter contact person name"
-            className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-[#7f7f7f] dark:bg-[#1e1e1e] dark:text-white dark:placeholder:text-[#7f7f7f]"
+            className={inputClass}
           />
         </div>
       </div>
