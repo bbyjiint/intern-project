@@ -5,6 +5,7 @@ import InternNavbar from "@/components/InternNavbar";
 import JobCard, { JobPostData } from "@/components/profile/JobCard";
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/lib/api";
+import { POSITION_OPTIONS } from "@/constants/positionOptions";
 
 export default function FindCompaniesPage() {
   const router = useRouter();
@@ -108,7 +109,8 @@ export default function FindCompaniesPage() {
         job.companyName.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesPosition = positionFilter === "" ||
-        job.jobTitle.toLowerCase().includes(positionFilter.toLowerCase());
+        (job.jobTitle || "").toLowerCase().includes(positionFilter.toLowerCase()) ||
+        (job.positions && job.positions.some(pos => pos.toLowerCase().includes(positionFilter.toLowerCase())));
 
       const workType = job.workType?.toUpperCase().replace(/[-\s]/g, "_");
       const matchesFormat = (formatFilters.hybrid && workType === "HYBRID") ||
@@ -165,9 +167,11 @@ export default function FindCompaniesPage() {
                 className="w-full appearance-none px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-blue-500 outline-none transition-all cursor-pointer"
               >
                 <option value="">All Positions</option>
-                <option value="frontend">Frontend Developer</option>
-                <option value="backend">Backend Developer</option>
-                <option value="ai">AI Engineer</option>
+                {POSITION_OPTIONS.map((position) => (
+                  <option key={position} value={position}>
+                    {position}
+                  </option>
+                ))}
               </select>
               <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-blue-500 transition-colors">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" /></svg>

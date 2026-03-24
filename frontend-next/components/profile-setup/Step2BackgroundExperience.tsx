@@ -368,7 +368,13 @@ const EducationForm = forwardRef<EducationFormHandle, EducationFormProps>(
             </label>
             <input
               value={fields.gpa}
-              onChange={(e) => updateField("gpa", e.target.value)}
+              onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "" || /^\d*\.?\d{0,2}$/.test(val)) {
+                    if (Number(val) > 4.0) return;
+                    updateField("gpa", e.target.value);
+                  }
+                }}
               placeholder="e.g. 3.50"
               className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 ${borderClass("gpa")}`}
             />

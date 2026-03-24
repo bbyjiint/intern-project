@@ -158,10 +158,11 @@ function MonthYearPicker({
 
   return (
     <div ref={wrapRef} className="relative">
-      <div className="relative">
+      <div className="relative cursor-pointer" onClick={() => setOpen((v) => !v)}>
         <input
           type="text"
           value={inputVal}
+          readOnly
           placeholder={placeholder}
           onChange={(e) => setInputVal(e.target.value)}
           onBlur={(e) => commitInput(e.target.value)}

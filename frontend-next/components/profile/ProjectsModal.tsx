@@ -90,7 +90,28 @@ function MonthYearPicker({
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
-  }, []);
+  }, [])
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let raw = e.target.value.replace(/[^0-9/]/g, ""); // ลบตัวอักษรทิ้ง ให้เหลือแต่เลขกับ /
+    
+    // ป้องกันการพิมพ์ / เกิน 1 ตัว
+    if ((raw.match(/\//g) || []).length > 1) {
+      return;
+    }
+
+    // เติม / ให้อัตโนมัติเมื่อพิมพ์เลขเดือนเสร็จ (2 ตัวแรก)
+    if (raw.length === 2 && !raw.includes("/")) {
+      const month = parseInt(raw);
+      if (month > 12) raw = "12"; // ถ้าพิมพ์เดือนเกิน 12 ให้ปรับเป็น 12
+      raw = raw + "/";
+    }
+
+    // จำกัดความยาวแค่ MM/YYYY (7 ตัวอักษร)
+    if (raw.length <= 7) {
+      setInputVal(raw);
+    }
+  };
 
   const commitInput = (raw: string) => {
     const p = parseDateValue(raw);
@@ -113,14 +134,14 @@ function MonthYearPicker({
 
   return (
     <div ref={wrapRef} className="relative">
-      <div className="relative">
+      <div className="relative cursor-pointer"
+      onClick={() => setOpen((v) => !v)}
+      >
         <input
           type="text"
           value={inputVal}
           placeholder={placeholder}
-          onChange={(e) => setInputVal(e.target.value)}
-          onBlur={(e) => commitInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && commitInput(inputVal)}
+          readOnly
           className={`w-full px-4 py-3 pr-10 border rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${borderCls}`}
         />
         <button

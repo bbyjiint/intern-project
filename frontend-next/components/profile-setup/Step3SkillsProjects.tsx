@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import SearchableDropdown from "@/components/SearchableDropdown";
 import { apiFetch } from "@/lib/api";
 
@@ -381,14 +381,12 @@ function SkillForm({
 
   const [fields, setFields] = useState<Skill>({
     name: skill?.name || "",
-    category: skill?.category || "technical",
+    category: skill?.category || "",
     level: skill?.level || "",
     usedIn: skill?.usedIn || { educationIds: [], projectIds: [] },
     _aiTag: skill?._aiTag || false,
   });
-  const [skillOptions, setSkillOptions] = useState<
-    { id: string; name: string }[]
-  >([]);
+  const [allSkills, setAllSkills] = useState<{ id: string; name: string; category?: string }[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
@@ -399,9 +397,9 @@ function SkillForm({
         const res = await apiFetch<{ skills: { id: string; name: string }[] }>(
           "/api/skills",
         );
-        if (!cancelled) setSkillOptions(res.skills || []);
+        if (!cancelled) setAllSkills(res.skills || []);
       } catch {
-        if (!cancelled) setSkillOptions([]);
+        if (!cancelled) setAllSkills([]);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -425,6 +423,18 @@ function SkillForm({
     }));
   };
 
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    set("category", e.target.value);
+    set("name", ""); 
+  };
+
+  const filteredSkills = useMemo(() => {
+    if (!fields.category) return [];
+    return allSkills.filter(s => 
+      !s.category || s.category.toLowerCase() === fields.category.toLowerCase()
+    );
+  }, [allSkills, fields.category]);
+
   const handleSubmit = () => {
     if (!fields.name || !fields.category || !fields.level) return;
     onSave({ ...fields, _aiTag: isEditing ? false : fields._aiTag });
@@ -443,18 +453,18 @@ function SkillForm({
           <label className="block text-xs font-medium mb-2 text-[#0273B1] dark:text-blue-400">
             Skill Name
           </label>
-          {loading ? (
+          {!fields.category ? (
             <div className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg text-sm text-gray-400 dark:text-slate-500 bg-white dark:bg-slate-700">
               Loading skills...
             </div>
           ) : (
             <SearchableDropdown
-              options={skillOptions.map((s) => ({
+              options={filteredSkills.map((s) => ({
                 value: s.name,
                 label: s.name,
               }))}
               value={fields.name}
-              onChange={(v) => set("name", v)}
+              onChange={(v: any) => set("name", v)}
               placeholder="Select skill"
               className="w-full"
               allOptionLabel="Select skill"
@@ -470,10 +480,10 @@ function SkillForm({
           <div className="relative">
             <select
               value={fields.category}
-              onChange={(e) => set("category", e.target.value)}
+              onChange={handleCategoryChange}
               className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none pr-10"
             >
-              <option value="">Select category</option>
+              <option value="" disabled>Select category</option>
               <option value="technical">Technical Skills</option>
               <option value="business">Business Skills</option>
             </select>
