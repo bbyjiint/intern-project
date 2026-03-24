@@ -31,35 +31,34 @@ function RoleCard({ icon, title, description, buttonText, onClick, isSelected, o
   return (
     <div
       onClick={handleCardClick}
-      className={`bg-white dark:bg-gray-800 border-2 rounded-2xl shadow-md p-6 md:p-8 transition-all duration-300 cursor-pointer flex flex-col items-center group ${
+      className={`bg-white dark:bg-gray-800 border-2 rounded-2xl shadow-md p-5 md:p-8 transition-all duration-300 cursor-pointer flex flex-col items-center group w-full ${
         isActive 
-          ? 'border-[#0273B1] scale-[1.03] shadow-xl' 
+          ? 'border-[#0273B1] scale-[1.02] md:scale-[1.03] shadow-xl' 
           : 'border-gray-100 dark:border-gray-700 hover:border-blue-200'
       }`}
     >
       <div className="text-center w-full flex flex-col items-center">
-        <div className="flex justify-center items-center mb-5 w-full">
+        <div className="flex justify-center items-center mb-4 md:mb-5 w-full">
           <div 
-            className="w-20 h-20 md:w-24 md:h-24 rounded-full flex items-center justify-center transition-all duration-300"
+            className="w-16 h-16 md:w-24 md:h-24 rounded-full flex items-center justify-center transition-all duration-300"
             style={{ 
               backgroundColor: isActive ? '#E3F2FD' : '#F1F5F9' 
             }}
           >
-            <div className="flex items-center justify-center w-10 h-10 md:w-12 md:h-12">
+            <div className="flex items-center justify-center w-8 h-8 md:w-12 md:h-12">
                {icon}
             </div>
           </div>
         </div>
 
-        <h2 className={`text-xl md:text-2xl font-extrabold mb-2 transition-colors ${isActive ? 'text-[#0273B1]' : 'text-[#0F172A] dark:text-white'}`}>
+        <h2 className={`text-lg md:text-2xl font-extrabold mb-1 md:mb-2 transition-colors ${isActive ? 'text-[#0273B1]' : 'text-[#0F172A] dark:text-white'}`}>
           {title}
         </h2>
 
-        <p className={`text-sm md:text-base mb-6 leading-relaxed min-h-[48px] font-medium transition-colors ${isActive ? 'text-slate-700 dark:text-slate-200' : 'text-slate-600 dark:text-gray-400'}`}>
+        <p className={`text-xs md:text-base mb-5 md:mb-6 leading-relaxed min-h-[40px] md:min-h-[48px] font-medium transition-colors ${isActive ? 'text-slate-700 dark:text-slate-200' : 'text-slate-600 dark:text-gray-400'}`}>
           {description}
         </p>
 
-        {/* ปรับสีปุ่มตอน Mouse Out ให้เข้มขึ้นชัดเจน */}
         <button
           onClick={handleButtonClick}
           className={`w-full py-3 md:py-4 rounded-xl font-bold text-sm md:text-base transition-all active:scale-95 shadow-sm border-2 ${
@@ -131,27 +130,31 @@ export default function RoleSelectionPage() {
   }
 
   return (
-    <div className="h-screen w-full flex items-center justify-center bg-[#F8FAFC] dark:bg-gray-950 transition-colors overflow-hidden px-4">
-      <div className="max-w-5xl w-full">
-        <div className="bg-white dark:bg-gray-900 rounded-[2rem] md:rounded-[3rem] shadow-2xl p-6 md:p-12 border border-gray-100 dark:border-gray-800 relative">
+    <div className="min-h-screen w-full flex items-center justify-center bg-[#F8FAFC] dark:bg-gray-950 transition-colors py-10 px-4 md:px-6">
+      <div className="max-w-4xl w-full">
+        <div className="bg-white dark:bg-gray-900 rounded-[2rem] md:rounded-[3.5rem] shadow-2xl p-6 md:p-14 border border-gray-100 dark:border-gray-800 relative">
           
           <div className="text-center mb-8 md:mb-12">
-            <h1 className="text-3xl md:text-5xl font-black text-[#0F172A] dark:text-white mb-4 tracking-tight">
+            <h1 className="text-2xl md:text-5xl font-black text-[#0F172A] dark:text-white mb-3 md:mb-4 tracking-tight leading-tight">
               Ready to get started<span className="text-[#0273B1]">?</span>
             </h1>
-            <p className="text-base md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto font-semibold">
+            <p className="text-sm md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto font-semibold leading-relaxed px-2">
               Join thousands of students and employers already using our platform to build the future.
             </p>
           </div>
 
           {error && (
-            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700 text-center">
+            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-xs md:text-sm text-red-700 text-center animate-shake">
               {error}
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-10">
-            <div onMouseEnter={() => setHoveredRole('intern')} onMouseLeave={() => setHoveredRole(null)}>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-10">
+            <div 
+              onMouseEnter={() => setHoveredRole('intern')} 
+              onMouseLeave={() => setHoveredRole(null)}
+              className="flex justify-center"
+            >
               <RoleCard
                 icon={
                   <svg className="w-full h-full" fill="none" stroke={getIconStroke('intern')} strokeWidth={2} viewBox="0 0 24 24">
@@ -170,7 +173,11 @@ export default function RoleSelectionPage() {
               />
             </div>
 
-            <div onMouseEnter={() => setHoveredRole('employer')} onMouseLeave={() => setHoveredRole(null)}>
+            <div 
+              onMouseEnter={() => setHoveredRole('employer')} 
+              onMouseLeave={() => setHoveredRole(null)}
+              className="flex justify-center"
+            >
               <RoleCard
                 icon={
                   <svg className="w-full h-full" fill="none" stroke={getIconStroke('employer')} strokeWidth={2} viewBox="0 0 24 24">
