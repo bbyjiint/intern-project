@@ -151,21 +151,7 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
         <div className="flex justify-between items-center h-[76px]">
           
           {/* LEFT SECTION */}
-          <div className="flex items-center gap-4 lg:gap-12 xl:gap-20">
-            {/* Hamburger Menu (Mobile Only) */}
-            <button 
-              className="md:hidden p-2 text-gray-600 dark:text-gray-300"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                {isMobileMenuOpen ? (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                ) : (
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
-                )}
-              </svg>
-            </button>
-
+          <div className="flex items-center ml-2 gap-4 lg:gap-12 xl:gap-20">
             <ThemedCompanyHubLogo href="/intern/profile" />
 
             {/* Desktop Links */}

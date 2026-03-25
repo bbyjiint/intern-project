@@ -331,18 +331,14 @@ export default function ProjectsSection({
 
                     <button
                       onClick={() => handleOpenUpload(project)}
-                      className={`px-6 py-3 sm:px-7 sm:py-3 rounded-xl text-xs sm:text-sm font-black transition-all border-2 text-center whitespace-nowrap ${
-                        hasAnyFile
-                          ? "border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white dark:border-blue-500 dark:text-blue-400 dark:hover:text-white"
-                          : "border-blue-100 dark:border-blue-900/30 text-blue-300 dark:text-blue-700 cursor-pointer"
-                      }`}
+                      className="px-5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-bold text-gray-700 dark:text-gray-200 transition-all hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-95 shadow-sm whitespace-nowrap"
                     >
-                      {hasAnyFile ? "Files" : "Upload"}
+                      {hasAnyFile ? "Edit Files" : "Upload Files"}
                     </button>
 
                     <button
                       onClick={() => handleEditClick(project)}
-                      className="px-6 py-3 sm:px-7 sm:py-3 bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white rounded-xl text-xs sm:text-sm font-black transition-all shadow-md shadow-blue-500/20 text-center whitespace-nowrap"
+                      className="px-5 py-2.5 rounded-lg border-2 border-blue-500 bg-transparent text-sm font-bold text-blue-600 dark:text-blue-400 transition-all hover:bg-blue-50 dark:hover:bg-blue-500/10 active:scale-95 whitespace-nowrap"
                     >
                       Edit
                     </button>

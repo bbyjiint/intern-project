@@ -119,6 +119,9 @@ export default function ProjectPage() {
         const fileUrl = p.fileUrl || p.file?.url || p.files?.[0]?.url;
         const fileName = p.fileName || p.file?.name || p.files?.[0]?.name;
 
+        // ✅ uploadStatus อิงจากมี githubUrl, projectUrl, หรือ fileUrl สักอันนึง
+        const hasAnyFile = !!(p.githubUrl || p.projectUrl || fileUrl);
+
         return {
           id: p.id,
           title: p.name,
@@ -126,7 +129,7 @@ export default function ProjectPage() {
           period: sd && ed ? `${sd} - ${ed}` : sd || ed || "No date",
           description: p.description || "",
           skills: p.relatedSkills || p.skills || [],
-          uploadStatus: (fileUrl ? "File Uploaded" : "No File Uploaded") as "No File Uploaded" | "File Uploaded",
+          uploadStatus: (hasAnyFile ? "File Uploaded" : "No File Uploaded") as "No File Uploaded" | "File Uploaded",
           githubLinked: !!p.githubUrl,
           projectLinked: !!p.projectUrl,
           fileUploaded: !!fileUrl,
@@ -204,7 +207,7 @@ export default function ProjectPage() {
             <Menu size={28} strokeWidth={2.5} />
           </button>
 
-          {/* Header Section - ปรับโครงสร้างเพื่อรองรับ Row ในโหมดมือถือ */}
+          {/* Header Section */}
           <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-8 sm:mb-10 gap-6">
             <div className="flex flex-col gap-2">
               <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">Projects</h1>
@@ -213,7 +216,6 @@ export default function ProjectPage() {
               </p>
             </div>
             
-            {/* Search & Add Button - ปรับเป็น flex-row ในมือถือ และขยับ gap */}
             <div className="flex flex-row items-center gap-2 sm:gap-3">
               <div className="relative flex-1 sm:w-72 sm:flex-none">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
@@ -296,17 +298,22 @@ export default function ProjectPage() {
                 </div>
 
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-t border-slate-100 dark:border-slate-800 pt-6">
-                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                  {/* ✅ Skills tags — เหมือน ProjectSection */}
+                  <div className="flex flex-wrap gap-2">
                     {project.skills.map((skill, idx) => (
-                      <span key={idx} className="px-3 sm:px-4 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-[10px] sm:text-xs font-black rounded-lg border border-blue-100 dark:border-blue-800">
+                      <span
+                        key={idx}
+                        className="px-2.5 py-1.5 bg-gray-50 dark:bg-slate-800 text-gray-700 dark:text-slate-300 text-[10px] sm:text-[11px] font-extrabold rounded-lg border border-gray-100 dark:border-slate-700"
+                      >
                         {skill}
                       </span>
                     ))}
                   </div>
                   
-                  <div className="flex items-center gap-2 sm:gap-3">
+                  {/* ✅ Button group — เหมือน ProjectSection */}
+                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0 mt-2 md:mt-0">
                     <button
-                      className="p-2.5 text-slate-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition-all"
+                      className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-all flex-shrink-0 mr-auto sm:mr-2"
                       onClick={() => {
                         setProjectToDelete({ id: project.id, title: project.title });
                         setIsDeleteModalOpen(true);
@@ -315,7 +322,7 @@ export default function ProjectPage() {
                       <Trash2 size={20} />
                     </button>
                     <button
-                      className="flex-1 sm:flex-none px-4 sm:px-5 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-transparent dark:border-slate-700 text-xs sm:text-sm"
+                      className="px-5 py-2.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm font-bold text-gray-700 dark:text-slate-200 transition-all hover:bg-gray-50 dark:hover:bg-slate-700 active:scale-95 shadow-sm whitespace-nowrap"
                       onClick={() => {
                         setProjectToUpload({
                           ...project,
@@ -326,10 +333,10 @@ export default function ProjectPage() {
                         setIsUploadModalOpen(true);
                       }}
                     >
-                      {project.uploadStatus === "No File Uploaded" ? "Upload" : "Edit Files"}
+                      {project.uploadStatus === "File Uploaded" ? "Edit Files" : "Upload Files"}
                     </button>
                     <button
-                      className="flex-1 sm:flex-none px-4 sm:px-5 py-2.5 bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 font-bold rounded-xl border border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all text-xs sm:text-sm"
+                      className="px-5 py-2.5 rounded-lg border-2 border-blue-500 bg-transparent text-sm font-bold text-blue-600 dark:text-blue-400 transition-all hover:bg-blue-50 dark:hover:bg-blue-500/10 active:scale-95 whitespace-nowrap"
                       onClick={() => {
                         setCurrentProject({
                           id: project.id,
@@ -347,7 +354,7 @@ export default function ProjectPage() {
                         setIsModalOpen(true);
                       }}
                     >
-                      Edit Details
+                      Edit
                     </button>
                   </div>
                 </div>
@@ -417,7 +424,7 @@ function Badge({ status }: { status: string }) {
       }`}
     >
       <div className={`w-1.5 h-1.5 rounded-full ${isUploaded ? "bg-emerald-500" : "bg-blue-500 animate-pulse"}`} />
-      {isUploaded ? "File Uploaded" : "No File"}
+      {isUploaded ? "File Uploaded" : "No File Uploaded"}
     </span>
   );
 }

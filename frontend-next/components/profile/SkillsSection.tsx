@@ -178,7 +178,7 @@ export default function SkillsSection({
                   href="/intern/skills"
                   className="text-blue-600 dark:text-blue-400 hover:underline decoration-2 underline-offset-2"
                 >
-                  Verify Skill
+                  &gt;&gt; Verify Skill
                 </Link>
                 <div className="h-3 w-[1px] bg-slate-200 dark:bg-slate-700 hidden sm:block" />
                 {hasCertEvidence || hasProjectEvidence ? (

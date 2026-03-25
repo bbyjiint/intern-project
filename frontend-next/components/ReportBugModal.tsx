@@ -79,7 +79,7 @@ export default function ReportBugModal({ isOpen, onClose }: ReportBugModalProps)
 
   return (
     <div 
-      className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 transition-all duration-300"
+      className="fixed inset-0 z-[200] flex items-center justify-center p-4 transition-all duration-300"
       aria-labelledby="modal-title"
       role="dialog"
       aria-modal="true"
@@ -92,7 +92,7 @@ export default function ReportBugModal({ isOpen, onClose }: ReportBugModalProps)
 
       {/* Modal Container */}
       <div 
-        className="bg-white dark:bg-slate-900 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full max-w-lg p-6 md:p-8 relative flex flex-col border-t sm:border border-gray-100 dark:border-slate-800 transform transition-all max-h-[92vh] overflow-y-auto"
+        className="bg-white dark:bg-slate-900 rounded-3xl sm:rounded-2xl shadow-2xl w-full max-w-lg p-6 md:p-8 relative flex flex-col border sm:border border-gray-100 dark:border-slate-800 transform transition-all max-h-[92vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()} 
       >
         {/* Mobile Handle (UI Decor) */}

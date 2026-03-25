@@ -30,7 +30,7 @@ interface JobCardProps {
 
 const workTypeStyles: Record<string, string> = {
   Hybrid: "#3B82F6",
-  "On-Site": "#F59E0B", // ปรับเป็น Amber 500 เพื่อความชัดเจน
+  "On-Site": "#F59E0B",
   "On-site": "#F59E0B",
   Remote: "#EF4444",
 };
@@ -62,7 +62,9 @@ export default function JobCard({
   return (
     <div
       className={`group relative flex h-full min-h-[274px] flex-col rounded-[12px] bg-white dark:bg-slate-800 px-[20px] py-[18px] shadow-sm border border-slate-100 dark:border-slate-700 transition-all duration-300 ${
-        onClick ? "cursor-pointer hover:shadow-xl hover:-translate-y-1" : ""
+        onClick
+          ? "cursor-pointer hover:border-blue-200 dark:hover:border-blue-900/50 hover:shadow-md hover:-translate-y-0.5"
+          : ""
       }`}
       onClick={() => onClick && onClick(job.id)}
     >

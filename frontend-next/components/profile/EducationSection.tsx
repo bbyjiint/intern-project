@@ -197,12 +197,12 @@ export default function EducationSection({
             return (
               <div
                 key={edu.id}
-                className="group relative border border-gray-100 dark:border-gray-800 rounded-2xl p-4 sm:p-6 hover:border-blue-200 dark:hover:border-blue-900 hover:bg-gray-50/30 dark:hover:bg-gray-800/30 transition-all bg-white dark:bg-gray-800/10"
+                className="group bg-white dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 sm:p-6 hover:border-blue-200 dark:hover:border-blue-900 hover:bg-gray-50/30 dark:hover:bg-gray-800/30 transition-all duration-300"
               >
                 {/* Top Header of Card */}
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-4">
                   <div className="flex-1">
-                    <h3 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white leading-tight mb-2">
+                    <h3 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-tight mb-2">
                       {edu.universityName || "University Name"}
                     </h3>
 
@@ -311,7 +311,7 @@ export default function EducationSection({
                       </div>
                     ) : isVerified ? (
                       <button
-                        className="px-5 py-2 border-2 border-blue-600 dark:border-blue-500 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-500 dark:hover:text-white rounded-xl text-sm font-black transition-all"
+                        className="px-5 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-bold text-gray-700 dark:text-gray-200 transition-all hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-95 shadow-sm"
                         onClick={() => {
                           const url = (edu as any).transcriptUrl;
                           if (url)
@@ -322,7 +322,7 @@ export default function EducationSection({
                       </button>
                     ) : (
                       <button
-                        className="px-5 py-2 border-2 border-blue-600 dark:border-blue-500 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-500 dark:hover:text-white rounded-xl text-sm font-black transition-all"
+                        className="px-5 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-bold text-gray-700 dark:text-gray-200 transition-all hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-95 shadow-sm"
                         onClick={() =>
                           setVerifyState({
                             isOpen: true,
@@ -341,7 +341,7 @@ export default function EducationSection({
                         setEditingEducation(edu);
                         setIsModalOpen(true);
                       }}
-                      className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-black transition-all shadow-md shadow-blue-500/10 active:scale-95"
+                      className="px-5 py-2 rounded-lg border-2 border-blue-500 bg-transparent text-sm font-bold text-blue-600 dark:text-blue-400 transition-all hover:bg-blue-50 dark:hover:bg-blue-500/10 active:scale-95"
                     >
                       Edit
                     </button>

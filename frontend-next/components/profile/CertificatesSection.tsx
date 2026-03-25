@@ -217,7 +217,7 @@ export default function CertificateSection() {
           certificates.map((cert) => (
             <div
               key={cert.id}
-              className="group bg-white dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 sm:p-6 hover:border-blue-200 dark:hover:border-blue-500/30 hover:shadow-xl dark:hover:shadow-blue-500/5 transition-all duration-300"
+              className="group bg-white dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 sm:p-6 hover:border-blue-200 dark:hover:border-blue-900 hover:bg-gray-50/30 dark:hover:bg-gray-800/30 transition-all duration-300"
             >
               <div className="flex flex-col sm:flex-row justify-between">
                 <div className="flex-1">
@@ -287,9 +287,9 @@ export default function CertificateSection() {
                     href={cert.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-3 sm:px-5 py-2 border-2 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 rounded-xl text-[9px] sm:text-[11px] font-black uppercase tracking-widest hover:border-blue-600 hover:text-blue-600 dark:hover:text-blue-400 transition-all text-center"
+                    className="px-5 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-sm font-bold text-gray-700 dark:text-gray-200 transition-all hover:bg-gray-50 dark:hover:bg-gray-700 active:scale-95 shadow-sm"
                   >
-                    View Doc
+                    View Files
                   </a>
                 )}
                 <button
@@ -297,7 +297,7 @@ export default function CertificateSection() {
                     setCurrentCert(cert);
                     setIsModalOpen(true);
                   }}
-                  className="px-4 sm:px-6 py-2 bg-white dark:bg-slate-900 border-2 border-blue-600 text-blue-600 dark:text-blue-400 rounded-xl text-[9px] sm:text-[11px] font-black uppercase tracking-widest hover:bg-blue-600 hover:text-white dark:hover:bg-blue-500 dark:hover:text-white transition-all"
+                  className="px-5 py-2 rounded-lg border-2 border-blue-500 bg-transparent text-sm font-bold text-blue-600 dark:text-blue-400 transition-all hover:bg-blue-50 dark:hover:bg-blue-500/10 active:scale-95"
                 >
                   Edit
                 </button>
