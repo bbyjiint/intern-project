@@ -15,7 +15,7 @@ export default function JobMatchPage() {
   const [isFromCache, setIsFromCache] = useState(false)
   const [isRecalculating, setIsRecalculating] = useState(false)
   
-  // เพิ่ม state สำหรับจัดการ Sidebar บนมือถือ
+  // State สำหรับจัดการ Sidebar
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   useEffect(() => {
@@ -88,8 +88,19 @@ export default function JobMatchPage() {
       <InternNavbar />
       
       <div className="flex relative">
-        {/* Sidebar Component - ส่ง props ไปควบคุมการเปิดปิด */}
+        {/* Sidebar Component */}
         <InternSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+
+        {/* Floating Action Button (FAB) สำหรับเปิด Sidebar บน Mobile/Tablet */}
+        <button 
+          onClick={() => setIsSidebarOpen(true)}
+          className="lg:hidden fixed bottom-6 right-6 z-50 w-14 h-14 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-full shadow-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200"
+          aria-label="Open Menu"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
 
         {/* Main Content */}
         <main className="flex-1 p-4 md:p-10 w-full overflow-hidden">
@@ -97,20 +108,6 @@ export default function JobMatchPage() {
             
             {/* Header Area */}
             <header className="flex flex-col gap-6 mb-8">
-              
-              {/* Mobile Menu Trigger & Title */}
-              <div className="flex items-center justify-between lg:hidden">
-                 <button 
-                  onClick={() => setIsSidebarOpen(true)}
-                  className="p-2 -ml-2 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300"
-                 >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                    </svg>
-                 </button>
-                 <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Menu</span>
-              </div>
-
               <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
                 <div className="space-y-2">
                   <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">

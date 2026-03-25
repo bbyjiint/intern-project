@@ -186,18 +186,15 @@ export default function CertificatesPage() {
         <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-10">
-          {/* Mobile Header: Burger Menu & Title */}
-          <div className="flex items-center justify-between mb-6 lg:hidden">
-            <button 
-              onClick={() => setIsSidebarOpen(true)}
-              className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-600 dark:text-slate-300"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7" />
-              </svg>
-            </button>
-            <span className="text-sm font-black text-blue-600 uppercase tracking-widest">My Portfolio</span>
-          </div>
+          {/* Floating Action Button for Mobile Sidebar */}
+          <button 
+            onClick={() => setIsSidebarOpen(true)}
+            className="lg:hidden fixed bottom-6 right-6 z-50 w-14 h-14 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full flex items-center justify-center shadow-2xl text-slate-600 dark:text-slate-300 hover:scale-110 active:scale-95 transition-all"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M4 6h16M4 12h16m-7 6h7" />
+            </svg>
+          </button>
 
           {isLoading ? (
             <div className="flex items-center justify-center min-h-[60vh]">
@@ -208,6 +205,8 @@ export default function CertificatesPage() {
               {/* Header Section */}
               <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-8 md:mb-10 gap-6">
                 <div className="text-left">
+                  {/* Portfolio Badge for Mobile */}
+                  
                   <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">
                     Certificates
                   </h1>
@@ -381,7 +380,7 @@ export default function CertificatesPage() {
         </main>
       </div>
 
-      {/* Delete Confirmation Modal - ปรับให้ Responsive */}
+      {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
           <div 

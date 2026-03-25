@@ -6,10 +6,10 @@ import InternSidebar from "@/components/InternSidebar";
 import SkillsModal, { SkillData } from "@/components/profile/SkillsModal";
 import { apiFetch } from "@/lib/api";
 import SkillTest from "@/components/skills/SkillTest";
-import { Search, Plus, Filter, Trash2, Edit3, AlertCircle, Menu } from "lucide-react";
+import { Search, Plus, Filter, Trash2, Edit3, AlertCircle, Menu, X } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 
-// --- Types (เหมือนเดิม) ---
+// --- Types ---
 type ProficiencyLevel = "Beginner" | "Intermediate" | "Advanced";
 type VerificationStatus = "NOT_VERIFIED" | "VERIFIED";
 
@@ -25,7 +25,7 @@ interface Skill {
   hasProjectEvidence?: boolean;
 }
 
-// --- 1. Delete Confirmation Modal (ปรับ Responsive) ---
+// --- 1. Delete Confirmation Modal ---
 interface DeleteModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -57,7 +57,7 @@ function DeleteConfirmationModal({ isOpen, onClose, onConfirm, skillName, isDele
   );
 }
 
-// --- 2. Evidence Badge (ปรับให้กระชับ) ---
+// --- 2. Evidence Badge ---
 function EvidenceBadge({ skill }: { skill: Skill }) {
   let label = "Not Verified";
   let colorClass = "bg-slate-50 dark:bg-slate-800 text-slate-400 border-slate-200 dark:border-slate-700";
@@ -105,7 +105,7 @@ export default function SkillsPage() {
   const [confirmBulkAction, setConfirmBulkAction] = useState<"add" | "discard" | null>(null);
   const [ignoredSkills, setIgnoredSkills] = useState<string[]>([]);
 
-  // Logic เดิมทั้งหมด
+  // Logic เดิม
   useEffect(() => {
     const stored = localStorage.getItem("ignored_missing_skills");
     if (stored) { try { setIgnoredSkills(JSON.parse(stored)); } catch (e) {} }
@@ -220,7 +220,6 @@ export default function SkillsPage() {
       <InternNavbar />
       
       <div className="flex flex-1 relative">
-        {/* Sidebar with Responsive Props */}
         <InternSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
         
         <main className="flex-1 p-4 sm:p-6 lg:p-10 w-full overflow-x-hidden">
@@ -237,10 +236,6 @@ export default function SkillsPage() {
                     <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">Skills</h1>
                     <p className="text-sm sm:text-base font-bold text-slate-500 dark:text-slate-400 mt-1">Manage your expertise.</p>
                   </div>
-                  {/* Mobile Menu Toggle */}
-                  <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-slate-600 dark:text-slate-300">
-                    <Menu size={24} />
-                  </button>
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-center gap-3">
@@ -254,7 +249,7 @@ export default function SkillsPage() {
                 </div>
               </div>
 
-              {/* Alert: Missing Skills (Responsive) */}
+              {/* Alert: Missing Skills */}
               {missingSkills.length > 0 && (
                 <div className="mb-8 p-4 sm:p-5 bg-rose-50 dark:bg-rose-500/10 border border-rose-200 dark:border-rose-500/20 rounded-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-in slide-in-from-top-4 duration-500">
                   <div className="flex items-start gap-3">
@@ -272,7 +267,7 @@ export default function SkillsPage() {
                 </div>
               )}
 
-              {/* Filters (Scrollable on Mobile) */}
+              {/* Filters */}
               <div className="flex flex-col xl:flex-row gap-4 mb-8">
                 <div className="overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
                   <div className="flex p-1.5 bg-slate-200/50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-800 w-max sm:w-fit">
@@ -292,7 +287,7 @@ export default function SkillsPage() {
                 </div>
               </div>
 
-              {/* Skills Grid (Responsive Card) */}
+              {/* Skills Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                 {filteredSkills.map((skill) => {
                   const style = getLevelStyles(skill.level);
@@ -329,7 +324,6 @@ export default function SkillsPage() {
                 })}
               </div>
 
-              {/* Empty State */}
               {filteredSkills.length === 0 && (
                 <div className="text-center py-20">
                   <div className="w-16 h-16 bg-slate-100 dark:bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-4 text-slate-300"><Search size={32} /></div>
@@ -341,7 +335,24 @@ export default function SkillsPage() {
         </main>
       </div>
 
-      {/* Modals เดิม (Logic เดิม) */}
+      {/* --- Floating Action Button (Sidebar Toggle) --- */}
+      <button 
+        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        className="lg:hidden fixed bottom-6 right-6 z-[100] w-14 h-14 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full flex items-center justify-center text-slate-600 dark:text-slate-300 shadow-[0_8px_30px_rgb(0,0,0,0.12)] active:scale-90 transition-all group"
+        aria-label="Toggle Sidebar"
+      >
+        <div className="relative w-6 h-6">
+          {isSidebarOpen ? (
+            <X size={24} className="animate-in fade-in zoom-in duration-300" />
+          ) : (
+            <Menu size={24} className="animate-in fade-in zoom-in duration-300" />
+          )}
+        </div>
+        {/* Glow effect */}
+        <div className="absolute inset-0 rounded-full bg-blue-500/5 group-hover:bg-blue-500/10 transition-colors" />
+      </button>
+
+      {/* Modals เดิม */}
       <SkillsModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={async (s) => { 
         const payload = { ...s, category: s.category === "Technical Skill" ? "TECHNICAL" : "BUSINESS" }; 
         const method = editingSkill?.id ? "PUT" : "POST"; 
@@ -352,13 +363,12 @@ export default function SkillsPage() {
       
       <DeleteConfirmationModal isOpen={deleteModal.isOpen} onClose={() => setDeleteModal(p => ({ ...p, isOpen: false }))} onConfirm={handleConfirmDelete} skillName={deleteModal.name} isDeleting={isDeletingLoading} />
 
-      {/* Bulk Add Modal (Responsive) */}
+      {/* Bulk Add Modal */}
       {isBulkModalOpen && (
         <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm">
           <div className="relative bg-white dark:bg-slate-900 rounded-t-[2rem] sm:rounded-3xl shadow-2xl max-w-md w-full p-6 sm:p-8 border border-slate-100 dark:border-slate-800 animate-in slide-in-from-bottom sm:zoom-in duration-300">
             <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mb-2">Add Missing Skills</h3>
             <p className="text-xs sm:text-sm text-slate-500 mb-6">Import skills found in your evidence.</p>
-
             <div className="max-h-[50vh] overflow-y-auto space-y-2 mb-8 pr-1">
               {missingSkills.map((skill) => {
                 const isSelected = bulkSelectedSkills.includes(skill);
@@ -377,7 +387,6 @@ export default function SkillsPage() {
                 );
               })}
             </div>
-
             <div className="flex gap-3">
               <button onClick={() => setIsBulkModalOpen(false)} className="flex-1 py-3.5 bg-slate-100 text-slate-700 font-bold rounded-2xl text-xs uppercase tracking-widest">Cancel</button>
               <button disabled={bulkSelectedSkills.length === 0} onClick={() => setConfirmBulkAction("add")} className="flex-[2] py-3.5 bg-blue-600 text-white font-black rounded-2xl text-xs uppercase tracking-widest shadow-lg shadow-blue-600/20 disabled:opacity-50">
@@ -388,7 +397,7 @@ export default function SkillsPage() {
         </div>
       )}
 
-      {/* Action Confirm Modal (Discard/Confirm) */}
+      {/* Action Confirm Modal */}
       {confirmBulkAction && (
         <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
           <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl max-w-sm w-full p-8 text-center border border-slate-100 animate-in zoom-in duration-200">

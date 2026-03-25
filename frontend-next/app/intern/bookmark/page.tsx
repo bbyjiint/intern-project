@@ -99,30 +99,32 @@ export default function InternBookmarkPage() {
       <InternNavbar />
 
       <div className="flex flex-1 relative">
-        {/* Pass props ไปยัง Sidebar */}
+        {/* Sidebar */}
         <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+
+        {/* Floating Action Button (FAB) - ปรากฏเฉพาะบน Mobile (lg:hidden) */}
+        <button 
+          onClick={() => setIsSidebarOpen(true)}
+          className="lg:hidden fixed bottom-6 right-6 z-50 w-14 h-14 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.15)] border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200"
+          aria-label="Toggle Menu"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
 
         <div className="layout-container layout-page flex-1 overflow-y-auto p-4 md:p-10">
           <div className="max-w-7xl mx-auto">
             
-            {/* Header with Mobile Menu Button */}
+            {/* Header */}
             <div className="flex items-center justify-between mb-8">
               <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
                 Bookmarks
               </h1>
-              
-              {/* ปุ่มเปิด Sidebar บนมือถือ */}
-              <button 
-                onClick={() => setIsSidebarOpen(true)}
-                className="lg:hidden p-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 shadow-sm"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
-                </svg>
-              </button>
+              {/* ปุ่ม Sidebar เดิมถูกย้ายไปที่ FAB แล้ว */}
             </div>
 
-            {/* Filter Section - ปรับ Grid ให้ยืดหยุ่น */}
+            {/* Filter Section */}
             <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-5 md:p-8 mb-6 md:mb-10">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 mb-4 md:mb-8">
                 <div>

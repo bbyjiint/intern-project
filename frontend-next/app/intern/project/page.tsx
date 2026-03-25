@@ -86,7 +86,7 @@ function parseToISODate(displayDate: string) {
 function formatDisplayDate(isoString?: string | null) {
   if (!isoString) return "";
   const d = new Date(isoString);
-  return isNaN(d.getTime()) ? "" : `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}`;
+  return d instanceof Date && !isNaN(d.getTime()) ? `${MONTH_NAMES[d.getMonth()]} ${d.getFullYear()}` : "";
 }
 
 // --- Main Component ---
@@ -191,24 +191,24 @@ export default function ProjectPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col transition-colors duration-300">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col transition-colors duration-300 overflow-hidden">
       <InternNavbar />
-      <div className="flex flex-1 relative">
-        {/* ส่ง State ไปควบคุม Sidebar */}
+      <div className="flex flex-1 overflow-hidden relative">
         <InternSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
         
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-10">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-10 relative custom-scrollbar">
           
+          {/* FAB: Floating Action Button สำหรับเปิด Sidebar บน Mobile */}
+          <button 
+            onClick={() => setIsSidebarOpen(true)}
+            className="lg:hidden fixed bottom-6 right-6 z-[100] w-14 h-14 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.2)] flex items-center justify-center active:scale-90 transition-all border border-slate-100 dark:border-slate-700"
+          >
+            <Menu size={28} strokeWidth={2.5} />
+          </button>
+
           {/* Header Section */}
           <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-8 sm:mb-10 gap-6">
             <div className="flex flex-col gap-2">
-              {/* ปุ่มเปิด Menu สำหรับมือถือ */}
-              <button 
-                onClick={() => setIsSidebarOpen(true)}
-                className="lg:hidden w-fit flex items-center gap-2 text-blue-600 font-bold text-sm mb-2"
-              >
-                <Menu size={18} /> Menu
-              </button>
               <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">Projects</h1>
               <p className="text-sm sm:text-base font-medium text-slate-500 dark:text-slate-400">
                 Manage and showcase your professional experience.
@@ -239,7 +239,7 @@ export default function ProjectPage() {
             </div>
           </div>
 
-          {/* Filter Tabs - ทำให้เลื่อนได้ในมือถือ (Scrollable) */}
+          {/* Filter Tabs */}
           <div className="overflow-x-auto pb-2 scrollbar-hide">
             <div className="flex p-1 bg-slate-200/50 dark:bg-slate-900/50 rounded-2xl w-fit mb-8 border border-slate-200 dark:border-slate-800 whitespace-nowrap">
               {["All", "No File Uploaded", "File Uploaded"].map((tab) => (
@@ -356,10 +356,13 @@ export default function ProjectPage() {
             ))}
           </div>
 
+          {/* ระยะห่างด้านล่างสำหรับ FAB */}
+          <div className="h-24 lg:hidden" />
+
         </main>
       </div>
 
-      {/* Modals - ไม่มีการเปลี่ยนแปลงฟังก์ชัน */}
+      {/* Modals */}
       <ProjectsModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
