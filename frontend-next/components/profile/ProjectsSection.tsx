@@ -186,10 +186,11 @@ export default function ProjectsSection({ projects, onRefresh }: { projects: Pro
                   </div>
                 </div>
 
-                {/* Bottom Actions - Stacked on mobile */}
-                <div className="flex flex-col gap-5 border-t border-gray-50 dark:border-gray-800 pt-6">
+                {/* Bottom Actions - Responsive Layout */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-5 border-t border-gray-50 dark:border-gray-800 pt-5 sm:pt-6">
+                  
                   {/* Skills tags */}
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 flex-1">
                     {(project.skills || project.relatedSkills)?.map((skill: string) => (
                       <span key={skill} className="px-2.5 py-1.5 bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-[10px] sm:text-[11px] font-extrabold rounded-lg border border-gray-100 dark:border-gray-700">
                         {skill}
@@ -197,23 +198,23 @@ export default function ProjectsSection({ projects, onRefresh }: { projects: Pro
                     ))}
                   </div>
 
-                  {/* Buttons group */}
-                  <div className="flex items-center gap-2 w-full">
+                  {/* Buttons group - Smaller and aligned to the right */}
+                  <div className="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0 mt-2 sm:mt-0">
                     <button
                       onClick={() => setDeleteModalState({ isOpen: true, id: project.id, name: project.name })}
-                      className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-all flex-shrink-0"
+                      className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-xl transition-all flex-shrink-0 mr-auto sm:mr-2"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                       </svg>
                     </button>
                     
                     <button
                       onClick={() => handleOpenUpload(project)}
-                      className={`flex-1 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black transition-all border-2 text-center ${
+                      className={`px-6 py-3 sm:px-7 sm:py-3 rounded-xl text-xs sm:text-sm font-black transition-all border-2 text-center whitespace-nowrap ${
                         hasAnyFile 
-                        ? "border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white" 
-                        : "border-blue-100 dark:border-blue-900/30 text-blue-300 dark:text-blue-700 cursor-not-allowed"
+                        ? "border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white dark:border-blue-500 dark:text-blue-400 dark:hover:text-white" 
+                        : "border-blue-100 dark:border-blue-900/30 text-blue-300 dark:text-blue-700 cursor-pointer"
                       }`}
                     >
                       {hasAnyFile ? "Files" : "Upload"}
@@ -221,7 +222,7 @@ export default function ProjectsSection({ projects, onRefresh }: { projects: Pro
                     
                     <button
                       onClick={() => handleEditClick(project)}
-                      className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs sm:text-sm font-black transition-all shadow-md shadow-blue-500/20 text-center"
+                      className="px-6 py-3 sm:px-7 sm:py-3 bg-blue-600 hover:bg-blue-700 dark:hover:bg-blue-500 text-white rounded-xl text-xs sm:text-sm font-black transition-all shadow-md shadow-blue-500/20 text-center whitespace-nowrap"
                     >
                       Edit
                     </button>

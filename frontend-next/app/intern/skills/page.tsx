@@ -188,6 +188,20 @@ export default function SkillsPage() {
     finally { setIsBulkSaving(false); }
   };
 
+  const toggleBulkSkill = (skill: string) => {
+    setBulkSelectedSkills((prev) =>
+      prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill]
+    );
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setBulkSelectedSkills(missingSkills);
+    } else {
+      setBulkSelectedSkills([]); 
+    }
+  };
+
   const executeDiscardAll = () => {
     const newIgnored = [...ignoredSkills, ...missingSkills.map(s => s.toLowerCase().trim())];
     setIgnoredSkills(newIgnored);
@@ -268,8 +282,8 @@ export default function SkillsPage() {
               )}
 
               {/* Filters */}
-              <div className="flex flex-col xl:flex-row gap-4 mb-8">
-                <div className="overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
+              <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4 mb-8">
+                <div className="overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 w-full xl:w-auto">
                   <div className="flex p-1.5 bg-slate-200/50 dark:bg-slate-900/50 rounded-2xl border border-slate-200 dark:border-slate-800 w-max sm:w-fit">
                     {["All", "Not Verified", "Verified", "Certificate", "Project"].map((tab) => (
                       <button key={tab} onClick={() => setFilterTab(tab)} className={`px-4 sm:px-6 py-2 text-[10px] sm:text-xs font-black uppercase tracking-wider rounded-xl transition-all whitespace-nowrap ${filterTab === tab ? "bg-white dark:bg-slate-800 text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-900"}`}>{tab}</button>
@@ -277,13 +291,12 @@ export default function SkillsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center w-full xl:w-auto">
                   <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="flex-1 sm:flex-none pl-4 pr-10 py-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold text-slate-600 cursor-pointer outline-none">
                     <option value="Select Category">All Categories</option>
                     <option value="Technical Skill">Technical Skill</option>
                     <option value="Business Skills">Business Skills</option>
                   </select>
-                  <button onClick={() => { setFilterTab("All"); setCategoryFilter("Select Category"); setSearchQuery(""); }} className="p-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-400 rounded-2xl"><AlertCircle size={20} /></button>
                 </div>
               </div>
 
@@ -314,7 +327,15 @@ export default function SkillsPage() {
                             <button onClick={() => setDeleteModal({ isOpen: true, name: skill.name, id: skill.id })} className="p-2.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all"><Trash2 size={18} /></button>
                             <button onClick={() => { setEditingSkill({ id: skill.id, name: skill.name, category: skill.category, level: skill.level }); setIsModalOpen(true); }} className="p-2.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-xl transition-all"><Edit3 size={18} /></button>
                           </div>
-                          <button disabled={skill.attemptsUsed >= 3} onClick={() => setTestingSkill({ id: skill.id, name: skill.name })} className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl border transition-all ${skill.attemptsUsed >= 3 ? "opacity-50 grayscale cursor-not-allowed" : "border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white"}`}>
+                          <button 
+                            disabled={skill.attemptsUsed >= 3} 
+                            onClick={() => setTestingSkill({ id: skill.id, name: skill.name })} 
+                            className={`px-4 py-2 text-[10px] font-black uppercase tracking-widest rounded-xl border transition-all ${
+                              skill.attemptsUsed >= 3 
+                                ? "opacity-60 cursor-not-allowed border-slate-200 bg-slate-100 text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white" 
+                                : "border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white dark:text-blue-400 dark:border-blue-400 dark:hover:text-white dark:hover:bg-blue-600"
+                            }`}
+                          >
                             Test {Math.min(skill.attemptsUsed, 3)}/3
                           </button>
                         </div>
@@ -366,32 +387,83 @@ export default function SkillsPage() {
       {/* Bulk Add Modal */}
       {isBulkModalOpen && (
         <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/60 backdrop-blur-sm">
-          <div className="relative bg-white dark:bg-slate-900 rounded-t-[2rem] sm:rounded-3xl shadow-2xl max-w-md w-full p-6 sm:p-8 border border-slate-100 dark:border-slate-800 animate-in slide-in-from-bottom sm:zoom-in duration-300">
-            <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mb-2">Add Missing Skills</h3>
-            <p className="text-xs sm:text-sm text-slate-500 mb-6">Import skills found in your evidence.</p>
-            <div className="max-h-[50vh] overflow-y-auto space-y-2 mb-8 pr-1">
+          <div className="relative bg-white dark:bg-slate-900 rounded-t-[2rem] sm:rounded-3xl shadow-2xl max-w-md w-full p-6 sm:p-8 border border-slate-100 dark:border-slate-800 animate-in slide-in-from-bottom sm:zoom-in duration-300 flex flex-col max-h-[90vh]">
+            
+            {/* Header */}
+            <div className="shrink-0 mb-4">
+              <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mb-2">Add Missing Skills</h3>
+              <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">We found these skills in your certificates and projects.</p>
+            </div>
+
+            {/* Select All Row */}
+            <div className="shrink-0 flex items-center justify-between mb-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={bulkSelectedSkills.length === missingSkills.length && missingSkills.length > 0}
+                  onChange={(e) => handleSelectAll(e.target.checked)}
+                  className="w-4 h-4 rounded text-blue-600 border-gray-300 focus:ring-blue-500"
+                />
+                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Select All</span>
+              </label>
+              <span className="text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-500/10 px-3 py-1 rounded-lg">
+                {bulkSelectedSkills.length} Selected
+              </span>
+            </div>
+
+            {/* Skill List (Scrollable) */}
+            <div className="flex-1 overflow-y-auto space-y-2 mb-6 pr-1 min-h-[200px]">
               {missingSkills.map((skill) => {
                 const isSelected = bulkSelectedSkills.includes(skill);
                 return (
-                  <div key={skill} className={`flex items-center justify-between p-3 rounded-xl border transition-all ${isSelected ? "border-blue-200 bg-blue-50/50" : "border-slate-100 hover:bg-slate-50"}`}>
+                  <div key={skill} className={`flex items-center justify-between p-3 rounded-xl border transition-all ${isSelected ? "border-blue-200 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-900/20" : "border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/50"}`}>
                     <label className="flex items-center gap-3 cursor-pointer flex-1 min-w-0">
-                      <input type="checkbox" checked={isSelected} onChange={() => setBulkSelectedSkills(prev => isSelected ? prev.filter(s => s !== skill) : [...prev, skill])} className="w-4 h-4 rounded text-blue-600" />
-                      <span className="text-sm font-bold text-slate-700 truncate">{skill}</span>
+                      <input 
+                        type="checkbox" 
+                        checked={isSelected} 
+                        onChange={() => toggleBulkSkill(skill)} 
+                        className="w-4 h-4 rounded text-blue-600 border-gray-300 focus:ring-blue-500" 
+                      />
+                      <span className={`text-sm font-bold truncate ${isSelected ? "text-blue-900 dark:text-blue-100" : "text-slate-700 dark:text-slate-300"}`}>{skill}</span>
                     </label>
-                    <select value={bulkSkillLevels[skill] || "Beginner"} onChange={(e) => setBulkSkillLevels(prev => ({ ...prev, [skill]: e.target.value }))} disabled={!isSelected} className="p-1.5 text-[10px] font-bold bg-white border border-slate-200 rounded-lg outline-none">
-                      <option value="Beginner">Beg</option>
-                      <option value="Intermediate">Int</option>
-                      <option value="Advanced">Adv</option>
+                    <select 
+                      value={bulkSkillLevels[skill] || "Beginner"} 
+                      onChange={(e) => setBulkSkillLevels(prev => ({ ...prev, [skill]: e.target.value }))} 
+                      disabled={!isSelected} 
+                      className={`p-1.5 text-[10px] font-bold rounded-lg outline-none transition-colors ${isSelected ? "bg-white dark:bg-slate-800 border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300" : "bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-400 cursor-not-allowed"}`}
+                    >
+                      <option value="Beginner">Beginner</option>
+                      <option value="Intermediate">Intermediate</option>
+                      <option value="Advanced">Advanced</option>
                     </select>
                   </div>
                 );
               })}
             </div>
-            <div className="flex gap-3">
-              <button onClick={() => setIsBulkModalOpen(false)} className="flex-1 py-3.5 bg-slate-100 text-slate-700 font-bold rounded-2xl text-xs uppercase tracking-widest">Cancel</button>
-              <button disabled={bulkSelectedSkills.length === 0} onClick={() => setConfirmBulkAction("add")} className="flex-[2] py-3.5 bg-blue-600 text-white font-black rounded-2xl text-xs uppercase tracking-widest shadow-lg shadow-blue-600/20 disabled:opacity-50">
-                Add Selected ({bulkSelectedSkills.length})
+
+            {/* Footer Actions */}
+            <div className="shrink-0 flex flex-col sm:flex-row items-center gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <button 
+                onClick={() => setConfirmBulkAction("discard")} 
+                className="w-full sm:w-auto px-4 py-3.5 text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 font-bold text-[10px] uppercase tracking-widest transition-colors"
+              >
+                Discard All
               </button>
+              <div className="flex w-full sm:flex-1 gap-3">
+                <button 
+                  onClick={() => setIsBulkModalOpen(false)} 
+                  className="flex-1 py-3.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold rounded-2xl text-[10px] sm:text-xs uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button 
+                  disabled={bulkSelectedSkills.length === 0} 
+                  onClick={() => setConfirmBulkAction("add")} 
+                  className="flex-[2] py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl text-[10px] sm:text-xs uppercase tracking-widest shadow-lg shadow-blue-600/20 disabled:opacity-50 disabled:hover:bg-blue-600 transition-all"
+                >
+                  Add ({bulkSelectedSkills.length})
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -400,16 +472,28 @@ export default function SkillsPage() {
       {/* Action Confirm Modal */}
       {confirmBulkAction && (
         <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md">
-          <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl max-w-sm w-full p-8 text-center border border-slate-100 animate-in zoom-in duration-200">
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 ${confirmBulkAction === "discard" ? "bg-amber-50 text-amber-500" : "bg-blue-50 text-blue-500"}`}>
+          <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl max-w-sm w-full p-6 sm:p-8 text-center border border-slate-100 dark:border-slate-800 animate-in zoom-in duration-200">
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 ${confirmBulkAction === "discard" ? "bg-amber-50 dark:bg-amber-500/10 text-amber-500" : "bg-blue-50 dark:bg-blue-500/10 text-blue-500"}`}>
               {confirmBulkAction === "discard" ? <AlertCircle size={32} /> : <Plus size={32} />}
             </div>
-            <h3 className="text-xl font-black text-slate-900 mb-2">{confirmBulkAction === "discard" ? "Discard All?" : "Add Skills?"}</h3>
-            <p className="text-sm text-slate-500 mb-8">{confirmBulkAction === "discard" ? "You won't see these suggestions again." : `Add ${bulkSelectedSkills.length} skills to your profile?`}</p>
+            <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mb-2">
+              {confirmBulkAction === "discard" ? "Discard All?" : "Add Skills?"}
+            </h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-8">
+              {confirmBulkAction === "discard" ? "You won't see these suggestions again." : `Add ${bulkSelectedSkills.length} skills to your profile?`}
+            </p>
             <div className="flex gap-3">
-              <button onClick={() => setConfirmBulkAction(null)} className="flex-1 py-3.5 bg-slate-100 text-slate-900 rounded-xl font-black text-[10px] uppercase tracking-widest">No</button>
-              <button onClick={confirmBulkAction === "discard" ? executeDiscardAll : executeBulkSave} className={`flex-1 py-3.5 text-white rounded-xl font-black text-[10px] uppercase tracking-widest ${confirmBulkAction === "discard" ? "bg-amber-500" : "bg-blue-600"}`}>
-                {isBulkSaving ? "..." : "Confirm"}
+              <button 
+                onClick={() => setConfirmBulkAction(null)} 
+                className="flex-1 py-3.5 bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+              >
+                No
+              </button>
+              <button 
+                onClick={confirmBulkAction === "discard" ? executeDiscardAll : executeBulkSave} 
+                className={`flex-1 py-3.5 text-white rounded-xl font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center ${confirmBulkAction === "discard" ? "bg-amber-500 hover:bg-amber-600 shadow-lg shadow-amber-500/20" : "bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-600/20"}`}
+              >
+                {isBulkSaving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : "Confirm"}
               </button>
             </div>
           </div>
