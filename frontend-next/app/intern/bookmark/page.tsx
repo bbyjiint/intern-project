@@ -10,6 +10,9 @@ import JobCard, { JobPostData } from "@/components/profile/JobCard";
 export default function InternBookmarkPage() {
   const router = useRouter();
 
+  // State สำหรับ Mobile Sidebar
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [position, setPosition] = useState("");
   const [academicYear, setAcademicYear] = useState("");
@@ -88,7 +91,6 @@ export default function InternBookmarkPage() {
     return matchesSearch && matchesPosition;
   });
 
-  // Common input styles for clear visibility
   const inputStyles = "w-full px-4 py-2.5 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:focus:ring-blue-400/30 text-sm text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 transition-all";
   const labelStyles = "block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 ml-1 uppercase tracking-wider";
 
@@ -96,18 +98,33 @@ export default function InternBookmarkPage() {
     <div className="min-h-screen bg-[#E6EBF4] dark:bg-slate-950 flex flex-col transition-colors duration-300">
       <InternNavbar />
 
-      <div className="flex flex-1">
-        <Sidebar />
+      <div className="flex flex-1 relative">
+        {/* Pass props ไปยัง Sidebar */}
+        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-        <div className="layout-container layout-page flex-1 overflow-y-auto p-6 md:p-10">
+        <div className="layout-container layout-page flex-1 overflow-y-auto p-4 md:p-10">
           <div className="max-w-7xl mx-auto">
-            <h1 className="text-4xl font-black text-slate-900 dark:text-white mb-8 tracking-tight">
-              Bookmarks
-            </h1>
+            
+            {/* Header with Mobile Menu Button */}
+            <div className="flex items-center justify-between mb-8">
+              <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
+                Bookmarks
+              </h1>
+              
+              {/* ปุ่มเปิด Sidebar บนมือถือ */}
+              <button 
+                onClick={() => setIsSidebarOpen(true)}
+                className="lg:hidden p-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 shadow-sm"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
+                </svg>
+              </button>
+            </div>
 
-            {/* Filter Section */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-8 mb-10">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-8">
+            {/* Filter Section - ปรับ Grid ให้ยืดหยุ่น */}
+            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-5 md:p-8 mb-6 md:mb-10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-8 mb-4 md:mb-8">
                 <div>
                   <label className={labelStyles}>Search Keyword</label>
                   <div className="relative group">
@@ -156,10 +173,10 @@ export default function InternBookmarkPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-                <div className="md:col-span-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8 mb-4 md:mb-8">
+                <div className="sm:col-span-2">
                   <label className={labelStyles}>Internship Period</label>
-                  <div className="flex space-x-3">
+                  <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                     <input
                       type="text"
                       placeholder="Start Date"
@@ -215,7 +232,7 @@ export default function InternBookmarkPage() {
               <div className="flex justify-end pt-2">
                 <button
                   onClick={handleClearFilters}
-                  className="px-8 py-2.5 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-all active:scale-95"
+                  className="w-full sm:w-auto px-8 py-2.5 rounded-xl text-sm font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-all active:scale-95"
                 >
                   Clear All Filters
                 </button>
@@ -242,27 +259,27 @@ export default function InternBookmarkPage() {
             </div>
 
             {isLoading ? (
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
                 {[1, 2, 3].map((n) => (
                   <div key={n} className="h-[280px] rounded-2xl bg-white dark:bg-slate-900 animate-pulse border border-slate-100 dark:border-slate-800" />
                 ))}
               </div>
             ) : filteredJobs.length === 0 ? (
-              <div className="text-center py-24 bg-white dark:bg-slate-900 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800 shadow-sm">
+              <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800 shadow-sm px-4">
                 <div className="mb-4 flex justify-center text-slate-300 dark:text-slate-700">
-                  <svg className="w-20 h-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-16 h-16 md:w-20 md:h-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                   </svg>
                 </div>
                 <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">No saved jobs found</h3>
-                <p className="text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
+                <p className="text-slate-500 dark:text-slate-400 max-w-xs mx-auto text-sm">
                   {jobs.length === 0 
                     ? "Start bookmarking jobs that interest you to keep track of them here."
                     : "Try adjusting your filters to find what you're looking for."}
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
                 {filteredJobs.map((job) => (
                   <div key={job.id} className="transition-transform duration-300 hover:scale-[1.02]">
                     <JobCard

@@ -16,10 +16,11 @@ import Sidebar from '@/components/InternSidebar'
 export default function InternProfilePage() {
   const router = useRouter()
   const pathname = usePathname()
-
   const { profileData, isLoading, completionPercentage, refetch } = useProfile()
-
   const [currentDate, setCurrentDate] = useState('')
+  
+  // เพิ่ม State สำหรับคุม Sidebar บนมือถือ
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   useEffect(() => {
     const now = new Date()
@@ -44,41 +45,49 @@ export default function InternProfilePage() {
   }, [router])
 
   return (
-    // 1. ปรับ Background หลักของหน้า และเพิ่ม transition
     <div className="min-h-screen bg-[#E6EBF4] dark:bg-gray-950 flex flex-col transition-colors duration-300">
       <InternNavbar />
 
-      <div className="flex flex-1">
-        <Sidebar />
+      {/* ปุ่มเปิด Sidebar สำหรับมือถือ (จะแสดงเฉพาะจอเล็ก) */}
+      <div className="lg:hidden p-4 bg-white dark:bg-slate-900 border-b dark:border-slate-800 flex items-center">
+        <button 
+          onClick={() => setIsSidebarOpen(true)}
+          className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
+        >
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
+          </svg>
+        </button>
+        <span className="ml-3 font-bold text-slate-800 dark:text-white">Menu</span>
+      </div>
 
-        {/* 2. ปรับพื้นที่แสดงเนื้อหา */}
-        <div className="layout-container layout-page flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-4xl py-8">
+      <div className="flex flex-1 relative overflow-hidden">
+        {/* ส่ง props ไปคุมการเปิดปิด */}
+        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+
+        <div className="flex-1 overflow-y-auto w-full">
+          <div className="px-4 sm:px-6 lg:px-8 mx-auto max-w-4xl py-6 sm:py-8">
             {isLoading ? (
               <div className="flex items-center justify-center min-h-[60vh]">
                 <div className="text-center">
-                  {/* ปรับสี Spinner ให้รับกับ Dark Mode */}
                   <div className="w-16 h-16 mx-auto mb-4 border-4 border-gray-200 dark:border-gray-800 border-t-blue-600 rounded-full animate-spin" />
                   <p className="text-gray-500 dark:text-gray-400">Loading profile...</p>
                 </div>
               </div>
             ) : !profileData ? (
-              <div className="flex items-center justify-center min-h-[60vh]">
+              <div className="flex items-center justify-center min-h-[60vh] px-4">
                 <div className="text-center">
                   <p className="text-gray-600 dark:text-gray-400 mb-4">No profile data found. Please complete your profile setup.</p>
                   <button
                     onClick={() => router.push('/intern/profile-setup')}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20"
+                    className="w-full sm:w-auto px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20"
                   >
                     Go to Profile Setup
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="space-y-6 pb-12"> 
-                {/* 3. ส่วน Content ที่เรียกใช้ Component ย่อย */}
-                {/* หมายเหตุ: คุณต้องเข้าไปใส่ dark: ใน Component ย่อยเหล่านี้ด้วย (เช่น ProfileHeader, PersonalInfoCard) */}
-                
+              <div className="space-y-6 pb-20"> 
                 <ProfileHeader
                   fullName={profileData.fullName || 'User'}
                   currentDate={currentDate}

@@ -9,6 +9,10 @@ import { POSITION_OPTIONS } from "@/constants/positionOptions";
 
 export default function FindCompaniesPage() {
   const router = useRouter();
+  
+  // State สำหรับควบคุม Mobile Sidebar
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   const [jobs, setJobs] = useState<JobPostData[]>([]);
   const [bookmarkedJobs, setBookmarkedJobs] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
@@ -148,15 +152,39 @@ export default function FindCompaniesPage() {
 
   // UI Reusable Styles
   const labelStyles = "text-sm font-black text-slate-900 dark:text-slate-100 uppercase tracking-widest mb-4 block";
-  const sidebarCardStyles = "bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 w-[300px] lg:w-[340px] p-8 flex flex-col gap-10 flex-shrink-0 transition-colors duration-300";
+  
+  // ปรับ sidebarCardStyles ให้รองรับการเลื่อนเข้า-ออก บนมือถือ
+  const sidebarContainerStyles = `
+    fixed inset-y-0 left-0 z-50 lg:static lg:block
+    bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 
+    w-[280px] md:w-[320px] lg:w-[340px] p-8 flex flex-col gap-10 flex-shrink-0 
+    transition-all duration-300 ease-in-out
+    ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+  `;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col transition-colors duration-300">
+    <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col transition-colors duration-300 overflow-x-hidden">
       <InternNavbar />
 
-      <div className="flex flex-1 w-full overflow-hidden">
-        {/* ================= LEFT SIDEBAR ================= */}
-        <aside className={sidebarCardStyles}>
+      <div className="flex flex-1 w-full overflow-hidden relative">
+        
+        {/* ================= OVERLAY (Mobile) ================= */}
+        {isSidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+
+        {/* ================= LEFT SIDEBAR (Filter) ================= */}
+        <aside className={sidebarContainerStyles}>
+          {/* Close button for mobile */}
+          <div className="lg:hidden flex justify-end -mb-6">
+             <button onClick={() => setIsSidebarOpen(false)} className="p-2 text-slate-400 hover:text-slate-600">
+               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+             </button>
+          </div>
+
           {/* Position */}
           <div>
             <label className={labelStyles}>Positions</label>
@@ -216,7 +244,7 @@ export default function FindCompaniesPage() {
               <input type="range" min="0" max={SLIDER_MAX} step="500" value={currentMax} onChange={handleMaxSliderChange} className="absolute w-full -top-1.5 appearance-none bg-transparent pointer-events-none z-20 slider-thumb-custom" />
             </div>
 
-            <div className="flex items-center gap-3 mb-8">
+            <div className="flex items-center gap-2 md:gap-3 mb-8">
               <div className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2 text-center">
                 <p className="text-[10px] font-bold text-slate-400 uppercase">Min</p>
                 <input type="number" value={minSalary} onChange={(e) => setMinSalary(e.target.value)} className="w-full bg-transparent text-sm font-black text-slate-700 dark:text-white outline-none text-center" />
@@ -229,18 +257,33 @@ export default function FindCompaniesPage() {
             </div>
 
             <div className="flex gap-3">
-              <button className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black py-3.5 rounded-xl shadow-lg shadow-blue-500/25 active:scale-95 transition-all">APPLY</button>
+              <button 
+                onClick={() => setIsSidebarOpen(false)} // ปิดหน้าต่างเมื่อกดบนมือถือ
+                className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black py-3.5 rounded-xl shadow-lg shadow-blue-500/25 active:scale-95 transition-all"
+              >
+                APPLY
+              </button>
               <button onClick={handleReset} className="px-4 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all">RESET</button>
             </div>
           </div>
         </aside>
 
         {/* ================= MAIN CONTENT ================= */}
-        <main className="flex-1 overflow-y-auto p-6 lg:p-12">
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-12">
           <div className="max-w-6xl mx-auto">
-            {/* Search Bar */}
-            <div className="flex justify-end mb-12">
-              <div className="relative w-full max-w-lg group">
+            
+            {/* Search Bar & Mobile Filter Toggle */}
+            <div className="flex flex-col-reverse md:flex-row gap-4 mb-8 md:mb-12">
+              {/* Mobile Filter Button */}
+              <button 
+                onClick={() => setIsSidebarOpen(true)}
+                className="lg:hidden flex items-center justify-center gap-2 w-full py-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl text-slate-600 dark:text-slate-300 font-bold shadow-sm active:scale-[0.98] transition-all"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+                Filters & Sorting
+              </button>
+
+              <div className="relative w-full group">
                 <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
                   <svg className="w-5 h-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </div>
@@ -255,27 +298,27 @@ export default function FindCompaniesPage() {
             </div>
 
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
-                {isLoading ? "Fetching Opportunities..." : <><span className="text-blue-600 dark:text-blue-400">{filteredJobs.length}</span> Total Job Postings</>}
+              <h2 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                {isLoading ? "Fetching Opportunities..." : <><span className="text-blue-600 dark:text-blue-400">{filteredJobs.length}</span> <span className="hidden sm:inline">Total Job Postings</span><span className="sm:hidden inline">Results</span></>}
               </h2>
             </div>
 
             {isLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
                   <div key={i} className="h-64 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 animate-pulse" />
                 ))}
               </div>
             ) : filteredJobs.length === 0 ? (
-              <div className="text-center py-32 bg-white dark:bg-slate-900 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800">
-                <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300">
-                  <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              <div className="text-center py-24 md:py-32 bg-white dark:bg-slate-900 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800 px-4">
+                <div className="w-16 h-16 md:w-20 md:h-20 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300">
+                  <svg className="w-8 h-8 md:w-10 md:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">No matching jobs found</h3>
-                <p className="text-slate-500 dark:text-slate-400">Try adjusting your filters or search terms.</p>
+                <h3 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white mb-2">No matching jobs found</h3>
+                <p className="text-sm md:text-base text-slate-500 dark:text-slate-400">Try adjusting your filters or search terms.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
                 {filteredJobs.map((job) => (
                   <div key={job.id} className="transition-all duration-300 hover:-translate-y-2">
                     <JobCard

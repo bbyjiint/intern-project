@@ -25,7 +25,7 @@ export default function PersonalInfoCard({
     }
     return () => {
       document.body.style.overflow = "auto";
-    };
+    }
   }, [isModalOpen]);
 
   const stats = useMemo(() => {
@@ -99,7 +99,6 @@ export default function PersonalInfoCard({
   const displayRoles = profile.preferredPositions?.length ? profile.preferredPositions : ["+ Position of interest"];
   const prefix = profile.gender?.toLowerCase() === "female" ? "Ms." : "Mr.";
 
-  // ปรับ Badge Styles ให้มีสีที่สว่างขึ้นเล็กน้อยใน Dark Mode
   const badgeStyles: Record<string, { bg: string; text: string; border: string }> = {
     Verified: {
       bg: "bg-[#F0FDF4] dark:bg-green-900/30",
@@ -139,34 +138,35 @@ export default function PersonalInfoCard({
 
   return (
     <>
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-8 mb-6 border border-gray-100 dark:border-gray-700 relative transition-colors duration-300">
-        {/* Edit Button */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-5 sm:p-8 mb-6 border border-gray-100 dark:border-gray-700 relative transition-colors duration-300">
+        
+        {/* Edit Button - ปรับตำแหน่งให้เหมาะสมบนมือถือ */}
         <button
           onClick={() => setIsModalOpen(true)}
-          className="absolute top-6 right-8 px-5 py-1.5 rounded-lg font-bold text-sm border border-blue-400 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all"
+          className="absolute top-4 right-4 sm:top-6 sm:right-8 px-4 sm:px-5 py-1.5 rounded-lg font-bold text-xs sm:text-sm border border-blue-400 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all z-10"
         >
           Edit
         </button>
 
-        {/* Profile Header Section */}
-        <div className="flex items-start gap-6 mb-6">
+        {/* Profile Header Section - ปรับเป็นแนวตั้งบนมือถือ */}
+        <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6 mb-6">
           {hasProfileImage ? (
             <img
               src={profile.profileImage!.startsWith("http") ? profile.profileImage! : `http://localhost:5001${profile.profileImage}`}
               alt="Profile"
-              className="w-24 h-24 rounded-full object-cover shadow-sm bg-slate-50 dark:bg-gray-700 flex-shrink-0 border-2 border-white dark:border-gray-600"
+              className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover shadow-sm bg-slate-50 dark:bg-gray-700 flex-shrink-0 border-2 border-white dark:border-gray-600"
             />
           ) : (
-            <div className="w-24 h-24 rounded-full flex-shrink-0 flex items-center justify-center bg-blue-600 dark:bg-blue-500 text-white text-2xl font-bold shadow-sm select-none border-2 border-white dark:border-gray-600">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full flex-shrink-0 flex items-center justify-center bg-blue-600 dark:bg-blue-500 text-white text-xl sm:text-2xl font-bold shadow-sm select-none border-2 border-white dark:border-gray-600">
               {initials || "?"}
             </div>
           )}
 
-          <div className="pt-1">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">
+          <div className="pt-1 w-full">
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-2 sm:mb-1 pr-16 sm:pr-0">
               {profile.fullName ? `${prefix} ${profile.fullName}` : "Candidate Name"}
             </h2>
-            <div className="flex flex-col text-slate-500 dark:text-slate-300 text-sm space-y-0.5">
+            <div className="flex flex-col text-slate-500 dark:text-slate-300 text-sm space-y-1 sm:space-y-0.5">
               <span className="flex items-center gap-1 font-medium">
                 Phone: <span className="text-slate-700 dark:text-slate-100">
                   {(() => {
@@ -177,7 +177,7 @@ export default function PersonalInfoCard({
                   })()}
                 </span>
               </span>
-              <span className="font-medium">
+              <span className="font-medium break-all">
                 Email: <span className="text-slate-700 dark:text-slate-100">{profile.contactEmail || "-"}</span>
               </span>
             </div>
@@ -194,26 +194,26 @@ export default function PersonalInfoCard({
           {displayRoles.map((role, idx) => (
             <span
               key={idx}
-              className="px-4 py-1.5 bg-[#E2E8F0] dark:bg-gray-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-md"
+              className="px-3 sm:px-4 py-1.5 bg-[#E2E8F0] dark:bg-gray-700 text-slate-700 dark:text-slate-200 text-[10px] sm:text-xs font-bold rounded-md"
             >
               {role}
             </span>
           ))}
         </div>
 
-        {/* Profile Completion Bar */}
-        <div className="flex items-center gap-4 mb-10">
+        {/* Profile Completion Bar - ปรับให้ stack บนมือถือ */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-8 sm:mb-10">
           <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
             Profile Completion:
           </span>
-          <div className="bg-blue-600 dark:bg-blue-500 text-white text-[11px] font-bold px-3 py-0.5 rounded-full min-w-[70px] text-center shadow-md shadow-blue-500/20">
+          <div className="bg-blue-600 dark:bg-blue-500 text-white text-[11px] font-bold px-3 py-1 sm:py-0.5 rounded-full w-fit min-w-[70px] text-center shadow-md shadow-blue-500/20">
             {completionPercentage}/100
           </div>
         </div>
 
         {/* AI Validation Status Card */}
         <div className="bg-white dark:bg-gray-900/50 border border-slate-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm transition-colors">
-          <div className="flex justify-between items-center px-6 py-4 border-b border-slate-100 dark:border-gray-700">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center px-4 sm:px-6 py-4 border-b border-slate-100 dark:border-gray-700 gap-3">
             <h3 className="font-bold text-slate-800 dark:text-slate-100">AI Validation Status</h3>
             <span className={`flex items-center gap-1.5 px-3 py-1 ${badge.bg} ${badge.text} border ${badge.border} rounded-full text-xs font-bold`}>
               {stats.badgeStatus === "Not Verified" ? <RedX /> : (
@@ -223,10 +223,10 @@ export default function PersonalInfoCard({
             </span>
           </div>
 
-          <div className="px-6 pb-6 space-y-6 pt-4">
+          <div className="px-4 sm:px-6 pb-6 space-y-6 pt-4">
             {/* Education Row */}
-            <div className="flex items-start gap-4">
-              <span className="w-20 text-slate-400 dark:text-slate-500 font-bold text-xs uppercase pt-0.5">Education</span>
+            <div className="flex flex-col sm:flex-row items-start gap-2 sm:gap-4">
+              <span className="w-20 text-slate-400 dark:text-slate-500 font-bold text-[10px] sm:text-xs uppercase pt-0.5">Education</span>
               <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200 font-medium">
                 {stats.educationVerified ? <><GreenCheck /> Verified</> : <><RedX /> Not Verified</>}
               </div>
@@ -235,9 +235,9 @@ export default function PersonalInfoCard({
             <hr className="border-slate-100 dark:border-gray-700" />
 
             {/* Skills Row */}
-            <div className="flex items-start gap-4">
-              <span className="w-20 text-slate-400 dark:text-slate-500 font-bold text-xs uppercase pt-0.5">Skills</span>
-              <div className="space-y-2">
+            <div className="flex flex-col sm:flex-row items-start gap-2 sm:gap-4">
+              <span className="w-20 text-slate-400 dark:text-slate-500 font-bold text-[10px] sm:text-xs uppercase pt-0.5">Skills</span>
+              <div className="space-y-3 sm:space-y-2">
                 <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200 font-medium"><GreenCheck /> {stats.verifiedSkillTest} Verified By Skill Test</div>
                 <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200 font-medium"><YellowCheck /> {stats.verifiedCertificate} Evidence By Certificate</div>
                 <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200 font-medium"><YellowCheck /> {stats.verifiedProject} Evidence By Project</div>
@@ -248,9 +248,9 @@ export default function PersonalInfoCard({
             <hr className="border-slate-100 dark:border-gray-700" />
 
             {/* Project Row */}
-            <div className="flex items-start gap-4">
-              <span className="w-20 text-slate-400 dark:text-slate-500 font-bold text-xs uppercase pt-0.5">Project</span>
-              <div className="space-y-2">
+            <div className="flex flex-col sm:flex-row items-start gap-2 sm:gap-4">
+              <span className="w-20 text-slate-400 dark:text-slate-500 font-bold text-[10px] sm:text-xs uppercase pt-0.5">Project</span>
+              <div className="space-y-3 sm:space-y-2">
                 <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200 font-medium"><GreenCheck /> {stats.projectUploaded} File Uploaded</div>
                 <div className="flex items-center gap-2 text-sm text-slate-400 dark:text-slate-500"><RedX /> {stats.projectNoFile} No File Uploaded</div>
               </div>

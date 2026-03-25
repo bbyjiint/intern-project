@@ -134,15 +134,15 @@ export default function PersonalModal({
   const inputClass = "w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-900 dark:text-gray-100 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors placeholder-gray-400 dark:placeholder-gray-500";
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 transition-opacity">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center z-[100] p-0 sm:p-4 transition-all duration-300">
+      <div className="bg-white dark:bg-gray-900 rounded-t-3xl sm:rounded-2xl shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col border border-gray-200 dark:border-gray-700 overflow-hidden">
         
-        {/* Header */}
-        <div className="flex justify-between items-center px-8 py-5 border-b border-gray-100 dark:border-gray-800">
-          <h2 className="text-xl font-extrabold text-gray-900 dark:text-white">
+        {/* Header - Fixed */}
+        <div className="flex justify-between items-center px-6 sm:px-8 py-4 sm:py-5 border-b border-gray-100 dark:border-gray-800 shrink-0">
+          <h2 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-white truncate">
             Profile Information
           </h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
+          <button onClick={onClose} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -150,10 +150,10 @@ export default function PersonalModal({
         </div>
 
         {/* Scrollable Body */}
-        <div className="overflow-y-auto flex-1 px-8 py-6 space-y-6">
+        <div className="overflow-y-auto flex-1 px-6 sm:px-8 py-6 space-y-6">
           
           {/* Name + Photo Row */}
-          <div className="flex flex-col md:flex-row gap-6 items-center md:items-start">
+          <div className="flex flex-col-reverse md:flex-row gap-6 items-center md:items-start">
             <div className="flex-1 w-full space-y-5">
               <div>
                 <label className={labelClass}>First Name<span className="text-red-500">*</span></label>
@@ -184,7 +184,7 @@ export default function PersonalModal({
 
             {/* Profile Photo */}
             <div className="relative group cursor-pointer shrink-0" onClick={() => fileInputRef.current?.click()}>
-              <img src={imagePreview} alt="Profile" className="w-40 h-40 rounded-2xl object-cover border-2 border-gray-200 dark:border-gray-700 shadow-md group-hover:opacity-90 transition-opacity" />
+              <img src={imagePreview} alt="Profile" className="w-32 h-32 sm:w-40 sm:h-40 rounded-2xl object-cover border-2 border-gray-200 dark:border-gray-700 shadow-md group-hover:opacity-90 transition-opacity" />
               <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 <div className="bg-black/40 text-white text-xs px-2 py-1 rounded-lg">Change Photo</div>
               </div>
@@ -210,8 +210,8 @@ export default function PersonalModal({
           {/* About You */}
           <div>
             <label className={labelClass}>About You</label>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">Highlight your background, skills, or interests.</p>
-            <textarea rows={4} value={formData.bio || ""} onChange={(e) => setFormData({ ...formData, bio: e.target.value })} className={inputClass} placeholder="Tell us about yourself..." />
+            <p className="text-[11px] sm:text-xs text-gray-500 dark:text-gray-400 mb-2">Highlight your background, skills, or interests.</p>
+            <textarea rows={4} value={formData.bio || ""} onChange={(e) => setFormData({ ...formData, bio: e.target.value })} className={`${inputClass} resize-none`} placeholder="Tell us about yourself..." />
           </div>
 
           {/* Contact Info */}
@@ -262,9 +262,9 @@ export default function PersonalModal({
               </div>
               <div>
                 <label className={labelClass}>Internship Period<span className="text-red-500">*</span></label>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
                   <input type="date" value={formData.startDate} onChange={(e) => setFormData({ ...formData, startDate: e.target.value })} className={inputClass} />
-                  <span className="text-gray-400">to</span>
+                  <span className="text-gray-400 self-center hidden sm:inline">to</span>
                   <input type="date" value={formData.endDate} onChange={(e) => setFormData({ ...formData, endDate: e.target.value })} className={inputClass} />
                 </div>
               </div>
@@ -272,15 +272,19 @@ export default function PersonalModal({
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-3 px-8 py-5 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
-          <button onClick={onClose} disabled={isSaving} className="px-6 py-2.5 text-sm font-bold text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition-colors">
+        {/* Footer - Sticky/Fixed */}
+        <div className="flex flex-col-reverse sm:flex-row items-center justify-end gap-3 px-6 sm:px-8 py-4 sm:py-5 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 shrink-0">
+          <button 
+            onClick={onClose} 
+            disabled={isSaving} 
+            className="w-full sm:w-auto px-6 py-2.5 text-sm font-bold text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-white transition-colors"
+          >
             Cancel
           </button>
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="px-10 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-all active:scale-95 disabled:bg-blue-400"
+            className="w-full sm:w-auto px-10 py-3 sm:py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-500/30 transition-all active:scale-95 disabled:bg-blue-400 flex items-center justify-center min-w-[140px]"
           >
             {isSaving ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : "Save Changes"}
           </button>

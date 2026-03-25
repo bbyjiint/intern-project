@@ -12,7 +12,6 @@ interface EducationSectionProps {
   onRefresh?: () => void;
 }
 
-// --- Types for Verification ---
 type VerificationStep = 'upload' | 'success' | 'mismatch' | 'error';
 interface VerifyResult {
   verified: boolean;
@@ -31,7 +30,6 @@ export default function EducationSection({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEducation, setEditingEducation] = useState<Education | null>(null);
   
-  // --- Verification States ---
   const [verifyingEduId, setVerifyingEduId] = useState<string | null>(null);
   const [verifyState, setVerifyState] = useState<{
     isOpen: boolean;
@@ -86,9 +84,7 @@ export default function EducationSection({
     setIsModalOpen(true);
   };
 
-  // --- ฟังก์ชันหลักสำหรับยิง API อัปโหลดและตรวจสอบ Transcript ---
   const executeVerification = async (file: File, eduId: string) => {
-    // ปิด Modal ทันทีแล้วให้ Card แสดงสถานะ Loading (Spinner)
     setVerifyState(prev => ({ ...prev, isOpen: false }));
     setVerifyingEduId(eduId);
 
@@ -97,7 +93,6 @@ export default function EducationSection({
       const formData = new FormData();
       formData.append('file', file);
 
-      // ใช้ native fetch เพื่อส่ง FormData
       let token = "";
       if (typeof document !== "undefined") {
         const match = document.cookie.match(/(^| )auth=([^;]+)/);
@@ -119,7 +114,6 @@ export default function EducationSection({
 
       const data: VerifyResult = await res.json();
       
-      // เมื่อเสร็จแล้ว เปิด Modal โชว์ผลลัพธ์ (ผ่าน หรือ ไม่ตรง)
       setVerifyState({
         isOpen: true,
         eduId,
@@ -128,11 +122,10 @@ export default function EducationSection({
       });
 
       if (data.verified) {
-        onRefresh?.(); // รีเฟรชหน้าเพื่อเอา Badge เขียวขึ้น
+        onRefresh?.();
       }
 
     } catch (err: any) {
-      // เปิด Modal โชว์ Error
       setVerifyState({
         isOpen: true,
         eduId,
@@ -140,14 +133,15 @@ export default function EducationSection({
         result: { verified: false, message: err.message || 'An unexpected error occurred' }
       });
     } finally {
-      setVerifyingEduId(null); // เอา Spinner บนการ์ดออก
+      setVerifyingEduId(null);
     }
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-6 mb-6 border border-gray-100 dark:border-gray-800 transition-colors">
-      {/* Section Header */}
-      <div className="flex items-center justify-between mb-8">
+    <div className="bg-white dark:bg-gray-900 rounded-xl shadow-sm p-4 sm:p-6 mb-6 border border-gray-100 dark:border-gray-800 transition-colors">
+      
+      {/* Section Header - Responsive Stack */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
         <div className="flex items-center gap-3">
           <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg text-blue-600 dark:text-blue-400">
             <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
@@ -156,7 +150,7 @@ export default function EducationSection({
               <path d="M19 13.52V17l-7 4-7-4v-3.48l7 3.82 7-3.82z" />
             </svg>
           </div>
-          <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white">Education</h2>
+          <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white">Education</h2>
         </div>
         
         <button
@@ -164,7 +158,7 @@ export default function EducationSection({
             setEditingEducation(null);
             setIsModalOpen(true);
           }}
-          className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-500/20 active:scale-95"
+          className="w-full sm:w-auto px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm transition-all shadow-lg shadow-blue-500/20 active:scale-95"
         >
           + Add Education
         </button>
@@ -185,48 +179,47 @@ export default function EducationSection({
             return (
               <div
                 key={edu.id}
-                className="group relative border border-gray-100 dark:border-gray-800 rounded-2xl p-6 hover:border-blue-200 dark:hover:border-blue-900 hover:bg-gray-50/30 dark:hover:bg-gray-800/30 transition-all bg-white dark:bg-gray-800/10"
+                className="group relative border border-gray-100 dark:border-gray-800 rounded-2xl p-4 sm:p-6 hover:border-blue-200 dark:hover:border-blue-900 hover:bg-gray-50/30 dark:hover:bg-gray-800/30 transition-all bg-white dark:bg-gray-800/10"
               >
-                {/* ── Top Header of Card (Title & Badge) ── */}
-                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
+                {/* Top Header of Card */}
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 mb-4">
                   <div className="flex-1">
-                    <h3 className="text-xl font-black text-gray-900 dark:text-white leading-tight mb-2">
+                    <h3 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white leading-tight mb-2">
                       {edu.universityName || "University Name"}
                     </h3>
                     
-                    {/* Badges Stack */}
                     <div className="flex flex-wrap gap-2">
                       {isVerified ? (
-                        <div className="flex items-center gap-1.5 px-3 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800/50 rounded-full text-xs font-bold shadow-sm">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800/50 rounded-full text-[10px] sm:text-xs font-bold shadow-sm">
+                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                           </svg>
-                          Uploaded File Transcript
+                          Verified Transcript
                         </div>
                       ) : (
-                        <div className="flex items-center gap-1.5 px-3 py-1 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50 rounded-full text-xs font-bold shadow-sm">
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800/50 rounded-full text-[10px] sm:text-xs font-bold shadow-sm">
+                          <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                           </svg>
-                          No File Uploaded
+                          Pending Verify
                         </div>
                       )}
                       
-                      <div className="px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-800/50 rounded-full text-xs font-bold">
+                      <div className="px-2.5 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 border border-blue-100 dark:border-blue-800/50 rounded-full text-[10px] sm:text-xs font-bold">
                         {edu.isCurrent ? "Ongoing" : "Completed"}
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* ── Content Details ── */}
+                {/* Content Details */}
                 <div className="space-y-2 text-gray-700 dark:text-gray-300">
-                  <p className="text-base font-bold dark:text-gray-100 flex items-center gap-2">
-                    <span className="text-blue-500">●</span>
-                    {`${edu.degreeName || "Degree Name"}${edu.fieldOfStudy ? ` in ${edu.fieldOfStudy}` : ""}`}
+                  <p className="text-sm sm:text-base font-bold dark:text-gray-100 flex items-start gap-2">
+                    <span className="text-blue-500 mt-1 flex-shrink-0">●</span>
+                    <span>{`${edu.degreeName || "Degree Name"}${edu.fieldOfStudy ? ` in ${edu.fieldOfStudy}` : ""}`}</span>
                   </p>
                   
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm font-medium text-gray-500 dark:text-gray-400">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400 pl-5">
                     {edu.gpa && (
                       <div className="flex items-center gap-1.5">
                         <span className="text-gray-400 uppercase text-[10px]">GPA:</span>
@@ -242,54 +235,58 @@ export default function EducationSection({
                   </div>
                 </div>
 
-                {/* ── Action Buttons ── */}
-                <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-gray-50 dark:border-gray-800">
-                  {/* Delete Button */}
-                  <button
-                    onClick={() => setDeleteModal({ isOpen: true, id: edu.id })}
-                    className="p-2.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
-                    title="Delete"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-
-                  {/* ปุ่มแสดงสถานะ (Loading/View/Upload) - เปลี่ยนเป็นโทนฟ้า */}
-                  {isVerifying ? (
-                    <div className="flex items-center gap-2 px-5 py-2 text-blue-600 dark:text-blue-400 font-bold text-sm bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800/50 shadow-sm animate-pulse">
-                      <div className="w-4 h-4 border-2 border-blue-600 dark:border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-                      AI is verifying...
-                    </div>
-                  ) : isVerified ? (
+                {/* Action Buttons - Responsive Flexbox */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 mt-6 pt-4 border-t border-gray-50 dark:border-gray-800">
+                  <div className="flex items-center justify-between sm:justify-end gap-3 order-2 sm:order-1">
+                    {/* Delete Button */}
                     <button
-                      className="px-5 py-2 border-2 border-blue-600 dark:border-blue-500 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-500 dark:hover:text-white rounded-xl text-sm font-black transition-all"
+                      onClick={() => setDeleteModal({ isOpen: true, id: edu.id })}
+                      className="p-2.5 text-gray-400 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
+                      title="Delete"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-4v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+
+                    {/* Edit Button - Mobile Full width within this flex group */}
+                    <button
                       onClick={() => {
-                        const url = (edu as any).transcriptUrl;
-                        if (url) window.open(url, "_blank", "noopener,noreferrer");
+                        setEditingEducation(edu);
+                        setIsModalOpen(true);
                       }}
+                      className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-black transition-all shadow-md shadow-blue-500/10 active:scale-95"
                     >
-                      View Transcript
+                      Edit
                     </button>
-                  ) : (
-                    <button
-                      className="px-5 py-2 border-2 border-blue-600 dark:border-blue-500 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-500 dark:hover:text-white rounded-xl text-sm font-black transition-all"
-                      onClick={() => setVerifyState({ isOpen: true, eduId: edu.id, step: 'upload', result: null })}
-                    >
-                      Upload Transcript
-                    </button>
-                  )}
+                  </div>
 
-                  {/* ปุ่ม Edit - เปลี่ยนจากสีดำเป็นสีฟ้า (Blue) */}
-                  <button
-                    onClick={() => {
-                      setEditingEducation(edu);
-                      setIsModalOpen(true);
-                    }}
-                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-black transition-all shadow-md shadow-blue-500/10 active:scale-95"
-                  >
-                    Edit
-                  </button>
+                  {/* Verification Status/Action Button - Primary Order on Mobile */}
+                  <div className="order-1 sm:order-2">
+                    {isVerifying ? (
+                      <div className="flex items-center justify-center gap-2 px-5 py-2 text-blue-600 dark:text-blue-400 font-bold text-sm bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-800/50 shadow-sm animate-pulse">
+                        <div className="w-4 h-4 border-2 border-blue-600 dark:border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+                        AI Verifying...
+                      </div>
+                    ) : isVerified ? (
+                      <button
+                        className="w-full sm:w-auto px-5 py-2 border-2 border-blue-600 dark:border-blue-500 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-500 dark:hover:text-white rounded-xl text-sm font-black transition-all"
+                        onClick={() => {
+                          const url = (edu as any).transcriptUrl;
+                          if (url) window.open(url, "_blank", "noopener,noreferrer");
+                        }}
+                      >
+                        View Transcript
+                      </button>
+                    ) : (
+                      <button
+                        className="w-full sm:w-auto px-5 py-2 border-2 border-blue-600 dark:border-blue-500 text-blue-600 dark:text-blue-400 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-500 dark:hover:text-white rounded-xl text-sm font-black transition-all"
+                        onClick={() => setVerifyState({ isOpen: true, eduId: edu.id, step: 'upload', result: null })}
+                      >
+                        Upload Transcript
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             );
@@ -328,21 +325,21 @@ export default function EducationSection({
         onSuccessConfirm={() => setVerifyState(prev => ({ ...prev, isOpen: false }))}
       />
 
-      {/* Delete Confirmation */}
+      {/* Delete Confirmation Modal - ปรับ Padding บนมือถือ */}
       {deleteModal.isOpen && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => !isDeleting && setDeleteModal({ isOpen: false, id: "" })} />
-          <div className="relative bg-white dark:bg-gray-900 rounded-3xl shadow-2xl max-w-sm w-full p-8 text-center animate-in fade-in zoom-in duration-200 border border-gray-100 dark:border-gray-800">
-            <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-10 h-10 text-red-600 dark:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="relative bg-white dark:bg-gray-900 rounded-3xl shadow-2xl max-w-sm w-full p-6 sm:p-8 text-center animate-in fade-in zoom-in duration-200 border border-gray-100 dark:border-gray-800">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-8 h-8 sm:w-10 sm:h-10 text-red-600 dark:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
-            <h3 className="text-2xl font-black text-gray-900 dark:text-white mb-3">Confirm Delete</h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-8 font-medium">
-              This will permanently remove your education record. This action cannot be undone.
+            <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white mb-3">Confirm Delete</h3>
+            <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mb-8 font-medium">
+              This will permanently remove your education record.
             </p>
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <button
                 disabled={isDeleting}
                 onClick={() => setDeleteModal({ isOpen: false, id: "" })}

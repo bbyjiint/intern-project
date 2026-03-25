@@ -33,6 +33,9 @@ export default function CertificatesPage() {
   const [certToDelete, setCertToDelete] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // -- New State for Mobile Sidebar --
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   const fetchCertificates = useCallback(async () => {
     try {
       const data = await apiFetch<{ profile: any }>("/api/candidates/profile");
@@ -178,11 +181,24 @@ export default function CertificatesPage() {
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-slate-950 flex flex-col transition-colors duration-300">
       <InternNavbar />
 
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar />
+      <div className="flex flex-1 relative overflow-hidden">
+        {/* Sidebar with Mobile Support */}
+        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-        <main className="flex-1 overflow-y-auto p-6 lg:p-10">
-          {/* เอา max-w-6xl mx-auto ออกไปแล้วเพื่อให้กว้างเท่า ProjectPage */}
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-10">
+          {/* Mobile Header: Burger Menu & Title */}
+          <div className="flex items-center justify-between mb-6 lg:hidden">
+            <button 
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-600 dark:text-slate-300"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16m-7 6h7" />
+              </svg>
+            </button>
+            <span className="text-sm font-black text-blue-600 uppercase tracking-widest">My Portfolio</span>
+          </div>
+
           {isLoading ? (
             <div className="flex items-center justify-center min-h-[60vh]">
               <div className="w-12 h-12 border-4 border-slate-200 dark:border-slate-800 border-t-blue-600 rounded-full animate-spin"></div>
@@ -190,17 +206,17 @@ export default function CertificatesPage() {
           ) : (
             <>
               {/* Header Section */}
-              <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-10 gap-6">
-                <div>
-                  <h1 className="text-4xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">
+              <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-8 md:mb-10 gap-6">
+                <div className="text-left">
+                  <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">
                     Certificates
                   </h1>
-                  <p className="text-slate-500 dark:text-slate-400 text-[15px] font-medium">
+                  <p className="text-slate-500 dark:text-slate-400 text-sm md:text-[15px] font-medium">
                     Manage and showcase your professional achievements and skills.
                   </p>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center gap-4">
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
                   <div className="relative w-full sm:w-72">
                     <svg
                       className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 transform -translate-y-1/2"
@@ -221,37 +237,40 @@ export default function CertificatesPage() {
                   </div>
                   <button
                     onClick={handleAddClick}
-                    className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 active:scale-95"
+                    className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 active:scale-95 text-sm"
                   >
-                    <span className="text-lg">+</span> Add Certificate
+                    <span>+</span> Add Certificate
                   </button>
                 </div>
               </div>
 
               {/* Filters Tabs & Count */}
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4">
-                <div className="flex p-1.5 bg-slate-200/50 dark:bg-slate-900/50 rounded-2xl w-fit border border-slate-200 dark:border-slate-800">
-                  {["All", "No File Uploaded", "File Uploaded"].map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setFilterTab(tab as any)}
-                      className={`px-5 py-2 text-sm font-bold rounded-xl transition-all ${
-                        filterTab === tab
-                          ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-md shadow-black/5"
-                          : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
-                      }`}
-                    >
-                      {tab}
-                    </button>
-                  ))}
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
+                <div className="flex p-1 bg-slate-200/50 dark:bg-slate-900/50 rounded-2xl w-full sm:w-fit border border-slate-200 dark:border-slate-800 overflow-x-auto no-scrollbar">
+                  {["All", "No File", "Uploaded"].map((tabLabel) => {
+                    const actualValue = tabLabel === "No File" ? "No File Uploaded" : tabLabel === "Uploaded" ? "File Uploaded" : "All";
+                    return (
+                      <button
+                        key={actualValue}
+                        onClick={() => setFilterTab(actualValue as any)}
+                        className={`flex-1 sm:flex-none px-4 md:px-5 py-2 text-[12px] md:text-sm font-bold rounded-xl transition-all whitespace-nowrap ${
+                          filterTab === actualValue
+                            ? "bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-md shadow-black/5"
+                            : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+                        }`}
+                      >
+                        {tabLabel}
+                      </button>
+                    )
+                  })}
                 </div>
-                <h2 className="text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">
+                <h2 className="text-[11px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pl-1">
                   {filteredCertificates.length} Total Certificates
                 </h2>
               </div>
 
               {/* Certificates List */}
-              <div className="grid grid-cols-1 gap-6">
+              <div className="grid grid-cols-1 gap-4 md:gap-6">
                 {filteredCertificates.length === 0 ? (
                   <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800">
                     <p className="text-slate-400 dark:text-slate-500 font-medium">No certificates found matching your search.</p>
@@ -263,58 +282,57 @@ export default function CertificatesPage() {
                     return (
                       <div
                         key={cert.id}
-                        className="group relative bg-white dark:bg-slate-900 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 p-6 md:p-8 flex flex-col transition-all hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/5 hover:-translate-y-1"
+                        className="group relative bg-white dark:bg-slate-900 rounded-2xl md:rounded-3xl shadow-sm border border-slate-100 dark:border-slate-800 p-5 md:p-8 flex flex-col transition-all hover:border-blue-500/50 hover:shadow-xl hover:shadow-blue-500/5 lg:hover:-translate-y-1"
                       >
-                        {/* ── Badge (Top Right) ── */}
-                        <div className="absolute top-8 right-8 hidden sm:block">
+                        {/* Status Badge (Desktop) */}
+                        <div className="absolute top-8 right-8 hidden md:block">
                           <div className={`flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-black tracking-wider uppercase border ${hasAnyFile ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800" : "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800"}`}>
                             <div className={`w-1.5 h-1.5 rounded-full ${hasAnyFile ? "bg-emerald-500" : "bg-blue-500 animate-pulse"}`} />
-                            {hasAnyFile ? "File Uploaded" : "No File Uploaded"}
+                            {hasAnyFile ? "File Uploaded" : "No File"}
                           </div>
                         </div>
 
-                        {/* ── Content ── */}
-                        <div className="mb-6 pr-0 sm:pr-32">
-                          <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                        {/* Content */}
+                        <div className="mb-6 md:pr-32">
+                          <h3 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white mb-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-2">
                             {cert.name}
                           </h3>
-                          <div className="flex items-center gap-2 mt-1 text-slate-500 dark:text-slate-400 font-bold text-sm">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mt-1 text-slate-500 dark:text-slate-400 font-bold text-[13px]">
                             <span className="text-blue-600 dark:text-blue-400">{cert.issuedBy || "Organization"}</span>
                             {cert.issueDate && (
                               <>
-                                <span className="opacity-30">•</span>
+                                <span className="opacity-30 hidden sm:inline">•</span>
                                 <span>{cert.issueDate}</span>
                               </>
                             )}
                           </div>
 
-                          {/* Mobile Badge */}
-                          <div className="mt-3 sm:hidden inline-block mb-2">
-                            <div className={`flex items-center w-max gap-2 px-3 py-1 rounded-full text-[10px] font-black tracking-wider uppercase border ${hasAnyFile ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800" : "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800"}`}>
-                              <div className={`w-1.5 h-1.5 rounded-full ${hasAnyFile ? "bg-emerald-500" : "bg-blue-500 animate-pulse"}`} />
-                              {hasAnyFile ? "File Uploaded" : "No File Uploaded"}
+                          {/* Mobile Status Badge */}
+                          <div className="mt-3 md:hidden">
+                            <div className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-lg text-[9px] font-black tracking-wider uppercase border ${hasAnyFile ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800" : "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border-blue-100 dark:border-blue-800"}`}>
+                              {hasAnyFile ? "Uploaded" : "No File"}
                             </div>
                           </div>
 
-                          <p className="text-base text-slate-600 dark:text-slate-300 leading-relaxed mt-4 whitespace-pre-wrap font-medium">
+                          <p className="text-sm md:text-base text-slate-600 dark:text-slate-300 leading-relaxed mt-4 whitespace-pre-wrap font-medium line-clamp-3 md:line-clamp-none">
                             {cert.description || "No description provided."}
                           </p>
                         </div>
 
-                        {/* ── Action Footer ── */}
-                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-t border-slate-100 dark:border-slate-800 pt-6 mt-auto">
-                          <div className="flex flex-wrap gap-2">
-                            {(cert.tags || []).map((tag, idx) => (
+                        {/* Action Footer */}
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-t border-slate-100 dark:border-slate-800 pt-5 mt-auto">
+                          <div className="flex flex-wrap gap-1.5">
+                            {(cert.tags || []).slice(0, 4).map((tag, idx) => (
                               <span
                                 key={idx}
-                                className="px-4 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-xs font-black rounded-lg border border-blue-100 dark:border-blue-800"
+                                className="px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-[10px] md:text-xs font-black rounded-lg border border-blue-100 dark:border-blue-800"
                               >
                                 {tag}
                               </span>
                             ))}
                           </div>
 
-                          <div className="flex items-center gap-3 mt-4 md:mt-0">
+                          <div className="flex items-center gap-2">
                             <button
                               onClick={() => openDeleteConfirm(cert.id)}
                               className="p-2.5 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl transition-all"
@@ -325,30 +343,30 @@ export default function CertificatesPage() {
                               </svg>
                             </button>
                             
-                            <div className="flex gap-2 w-full sm:w-auto">
+                            <div className="flex gap-2 flex-1 sm:flex-none">
                               {hasAnyFile ? (
                                 <a
                                   href={cert.url}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="flex-1 sm:flex-none px-5 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-transparent dark:border-slate-700 text-center"
+                                  className="flex-1 sm:flex-none px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs md:text-sm font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all text-center border border-transparent"
                                 >
-                                  View File
+                                  View
                                 </a>
                               ) : (
                                 <button
                                   onClick={() => handleEditClick(cert)}
-                                  className="flex-1 sm:flex-none px-5 py-2.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 transition-all border border-transparent dark:border-slate-700"
+                                  className="flex-1 sm:flex-none px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs md:text-sm font-bold rounded-xl hover:bg-slate-200 transition-all"
                                 >
-                                  Upload File
+                                  Upload
                                 </button>
                               )}
 
                               <button
                                 onClick={() => handleEditClick(cert)}
-                                className="flex-1 sm:flex-none px-5 py-2.5 bg-white dark:bg-slate-900 border border-blue-600 text-blue-600 text-sm font-bold rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all shadow-sm"
+                                className="flex-1 sm:flex-none px-4 py-2 bg-white dark:bg-slate-900 border border-blue-600 text-blue-600 text-xs md:text-sm font-bold rounded-xl hover:bg-blue-50 transition-all shadow-sm"
                               >
-                                Edit Details
+                                Edit
                               </button>
                             </div>
                           </div>
@@ -363,42 +381,40 @@ export default function CertificatesPage() {
         </main>
       </div>
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Confirmation Modal - ปรับให้ Responsive */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
           <div 
-            className="absolute inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm transition-opacity"
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
             onClick={() => !isDeleting && setIsDeleteModalOpen(false)}
           ></div>
           
-          <div className="relative bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl max-w-sm w-full p-8 text-center border border-slate-100 dark:border-slate-800 animate-in fade-in zoom-in duration-200">
-            <div className="w-20 h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
-              <svg className="w-10 h-10 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <div className="relative bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl max-w-sm w-full p-6 md:p-8 text-center border border-slate-100 dark:border-slate-800 animate-in fade-in zoom-in duration-200">
+            <div className="w-16 h-16 md:w-20 md:h-20 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-8 h-8 md:w-10 md:h-10 text-red-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </div>
             
-            <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Delete Certificate?</h3>
-            <p className="text-slate-500 dark:text-slate-400 mb-8 font-medium">
-              This action is permanent and cannot be undone. Are you sure?
+            <h3 className="text-xl md:text-2xl font-black text-slate-900 dark:text-white mb-2">Delete Certificate?</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mb-8 font-medium">
+              This action is permanent and cannot be undone.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex gap-3">
               <button
                 disabled={isDeleting}
                 onClick={() => setIsDeleteModalOpen(false)}
-                className="flex-1 px-6 py-3.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-2xl transition-all disabled:opacity-50 text-xs uppercase tracking-widest"
+                className="flex-1 px-4 py-3 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold rounded-xl transition-all text-[11px] uppercase tracking-widest"
               >
                 Cancel
               </button>
               <button
                 disabled={isDeleting}
                 onClick={handleConfirmDelete}
-                className="flex-1 px-6 py-3.5 bg-red-600 hover:bg-red-700 text-white font-bold rounded-2xl transition-all disabled:opacity-50 flex items-center justify-center shadow-lg shadow-red-500/20 text-xs uppercase tracking-widest"
+                className="flex-1 px-4 py-3 bg-red-600 text-white font-bold rounded-xl transition-all flex items-center justify-center text-[11px] uppercase tracking-widest"
               >
-                {isDeleting ? (
-                   <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                ) : "Delete"}
+                {isDeleting ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : "Delete"}
               </button>
             </div>
           </div>
