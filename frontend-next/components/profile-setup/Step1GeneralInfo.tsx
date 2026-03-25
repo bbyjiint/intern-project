@@ -146,7 +146,7 @@ function DayMonthYearPicker({
 
   const btnStyle = (active: boolean) => ({
     backgroundColor: active ? "#0273B1" : "transparent",
-    color: active ? "#fff" : "#1C2D4F",
+    color: active ? "#fff" : undefined, // ← ให้ Tailwind จัดการ color แทน
   });
 
   return (
@@ -335,7 +335,7 @@ function DayMonthYearPicker({
                       key={day}
                       type="button"
                       onClick={() => selectDay(day)}
-                      className="w-full aspect-square rounded-full text-sm font-medium transition-colors flex items-center justify-center dark:text-slate-200"
+                      className="w-8 h-8 mx-auto rounded-full text-sm font-medium transition-colors flex items-center justify-center dark:text-slate-200"
                       style={btnStyle(active)}
                       onMouseEnter={(e) => {
                         if (!active)
@@ -609,6 +609,7 @@ export default function Step1GeneralInfo({
               <select
                 value={phonePrefix}
                 onChange={(e) => setPhonePrefix(e.target.value)}
+                size={1}
                 className="w-[120px] px-3 py-3 border border-gray-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {COUNTRY_DATA.filter((c) => c.dialCode !== "").map(

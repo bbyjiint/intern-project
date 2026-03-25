@@ -157,7 +157,14 @@ export default function Step2BackgroundExperience({
 // EducationForm
 // ─────────────────────────────────────────────────────────────────────────────
 
-const EDUCATION_LEVELS = ["Bachelor", "Master", "PhD"];
+const EDUCATION_LEVELS = [
+  "Below High School",
+  "High School / Vocational Certificate",
+  "Higher Vocational Diploma",
+  "Bachelor's Degree",
+  "Master's Degree",
+  "Doctoral Degree (PhD)",
+];
 const YEAR_OF_STUDY_OPTIONS = [
   "1st Year",
   "2nd Year",

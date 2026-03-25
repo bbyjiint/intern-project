@@ -9,7 +9,6 @@ export const POSITION_OPTIONS: string[] = [
   "Backend Engineer",
   "Full Stack Developer",
   "Application Developer",
-  "UI Engineer",
   "Mobile Engineer",
   "Software Engineer Intern",
   "Web Developer Intern",

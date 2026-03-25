@@ -398,7 +398,7 @@ export default function ProfileSetupPage() {
         </div>
       </div>
 
-      <div className="layout-container layout-page">
+      <div className="layout-container layout-page pb-36">
         <div className="mx-auto max-w-[800px]">
           {/* Progress Card */}
           <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow mb-4 transition-colors">
