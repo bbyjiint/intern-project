@@ -114,7 +114,7 @@ export default function InternProfilePage() {
                   completionPercentage={completionPercentage}
                 />
 
-                <div className="grid grid-cols-1 gap-6">
+                <div className="grid grid-cols-1 gap-5 [&>*]:mb-0">
                   <PersonalInfoCard
                     profile={profileData}
                     onRefresh={refetch}
@@ -144,7 +144,7 @@ export default function InternProfilePage() {
                 </div>
 
                 {/* Space for FAB on mobile */}
-                <div className="h-24 lg:hidden" />
+                <div className="h-1 lg:hidden" />
               </>
             )}
           </div>

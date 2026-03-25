@@ -77,7 +77,7 @@ export default function ResumeSection({ resumeData, onRefresh }: ResumeSectionPr
       </div>
 
       {/* Content Box */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/40 p-5">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/40 p-5">
         
         <div className="flex items-center space-x-4">
           {/* Resume Icon */}

@@ -140,7 +140,7 @@ export default function PersonalInfoCard({
     <>
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-5 sm:p-8 mb-6 border border-gray-100 dark:border-gray-700 relative transition-colors duration-300">
         
-        {/* Edit Button - ปรับตำแหน่งให้เหมาะสมบนมือถือ */}
+        {/* Edit Button */}
         <button
           onClick={() => setIsModalOpen(true)}
           className="absolute top-4 right-4 sm:top-6 sm:right-8 px-4 sm:px-5 py-1.5 rounded-lg font-bold text-xs sm:text-sm border border-blue-400 text-blue-500 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-all z-10"
@@ -148,7 +148,7 @@ export default function PersonalInfoCard({
           Edit
         </button>
 
-        {/* Profile Header Section - ปรับเป็นแนวตั้งบนมือถือ */}
+        {/* Profile Header Section */}
         <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6 mb-6">
           {hasProfileImage ? (
             <img
@@ -194,15 +194,15 @@ export default function PersonalInfoCard({
           {displayRoles.map((role, idx) => (
             <span
               key={idx}
-              className="px-3 sm:px-4 py-1.5 bg-[#E2E8F0] dark:bg-gray-700 text-slate-700 dark:text-slate-200 text-[10px] sm:text-xs font-bold rounded-md"
+              className="px-3 sm:px-4 py-1.5 bg-[#E2E8F0] dark:bg-gray-700 text-slate-700 dark:text-slate-200 text-xs font-bold rounded-md"
             >
               {role}
             </span>
           ))}
         </div>
 
-        {/* Profile Completion Bar - ปรับให้ stack บนมือถือ */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 mb-8 sm:mb-10">
+        {/* Profile Completion — always inline */}
+        <div className="flex flex-row items-center gap-4 mb-4">
           <span className="text-sm font-bold text-slate-900 dark:text-slate-100">
             Profile Completion:
           </span>
@@ -213,7 +213,8 @@ export default function PersonalInfoCard({
 
         {/* AI Validation Status Card */}
         <div className="bg-white dark:bg-gray-900/50 border border-slate-200 dark:border-gray-700 rounded-xl overflow-hidden shadow-sm transition-colors">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center px-4 sm:px-6 py-4 border-b border-slate-100 dark:border-gray-700 gap-3">
+          {/* Header — always row, badge always top-right */}
+          <div className="flex flex-row justify-between items-center px-4 sm:px-6 py-4 border-b border-slate-100 dark:border-gray-700">
             <h3 className="font-bold text-slate-800 dark:text-slate-100">AI Validation Status</h3>
             <span className={`flex items-center gap-1.5 px-3 py-1 ${badge.bg} ${badge.text} border ${badge.border} rounded-full text-xs font-bold`}>
               {stats.badgeStatus === "Not Verified" ? <RedX /> : (
@@ -224,9 +225,9 @@ export default function PersonalInfoCard({
           </div>
 
           <div className="px-4 sm:px-6 pb-6 space-y-6 pt-4">
-            {/* Education Row */}
-            <div className="flex flex-col sm:flex-row items-start gap-2 sm:gap-4">
-              <span className="w-20 text-slate-400 dark:text-slate-500 font-bold text-[10px] sm:text-xs uppercase pt-0.5">Education</span>
+            {/* Education Row — always inline */}
+            <div className="flex flex-row items-center gap-4">
+              <span className="w-20 text-slate-400 dark:text-slate-500 font-bold text-xs uppercase flex-shrink-0">Education</span>
               <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200 font-medium">
                 {stats.educationVerified ? <><GreenCheck /> Verified</> : <><RedX /> Not Verified</>}
               </div>
@@ -235,8 +236,8 @@ export default function PersonalInfoCard({
             <hr className="border-slate-100 dark:border-gray-700" />
 
             {/* Skills Row */}
-            <div className="flex flex-col sm:flex-row items-start gap-2 sm:gap-4">
-              <span className="w-20 text-slate-400 dark:text-slate-500 font-bold text-[10px] sm:text-xs uppercase pt-0.5">Skills</span>
+            <div className="flex flex-row items-start gap-4">
+              <span className="w-20 text-slate-400 dark:text-slate-500 font-bold text-xs uppercase flex-shrink-0">Skills</span>
               <div className="space-y-3 sm:space-y-2">
                 <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200 font-medium"><GreenCheck /> {stats.verifiedSkillTest} Verified By Skill Test</div>
                 <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200 font-medium"><YellowCheck /> {stats.verifiedCertificate} Evidence By Certificate</div>
@@ -248,8 +249,8 @@ export default function PersonalInfoCard({
             <hr className="border-slate-100 dark:border-gray-700" />
 
             {/* Project Row */}
-            <div className="flex flex-col sm:flex-row items-start gap-2 sm:gap-4">
-              <span className="w-20 text-slate-400 dark:text-slate-500 font-bold text-[10px] sm:text-xs uppercase pt-0.5">Project</span>
+            <div className="flex flex-row items-start gap-4">
+              <span className="w-20 text-slate-400 dark:text-slate-500 font-bold text-xs uppercase flex-shrink-0">Project</span>
               <div className="space-y-3 sm:space-y-2">
                 <div className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-200 font-medium"><GreenCheck /> {stats.projectUploaded} File Uploaded</div>
                 <div className="flex items-center gap-2 text-sm text-slate-400 dark:text-slate-500"><RedX /> {stats.projectNoFile} No File Uploaded</div>
