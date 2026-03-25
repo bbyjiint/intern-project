@@ -273,28 +273,28 @@ export default function FindCompaniesPage() {
           <div className="max-w-6xl mx-auto">
             
             {/* Search Bar & Mobile Filter Toggle */}
-            <div className="flex flex-col-reverse md:flex-row gap-4 mb-8 md:mb-12">
-              {/* Mobile Filter Button */}
-              <button 
-                onClick={() => setIsSidebarOpen(true)}
-                className="lg:hidden flex items-center justify-center gap-2 w-full py-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl text-slate-600 dark:text-slate-300 font-bold shadow-sm active:scale-[0.98] transition-all"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
-                Filters & Sorting
-              </button>
-
-              <div className="relative w-full group">
-                <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
-                  <svg className="w-5 h-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <div className="flex flex-row gap-2 md:gap-4 mb-8 md:mb-12">
+              <div className="relative flex-1 group">
+                <div className="absolute inset-y-0 left-4 md:left-5 flex items-center pointer-events-none">
+                  <svg className="w-4 h-4 md:w-5 md:h-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </div>
                 <input
                   type="text"
-                  placeholder="Search roles, companies, or keywords..."
+                  placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-14 pr-6 py-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl shadow-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-slate-700 dark:text-slate-200 font-medium transition-all"
+                  className="w-full pl-10 md:pl-14 pr-4 md:pr-6 py-3 md:py-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl md:rounded-2xl shadow-sm focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-sm md:text-base text-slate-700 dark:text-slate-200 font-medium transition-all"
                 />
               </div>
+
+              {/* Mobile Filter Button - Visible only on mobile/tablet */}
+              <button 
+                onClick={() => setIsSidebarOpen(true)}
+                className="lg:hidden flex items-center justify-center gap-2 px-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl text-slate-600 dark:text-slate-300 font-bold shadow-sm active:scale-[0.98] transition-all"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" /></svg>
+                <span className="hidden sm:inline">Filter</span>
+              </button>
             </div>
 
             <div className="flex items-center justify-between mb-8">

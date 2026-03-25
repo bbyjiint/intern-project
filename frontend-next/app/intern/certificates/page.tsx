@@ -182,11 +182,9 @@ export default function CertificatesPage() {
       <InternNavbar />
 
       <div className="flex flex-1 relative overflow-hidden">
-        {/* Sidebar with Mobile Support */}
         <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
         <main className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-10">
-          {/* Floating Action Button for Mobile Sidebar */}
           <button 
             onClick={() => setIsSidebarOpen(true)}
             className="lg:hidden fixed bottom-6 right-6 z-50 w-14 h-14 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full flex items-center justify-center shadow-2xl text-slate-600 dark:text-slate-300 hover:scale-110 active:scale-95 transition-all"
@@ -202,11 +200,9 @@ export default function CertificatesPage() {
             </div>
           ) : (
             <>
-              {/* Header Section */}
+              {/* Header Section - Adjusted for Responsive Alignment */}
               <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-8 md:mb-10 gap-6">
                 <div className="text-left">
-                  {/* Portfolio Badge for Mobile */}
-                  
                   <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">
                     Certificates
                   </h1>
@@ -215,8 +211,9 @@ export default function CertificatesPage() {
                   </p>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto">
-                  <div className="relative w-full sm:w-72">
+                {/* Search & Add Button Container - Same line on mobile */}
+                <div className="flex items-center gap-3 w-full lg:w-auto">
+                  <div className="relative flex-1 lg:w-72">
                     <svg
                       className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 transform -translate-y-1/2"
                       fill="none"
@@ -236,9 +233,11 @@ export default function CertificatesPage() {
                   </div>
                   <button
                     onClick={handleAddClick}
-                    className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 active:scale-95 text-sm"
+                    className="shrink-0 px-4 sm:px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 active:scale-95 text-sm"
                   >
-                    <span>+</span> Add Certificate
+                    <span>+</span> 
+                    <span className="hidden sm:inline">Add Certificate</span>
+                    <span className="inline sm:hidden">Add</span>
                   </button>
                 </div>
               </div>

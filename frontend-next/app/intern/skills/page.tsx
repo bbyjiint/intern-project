@@ -252,13 +252,27 @@ export default function SkillsPage() {
                   </div>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center gap-3">
-                  <div className="relative w-full sm:flex-1">
+                {/* Search & Add Button Row */}
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="relative flex-1">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                    <input type="text" placeholder="Search skills..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-12 pr-4 py-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/10 transition-all shadow-sm" />
+                    <input 
+                      type="text" 
+                      placeholder="Search skills..." 
+                      value={searchQuery} 
+                      onChange={(e) => setSearchQuery(e.target.value)} 
+                      className="w-full pl-11 sm:pl-12 pr-4 py-3 sm:py-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs sm:text-sm font-bold outline-none focus:ring-4 focus:ring-blue-500/10 transition-all shadow-sm" 
+                    />
                   </div>
-                  <button onClick={() => { setEditingSkill(null); setIsModalOpen(true); }} className="w-full sm:w-auto px-8 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 active:scale-95 transition-all">
-                    <Plus size={20} strokeWidth={3} /> Add Skill
+                  <button 
+                    onClick={() => { setEditingSkill(null); setIsModalOpen(true); }} 
+                    className="shrink-0 px-4 sm:px-8 py-3 sm:py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black rounded-2xl flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 active:scale-95 transition-all"
+                  >
+                    <Plus size={18} strokeWidth={3} className="sm:w-5 sm:h-5" /> 
+                    <span className="text-[10px] sm:text-base uppercase sm:normal-case tracking-widest sm:tracking-normal">
+                      <span className="hidden sm:inline">Add Skill</span>
+                      <span className="sm:hidden">Add</span>
+                    </span>
                   </button>
                 </div>
               </div>
@@ -369,11 +383,10 @@ export default function SkillsPage() {
             <Menu size={24} className="animate-in fade-in zoom-in duration-300" />
           )}
         </div>
-        {/* Glow effect */}
         <div className="absolute inset-0 rounded-full bg-blue-500/5 group-hover:bg-blue-500/10 transition-colors" />
       </button>
 
-      {/* Modals เดิม */}
+      {/* Modals */}
       <SkillsModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onSave={async (s) => { 
         const payload = { ...s, category: s.category === "Technical Skill" ? "TECHNICAL" : "BUSINESS" }; 
         const method = editingSkill?.id ? "PUT" : "POST"; 

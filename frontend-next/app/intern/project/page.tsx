@@ -104,7 +104,6 @@ export default function ProjectPage() {
   const [projectToDelete, setProjectToDelete] = useState<{ id: string; title: string } | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   
-  // State สำหรับควบคุม Sidebar บนมือถือ
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
@@ -198,7 +197,6 @@ export default function ProjectPage() {
         
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-10 relative custom-scrollbar">
           
-          {/* FAB: Floating Action Button สำหรับเปิด Sidebar บน Mobile */}
           <button 
             onClick={() => setIsSidebarOpen(true)}
             className="lg:hidden fixed bottom-6 right-6 z-[100] w-14 h-14 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.2)] flex items-center justify-center active:scale-90 transition-all border border-slate-100 dark:border-slate-700"
@@ -206,7 +204,7 @@ export default function ProjectPage() {
             <Menu size={28} strokeWidth={2.5} />
           </button>
 
-          {/* Header Section */}
+          {/* Header Section - ปรับโครงสร้างเพื่อรองรับ Row ในโหมดมือถือ */}
           <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-8 sm:mb-10 gap-6">
             <div className="flex flex-col gap-2">
               <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">Projects</h1>
@@ -215,26 +213,27 @@ export default function ProjectPage() {
               </p>
             </div>
             
-            <div className="flex flex-col sm:flex-row items-center gap-3">
-              <div className="relative w-full sm:w-72">
+            {/* Search & Add Button - ปรับเป็น flex-row ในมือถือ และขยับ gap */}
+            <div className="flex flex-row items-center gap-2 sm:gap-3">
+              <div className="relative flex-1 sm:w-72 sm:flex-none">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
                 <input
                   type="text"
-                  placeholder="Search projects..."
+                  placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none dark:text-white transition-all"
                 />
               </div>
               <button
-                className="w-full sm:w-auto px-6 py-3 sm:py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 transition-all active:scale-95 text-sm"
+                className="w-auto px-3 sm:px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl flex items-center justify-center gap-1 sm:gap-2 shadow-lg shadow-blue-600/20 transition-all active:scale-95 text-sm whitespace-nowrap"
                 onClick={() => {
                   setCurrentProject(null);
                   setIsModalOpen(true);
                 }}
               >
                 <Plus size={18} strokeWidth={3} />
-                Add Project
+                <span>Add <span className="hidden sm:inline">Project</span></span>
               </button>
             </div>
           </div>
@@ -356,7 +355,6 @@ export default function ProjectPage() {
             ))}
           </div>
 
-          {/* ระยะห่างด้านล่างสำหรับ FAB */}
           <div className="h-24 lg:hidden" />
 
         </main>
