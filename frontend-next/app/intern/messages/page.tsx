@@ -55,18 +55,6 @@ function formatTime(date: Date): string {
   return date.toLocaleDateString()
 }
 
-const CompanyLogo = ({ logo, name }: { logo?: string; name?: string }) => (
-  <div className="w-10 h-10 rounded-full border border-gray-200 dark:border-slate-700 flex items-center justify-center overflow-hidden bg-gray-50 dark:bg-slate-800 flex-shrink-0">
-    {logo ? (
-      <img src={logo} alt={name} className="w-10 h-10 rounded-full object-cover" />
-    ) : (
-      <span className="text-sm font-bold text-white bg-[#1C2D4F] w-full h-full flex items-center justify-center">
-        {name?.substring(0, 2).toUpperCase() || 'CO'}
-      </span>
-    )}
-  </div>
-)
-
 export default function InternMessagesPage() {
   const router = useRouter()
   const [conversations, setConversations] = useState<Conversation[]>([])
@@ -74,6 +62,10 @@ export default function InternMessagesPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [newMessage, setNewMessage] = useState('')
   const [loading, setLoading] = useState(true)
+  
+  // Responsive State
+  const [showChatMobile, setShowChatMobile] = useState(false)
+  
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const selectedConversationRef = useRef<Conversation | null>(null)
 
@@ -111,7 +103,9 @@ export default function InternMessagesPage() {
             return { ...conv, messages: existingConversation?.messages || [] }
           })
         )
-        if (converted.length > 0 && !selectedConversationRef.current) {
+        
+        // บน Desktop เท่านั้นที่ให้เลือกแชทแรกอัตโนมัติ
+        if (window.innerWidth >= 1024 && converted.length > 0 && !selectedConversationRef.current) {
           setSelectedConversation(converted[0])
         }
         setLoading(false)
@@ -228,22 +222,30 @@ export default function InternMessagesPage() {
     return name.substring(0, 2).toUpperCase()
   }
 
+  const selectConversation = (conv: Conversation) => {
+    setSelectedConversation(conv)
+    setShowChatMobile(true) // เปิดหน้าแชทบนมือถือ
+  }
+
   return (
-    <div className="min-h-screen bg-[#E6EBF4] dark:bg-gray-950 flex flex-col transition-colors duration-300">
+    <div className="min-h-screen bg-[#E6EBF4] dark:bg-gray-950 flex flex-col transition-colors duration-300 overflow-hidden">
       <InternNavbar />
       
-      <div className="layout-container flex h-[calc(100vh-4rem)] w-full py-6">
+      <div className="flex-1 flex w-full max-w-7xl mx-auto lg:py-6 lg:px-4 h-[calc(100vh-4rem)] overflow-hidden">
         
         {/* --- Left Sidebar - Conversation List --- */}
-        <div className="flex w-80 flex-col rounded-l-2xl border border-r-0 border-gray-200 bg-white transition-colors dark:border-slate-800 dark:bg-slate-900">
-          <div className="border-b border-gray-200 p-6 dark:border-slate-800">
+        <div className={`
+          ${showChatMobile ? 'hidden lg:flex' : 'flex'} 
+          w-full lg:w-80 flex-col lg:rounded-l-2xl border-r border-gray-200 bg-white transition-colors dark:border-slate-800 dark:bg-slate-900
+        `}>
+          <div className="border-b border-gray-200 p-4 lg:p-6 dark:border-slate-800">
             <div className="flex items-center gap-3 mb-4">
               <Link href="/intern/find-companies" className="text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-white transition-colors">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
               </Link>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Messages</h1>
+              <h1 className="text-xl lg:text-2xl font-bold text-gray-900 dark:text-white">Messages</h1>
             </div>
             
             <div className="relative">
@@ -252,9 +254,9 @@ export default function InternMessagesPage() {
                 placeholder="Search conversations..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 pl-10 text-slate-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-gray-500"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 pl-10 text-sm text-slate-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
               />
-              <svg className="absolute left-3 top-2.5 h-5 w-5 text-gray-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="absolute left-3 top-2.5 h-4 w-4 text-gray-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
@@ -262,12 +264,12 @@ export default function InternMessagesPage() {
 
           <div className="flex-1 overflow-y-auto">
             {filteredConversations.length === 0 ? (
-              <div className="p-6 text-center text-gray-500 dark:text-slate-400">No conversations found</div>
+              <div className="p-6 text-center text-gray-500 dark:text-slate-400 text-sm">No conversations found</div>
             ) : (
               filteredConversations.map((conv) => (
                 <div
                   key={conv.id}
-                  onClick={() => setSelectedConversation(conv)}
+                  onClick={() => selectConversation(conv)}
                   className={`cursor-pointer border-b border-gray-100 p-4 transition-colors hover:bg-gray-50 dark:border-slate-800 dark:hover:bg-slate-800 ${
                     selectedConversation?.id === conv.id ? 'bg-blue-50 dark:bg-slate-800' : ''
                   }`}
@@ -291,9 +293,9 @@ export default function InternMessagesPage() {
                           <span className="w-2 h-2 bg-red-500 rounded-full flex-shrink-0"></span>
                         )}
                       </div>
-                      <p className="text-xs text-blue-600 dark:text-blue-400 font-medium truncate mb-1">{conv.jobTitle}</p>
-                      <p className="mb-1 truncate text-sm text-gray-600 dark:text-slate-300">{conv.lastMessage}</p>
-                      <p className="text-xs text-gray-500 dark:text-slate-500">{formatTime(conv.lastMessageTime)}</p>
+                      <p className="text-[11px] text-blue-600 dark:text-blue-400 font-medium truncate mb-1">{conv.jobTitle}</p>
+                      <p className="mb-1 truncate text-xs text-gray-600 dark:text-slate-300">{conv.lastMessage}</p>
+                      <p className="text-[10px] text-gray-500 dark:text-slate-500">{formatTime(conv.lastMessageTime)}</p>
                     </div>
                   </div>
                 </div>
@@ -303,29 +305,37 @@ export default function InternMessagesPage() {
         </div>
 
         {/* --- Main Chat Area --- */}
-        <div className="flex flex-1 flex-col rounded-r-2xl border border-gray-200 bg-white transition-colors dark:border-slate-800 dark:bg-slate-900">
+        <div className={`
+          ${!showChatMobile ? 'hidden lg:flex' : 'flex'} 
+          flex-1 flex-col lg:rounded-r-2xl bg-white transition-colors dark:bg-slate-900 border-l border-gray-200 dark:border-slate-800
+        `}>
           {loading ? (
             <div className="flex flex-1 items-center justify-center text-gray-500 dark:text-slate-400">
               <div className="text-center">
-                <div className="mx-auto mb-4 h-16 w-16 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600 dark:border-slate-800 dark:border-t-blue-500"></div>
-                <p className="text-lg">Loading messages...</p>
+                <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600 dark:border-slate-800"></div>
+                <p className="text-sm">Loading messages...</p>
               </div>
             </div>
           ) : selectedConversation ? (
             <>
               {/* Chat Header */}
-              <div className="flex items-center justify-between border-b border-gray-200 p-4 dark:border-slate-800">
+              <div className="flex items-center justify-between border-b border-gray-200 p-3 lg:p-4 dark:border-slate-800 shadow-sm">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold overflow-hidden bg-blue-600">
+                  {/* Back button for mobile */}
+                  <button onClick={() => setShowChatMobile(false)} className="lg:hidden p-1 text-gray-500">
+                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                  </button>
+
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center text-white font-semibold overflow-hidden bg-blue-600 flex-shrink-0">
                     {selectedConversation.companyLogo ? (
                       <img src={selectedConversation.companyLogo} alt={selectedConversation.companyName} className="w-full h-full object-cover" />
                     ) : (
                       getCompanyInitials(selectedConversation.companyName)
                     )}
                   </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white leading-tight">{selectedConversation.companyName}</h2>
-                    <p className="text-xs text-green-500 font-medium flex items-center gap-1 mt-0.5">
+                  <div className="min-w-0">
+                    <h2 className="text-sm lg:text-base font-bold text-gray-900 dark:text-white truncate">{selectedConversation.companyName}</h2>
+                    <p className="text-[10px] text-green-500 font-medium flex items-center gap-1">
                       <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> Online
                     </p>
                   </div>
@@ -333,15 +343,13 @@ export default function InternMessagesPage() {
               </div>
 
               {/* Messages Area */}
-              <div className="flex-1 overflow-y-auto bg-gray-50 p-6 transition-colors dark:bg-gray-950">
+              <div className="flex-1 overflow-y-auto bg-gray-50 p-4 lg:p-6 transition-colors dark:bg-gray-950">
                 <div className="space-y-4">
                   {selectedConversation.messages?.map((msg) => {
-                    const isCurrentUser = !msg.isCompany // ฝั่ง Intern (User) เป็นคนส่ง
+                    const isCurrentUser = !msg.isCompany 
                     return (
-                      <div key={msg.id} className={`flex items-start space-x-3 ${isCurrentUser ? 'flex-row-reverse space-x-reverse' : ''}`}>
-                        
-                        {/* รูปหรือตัวย่อของคนส่งข้อความ */}
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0 overflow-hidden ${
+                      <div key={msg.id} className={`flex items-start space-x-2 ${isCurrentUser ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-semibold flex-shrink-0 overflow-hidden ${
                             isCurrentUser ? 'bg-blue-600' : 'bg-gray-400'
                           }`}
                         >
@@ -352,16 +360,15 @@ export default function InternMessagesPage() {
                           )}
                         </div>
 
-                        {/* กล่องข้อความ */}
                         <div className={`flex-1 ${isCurrentUser ? 'flex justify-end' : ''}`}>
-                          <div className={`inline-block max-w-[70%] rounded-lg px-4 py-2 ${
+                          <div className={`inline-block max-w-[85%] lg:max-w-[70%] rounded-2xl px-4 py-2 shadow-sm ${
                               isCurrentUser
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-white border border-gray-200 text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white'
+                                ? 'bg-blue-600 text-white rounded-tr-none'
+                                : 'bg-white border border-gray-100 text-gray-900 dark:border-slate-800 dark:bg-slate-800 dark:text-white rounded-tl-none'
                             }`}
                           >
-                            <p className="text-sm leading-relaxed">{msg.text}</p>
-                            <p className={`text-xs mt-1 ${isCurrentUser ? 'text-blue-100' : 'text-gray-500 dark:text-slate-500'}`}>
+                            <p className="text-sm leading-relaxed break-words">{msg.text}</p>
+                            <p className={`text-[9px] mt-1 text-right ${isCurrentUser ? 'text-blue-100' : 'text-gray-400'}`}>
                               {formatTime(msg.timestamp)}
                             </p>
                           </div>
@@ -374,8 +381,8 @@ export default function InternMessagesPage() {
               </div>
 
               {/* Message Input Area */}
-              <div className="border-t border-gray-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                <div className="flex items-center space-x-4">
+              <div className="border-t border-gray-200 bg-white p-3 lg:p-4 dark:border-slate-800 dark:bg-slate-900">
+                <div className="flex items-center space-x-2 lg:space-x-4">
                   <input
                     type="text"
                     value={newMessage}
@@ -387,25 +394,29 @@ export default function InternMessagesPage() {
                       }
                     }}
                     placeholder="Type a message..."
-                    className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-slate-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-gray-500"
+                    className="flex-1 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-slate-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
                   />
                   <button
                     onClick={handleSendMessage}
                     disabled={!newMessage.trim()}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="p-2 lg:px-6 lg:py-2 bg-blue-600 text-white rounded-full font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50"
                   >
-                    Send
+                    <span className="hidden lg:inline">Send</span>
+                    <svg className="w-5 h-5 lg:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
                   </button>
                 </div>
               </div>
             </>
           ) : (
-            <div className="flex flex-1 items-center justify-center text-gray-500 dark:text-slate-400">
+            <div className="flex flex-1 items-center justify-center text-gray-500 dark:text-slate-400 px-6">
               <div className="text-center">
-                <svg className="mx-auto mb-4 h-16 w-16 text-gray-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-                <p className="text-lg">Select a conversation to start messaging</p>
+                <div className="w-20 h-20 bg-gray-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="h-10 w-10 text-gray-400 dark:text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                </div>
+                <p className="text-base lg:text-lg font-medium">Select a conversation</p>
+                <p className="text-xs lg:text-sm text-gray-400 mt-1">Choose a company to start chatting</p>
               </div>
             </div>
           )}
