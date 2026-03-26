@@ -135,7 +135,7 @@ export default function ProjectsSection({
     name: "",
   });
 
-  const displayedProjects = projects.slice(0, 3);
+  const displayedProjects = projects.slice(0, 2);
 
   const handleOpenUpload = (project: any) => {
     setSelectedProject({
@@ -351,15 +351,15 @@ export default function ProjectsSection({
       )}
 
       {/* View All Link */}
-      {projects.length > 3 && (
-        <div className="mt-10 text-center">
+      {projects.length > 2 && (
+        <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
           <Link
             href="/intern/project"
-            className="inline-flex items-center gap-3 text-blue-600 dark:text-blue-400 font-black hover:gap-5 transition-all text-sm group"
+            className="text-blue-600 dark:text-blue-400 font-black text-[10px] sm:text-xs uppercase tracking-widest inline-flex items-center gap-2 hover:gap-3 transition-all group"
           >
-            VIEW ALL PROJECTS ({projects.length})
+            View all projects
             <svg
-              className="w-5 h-5 group-hover:translate-x-1 transition-transform"
+              className="w-4 h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -368,7 +368,7 @@ export default function ProjectsSection({
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={3}
-                d="M13 7l5 5m0 0l-5 5m5-5H6"
+                d="M17 8l4 4m0 0l-4 4m4-4H3"
               />
             </svg>
           </Link>

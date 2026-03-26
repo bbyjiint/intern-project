@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import CertificatesModal, { ModalCertificate } from "./CertificatesModal";
 import { useProfile } from "@/hooks/useProfile";
 import { apiFetch } from "@/lib/api";
+import Link from "next/link";
 
 export interface Certificate {
   id: string;
@@ -132,6 +133,8 @@ export default function CertificateSection() {
     }
   }, [profileData]);
 
+  const displayedCertifaces = certificates.slice(0, 3);
+
   const handleConfirmDelete = async () => {
     try {
       setIsDeletingLoading(true);
@@ -214,7 +217,7 @@ export default function CertificateSection() {
             </p>
           </div>
         ) : (
-          certificates.map((cert) => (
+          displayedCertifaces.map((cert) => (
             <div
               key={cert.id}
               className="group bg-white dark:bg-slate-800/30 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 sm:p-6 hover:border-blue-200 dark:hover:border-blue-900 hover:bg-gray-50/30 dark:hover:bg-gray-800/30 transition-all duration-300"
@@ -304,6 +307,30 @@ export default function CertificateSection() {
               </div>
             </div>
           ))
+        )}
+
+        {certificates.length > 3 && (
+        <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800">
+          <Link
+            href="/intern/certificates"
+            className="text-blue-600 dark:text-blue-400 font-black text-[10px] sm:text-xs uppercase tracking-widest inline-flex items-center gap-2 hover:gap-3 transition-all group"
+          >
+            View all certificates
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={3}
+                d="M17 8l4 4m0 0l-4 4m4-4H3"
+              />
+            </svg>
+          </Link>
+        </div>
         )}
       </div>
 

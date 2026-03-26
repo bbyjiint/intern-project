@@ -278,7 +278,7 @@ export default function EducationSection({
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex items-center justify-between gap-3 mt-6 pt-4 border-t border-gray-50 dark:border-gray-800">
+                <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-gray-50 dark:border-gray-800">
                   {/* Delete Button */}
                   <button
                     onClick={() =>
