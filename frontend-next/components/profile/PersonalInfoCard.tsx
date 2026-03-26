@@ -152,7 +152,7 @@ export default function PersonalInfoCard({
         <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6 mb-6">
           {hasProfileImage ? (
             <img
-              src={profile.profileImage!.startsWith("http") ? profile.profileImage! : `http://localhost:5001${profile.profileImage}`}
+              src={profile.profileImage!.startsWith("http") ? profile.profileImage! : `http://localhost:5000${profile.profileImage}`}
               alt="Profile"
               className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover shadow-sm bg-slate-50 dark:bg-gray-700 flex-shrink-0 border-2 border-white dark:border-gray-600"
             />

@@ -6,6 +6,7 @@
     "schema": "prisma/schema.prisma"
   },
   "scripts": {
+    "predev": "npx prisma generate --config=./prisma.config.ts",
     "dev": "tsx watch src/utils/server.ts",
     "build": "tsc",
     "start": "node dist/utils/server.js",

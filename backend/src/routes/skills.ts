@@ -17,7 +17,6 @@ skillsRouter.get("/", async (req, res) => {
       select: {
         id: true,
         name: true,
-        category: true,
       },
       orderBy: { name: "asc" },
       // Limit to 200 for search results, no limit for initial load

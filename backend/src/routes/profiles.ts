@@ -8,6 +8,41 @@ import { randomUUID } from "crypto";
 
 export const profilesRouter = Router();
 
+/** Empty → null; keeps DB tidy */
+function nullableCompanyString(v: unknown): string | null {
+  if (v === undefined || v === null) return null;
+  const s = String(v).trim();
+  return s === "" ? null : s;
+}
+
+/**
+ * Persist businessType / companySize via raw SQL so PUT works even when the running
+ * Prisma Client was generated before those columns existed (avoids "Unknown argument businessType").
+ */
+async function patchCompanyTypeAndSize(
+  userId: string,
+  businessType: unknown,
+  companySize: unknown,
+  previous: { businessType?: string | null; companySize?: string | null } | null,
+) {
+  if (businessType === undefined && companySize === undefined) return;
+
+  const bt =
+    businessType !== undefined
+      ? nullableCompanyString(businessType)
+      : (previous?.businessType ?? null);
+  const cs =
+    companySize !== undefined
+      ? nullableCompanyString(companySize)
+      : (previous?.companySize ?? null);
+
+  await prisma.$executeRaw`
+    UPDATE "CompanyProfile"
+    SET "businessType" = ${bt}, "companySize" = ${cs}
+    WHERE "userId" = ${userId}
+  `;
+}
+
 function normalizeEducationLevel(value: unknown): string {
   const normalized = String(value || "").trim().toUpperCase().replace(/[^A-Z_]/g, "");
 
@@ -583,12 +618,15 @@ profilesRouter.put("/companies/profile", requireAuth, requireRole("COMPANY"), as
     const normalizedSubdistrictId = subdistrictId !== undefined ? (subdistrictId && subdistrictId.trim() !== "" ? subdistrictId.trim() : null) : undefined;
 
     if (companyProfile) {
-      // Update existing profile
+      const previousTypeSize = {
+        businessType: (companyProfile as { businessType?: string | null }).businessType ?? null,
+        companySize: (companyProfile as { companySize?: string | null }).companySize ?? null,
+      };
+
+      // Update existing profile (businessType / companySize patched via SQL — see patchCompanyTypeAndSize)
       const updateData: any = {
         companyName: companyName !== undefined ? companyName : companyProfile.companyName,
         about: companyDescription !== undefined ? companyDescription : companyProfile.about,
-        businessType: businessType !== undefined ? businessType : companyProfile.businessType,
-        companySize: companySize !== undefined ? companySize : companyProfile.companySize,
         addressDetails: addressDetails !== undefined ? addressDetails : companyProfile.addressDetails,
         postcode: postcode !== undefined ? postcode : companyProfile.postcode,
         recruiterName: contactName !== undefined ? contactName : companyProfile.recruiterName,
@@ -628,6 +666,8 @@ profilesRouter.put("/companies/profile", requireAuth, requireRole("COMPANY"), as
         data: updateData,
       });
 
+      await patchCompanyTypeAndSize(userId, businessType, companySize, previousTypeSize);
+
       console.log('✅ CompanyProfile updated successfully:', companyProfile.id);
       console.log('✅ Saved provinceId:', companyProfile.provinceId);
       console.log('✅ Saved districtId:', companyProfile.districtId);
@@ -640,8 +680,6 @@ profilesRouter.put("/companies/profile", requireAuth, requireRole("COMPANY"), as
           userId,
           companyName: companyName || "Company",
           about: companyDescription || undefined,
-          businessType: businessType || undefined,
-          companySize: companySize || undefined,
           addressDetails: addressDetails || undefined,
           // Store the normalized IDs - these are the source of truth
           provinceId: normalizedProvinceId ?? null,
@@ -654,6 +692,16 @@ profilesRouter.put("/companies/profile", requireAuth, requireRole("COMPANY"), as
           updatedAt: new Date(),
         },
       });
+
+      await patchCompanyTypeAndSize(userId, businessType, companySize, null);
+    }
+
+    companyProfile = await prisma.companyProfile.findUnique({
+      where: { userId },
+    });
+
+    if (!companyProfile) {
+      return res.status(500).json({ error: "Company profile missing after save" });
     }
 
     // Handle company email
