@@ -236,6 +236,9 @@ jobPostsRouter.get("/job-posts/public", async (req, res) => {
             User: { select: { email: true } },
           },
         },
+        LocationProvince: {
+          select: { name: true }
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -266,7 +269,7 @@ jobPostsRouter.get("/job-posts/public", async (req, res) => {
         companyName,
         companyEmail: post.Company?.CompanyEmails?.[0]?.email || post.Company?.User?.email || "",
         companyLogo,
-        location: post.locationProvince || "Location not specified",
+        location: post.locationProvince || post.LocationProvince?.name || "-",
         workType: formatWorkplaceType(post.workplaceType),
         positionsAvailable: post.positionsAvailable || 0,
         positions: Array.isArray(post.positions) ? post.positions : [],
