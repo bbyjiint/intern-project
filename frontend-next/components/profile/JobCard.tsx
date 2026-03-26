@@ -61,10 +61,8 @@ export default function JobCard({
 
   return (
     <div
-      className={`group relative flex h-full min-h-[274px] flex-col rounded-[12px] bg-white dark:bg-slate-800 px-[20px] py-[18px] shadow-sm border border-slate-100 dark:border-slate-700 transition-all duration-300 ${
-        onClick
-          ? "cursor-pointer hover:border-blue-200 dark:hover:border-blue-900/50 hover:shadow-md hover:-translate-y-0.5"
-          : ""
+      className={`group relative flex h-full min-h-[274px] flex-col rounded-[12px] bg-white dark:bg-slate-800 px-[20px] py-[18px] shadow-sm border border-slate-100 dark:border-slate-700 transition-shadow duration-200 hover:shadow-[0_0px_15px_rgba(0,0,0,0.10)] ${
+        onClick ? "cursor-pointer" : ""
       }`}
       onClick={() => onClick && onClick(job.id)}
     >
@@ -133,7 +131,7 @@ export default function JobCard({
       </div>
 
       {/* Job Title */}
-      <h2 className="mb-[10px] text-[17px] font-bold leading-snug text-slate-900 dark:text-white group-hover:text-[#0273B1] dark:group-hover:text-sky-400 transition-colors">
+      <h2 className="mb-[10px] text-[17px] font-bold leading-snug text-slate-900 dark:text-white">
         {job.jobTitle}
       </h2>
 
@@ -164,24 +162,24 @@ export default function JobCard({
 
       {/* Details Grid */}
       <div className="grid grid-cols-[130px_1fr] gap-y-[10px] items-baseline">
-        <span className="text-[12px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider">
-          Location
+        <span className="text-[12px] text-[#7C869A] dark:text-[#7f7f7f]">
+          Preferred
         </span>
-        <span className="text-[13px] font-medium text-slate-700 dark:text-slate-300">
+        <span className="text-[13px] font-semibold text-[#111827] dark:text-[#e5e7eb]">
           {job.location}
         </span>
 
-        <span className="text-[12px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+        <span className="text-[12px] text-[#7C869A] dark:text-[#7f7f7f]">
           Applicants
         </span>
-        <span className="text-[13px] font-medium text-slate-700 dark:text-slate-300">
+        <span className="text-[13px] font-semibold text-[#111827] dark:text-[#e5e7eb]">
           {job.applicants} Persons
         </span>
 
-        <span className="text-[12px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+        <span className="text-[12px] text-[#7C869A] dark:text-[#7f7f7f]">
           Allowance
         </span>
-        <span className="text-[14px] font-bold text-sky-700 dark:text-sky-400 italic">
+        <span className="text-[13px] font-semibold text-[#111827] dark:text-[#e5e7eb]">
           {job.allowance}
         </span>
       </div>

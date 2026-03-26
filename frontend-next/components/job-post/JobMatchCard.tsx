@@ -94,7 +94,7 @@ export default function JobMatchCard({
   };
 
   return (
-    <div className="relative flex h-full min-h-[274px] flex-col rounded-[12px] bg-white dark:bg-slate-800 px-[20px] py-[18px] shadow-[0_2px_10px_rgba(15,23,42,0.05)]">
+    <div className="relative flex h-full min-h-[274px] flex-col rounded-[12px] bg-white dark:bg-slate-800 px-[20px] py-[18px] shadow-sm border border-slate-100 dark:border-slate-700 transition-shadow duration-200 hover:shadow-[0_0px_15px_rgba(0,0,0,0.10)] cursor-pointer">
       {/* Header */}
       <div className="mb-[9px] flex items-start justify-between gap-2">
         <div className="flex items-start gap-[14px]">

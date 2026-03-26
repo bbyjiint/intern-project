@@ -180,7 +180,7 @@ export default function InternAppliedPage() {
                 </div>
               ) : (
                 filteredApplications.map((application) => (
-                  <div key={application.id} className="transform transition-all active:scale-95 md:hover:scale-[1.02]">
+                  <div key={application.id} className="transition-all active:scale-95">
                     <JobCard
                       job={application}
                       onMenuClick={(id) => console.log("Menu ID:", id)}

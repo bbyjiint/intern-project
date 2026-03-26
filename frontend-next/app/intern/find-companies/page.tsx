@@ -49,7 +49,7 @@ export default function FindCompaniesPage() {
             companyName: post.companyName,
             companyEmail: post.companyEmail || "",
             companyLogo: post.companyLogo,
-            location: post.location || "Location not specified",
+            location: post.location || "-",
             workType: post.workType,
             roleType: "",
             positions: Array.isArray(post.positions) ? post.positions : [],
@@ -196,7 +196,6 @@ export default function FindCompaniesPage() {
         - Main: flex-1 overflow-y-auto
       */}
       <div className="flex-1 flex overflow-hidden relative">
-
         {/* ================= LEFT SIDEBAR (Filter) ================= */}
         <aside
           className={`
@@ -219,8 +218,18 @@ export default function FindCompaniesPage() {
               onClick={() => setIsFilterSidebarOpen(false)}
               className="p-2 text-slate-400 hover:text-slate-600"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -236,12 +245,24 @@ export default function FindCompaniesPage() {
               >
                 <option value="">All Positions</option>
                 {POSITION_OPTIONS.map((position) => (
-                  <option key={position} value={position}>{position}</option>
+                  <option key={position} value={position}>
+                    {position}
+                  </option>
                 ))}
               </select>
               <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 group-hover:text-blue-500 transition-colors">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.5}
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </div>
             </div>
@@ -252,11 +273,32 @@ export default function FindCompaniesPage() {
             <label className={labelStyles}>Work Format</label>
             <div className="space-y-4">
               {[
-                { id: "onSite",  label: "On-Site", type: "ON_SITE", color: "text-orange-600 bg-orange-50 dark:bg-orange-900/20 dark:text-orange-400" },
-                { id: "hybrid",  label: "Hybrid",  type: "HYBRID",  color: "text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400" },
-                { id: "remote",  label: "Remote",  type: "REMOTE",  color: "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 dark:text-emerald-400" },
+                {
+                  id: "onSite",
+                  label: "On-Site",
+                  type: "ON_SITE",
+                  color:
+                    "text-orange-600 bg-orange-50 dark:bg-orange-900/20 dark:text-orange-400",
+                },
+                {
+                  id: "hybrid",
+                  label: "Hybrid",
+                  type: "HYBRID",
+                  color:
+                    "text-blue-600 bg-blue-50 dark:bg-blue-900/20 dark:text-blue-400",
+                },
+                {
+                  id: "remote",
+                  label: "Remote",
+                  type: "REMOTE",
+                  color:
+                    "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 dark:text-emerald-400",
+                },
               ].map((format) => (
-                <label key={format.id} className="flex items-center justify-between group cursor-pointer">
+                <label
+                  key={format.id}
+                  className="flex items-center justify-between group cursor-pointer"
+                >
                   <div className="flex items-center gap-3">
                     <div
                       className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
@@ -265,23 +307,41 @@ export default function FindCompaniesPage() {
                           : "border-slate-300 dark:border-slate-600 bg-transparent"
                       }`}
                     >
-                      {formatFilters[format.id as keyof typeof formatFilters] && (
-                        <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      {formatFilters[
+                        format.id as keyof typeof formatFilters
+                      ] && (
+                        <svg
+                          className="w-4 h-4 text-white"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={3}
+                            d="M5 13l4 4L19 7"
+                          />
                         </svg>
                       )}
                     </div>
                     <input
                       type="checkbox"
                       className="hidden"
-                      checked={formatFilters[format.id as keyof typeof formatFilters]}
-                      onChange={() => toggleFormat(format.id as keyof typeof formatFilters)}
+                      checked={
+                        formatFilters[format.id as keyof typeof formatFilters]
+                      }
+                      onChange={() =>
+                        toggleFormat(format.id as keyof typeof formatFilters)
+                      }
                     />
                     <span className="text-sm font-bold text-slate-600 dark:text-slate-300 group-hover:text-blue-500 transition-colors">
                       {format.label}
                     </span>
                   </div>
-                  <span className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase ${format.color}`}>
+                  <span
+                    className={`text-[10px] font-black px-2.5 py-1 rounded-full uppercase ${format.color}`}
+                  >
                     {countWorkType(format.type)}
                   </span>
                 </label>
@@ -295,15 +355,26 @@ export default function FindCompaniesPage() {
             <div className="relative h-2 bg-slate-200 dark:bg-slate-800 rounded-full mb-10 mt-6">
               <div
                 className="absolute h-full bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"
-                style={{ left: `${minPercent}%`, right: `${100 - maxPercent}%` }}
+                style={{
+                  left: `${minPercent}%`,
+                  right: `${100 - maxPercent}%`,
+                }}
               />
               <input
-                type="range" min="0" max={SLIDER_MAX} step="500" value={currentMin}
+                type="range"
+                min="0"
+                max={SLIDER_MAX}
+                step="500"
+                value={currentMin}
                 onChange={handleMinSliderChange}
                 className="absolute w-full -top-1.5 appearance-none bg-transparent pointer-events-none z-20 slider-thumb-custom"
               />
               <input
-                type="range" min="0" max={SLIDER_MAX} step="500" value={currentMax}
+                type="range"
+                min="0"
+                max={SLIDER_MAX}
+                step="500"
+                value={currentMax}
                 onChange={handleMaxSliderChange}
                 className="absolute w-full -top-1.5 appearance-none bg-transparent pointer-events-none z-20 slider-thumb-custom"
               />
@@ -311,18 +382,24 @@ export default function FindCompaniesPage() {
 
             <div className="flex items-center gap-2 md:gap-3 mb-8">
               <div className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2 text-center">
-                <p className="text-[10px] font-bold text-slate-400 uppercase">Min</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase">
+                  Min
+                </p>
                 <input
-                  type="number" value={minSalary}
+                  type="number"
+                  value={minSalary}
                   onChange={(e) => setMinSalary(e.target.value)}
                   className="w-full bg-transparent text-sm font-black text-slate-700 dark:text-white outline-none text-center"
                 />
               </div>
               <span className="text-slate-400 font-bold">/</span>
               <div className="flex-1 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2 text-center">
-                <p className="text-[10px] font-bold text-slate-400 uppercase">Max</p>
+                <p className="text-[10px] font-bold text-slate-400 uppercase">
+                  Max
+                </p>
                 <input
-                  type="number" value={maxSalary}
+                  type="number"
+                  value={maxSalary}
                   onChange={(e) => setMaxSalary(e.target.value)}
                   className="w-full bg-transparent text-sm font-black text-slate-700 dark:text-white outline-none text-center"
                 />
@@ -361,7 +438,9 @@ export default function FindCompaniesPage() {
         <button
           onClick={() => setIsInternSidebarOpen(true)}
           className={`lg:hidden fixed bottom-6 right-6 z-[100] w-14 h-14 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.2)] flex items-center justify-center active:scale-90 border border-slate-100 dark:border-slate-700 transition-all duration-300 ${
-            isFilterSidebarOpen || isInternSidebarOpen ? "pointer-events-none" : ""
+            isFilterSidebarOpen || isInternSidebarOpen
+              ? "pointer-events-none"
+              : ""
           }`}
         >
           <Menu size={28} strokeWidth={2.5} />
@@ -376,9 +455,16 @@ export default function FindCompaniesPage() {
                 <div className="absolute inset-y-0 left-4 md:left-5 flex items-center pointer-events-none">
                   <svg
                     className="w-4 h-4 md:w-5 md:h-5 text-slate-400 group-focus-within:text-blue-500 transition-colors"
-                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2.5}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
                   </svg>
                 </div>
                 <input
@@ -395,8 +481,18 @@ export default function FindCompaniesPage() {
                 onClick={() => setIsFilterSidebarOpen(true)}
                 className="lg:hidden flex items-center justify-center gap-2 px-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl text-slate-600 dark:text-slate-300 font-bold shadow-sm active:scale-[0.98] transition-all"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.5}
+                    d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                  />
                 </svg>
                 <span className="hidden sm:inline">Filter</span>
               </button>
@@ -408,7 +504,9 @@ export default function FindCompaniesPage() {
                   "Fetching Opportunities..."
                 ) : (
                   <>
-                    <span className="text-blue-600 dark:text-blue-400">{filteredJobs.length}</span>{" "}
+                    <span className="text-blue-600 dark:text-blue-400">
+                      {filteredJobs.length}
+                    </span>{" "}
                     <span className="hidden sm:inline">Total Job Postings</span>
                     <span className="sm:hidden inline">Results</span>
                   </>
@@ -419,18 +517,35 @@ export default function FindCompaniesPage() {
             {isLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="h-64 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 animate-pulse" />
+                  <div
+                    key={i}
+                    className="h-64 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 animate-pulse"
+                  />
                 ))}
               </div>
             ) : filteredJobs.length === 0 ? (
               <div className="text-center py-24 md:py-32 bg-white dark:bg-slate-900 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800 px-4">
                 <div className="w-16 h-16 md:w-20 md:h-20 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-6 text-slate-300">
-                  <svg className="w-8 h-8 md:w-10 md:h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  <svg
+                    className="w-8 h-8 md:w-10 md:h-10"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
                   </svg>
                 </div>
-                <h3 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white mb-2">No matching jobs found</h3>
-                <p className="text-sm md:text-base text-slate-500 dark:text-slate-400">Try adjusting your filters or search terms.</p>
+                <h3 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white mb-2">
+                  No matching jobs found
+                </h3>
+                <p className="text-sm md:text-base text-slate-500 dark:text-slate-400">
+                  Try adjusting your filters or search terms.
+                </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">

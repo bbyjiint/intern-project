@@ -175,7 +175,7 @@ export default function JobMatchPage() {
             {!isFetchingJobs && !isRecalculating && jobs.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {jobs.map((job) => (
-                  <div key={job.id} className="transform transition-all duration-300 hover:-translate-y-1">
+                  <div key={job.id}>
                     <JobMatchCard
                       post={job}
                       onBookmark={handleBookmark}
