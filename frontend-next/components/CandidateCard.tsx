@@ -153,11 +153,7 @@ export default function CandidateCard({
         {tags.slice(0, 3).map((tag, index) => (
           <span
             key={index}
-            className={`inline-flex items-center rounded-[8px] px-[14px] py-[2px] text-[12px] font-semibold ${
-              index === 0
-                ? 'bg-[#E5E7EB] text-[#4B5563] dark:bg-[#fef3c7] dark:text-[#b45309]'
-                : 'bg-[#E5E7EB] text-[#4B5563] dark:bg-gray-700 dark:text-slate-200'
-            }`}
+            className="inline-flex items-center rounded-[8px] px-[14px] py-[2px] text-[12px] font-semibold bg-[#E5E7EB] text-[#4B5563] dark:bg-gray-700 dark:text-slate-200"
           >
             {tag}
           </span>

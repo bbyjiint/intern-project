@@ -72,7 +72,6 @@ export default function ApplicantCard({
 
   return (
     <div className="relative flex h-full min-h-[274px] flex-col overflow-hidden rounded-[12px] border border-gray-100 bg-white px-[20px] py-[18px] shadow-[0_2px_10px_rgba(15,23,42,0.05)] transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
-      
       {/* ── New ribbon badge ── */}
       {applicant.status === "new" && (
         <div
@@ -125,7 +124,14 @@ export default function ApplicantCard({
         {isLoading ? (
           <div className="relative flex h-[52px] w-[52px] shrink-0 items-center justify-center">
             <svg width="52" height="52" viewBox="0 0 52 52">
-              <circle cx="26" cy="26" r={r} fill="none" stroke="#E5E7EB" strokeWidth="4" />
+              <circle
+                cx="26"
+                cy="26"
+                r={r}
+                fill="none"
+                stroke="#E5E7EB"
+                strokeWidth="4"
+              />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="h-[20px] w-[20px] animate-spin rounded-full border-[2px] border-[#D1D5DB] border-t-[#6B7280]" />
@@ -135,13 +141,17 @@ export default function ApplicantCard({
           <div className="relative h-[52px] w-[52px] shrink-0">
             <svg width="52" height="52" viewBox="0 0 52 52">
               <circle
-                cx="26" cy="26" r={r}
+                cx="26"
+                cy="26"
+                r={r}
                 fill="none"
                 stroke="#E5E7EB"
                 strokeWidth="4"
               />
               <circle
-                cx="26" cy="26" r={r}
+                cx="26"
+                cy="26"
+                r={r}
                 fill="none"
                 stroke={getScoreColor(score)}
                 strokeWidth="4"
@@ -185,20 +195,16 @@ export default function ApplicantCard({
       </div>
 
       {/* Tags */}
-      <div className="mt-[18px] flex flex-wrap gap-[8px]">
+      <div className="mt-[18px] flex min-h-[30px] flex-wrap gap-[8px]">
         {(applicant.preferredPositions?.length
           ? applicant.preferredPositions
           : applicant.skills
         )
           .slice(0, 3)
-          .map((item, index) => (
+          .map((item) => (
             <span
               key={item}
-              className={`inline-flex items-center rounded-[8px] px-[14px] py-[2px] text-[12px] font-semibold ${
-                index === 0
-                  ? 'bg-[#E5E7EB] text-[#374151] dark:bg-[#fef3c7] dark:text-[#b45309]'
-                  : 'bg-[#E5E7EB] text-[#374151] dark:bg-gray-700 dark:text-slate-200'
-              }`}
+              className="inline-flex items-center rounded-[8px] px-[14px] py-[2px] text-[12px] font-semibold bg-[#E5E7EB] text-[#374151] dark:bg-gray-700 dark:text-slate-200"
             >
               {item}
             </span>
@@ -207,7 +213,9 @@ export default function ApplicantCard({
 
       {/* Footer */}
       <div className="mt-auto flex items-center justify-between pt-[12px]">
-        <p className="text-[12px] text-[#C2C8D3] dark:text-[#e5e7eb]">{applicant.appliedDate}</p>
+        <p className="text-[12px] text-[#C2C8D3] dark:text-[#e5e7eb]">
+          {applicant.appliedDate}
+        </p>
         <div className="flex items-center gap-[6px]">
           <button
             type="button"

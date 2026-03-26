@@ -75,7 +75,10 @@ export default function EmployerApplicantsOverviewCard({
           </div>
 
           <div className="min-w-0 pt-[1px]">
-            <h3 className="truncate text-[15px] font-bold leading-tight text-[#111827] dark:text-white" title={post.companyName}>
+            <h3
+              className="truncate text-[15px] font-bold leading-tight text-[#111827] dark:text-white"
+              title={post.companyName}
+            >
               {post.companyName}
             </h3>
             <p className="mt-[2px] text-[12px] text-[#8B94A7] dark:text-[#e5e7eb]">
@@ -101,11 +104,7 @@ export default function EmployerApplicantsOverviewCard({
         {post.positions.slice(0, 3).map((pos) => (
           <span
             key={pos}
-            className={`inline-flex items-center rounded-[8px] px-[14px] py-[2px] text-[12px] font-semibold ${
-              pos === post.positions[0]
-                ? 'bg-[#E5E7EB] text-[#4B5563] dark:bg-[#fef3c7] dark:text-[#b45309]'
-                : 'bg-[#E5E7EB] text-[#4B5563] dark:bg-gray-700 dark:text-slate-200'
-            }`}
+            className="inline-flex items-center rounded-[8px] px-[14px] py-[2px] text-[12px] font-semibold bg-[#E5E7EB] text-[#4B5563] dark:bg-gray-700 dark:text-slate-200"
           >
             {pos}
           </span>
@@ -124,18 +123,30 @@ export default function EmployerApplicantsOverviewCard({
       </div>
 
       <div className="grid grid-cols-[150px_1fr] gap-y-[8px]">
-        <p className="text-[12px] text-[#8B94A7] dark:text-[#7f7f7f]">Preferred</p>
-        <p className="text-[13px] text-[#6B7280] dark:text-[#e5e7eb]">{post.preferred}</p>
-        <p className="text-[12px] text-[#8B94A7] dark:text-[#7f7f7f]">Position available</p>
-        <p className="text-[13px] text-[#6B7280] dark:text-[#e5e7eb]">{post.applicantsCount}</p>
-        <p className="text-[12px] text-[#8B94A7] dark:text-[#7f7f7f]">Allowance</p>
+        <p className="text-[12px] text-[#8B94A7] dark:text-[#7f7f7f]">
+          Preferred
+        </p>
+        <p className="text-[13px] text-[#6B7280] dark:text-[#e5e7eb]">
+          {post.preferred}
+        </p>
+        <p className="text-[12px] text-[#8B94A7] dark:text-[#7f7f7f]">
+          Position available
+        </p>
+        <p className="text-[13px] text-[#6B7280] dark:text-[#e5e7eb]">
+          {post.applicantsCount}
+        </p>
+        <p className="text-[12px] text-[#8B94A7] dark:text-[#7f7f7f]">
+          Allowance
+        </p>
         <p className="text-[13px] font-semibold text-[#111827] dark:text-white">
           {post.allowance}
         </p>
       </div>
 
       <div className="mt-auto flex items-center justify-between pt-[12px]">
-        <span className="text-[12px] text-[#C2C8D3] dark:text-[#e5e7eb]">{post.postedDate}</span>
+        <span className="text-[12px] text-[#C2C8D3] dark:text-[#e5e7eb]">
+          {post.postedDate}
+        </span>
 
         <div className="flex items-center gap-[6px]">
           <Link

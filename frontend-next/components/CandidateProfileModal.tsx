@@ -212,11 +212,7 @@ export default function CandidateProfileModal({
                   positionTags.slice(0, 5).map((pos, index) => (
                     <span
                       key={`${pos}-${index}`}
-                      className={`rounded-[6px] px-[14px] py-[5px] text-[12px] font-semibold ${
-                        index === 0
-                          ? 'bg-[#E5E7EB] text-[#374151] dark:bg-[#fef3c7] dark:text-[#b45309]'
-                          : 'bg-[#E5E7EB] text-[#374151] dark:bg-gray-700 dark:text-slate-200'
-                      }`}
+                      className="rounded-[6px] px-[14px] py-[5px] text-[12px] font-semibold bg-[#E5E7EB] text-[#374151] dark:bg-gray-700 dark:text-slate-200"
                     >
                       {pos}
                     </span>

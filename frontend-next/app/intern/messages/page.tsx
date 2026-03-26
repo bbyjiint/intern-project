@@ -31,6 +31,11 @@ interface Conversation {
   messages: Message[]
 }
 
+interface MyProfile {
+  fullName: string | null
+  profileImage: string | null
+}
+
 function formatTime(date: Date): string {
   const now = new Date()
   const diffMs = now.getTime() - date.getTime()
@@ -62,6 +67,7 @@ export default function InternMessagesPage() {
   const [searchQuery, setSearchQuery] = useState('')
   const [newMessage, setNewMessage] = useState('')
   const [loading, setLoading] = useState(true)
+  const [myProfile, setMyProfile] = useState<MyProfile | null>(null)
   
   // Responsive State
   const [showChatMobile, setShowChatMobile] = useState(false)
@@ -84,6 +90,16 @@ export default function InternMessagesPage() {
         if (!userData.user.role) {
           router.push('/role-selection')
           return
+        }
+
+        // ดึงโปรไฟล์ของเราครั้งเดียวตอนโหลด
+        if (!myProfile) {
+          try {
+            const profileData = await apiFetch<{ profile: MyProfile }>('/api/candidates/profile')
+            setMyProfile(profileData.profile)
+          } catch {
+            // ถ้าดึงไม่ได้ก็ใช้ค่า default (ME)
+          }
         }
 
         const data = await apiFetch<{ conversations: Conversation[] }>('/api/messages/conversations')
@@ -222,9 +238,16 @@ export default function InternMessagesPage() {
     return name.substring(0, 2).toUpperCase()
   }
 
+  const getMyInitials = () => {
+    if (!myProfile?.fullName) return 'ME'
+    const parts = myProfile.fullName.trim().split(' ').filter(Boolean)
+    if (parts.length >= 2) return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    return myProfile.fullName.substring(0, 2).toUpperCase()
+  }
+
   const selectConversation = (conv: Conversation) => {
     setSelectedConversation(conv)
-    setShowChatMobile(true) // เปิดหน้าแชทบนมือถือ
+    setShowChatMobile(true)
   }
 
   return (
@@ -349,14 +372,23 @@ export default function InternMessagesPage() {
                     const isCurrentUser = !msg.isCompany 
                     return (
                       <div key={msg.id} className={`flex items-start space-x-2 ${isCurrentUser ? 'flex-row-reverse space-x-reverse' : ''}`}>
+                        {/* Avatar */}
                         <div className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-semibold flex-shrink-0 overflow-hidden ${
                             isCurrentUser ? 'bg-blue-600' : 'bg-gray-400'
                           }`}
                         >
-                          {!isCurrentUser && selectedConversation.companyLogo ? (
-                            <img src={selectedConversation.companyLogo} alt="Company" className="w-full h-full object-cover" />
+                          {isCurrentUser ? (
+                            myProfile?.profileImage ? (
+                              <img src={myProfile.profileImage} alt="Me" className="w-full h-full object-cover" />
+                            ) : (
+                              getMyInitials()
+                            )
                           ) : (
-                            isCurrentUser ? 'ME' : getCompanyInitials(selectedConversation.companyName)
+                            selectedConversation.companyLogo ? (
+                              <img src={selectedConversation.companyLogo} alt="Company" className="w-full h-full object-cover" />
+                            ) : (
+                              getCompanyInitials(selectedConversation.companyName)
+                            )
                           )}
                         </div>
 

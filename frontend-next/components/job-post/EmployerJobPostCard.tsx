@@ -56,7 +56,10 @@ export default function EmployerJobPostCard({
           </div>
 
           <div className="min-w-0 pt-[1px]">
-            <h2 className="truncate text-[15px] font-bold leading-tight text-[#111827] dark:text-white" title={post.companyName}>
+            <h2
+              className="truncate text-[15px] font-bold leading-tight text-[#111827] dark:text-white"
+              title={post.companyName}
+            >
               {post.companyName}
             </h2>
             <p className="mt-[2px] text-[12px] text-[#8B94A7] dark:text-[#e5e7eb]">
@@ -86,11 +89,7 @@ export default function EmployerJobPostCard({
         {post.positions.slice(0, 3).map((pos) => (
           <span
             key={pos}
-            className={`inline-flex items-center rounded-[8px] px-[14px] py-[2px] text-[12px] font-semibold ${
-              pos === post.positions[0]
-                ? "bg-[#E5E7EB] text-[#4B5563] dark:bg-[#fef3c7] dark:text-[#b45309]"
-                : "bg-[#E5E7EB] text-[#4B5563] dark:bg-gray-700 dark:text-slate-200"
-            }`}
+            className="inline-flex items-center rounded-[8px] px-[14px] py-[2px] text-[12px] font-semibold bg-[#E5E7EB] text-[#4B5563] dark:bg-gray-700 dark:text-slate-200"
           >
             {pos}
           </span>
@@ -109,11 +108,21 @@ export default function EmployerJobPostCard({
       </div>
 
       <div className="grid grid-cols-[150px_1fr] gap-y-[8px]">
-        <p className="text-[12px] text-[#8B94A7] dark:text-[#7f7f7f]">Preferred</p>
-        <p className="text-[13px] text-[#6B7280] dark:text-[#e5e7eb]">{post.location}</p>
-        <p className="text-[12px] text-[#8B94A7] dark:text-[#7f7f7f]">Position available</p>
-        <p className="text-[13px] text-[#6B7280] dark:text-[#e5e7eb]">{post.applicantsCount}</p>
-        <p className="text-[12px] text-[#8B94A7] dark:text-[#7f7f7f]">Allowance</p>
+        <p className="text-[12px] text-[#8B94A7] dark:text-[#7f7f7f]">
+          Preferred
+        </p>
+        <p className="text-[13px] text-[#6B7280] dark:text-[#e5e7eb]">
+          {post.location}
+        </p>
+        <p className="text-[12px] text-[#8B94A7] dark:text-[#7f7f7f]">
+          Position available
+        </p>
+        <p className="text-[13px] text-[#6B7280] dark:text-[#e5e7eb]">
+          {post.applicantsCount}
+        </p>
+        <p className="text-[12px] text-[#8B94A7] dark:text-[#7f7f7f]">
+          Allowance
+        </p>
         <p className="text-[13px] font-semibold text-[#111827] dark:text-white">
           {post.allowance}
         </p>

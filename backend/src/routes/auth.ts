@@ -371,7 +371,7 @@ authRouter.get("/me", requireAuth, async (req: AuthedRequest, res) => {
       email: true,
       role: true,
       CandidateProfile: { select: { id: true, fullName: true } },
-      CompanyProfile: { select: { id: true, companyName: true } },
+      CompanyProfile: { select: { id: true, companyName: true, logoURL: true } },
     },
   });
 
