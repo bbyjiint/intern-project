@@ -97,8 +97,9 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
             Skills: {
               select: {
                 name: true,
-              },
-            },
+                category: true,
+              }
+            }
           },
           orderBy: { rating: "desc" },
         },
@@ -205,8 +206,8 @@ candidatesRouter.get("/profile", requireAuth, requireRole("CANDIDATE"), async (r
           name: us.Skills.name,
           level: ratingMap[us.rating || 1] || "beginner",
           rating: us.rating || 1,
-          category: String(us.category ?? "TECHNICAL").toLowerCase(),
-          status: us.status,
+          category: us.Skills.category,
+          status: us.status
         };
       }),
       files: {
@@ -272,6 +273,7 @@ candidatesRouter.get("/skills", requireAuth, requireRole("CANDIDATE"), async (re
         Skills: {
           select: {
             name: true,
+            category: true,
           },
         },
       },
@@ -307,7 +309,7 @@ candidatesRouter.get("/skills", requireAuth, requireRole("CANDIDATE"), async (re
       return {
         id: skill.id,
         name: skill.Skills?.name || "Unknown Skill",
-        category: skill.category ?? "TECHNICAL",
+        category: skill.category || skill.Skills?.category || "TECHNICAL",
         rating: skill.rating,
         level: ratingMap[skill.rating || 1] || "Beginner",
         status: skill.status,
@@ -468,7 +470,7 @@ candidatesRouter.get("/job-matches", requireAuth, requireRole("CANDIDATE"), asyn
       const candidate = await prisma.candidateProfile.findUnique({
         where: { id: candidateId },
         include: {
-          UserSkill: { include: { Skills: { select: { name: true } } } },
+          UserSkill: { include: { Skills: { select: { name: true, category: true } } } },
           CandidateUniversity: {
             orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
             take: 1,
@@ -484,10 +486,7 @@ candidatesRouter.get("/job-matches", requireAuth, requireRole("CANDIDATE"), asyn
       if (!candidate) return res.status(404).json({ error: "Candidate not found" });
 
       const candidateProfile = {
-        skills: candidate.UserSkill.map((us) => ({
-          name: us.Skills.name,
-          category: String(us.category ?? "TECHNICAL").toLowerCase(),
-        })),
+        skills: candidate.UserSkill.map((us) => ({ name: us.Skills.name, category: us.Skills.category })),
         preferredPositions: candidate.preferredPositions,
         preferredProvinces: candidate.CandidatePreferredProvince.map((p) => p.Province.name),
         gpa: candidate.CandidateUniversity[0]?.gpa ?? null,
@@ -728,7 +727,7 @@ candidatesRouter.get(
       const missingCandidates = await prisma.candidateProfile.findMany({
         where: { id: { in: missingIds } },
         include: {
-          UserSkill: { include: { Skills: { select: { name: true } } } },
+          UserSkill: { include: { Skills: { select: { name: true, category: true } } } },
           CandidateUniversity: {
             orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
             take: 1,
@@ -748,10 +747,7 @@ candidatesRouter.get(
 
       const missingProfiles = missingCandidates.map((c) => ({
         id: c.id,
-        skills: c.UserSkill.map((us) => ({
-          name: us.Skills.name,
-          category: String(us.category ?? "TECHNICAL").toLowerCase(),
-        })),
+        skills: c.UserSkill.map((us) => ({ name: us.Skills.name, category: us.Skills.category })),
         preferredPositions: c.preferredPositions,
         preferredProvinces: c.CandidatePreferredProvince.map((p) => p.Province.name),
         gpa: c.CandidateUniversity[0]?.gpa ?? null,

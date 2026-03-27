@@ -35,7 +35,7 @@ export default function RegisterModal({ isOpen, onClose, onLoginClick }: Registe
   }, [isOpen])
 
   const startOAuth = (provider: 'google' | 'line') => {
-    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'
+    const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5001'
     const returnTo = `${window.location.origin}/role-selection`
     window.location.href = `${apiBase}/api/auth/${provider}/start?returnTo=${encodeURIComponent(returnTo)}`
   }

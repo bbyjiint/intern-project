@@ -25,7 +25,7 @@ export default function EmployerNavbar() {
   const resolveImageUrl = (image?: string) => {
     if (!image) return null
     if (image.startsWith('http')) return image
-    return `http://localhost:5000${image}`
+    return `http://localhost:5001${image}`
   }
 
   useEffect(() => {

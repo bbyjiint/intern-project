@@ -114,29 +114,28 @@ export default function Step3SkillsProjects({
 
   return (
     <div>
-      {/* Header — Skip compact, top-right */}
-      <div className="mb-3 flex items-start justify-between gap-2 md:mb-6">
-        <div className="min-w-0 flex-1 pr-1">
-          <h2 className="mb-0.5 text-base font-semibold text-[#1C2D4F] dark:text-slate-100 md:text-2xl md:font-bold">
+      {/* Header */}
+      <div className="flex justify-between items-start mb-6">
+        <div>
+          <h2 className="text-2xl font-bold mb-1 text-[#1C2D4F] dark:text-slate-100">
             Skills
           </h2>
-          <p className="text-xs text-[#A9B4CD] dark:text-slate-400 md:text-sm">
+          <p className="text-sm text-[#A9B4CD] dark:text-slate-400">
             This step is optional — you can fill your profile information at any
             time.
           </p>
         </div>
         {onSkip && (
           <button
-            type="button"
             onClick={onSkip}
-            className="shrink-0 rounded-md border border-[#0273B1] bg-white px-2 py-1 text-xs font-semibold leading-none text-[#0273B1] transition-colors hover:bg-[#F0F4F8] dark:border-blue-400 dark:bg-slate-800 dark:text-blue-400 dark:hover:bg-slate-700"
+            className="flex items-center px-4 py-2 rounded-lg font-medium text-sm transition-colors border-2 border-[#0273B1] dark:border-blue-400 text-[#0273B1] dark:text-blue-400 bg-white dark:bg-slate-700 hover:bg-[#F0F4F8] dark:hover:bg-slate-600"
           >
             Skip &gt;
           </button>
         )}
       </div>
 
-      <div className="rounded-lg border border-gray-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800 md:p-6">
+      <div className="border border-gray-200 dark:border-slate-700 rounded-lg p-6 bg-white dark:bg-slate-800">
         {showForm || editingIndex !== null ? (
           <SkillForm
             skill={editingIndex !== null ? skills[editingIndex] : null}
@@ -154,13 +153,13 @@ export default function Step3SkillsProjects({
           />
         ) : (
           <>
-            <div className="mb-3 flex items-center justify-between md:mb-5">
-              <h3 className="text-sm font-semibold text-[#0273B1] dark:text-blue-400 md:text-lg md:font-bold">
+            <div className="flex justify-between items-center mb-5">
+              <h3 className="text-lg font-bold text-[#0273B1] dark:text-blue-400">
                 Skills
               </h3>
               <button
                 onClick={() => setShowForm(true)}
-                className="h-9 rounded-lg bg-[#E3F5FF] px-3 text-xs font-semibold text-[#0273B1] transition-colors hover:bg-[#0273B1] hover:text-white dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-600 md:h-10 md:px-4 md:text-sm"
+                className="px-4 py-2 rounded-lg font-semibold text-sm transition-colors bg-[#E3F5FF] dark:bg-blue-900/30 text-[#0273B1] dark:text-blue-400 hover:bg-[#0273B1] dark:hover:bg-blue-600 hover:text-white"
               >
                 + Add Skill
               </button>
@@ -168,7 +167,7 @@ export default function Step3SkillsProjects({
 
             {/* AI Autofill Banner */}
             {data._aiFilled_skills && skills.length > 0 && (
-              <div className="mb-3 flex items-start gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs dark:border-indigo-700 dark:bg-indigo-900/20 md:mb-5 md:gap-3 md:px-4 md:py-3 md:text-sm">
+              <div className="flex items-start gap-3 px-4 py-3 rounded-lg mb-5 text-sm bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-700">
                 <span className="text-base mt-0.5">✨</span>
                 <div>
                   <p className="font-semibold text-indigo-700 dark:text-indigo-300">
@@ -201,7 +200,7 @@ export default function Step3SkillsProjects({
               onDelete={handleDelete}
             />
 
-            <div className="mt-4 md:mt-6">
+            <div className="mt-6">
               <SkillGroup
                 title="Business Skills"
                 skills={business}
@@ -242,15 +241,15 @@ function SkillGroup({
 }) {
   return (
     <div>
-      <h4 className="mb-2 text-sm font-semibold text-[#1C2D4F] dark:text-slate-200 md:mb-3 md:text-base">
+      <h4 className="font-semibold mb-3 text-[#1C2D4F] dark:text-slate-200">
         {title}
       </h4>
       {skills.length === 0 ? (
-        <p className="text-xs text-[#A9B4CD] dark:text-slate-500 md:text-sm">
+        <p className="text-sm text-[#A9B4CD] dark:text-slate-500">
           No {title.toLowerCase()} added yet.
         </p>
       ) : (
-        <div className="space-y-2 md:space-y-3">
+        <div className="space-y-3">
           {skills.map((skill) => {
             const originalIndex = allSkills.indexOf(skill);
             return (
@@ -304,11 +303,11 @@ function SkillItem({
   })();
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-3 dark:border-slate-600 dark:bg-slate-700 md:p-4">
+    <div className="p-4 border border-gray-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700">
       <div className="flex justify-between items-start">
         <div className="flex-1">
           <div className="flex items-center gap-1 flex-wrap mb-1">
-            <span className="text-sm font-semibold text-[#1C2D4F] dark:text-slate-100">
+            <span className="font-semibold text-[#1C2D4F] dark:text-slate-100">
               {skill.name}
             </span>
             {skill._aiTag && <AIBadge />}
@@ -342,16 +341,16 @@ function SkillItem({
           )}
         </div>
 
-        <div className="ml-2 flex shrink-0 gap-1.5 md:ml-4 md:gap-2">
+        <div className="flex gap-2 ml-4">
           <button
             onClick={onEdit}
-            className="h-8 rounded border border-[#0273B1] bg-white px-2 text-xs font-semibold text-[#0273B1] transition-colors hover:bg-[#E3F5FF] dark:border-blue-400 dark:bg-slate-600 dark:text-blue-400 dark:hover:bg-blue-900/30 md:h-9 md:px-3 md:text-sm"
+            className="px-3 py-1 rounded text-sm font-semibold transition-colors bg-white dark:bg-slate-600 border-2 border-[#0273B1] dark:border-blue-400 text-[#0273B1] dark:text-blue-400 hover:bg-[#E3F5FF] dark:hover:bg-blue-900/30"
           >
             Edit
           </button>
           <button
             onClick={onDelete}
-            className="h-8 rounded border border-red-400 bg-white px-2 text-xs font-semibold text-red-400 transition-colors hover:bg-red-50 dark:bg-slate-600 dark:hover:bg-red-900/20 md:h-9 md:px-3 md:text-sm"
+            className="px-3 py-1 rounded text-sm font-semibold transition-colors bg-white dark:bg-slate-600 border-2 border-red-400 text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
           >
             Delete
           </button>
@@ -443,19 +442,19 @@ function SkillForm({
 
   return (
     <div>
-      <h4 className="mb-3 text-base font-semibold text-[#1C2D4F] dark:text-slate-100 md:mb-6 md:text-lg md:font-bold">
+      <h4 className="text-lg font-bold mb-6 text-[#1C2D4F] dark:text-slate-100">
         {isEditing ? "Edit Skill" : "Add Skill"}
         {isEditing && skill?._aiTag && <AIBadge />}
       </h4>
 
-      <div className="space-y-4 md:space-y-6">
+      <div className="space-y-6">
         {/* Skill Name */}
         <div>
-          <label className="mb-1 block text-xs font-medium text-[#0273B1] dark:text-blue-400 md:mb-2">
+          <label className="block text-xs font-medium mb-2 text-[#0273B1] dark:text-blue-400">
             Skill Name
           </label>
           {!fields.category ? (
-            <div className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-400 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-500 md:px-4 md:py-3">
+            <div className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg text-sm text-gray-400 dark:text-slate-500 bg-white dark:bg-slate-700">
               Loading skills...
             </div>
           ) : (
@@ -475,7 +474,7 @@ function SkillForm({
 
         {/* Category */}
         <div>
-          <label className="mb-1 block text-xs font-medium text-[#0273B1] dark:text-blue-400 md:mb-2">
+          <label className="block text-xs font-medium mb-2 text-[#0273B1] dark:text-blue-400">
             Category
           </label>
           <div className="relative">
@@ -506,10 +505,10 @@ function SkillForm({
 
         {/* Proficiency Level */}
         <div>
-          <label className="mb-2 block text-xs font-medium text-[#0273B1] dark:text-blue-400 md:mb-3">
+          <label className="block text-xs font-medium mb-3 text-[#0273B1] dark:text-blue-400">
             Proficiency Level
           </label>
-          <div className="space-y-2 md:space-y-3">
+          <div className="space-y-3">
             {(
               Object.entries(LEVEL_CONFIG) as [
                 string,
@@ -522,19 +521,19 @@ function SkillForm({
                   key={key}
                   type="button"
                   onClick={() => set("level", key)}
-                  className={`w-full rounded-lg border-2 p-3 text-left transition-all md:p-4 ${isSelected ? cfg.border : "border-gray-200 dark:border-slate-600"}`}
+                  className={`w-full p-4 rounded-lg border-2 text-left transition-all ${isSelected ? cfg.border : "border-gray-200 dark:border-slate-600"}`}
                   style={{ backgroundColor: isSelected ? cfg.bg : undefined }}
                   // Apply darkBg via inline style only when selected in dark mode isn't possible purely via Tailwind with dynamic colors,
                   // so we rely on the light bg + Tailwind dark overlay
                 >
-                  <div className="mb-1.5 flex items-center gap-2 md:mb-2 md:gap-3">
+                  <div className="flex items-center gap-3 mb-2">
                     <div
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base font-bold text-white md:h-10 md:w-10 md:text-lg"
+                      className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg text-white"
                       style={{ backgroundColor: cfg.color }}
                     >
                       {num + 1}
                     </div>
-                    <span className="text-sm font-semibold text-[#1C2D4F] dark:text-slate-100 md:text-base">
+                    <span className="font-semibold text-base text-[#1C2D4F] dark:text-slate-100">
                       {cfg.label}
                     </span>
                   </div>
@@ -549,7 +548,7 @@ function SkillForm({
                       />
                     ))}
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-slate-400 md:text-sm">
+                  <p className="text-sm text-gray-500 dark:text-slate-400">
                     {cfg.desc}
                   </p>
                 </button>
@@ -559,16 +558,16 @@ function SkillForm({
         </div>
       </div>
 
-      <div className="flex justify-end gap-2 pt-4 md:pt-6">
+      <div className="flex justify-end gap-2 pt-6">
         <button
           onClick={onCancel}
-          className="h-9 rounded-lg bg-white px-4 text-xs font-semibold text-[#1C2D4F] transition-colors hover:bg-gray-100 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600 md:h-10 md:px-6 md:text-sm"
+          className="px-6 py-2 rounded-lg font-semibold text-sm transition-colors bg-white dark:bg-slate-700 text-[#1C2D4F] dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-600"
         >
           Cancel
         </button>
         <button
           onClick={handleSubmit}
-          className="h-9 rounded-lg bg-[#0273B1] px-4 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-[#025a8f] md:h-10 md:px-6 md:text-sm"
+          className="px-6 py-2 rounded-lg font-semibold text-sm text-white transition-colors bg-[#0273B1] hover:bg-[#025a8f]"
         >
           {isEditing ? "Save Changes" : "Add Skill"}
         </button>

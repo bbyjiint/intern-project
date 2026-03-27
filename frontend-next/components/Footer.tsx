@@ -7,7 +7,7 @@ export default function Footer() {
       <div className="layout-container py-7">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           <div>
-           <div className="mb-4">
+           <div className="mb-4 dark">
             <ThemedCompanyHubLogo href="/" />
            </div>
             <p className="max-w-[280px] text-sm leading-6 text-gray-400 dark:text-[#B0B8C1]">
@@ -23,14 +23,14 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <span className="cursor-default">
+                <Link href="/about" className="transition-colors hover:text-white dark:hover:text-white">
                   About
-                </span>
+                </Link>
               </li>
               <li>
-                <span className="cursor-default">
+                <Link href="/contact" className="transition-colors hover:text-white dark:hover:text-white">
                   Contact
-                </span>
+                </Link>
               </li>
             </ul>
           </div>

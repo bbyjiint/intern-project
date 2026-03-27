@@ -85,7 +85,7 @@ export default function Step1GeneralInfo({
 
       <div className="space-y-[15px]">
         <div className="grid items-start gap-8 lg:grid-cols-[494px_minmax(0,1fr)] lg:gap-[40px]">
-          <div className="w-full max-w-[494px] space-y-[14px]">
+          <div className="max-w-[494px] space-y-[14px]">
             <div>
               <label className="mb-[6px] block text-[14px] font-semibold text-[#253858] dark:text-slate-200">
                 Company Name<span style={{ color: "#EF4444" }}>*</span>
@@ -95,8 +95,6 @@ export default function Step1GeneralInfo({
                 value={formData.companyName}
                 onChange={(e) => handleChange("companyName", e.target.value)}
                 placeholder="Company Name"
-                autoComplete="organization"
-                suppressHydrationWarning
                 className="h-[42px] w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 text-[13px] text-[#1E293B] dark:text-slate-200 placeholder:text-gray-400 dark:placeholder:text-slate-400 outline-none transition focus:border-[#0273B1] focus:ring-2 focus:ring-[#BFDBFE]"
               />
             </div>
@@ -108,8 +106,6 @@ export default function Step1GeneralInfo({
               <select
                 value={formData.companySize}
                 onChange={(e) => handleChange("companySize", e.target.value)}
-                autoComplete="off"
-                suppressHydrationWarning
                 className="h-[42px] w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 text-[13px] text-[#64748B] dark:text-slate-200 outline-none transition focus:border-[#0273B1] focus:ring-2 focus:ring-[#BFDBFE]"
               >
                 <option value="">Select company size</option>
@@ -155,11 +151,10 @@ export default function Step1GeneralInfo({
             </div>
           </div>
 
-          {/* Logo: laptop (lg+) only — setup page */}
-          <div className="hidden justify-center pt-[6px] lg:flex lg:justify-end">
+          <div className="flex justify-center pt-[6px] lg:justify-end">
             {formData.companyLogo ? (
               <div className="w-[170px]">
-                <div className="overflow-hidden rounded-lg border border-gray-200 bg-gray-50 dark:border-slate-600 dark:bg-slate-700">
+                <div className="overflow-hidden rounded-lg border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-700">
                   <img
                     src={formData.companyLogo}
                     alt="Company logo preview"
@@ -183,7 +178,7 @@ export default function Step1GeneralInfo({
                       setFormData(updated);
                       onUpdate(updated);
                     }}
-                    className="rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-[#64748B] transition hover:bg-gray-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+                    className="rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-xs font-semibold text-[#64748B] dark:text-slate-300 transition hover:bg-gray-50 dark:hover:bg-slate-700"
                   >
                     Remove
                   </button>
@@ -191,7 +186,7 @@ export default function Step1GeneralInfo({
               </div>
             ) : (
               <label className="block cursor-pointer">
-                <div className="flex h-[170px] w-[170px] items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 text-center transition hover:bg-gray-100 dark:border-slate-600 dark:bg-slate-700 dark:hover:bg-slate-600">
+                <div className="flex h-[170px] w-[170px] items-center justify-center rounded-lg border-2 border-dashed border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-700 text-center transition hover:bg-gray-100 dark:hover:bg-slate-600">
                   <div className="flex items-center gap-[10px]">
                     <div className="flex h-[18px] w-[18px] items-center justify-center rounded-full bg-[#0273B1] text-[14px] text-white">
                       +
@@ -226,8 +221,6 @@ export default function Step1GeneralInfo({
             placeholder="Describe your company, industry focus, and core services"
             rows={6}
             maxLength={2000}
-            autoComplete="off"
-            suppressHydrationWarning
             className="min-h-[116px] w-full resize-none rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-3 text-[13px] text-[#1E293B] dark:text-slate-200 placeholder:text-gray-400 dark:placeholder:text-slate-400 outline-none transition focus:border-[#0273B1] focus:ring-2 focus:ring-[#BFDBFE]"
           />
         </div>

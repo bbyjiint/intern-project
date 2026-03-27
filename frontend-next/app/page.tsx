@@ -13,7 +13,7 @@ export default function Home() {
   
 
   return (
-    <div className="min-h-screen flex flex-col overflow-x-clip bg-white transition-colors dark:bg-[#0B1C2C]">
+    <div className="min-h-screen flex flex-col bg-white dark:bg-[#0B1C2C] transition-colors">
       <Navbar onLoginClick={() => setIsLoginModalOpen(true)} onRegisterClick={() => setIsRegisterModalOpen(true)} />
       <LoginModal 
         isOpen={isLoginModalOpen} 
@@ -29,7 +29,7 @@ export default function Home() {
        
       {/* Hero Section */}
       <section className="bg-white py-10 transition-colors dark:bg-[#0B1C2C] lg:py-20">
-        <div className="layout-container">
+        <div className="layout-container px-6 lg:px-0">
           {/* ปรับตรงนี้: flex-col-reverse จะทำให้ Text ขึ้นก่อน Image ในมือถือ */}
           <div className="flex flex-col-reverse items-center gap-10 lg:grid lg:grid-cols-2 lg:gap-24">
             

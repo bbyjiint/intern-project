@@ -190,7 +190,7 @@ export default function SkillTest({
         if (!token) token = localStorage.getItem("token") || "";
       }
       
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
       const targetUrl = `${backendUrl}/api/candidates/skills/submit-test`;
 
       fetch(targetUrl, {

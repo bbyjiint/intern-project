@@ -28,39 +28,19 @@
 }
 
 @layer base {
-  *,
-  *::before,
-  *::after {
-    box-sizing: border-box;
-  }
-
-  html,
-  body {
-    max-width: 100%;
-    overflow-x: hidden;
-  }
-
   body {
     @apply bg-gray-50;
     color: var(--color-primary-text);
     overflow-x: hidden;
   }
-
-  img,
-  video,
-  canvas,
-  svg {
-    max-width: 100%;
-    height: auto;
-  }
 }
 
 @layer components {
   .layout-container {
-    width: min(100%, var(--layout-max-width));
+    width: 100%;
     max-width: var(--layout-max-width);
     margin-inline: auto;
-    padding-inline: clamp(16px, 4vw, var(--layout-gutter));
+    padding-inline: var(--layout-gutter);
   }
 
   .layout-page {

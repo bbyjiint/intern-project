@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { apiFetch } from "@/lib/api";
-import CompanyHubLogoDark from "@/components/CompanyHubLogoDark";
+import ThemedCompanyHubLogo from "@/components/ThemedCompanyHubLogo";
 import ThemeToggle from "@/components/ThemeToggle";
 import Step1GeneralInfo from "@/components/employer-profile-setup/Step1GeneralInfo";
 import Step2CompanyAddress from "@/components/employer-profile-setup/Step2CompanyAddress";
@@ -16,7 +17,6 @@ export default function EmployerProfileSetupPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [showSaveModal, setShowSaveModal] = useState(false);
   const [showCreateProfileModal, setShowCreateProfileModal] = useState(false);
   const [showProfileCreatedModal, setShowProfileCreatedModal] = useState(false);
 
@@ -117,43 +117,6 @@ export default function EmployerProfileSetupPage() {
     loadProfile();
   }, []);
 
-  const buildCompanyPayload = () => ({
-    companyName: formData.companyName,
-    companyDescription: formData.companyDescription,
-    businessType: formData.businessType,
-    companySize: formData.companySize,
-    profileImage: formData.companyLogo || null,
-    addressDetails: formData.addressDetails,
-    subDistrict: formData.subDistrict,
-    district: formData.district,
-    province: formData.province,
-    postcode: formData.postcode,
-    provinceId: formData.provinceId,
-    districtId: formData.districtId,
-    subdistrictId: formData.subdistrictId,
-    phoneNumber: formData.phoneNumber,
-    email: formData.email,
-    websiteUrl: formData.websiteUrl,
-    contactName: formData.contactName,
-  });
-
-  const saveProgress = async () => {
-    if (isSubmitting) return;
-    setIsSubmitting(true);
-    setError(null);
-    try {
-      await apiFetch("/api/companies/profile", {
-        method: "PUT",
-        body: JSON.stringify(buildCompanyPayload()),
-      });
-      setShowSaveModal(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleNext = () => {
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
@@ -181,7 +144,25 @@ export default function EmployerProfileSetupPage() {
     try {
       await apiFetch("/api/companies/profile", {
         method: "PUT",
-        body: JSON.stringify(buildCompanyPayload()),
+        body: JSON.stringify({
+          companyName: formData.companyName,
+          companyDescription: formData.companyDescription,
+          businessType: formData.businessType,
+          companySize: formData.companySize,
+          profileImage: formData.companyLogo || null,
+          addressDetails: formData.addressDetails,
+          subDistrict: formData.subDistrict,
+          district: formData.district,
+          province: formData.province,
+          postcode: formData.postcode,
+          provinceId: formData.provinceId,
+          districtId: formData.districtId,
+          subdistrictId: formData.subdistrictId,
+          phoneNumber: formData.phoneNumber,
+          email: formData.email,
+          websiteUrl: formData.websiteUrl,
+          contactName: formData.contactName,
+        }),
       });
 
       localStorage.removeItem("employerProfileData");
@@ -213,323 +194,142 @@ export default function EmployerProfileSetupPage() {
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-[#EAF3FA] transition-colors duration-300 dark:bg-slate-950 md:bg-[#F0F4F8]">
-      <header className="sticky top-0 z-50 border-b border-[#223A57] bg-[#0B1C2C]">
-        <div className="layout-container flex h-12 items-center justify-between px-3 md:h-[76px] md:px-6">
-          <CompanyHubLogoDark href="/" className="shrink-0" />
-          <div
-            className="shrink-0 [&_button]:!h-9 [&_button]:!w-9 md:[&_button]:!h-10 md:[&_button]:!w-10 [&_button]:!border-[#223A57] [&_button]:!bg-[#10273F] [&_button:hover]:!bg-[#223A57] [&_button]:focus:ring-blue-400 [&_button]:focus:ring-offset-2 [&_button]:focus:ring-offset-[#0B1C2C] [&_button_svg]:!h-3.5 [&_button_svg]:!w-3.5 md:[&_button_svg]:!h-4 md:[&_button_svg]:!w-4 [&_button_svg]:!text-[#8A94A6]"
-          >
-            <ThemeToggle />
-          </div>
+    <div className="min-h-screen bg-[#F0F4F8] dark:bg-slate-950 transition-colors duration-300">
+      {/* Header */}
+      <div className="bg-white dark:bg-slate-900 border-b dark:border-slate-800 sticky top-0 z-50 transition-colors">
+        <div className="mx-auto flex h-[82px] max-w-[1120px] items-center justify-between px-[34px]">
+          <ThemedCompanyHubLogo href="/" />
+          <ThemeToggle />
         </div>
-      </header>
+      </div>
 
-      <div className="layout-container pt-3 pb-24 md:pt-8 md:pb-36 lg:pt-12">
-        <div className="mx-auto w-full max-w-[800px] min-w-0">
-          <div className="mb-2 pt-1 md:mb-4 md:px-1 md:pt-4">
-            <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm dark:border-[#223A57] dark:bg-[#0B1C2C] md:hidden">
-              <h1 className="mb-2 text-center text-lg font-semibold leading-tight tracking-tight text-[#0273B1] dark:text-white">
-                Company Registration
-              </h1>
-              <EmployerProgressIndicator
-                currentStep={currentStep}
-                totalSteps={3}
-              />
+      {/* Main Content */}
+      <div className="layout-container layout-page-compact">
+        {/* Progress Card */}
+        <div className="mx-auto mb-4 max-w-[1008px] rounded-lg bg-white dark:bg-slate-800 px-6 py-10 shadow transition-colors">
+          <h1 className="text-center text-3xl font-bold mb-6 text-gray-900 dark:text-white">
+            Company Registration
+          </h1>
+          <EmployerProgressIndicator
+            currentStep={currentStep}
+            totalSteps={3}
+          />
+        </div>
+
+        {/* Form Content */}
+        <div className="mx-auto max-w-[1008px] rounded-lg bg-white dark:bg-slate-800 px-[44px] py-[34px] shadow transition-colors">
+          {error && (
+            <div className="mb-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/50 dark:bg-red-500/10 dark:text-red-300">
+              {error}
             </div>
-            <div className="hidden md:block md:rounded-lg md:bg-white md:p-6 md:shadow md:dark:bg-slate-800">
-              <h1 className="mb-6 text-center text-3xl font-bold leading-tight text-gray-900 dark:text-slate-100">
-                Company Registration
-              </h1>
-              <EmployerProgressIndicator
-                currentStep={currentStep}
-                totalSteps={3}
-              />
-            </div>
-          </div>
+          )}
+          {currentStep === 1 && (
+            <Step1GeneralInfo data={formData} onUpdate={updateFormData} />
+          )}
+          {currentStep === 2 && (
+            <Step2CompanyAddress data={formData} onUpdate={updateFormData} />
+          )}
+          {currentStep === 3 && (
+            <Step3ContactInfo data={formData} onUpdate={updateFormData} />
+          )}
 
-          <div className="rounded-lg bg-white p-4 shadow-md transition-colors dark:bg-slate-800 md:rounded-lg md:p-10 md:shadow">
-            {error && (
-              <div className="mb-3 text-sm text-red-500 md:mb-4">{error}</div>
-            )}
-            {currentStep === 1 && (
-              <Step1GeneralInfo data={formData} onUpdate={updateFormData} />
-            )}
-            {currentStep === 2 && (
-              <Step2CompanyAddress data={formData} onUpdate={updateFormData} />
-            )}
-            {currentStep === 3 && (
-              <Step3ContactInfo data={formData} onUpdate={updateFormData} />
-            )}
+          {/* Navigation Buttons */}
+          <div className="mt-10 pt-6 border-t dark:border-slate-700 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <button
+              onClick={handlePrevious}
+              className="flex items-center justify-center px-6 py-3 rounded-lg font-semibold bg-white dark:bg-slate-800 border-2 border-[#0273B1] text-[#0273B1] hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors order-2 sm:order-1 w-full sm:w-auto"
+            >
+              <svg
+                className="w-5 h-5 mr-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+              Back
+            </button>
 
-            <div className="mt-5 border-t border-gray-200 pt-4 dark:border-slate-700 md:mt-10 md:pt-6">
-              <div className="flex max-w-full flex-col gap-2 md:hidden">
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={saveProgress}
-                    disabled={isSubmitting}
-                    className="inline-flex h-10 max-w-full shrink-0 items-center justify-center gap-1.5 rounded-lg border border-[#0273B1] bg-white px-3 text-sm font-medium text-[#0273B1] transition-colors hover:bg-blue-50 disabled:opacity-60 dark:bg-slate-800 dark:hover:bg-slate-700"
-                  >
-                    <svg
-                      className="h-4 w-4 shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden
-                    >
-                      <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
-                      <polyline points="17 21 17 13 7 13 7 21" />
-                      <polyline points="7 3 7 8 15 8" />
-                    </svg>
-                    {isSubmitting ? "Saving..." : "Save"}
-                  </button>
-                </div>
-                <div className="grid w-full min-w-0 grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    onClick={handlePrevious}
-                    className="inline-flex h-10 min-w-0 items-center justify-center gap-1 rounded-lg border border-gray-300 bg-white px-2 text-sm font-medium text-[#1C2D4F] transition-colors hover:bg-gray-50 active:bg-gray-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-                  >
-                    <svg
-                      className="h-4 w-4 shrink-0 opacity-70"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M15 19l-7-7 7-7"
-                      />
-                    </svg>
-                    <span className="truncate">Previous</span>
-                  </button>
-                  {currentStep < 3 ? (
-                    <button
-                      type="button"
-                      onClick={handleNext}
-                      className="inline-flex h-10 min-w-0 items-center justify-center gap-1 rounded-lg bg-[#0273B1] px-2 text-sm font-semibold text-white shadow-sm ring-1 ring-[#0273B1]/20 transition-colors hover:bg-[#025a8f] active:scale-[0.99]"
-                    >
-                      <span className="truncate">Next</span>
-                      <svg
-                        className="h-4 w-4 shrink-0"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
-                        />
-                      </svg>
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleOpenCreateProfileModal}
-                      disabled={isSubmitting}
-                      className="inline-flex h-10 min-w-0 items-center justify-center rounded-lg bg-[#16A34A] px-2 text-xs font-semibold leading-tight text-white shadow-sm transition-colors hover:bg-[#15803D] disabled:opacity-60 md:text-sm"
-                    >
-                      <span className="px-0.5 text-center leading-snug">
-                        Create Profile
-                      </span>
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="hidden items-center justify-between gap-3 md:flex">
-                <button
-                  type="button"
-                  onClick={handlePrevious}
-                  className="inline-flex h-10 items-center justify-center gap-1 rounded-lg border-2 border-[#0273B1] bg-white px-4 py-2 text-sm font-semibold text-[#0273B1] transition-colors hover:bg-blue-50 dark:bg-slate-800 dark:hover:bg-slate-700"
+            {currentStep < 3 ? (
+              <button
+                onClick={handleNext}
+                className="flex items-center justify-center px-6 py-3 rounded-lg font-semibold border-2 border-[#0273B1] text-[#0273B1] hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors order-1 sm:order-2 w-full sm:w-auto"
+              >
+                Next
+                <svg
+                  className="w-5 h-5 ml-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
                 >
-                  <svg
-                    className="h-4 w-4 shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 19l-7-7 7-7"
-                    />
-                  </svg>
-                  Previous
-                </button>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={saveProgress}
-                    disabled={isSubmitting}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors hover:opacity-95 disabled:opacity-60"
-                    style={{ backgroundColor: "#0273B1" }}
-                  >
-                    <svg
-                      className="h-4 w-4 shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden
-                    >
-                      <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
-                      <polyline points="17 21 17 13 7 13 7 21" />
-                      <polyline points="7 3 7 8 15 8" />
-                    </svg>
-                    {isSubmitting ? "Saving..." : "Save"}
-                  </button>
-                  {currentStep < 3 ? (
-                    <button
-                      type="button"
-                      onClick={handleNext}
-                      className="inline-flex h-10 items-center justify-center gap-1 rounded-lg border-2 border-[#0273B1] px-4 py-2 text-sm font-semibold text-[#0273B1] transition-colors hover:bg-blue-50 dark:hover:bg-slate-700"
-                    >
-                      Next
-                      <svg
-                        className="h-4 w-4 shrink-0"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 5l7 7-7 7"
-                        />
-                      </svg>
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={handleOpenCreateProfileModal}
-                      disabled={isSubmitting}
-                      className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-60"
-                      style={{ backgroundColor: "#16A34A" }}
-                      onMouseEnter={(e) => {
-                        if (!isSubmitting)
-                          e.currentTarget.style.backgroundColor = "#15803D";
-                      }}
-                      onMouseLeave={(e) => {
-                        if (!isSubmitting)
-                          e.currentTarget.style.backgroundColor = "#16A34A";
-                      }}
-                    >
-                      Create Profile
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 5l7 7-7 7"
+                  />
+                </svg>
+              </button>
+            ) : (
+              <button
+                onClick={handleOpenCreateProfileModal}
+                disabled={isSubmitting}
+                className="flex items-center justify-center px-6 py-3 rounded-lg font-semibold text-white transition-colors order-1 sm:order-2 w-full sm:w-auto"
+                style={{ backgroundColor: "#0273B1" }}
+                onMouseEnter={(e) => {
+                  if (!isSubmitting) e.currentTarget.style.backgroundColor = "#025a8f";
+                }}
+                onMouseLeave={(e) => {
+                  if (!isSubmitting) e.currentTarget.style.backgroundColor = "#0273B1";
+                }}
+              >
+                {isSubmitting ? "Creating..." : "Create Profile"}
+              </button>
+            )}
           </div>
         </div>
       </div>
 
-      {showSaveModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white px-5 py-6 text-center shadow-xl dark:bg-slate-800 sm:px-12 sm:py-10">
-            <div className="mb-6 flex justify-center">
-              <div className="flex h-24 w-24 items-center justify-center rounded-full border-4 border-green-200">
-                <svg
-                  className="h-14 w-14 text-green-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              </div>
-            </div>
-            <h2 className="mb-2 text-lg font-bold text-[#1C2D4F] dark:text-white sm:mb-3 sm:text-2xl md:text-3xl">
-              Saved Successfully
-            </h2>
-            <p className="mb-6 text-xs text-gray-500 dark:text-slate-400 sm:mb-8 sm:text-sm md:text-base">
-              Your information has been saved. You can update your profile at
-              any time.
-            </p>
-            <button
-              type="button"
-              onClick={() => setShowSaveModal(false)}
-              className="w-full rounded-lg px-10 py-3 font-semibold text-white transition-colors sm:w-auto"
-              style={{ backgroundColor: "#0273B1" }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "#025a8f";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "#0273B1";
-              }}
-            >
-              OK
-            </button>
-          </div>
-        </div>
-      )}
-
+      {/* Confirm Create Profile Modal */}
       {showCreateProfileModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white px-5 py-6 text-center shadow-xl dark:bg-slate-800 sm:px-12 sm:py-10">
-            <div className="mb-6 flex justify-center">
-              <div className="flex h-24 w-24 items-center justify-center rounded-full border-4 border-blue-200">
-                <svg
-                  className="h-14 w-14 text-[#0273B1]"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                  />
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl px-12 py-10 max-w-lg w-full text-center">
+            <div className="flex justify-center mb-6">
+              <div className="w-24 h-24 rounded-full border-4 border-blue-200 flex items-center justify-center">
+                <svg className="w-14 h-14 text-[#0273B1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
+                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
             </div>
-            <h2 className="mb-2 text-lg font-bold text-[#1C2D4F] dark:text-white sm:mb-3 sm:text-2xl md:text-3xl">
+            <h2 className="text-3xl font-bold text-[#1C2D4F] dark:text-white mb-3">
               Ready to Create Your Profile?
             </h2>
-            <p className="mb-6 text-xs text-gray-500 dark:text-slate-400 sm:mb-8 sm:text-sm md:text-base">
-              Are you sure you want to proceed? You can update your information
-              at any time.
+            <p className="text-gray-500 dark:text-slate-400 text-base mb-8">
+              Are you sure you want to proceed? You can update your information at any time.
             </p>
-            <div className="flex flex-col justify-center gap-3 sm:flex-row sm:gap-4">
+            <div className="flex gap-4 justify-center">
               <button
-                type="button"
                 onClick={() => setShowCreateProfileModal(false)}
-                className="w-full rounded-lg border border-gray-300 px-8 py-3 font-semibold text-gray-600 transition-colors hover:bg-gray-100 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 sm:w-auto"
+                className="px-8 py-3 rounded-lg font-semibold border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
               >
                 Cancel
               </button>
               <button
-                type="button"
                 onClick={handleConfirmCreateProfile}
                 disabled={isSubmitting}
-                className="w-full rounded-lg px-8 py-3 font-semibold text-white transition-colors sm:w-auto disabled:opacity-60"
+                className="px-8 py-3 rounded-lg font-semibold text-white transition-colors"
                 style={{ backgroundColor: "#0273B1" }}
                 onMouseEnter={(e) => {
-                  if (!isSubmitting)
-                    e.currentTarget.style.backgroundColor = "#025a8f";
+                  if (!isSubmitting) e.currentTarget.style.backgroundColor = "#025a8f";
                 }}
                 onMouseLeave={(e) => {
-                  if (!isSubmitting)
-                    e.currentTarget.style.backgroundColor = "#0273B1";
+                  if (!isSubmitting) e.currentTarget.style.backgroundColor = "#0273B1";
                 }}
               >
                 {isSubmitting ? "Creating..." : "Ready"}
@@ -539,44 +339,29 @@ export default function EmployerProfileSetupPage() {
         </div>
       )}
 
+      {/* Profile Created Success Modal */}
       {showProfileCreatedModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white px-5 py-6 text-center shadow-xl dark:bg-slate-800 sm:px-12 sm:py-10">
-            <div className="mb-6 flex justify-center">
-              <div className="flex h-24 w-24 items-center justify-center rounded-full border-4 border-green-200">
-                <svg
-                  className="h-14 w-14 text-green-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M5 13l4 4L19 7"
-                  />
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl px-12 py-10 max-w-lg w-full text-center">
+            <div className="flex justify-center mb-6">
+              <div className="w-24 h-24 rounded-full border-4 border-green-200 flex items-center justify-center">
+                <svg className="w-14 h-14 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                 </svg>
               </div>
             </div>
-            <h2 className="mb-2 text-lg font-bold text-[#1C2D4F] dark:text-white sm:mb-3 sm:text-2xl md:text-3xl">
+            <h2 className="text-3xl font-bold text-[#1C2D4F] dark:text-white mb-3">
               Your Profile Created
             </h2>
-            <p className="mb-6 text-xs text-gray-500 dark:text-slate-400 sm:mb-8 sm:text-sm md:text-base">
-              Your profile has been successfully created. You can update it at
-              any time.
+            <p className="text-gray-500 dark:text-slate-400 text-base mb-8">
+              Your profile has been successfully created. You can update it at any time.
             </p>
             <button
-              type="button"
               onClick={handleViewProfile}
-              className="w-full rounded-lg px-10 py-3 font-semibold text-white transition-colors sm:w-auto"
+              className="px-10 py-3 rounded-lg font-semibold text-white transition-colors"
               style={{ backgroundColor: "#0273B1" }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "#025a8f";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "#0273B1";
-              }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#025a8f"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#0273B1"; }}
             >
               View Profile
             </button>

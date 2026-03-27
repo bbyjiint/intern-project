@@ -103,22 +103,21 @@ export default function Step2BackgroundExperience({
 
   return (
     <div>
-      {/* Header — Skip compact, top-right */}
-      <div className="mb-3 flex items-start justify-between gap-2 md:mb-6">
-        <div className="min-w-0 flex-1 pr-1">
-          <h2 className="mb-0.5 text-base font-semibold text-[#1C2D4F] dark:text-slate-100 md:text-2xl md:font-bold">
+      {/* Header */}
+      <div className="flex justify-between items-start mb-6">
+        <div>
+          <h2 className="text-2xl font-bold mb-1 text-[#1C2D4F] dark:text-slate-100">
             Education
           </h2>
-          <p className="text-xs text-[#A9B4CD] dark:text-slate-400 md:text-sm">
+          <p className="text-sm text-[#A9B4CD] dark:text-slate-400">
             This step is optional — you can add education information at any time.
           </p>
         </div>
 
         {onSkip && (
           <button
-            type="button"
             onClick={onSkip}
-            className="shrink-0 rounded-md border border-[#0273B1] bg-white px-2 py-1 text-xs font-semibold leading-none text-[#0273B1] transition-colors hover:bg-[#F0F4F8] dark:border-blue-400 dark:bg-slate-800 dark:text-blue-400 dark:hover:bg-slate-700"
+            className="flex items-center px-4 py-2 rounded-lg font-medium text-sm transition-colors border-2 border-[#0273B1] text-[#0273B1] bg-white dark:bg-slate-700 dark:text-blue-400 dark:border-blue-400 hover:bg-[#F0F4F8] dark:hover:bg-slate-600"
           >
             Skip &gt;
           </button>
@@ -127,19 +126,17 @@ export default function Step2BackgroundExperience({
 
       {/* AI Autofill Banner */}
       {data._aiFilled_education && (
-        <div className="mb-4 flex gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2.5 text-indigo-700 dark:border-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300 md:mb-5 md:items-center md:px-4 md:py-3">
-          <span className="shrink-0 pt-0.5 text-sm md:pt-0 md:text-base">✨</span>
-          <div className="min-w-0 flex-1 space-y-0.5 text-xs leading-snug md:text-sm md:leading-normal">
-            <p className="font-semibold text-indigo-800 dark:text-indigo-200">AI autofilled your education</p>
-            <p className="text-xs text-indigo-600 dark:text-indigo-400 md:text-sm">
-              Fields marked with ✨ AI filled were read from your resume. Please review and edit if needed.
-            </p>
-          </div>
+        <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-5 text-sm bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700">
+          <span className="text-base">✨</span>
+          <span className="font-semibold">AI autofilled your education</span>
+          <span className="text-indigo-500 dark:text-indigo-400">
+            — Fields marked with ✨ AI filled were read from your resume. Please review and edit if needed.
+          </span>
         </div>
       )}
 
       {/* Form */}
-      <div className="rounded-lg border border-gray-200 p-4 dark:border-slate-700 md:p-6">
+      <div className="border border-gray-200 dark:border-slate-700 rounded-lg p-6">
         <EducationForm
           ref={educationFormRef}
           education={education[0] || null}
@@ -273,24 +270,24 @@ const EducationForm = forwardRef<EducationFormHandle, EducationFormProps>(
         : "border-gray-300 dark:border-slate-600";
 
     return (
-      <div className="space-y-3 md:space-y-5">
+      <div className="space-y-5">
         {/* Error banner */}
         {Object.values(errors).some(Boolean) && (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400 md:px-4 md:py-3 md:text-sm">
+          <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-400">
             Please fill in all required fields highlighted in red.
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Education Level */}
           <div>
-            <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-slate-300 md:mb-2">
+            <label className="block text-xs font-medium mb-2 text-gray-700 dark:text-slate-300">
               Education Level
             </label>
             <select
               value={fields.educationLevel}
               onChange={(e) => updateField("educationLevel", e.target.value)}
-              className={`w-full rounded-lg border bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-slate-700 dark:text-slate-200 md:px-4 md:py-3 ${borderClass("educationLevel")}`}
+              className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-400 ${borderClass("educationLevel")}`}
             >
               <option value="">Select education level</option>
               {EDUCATION_LEVELS.map((level) => (
@@ -303,11 +300,11 @@ const EducationForm = forwardRef<EducationFormHandle, EducationFormProps>(
 
           {/* Institution Name */}
           <div>
-            <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-slate-300 md:mb-2">
+            <label className="block text-xs font-medium mb-2 text-gray-700 dark:text-slate-300">
               Institution Name {isAiFilled && <AIBadge />}
             </label>
             {universitiesLoading ? (
-              <div className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-400 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-500 md:px-4 md:py-3">
+              <div className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg text-sm text-gray-400 dark:text-slate-500 bg-white dark:bg-slate-700">
                 Loading...
               </div>
             ) : (
@@ -328,39 +325,39 @@ const EducationForm = forwardRef<EducationFormHandle, EducationFormProps>(
 
           {/* Degree */}
           <div>
-            <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-slate-300 md:mb-2">
+            <label className="block text-xs font-medium mb-2 text-gray-700 dark:text-slate-300">
               Degree {isAiFilled && <AIBadge />}
             </label>
             <input
               value={fields.degree}
               onChange={(e) => updateField("degree", e.target.value)}
               placeholder="e.g. Bachelor of Science"
-              className={`w-full rounded-lg border bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 md:px-4 md:py-3 ${borderClass("degree")}`}
+              className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 ${borderClass("degree")}`}
             />
           </div>
 
           {/* Field of Study */}
           <div>
-            <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-slate-300 md:mb-2">
+            <label className="block text-xs font-medium mb-2 text-gray-700 dark:text-slate-300">
               Field of Study {isAiFilled && <AIBadge />}
             </label>
             <input
               value={fields.fieldOfStudy}
               onChange={(e) => updateField("fieldOfStudy", e.target.value)}
               placeholder="e.g. Computer Science"
-              className={`w-full rounded-lg border bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 md:px-4 md:py-3 ${borderClass("fieldOfStudy")}`}
+              className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 ${borderClass("fieldOfStudy")}`}
             />
           </div>
 
           {/* Year of Study */}
           <div>
-            <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-slate-300 md:mb-2">
+            <label className="block text-xs font-medium mb-2 text-gray-700 dark:text-slate-300">
               Year of Study
             </label>
             <select
               value={fields.yearOfStudy}
               onChange={(e) => updateField("yearOfStudy", e.target.value)}
-              className={`w-full rounded-lg border bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-slate-700 dark:text-slate-200 md:px-4 md:py-3 ${borderClass("yearOfStudy")}`}
+              className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-400 ${borderClass("yearOfStudy")}`}
             >
               <option value="">Select year of study</option>
               {YEAR_OF_STUDY_OPTIONS.map((year) => (
@@ -373,7 +370,7 @@ const EducationForm = forwardRef<EducationFormHandle, EducationFormProps>(
 
           {/* GPA */}
           <div>
-            <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-slate-300 md:mb-2">
+            <label className="block text-xs font-medium mb-2 text-gray-700 dark:text-slate-300">
               GPA (Current) {isAiFilled && <AIBadge />}
             </label>
             <input
@@ -386,7 +383,7 @@ const EducationForm = forwardRef<EducationFormHandle, EducationFormProps>(
                   }
                 }}
               placeholder="e.g. 3.50"
-              className={`w-full rounded-lg border bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 md:px-4 md:py-3 ${borderClass("gpa")}`}
+              className={`w-full px-4 py-3 border rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-400 ${borderClass("gpa")}`}
             />
           </div>
         </div>

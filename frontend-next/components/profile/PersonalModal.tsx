@@ -67,7 +67,7 @@ export default function PersonalModal({
 
     setImagePreview(
       profile.profileImage
-        ? profile.profileImage.startsWith("http") ? profile.profileImage : `http://localhost:5000${profile.profileImage}`
+        ? profile.profileImage.startsWith("http") ? profile.profileImage : `http://localhost:5001${profile.profileImage}`
         : "https://placehold.co/150x150"
     );
   }, [profile, isOpen]);

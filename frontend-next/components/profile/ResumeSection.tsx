@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { apiFetch } from '@/lib/api'
 import ResumeModal from './ResumeModal'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5001'
 
 interface ResumeSectionProps {
   resumeData?: {
