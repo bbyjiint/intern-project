@@ -1,38 +1,17 @@
 import fs from "fs";
+import { createRequire } from "module";
 import { GoogleGenAI } from "@google/genai";
-import { PDFParse } from "pdf-parse";
 
 console.log("🔥 NEW SDK PARSER LOADED");
 
-let genaiClient: GoogleGenAI | null = null;
+const require = createRequire(import.meta.url);
 
-function getGenAI(): GoogleGenAI {
-  const apiKey = process.env.GEMINI_API_KEY?.trim();
-  if (!apiKey) {
-    throw new Error("GEMINI_API_KEY is not configured");
-  }
-  if (!genaiClient) {
-    genaiClient = new GoogleGenAI({ apiKey });
-  }
-  return genaiClient;
-}
+const ai = new GoogleGenAI({
+  apiKey: process.env.GEMINI_API_KEY!,
+});
 
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
-  // pdf-parse v2+: use PDFParse class (the old default export function was removed)
-  try {
-    const parser = new PDFParse({ data: buffer });
-    try {
-      const result = await parser.getText();
-      const text = result.text ?? "";
-      console.log("📝 PDFParse extracted length:", text.length);
-      if (text.trim().length >= 20) return text;
-    } finally {
-      await parser.destroy().catch(() => {});
-    }
-  } catch (e1) {
-    console.log("⚠️ PDFParse failed, trying pdfjs:", (e1 as Error).message);
-  }
-
+  // ── ลอง pdfjs-dist โดยตรง ─────────────────────────────────────────────────
   try {
     const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs" as any);
     const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buffer) });
@@ -52,8 +31,22 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
     const text = textParts.join("\n");
     console.log("📝 pdfjs extracted length:", text.length);
     return text;
+  } catch (e1) {
+    console.log("⚠️ pdfjs failed, trying pdf-parse:", (e1 as any).message);
+  }
+
+  // ── fallback: pdf-parse ───────────────────────────────────────────────────
+  try {
+    const pdfParseLib = require("pdf-parse");
+    const fn = typeof pdfParseLib === "function"
+      ? pdfParseLib
+      : pdfParseLib.default ?? pdfParseLib;
+    const data = await fn(buffer);
+    const text = data?.text ?? "";
+    console.log("📝 pdf-parse extracted length:", text.length);
+    return text;
   } catch (e2) {
-    console.log("⚠️ pdfjs failed:", (e2 as Error).message);
+    console.log("⚠️ pdf-parse failed:", (e2 as any).message);
   }
 
   return "";
@@ -69,11 +62,10 @@ export async function parseResume(filePath: string) {
       throw new Error("Failed to extract text from PDF");
     }
 
-    const modelName =
-      process.env.GEMINI_MODEL?.trim() || "gemini-2.0-flash";
+    const modelName = "gemini-2.5-flash";
     console.log("Using model:", modelName);
 
-    const response = await getGenAI().models.generateContent({
+    const response = await ai.models.generateContent({
       model: modelName,
       contents: `
 You are a professional resume parser.
@@ -117,7 +109,14 @@ For "education":
   "gpa": "GPA number as string or empty string if not found"
 }
 
-skills = list of skill name strings only.
+For "skills", return an array of objects (NOT strings). Each skill must have:
+{
+  "name": "skill name exactly as written in the resume",
+  "category": "technical" or "business" — classify as follows:
+    - "technical": programming languages, frameworks, tools, software, databases, cloud platforms, hardware, engineering, science, design tools, data analysis tools, etc.
+    - "business": communication, teamwork, leadership, problem-solving, time management, adaptability, creativity, negotiation, presentation, interpersonal skills, critical thinking, decision-making, project management, customer service, emotional intelligence, conflict resolution, organization, collaboration, work ethic, attention to detail, etc.
+  "level": always "beginner" for every skill — do not infer or change this value.
+}
 
 Resume:
 ${text}
@@ -156,6 +155,21 @@ ${text}
     const lines = text.split("\n").map((l: string) => l.trim()).filter(Boolean);
     const fallbackName = lines.length > 0 && lines[0].length < 80 ? lines[0] : "";
 
+    // ── Normalize skills — handle both old (string[]) and new (object[]) format
+    const rawSkills = Array.isArray(parsedData.skills) ? parsedData.skills : [];
+    const normalizedSkills = rawSkills.map((s: any) => {
+      // Old format: skill was just a string
+      if (typeof s === "string") {
+        return { name: s, category: "technical", level: "beginner" };
+      }
+      // New format: already an object — ensure required fields have fallbacks
+      return {
+        name:     s.name     || "",
+        category: s.category === "business" ? "business" : "technical",
+        level:    "beginner",
+      };
+    }).filter((s: any) => s.name);
+
     // ── Normalize ─────────────────────────────────────────────────────────────
     const result = {
       fullName:    parsedData.fullName    || fallbackName  || "",
@@ -163,7 +177,7 @@ ${text}
       phoneNumber: parsedData.phoneNumber || fallbackPhone || "",
       bio:         parsedData.bio         || "",
       education:   Array.isArray(parsedData.education) ? parsedData.education : [],
-      skills:      Array.isArray(parsedData.skills)    ? parsedData.skills    : [],
+      skills:      normalizedSkills,
       projects:    Array.isArray(parsedData.projects)  ? parsedData.projects  : [],
     };
 

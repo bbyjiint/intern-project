@@ -28,7 +28,7 @@ const LEVEL_CONFIG = {
     desc: "Learning basics, needs guidance",
     color: "#10B981",
     bg: "#F0FDF4",
-    darkBg: "rgba(16,185,129,0.15)",
+    darkBg: "#052e16",
     border: "border-green-500",
     bars: [true, false, false],
   },
@@ -37,7 +37,7 @@ const LEVEL_CONFIG = {
     desc: "Can work independently",
     color: "#3B82F6",
     bg: "#EFF6FF",
-    darkBg: "rgba(59,130,246,0.15)",
+    darkBg: "#0c1d3d",
     border: "border-blue-500",
     bars: [true, true, false],
   },
@@ -46,11 +46,29 @@ const LEVEL_CONFIG = {
     desc: "Can mentor others",
     color: "#9333EA",
     bg: "#F3E8FF",
-    darkBg: "rgba(147,51,234,0.15)",
+    darkBg: "#1e0a3c",
     border: "border-purple-500",
     bars: [true, true, true],
   },
 } as const;
+
+// Skills that belong to "business" category by default
+const BUSINESS_SKILL_KEYWORDS = [
+  "problem-solving", "problem solving", "communication", "adaptability",
+  "time management", "leadership", "teamwork", "critical thinking",
+  "creativity", "negotiation", "presentation", "interpersonal",
+  "emotional intelligence", "conflict resolution", "decision making",
+  "decision-making", "project management", "customer service",
+  "analytical thinking", "strategic thinking", "organization",
+  "collaboration", "work ethic", "attention to detail",
+];
+
+function inferCategory(skillName: string): "technical" | "business" {
+  const lower = skillName.toLowerCase();
+  return BUSINESS_SKILL_KEYWORDS.some((kw) => lower.includes(kw))
+    ? "business"
+    : "technical";
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // AIBadge
@@ -73,7 +91,13 @@ export default function Step3SkillsProjects({
   onUpdate,
   onSkip,
 }: Step3Props) {
-  const [skills, setSkills] = useState<Skill[]>(data.skills || []);
+  const [skills, setSkills] = useState<Skill[]>(() => {
+    // Fix categories on initial load
+    return (data.skills || []).map((s: Skill) => ({
+      ...s,
+      category: s.category || inferCategory(s.name),
+    }));
+  });
   const [showForm, setShowForm] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
 
@@ -82,7 +106,12 @@ export default function Step3SkillsProjects({
     if (initializedRef.current) return;
     const incoming = data.skills || [];
     if (incoming.length === 0) return;
-    setSkills(incoming);
+    // Fix categories on data change too
+    const fixed = incoming.map((s: Skill) => ({
+      ...s,
+      category: s.category || inferCategory(s.name),
+    }));
+    setSkills(fixed);
     initializedRef.current = true;
   }, [data.skills]);
 
@@ -114,15 +143,14 @@ export default function Step3SkillsProjects({
 
   return (
     <div>
-      {/* Header — Skip compact, top-right */}
+      {/* Header */}
       <div className="mb-3 flex items-start justify-between gap-2 md:mb-6">
         <div className="min-w-0 flex-1 pr-1">
           <h2 className="mb-0.5 text-base font-semibold text-[#1C2D4F] dark:text-slate-100 md:text-2xl md:font-bold">
             Skills
           </h2>
           <p className="text-xs text-[#A9B4CD] dark:text-slate-400 md:text-sm">
-            This step is optional — you can fill your profile information at any
-            time.
+            This step is optional — you can fill your profile information at any time.
           </p>
         </div>
         {onSkip && (
@@ -172,15 +200,12 @@ export default function Step3SkillsProjects({
                 <span className="text-base mt-0.5">✨</span>
                 <div>
                   <p className="font-semibold text-indigo-700 dark:text-indigo-300">
-                    AI autofilled {skills.length} skill
-                    {skills.length > 1 ? "s" : ""} from your resume
+                    AI autofilled {skills.length} skill{skills.length > 1 ? "s" : ""} from your resume
                   </p>
                   {aiSkillsNeedingReview > 0 ? (
                     <p className="mt-0.5 text-indigo-500 dark:text-indigo-400">
-                      {aiSkillsNeedingReview} skill
-                      {aiSkillsNeedingReview > 1 ? "s" : ""} still need
-                      {aiSkillsNeedingReview === 1 ? "s" : ""} a proficiency
-                      level — click <strong>Edit</strong> to set it.
+                      {aiSkillsNeedingReview} skill{aiSkillsNeedingReview > 1 ? "s" : ""} still need
+                      {aiSkillsNeedingReview === 1 ? "s" : ""} a proficiency level — click <strong>Edit</strong> to set it.
                     </p>
                   ) : (
                     <p className="mt-0.5 text-indigo-500 dark:text-indigo-400">
@@ -362,7 +387,7 @@ function SkillItem({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SkillForm
+// SkillForm  — dark mode aware background for selected level
 // ─────────────────────────────────────────────────────────────────────────────
 
 function SkillForm({
@@ -380,6 +405,17 @@ function SkillForm({
 }) {
   const isEditing = !!skill;
 
+  // Detect dark mode via the class on <html> (works with next-themes / class strategy)
+  const [isDark, setIsDark] = useState(false);
+  useEffect(() => {
+    const check = () =>
+      setIsDark(document.documentElement.classList.contains("dark"));
+    check();
+    const obs = new MutationObserver(check);
+    obs.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => obs.disconnect();
+  }, []);
+
   const [fields, setFields] = useState<Skill>({
     name: skill?.name || "",
     category: skill?.category || "",
@@ -395,9 +431,7 @@ function SkillForm({
     (async () => {
       setLoading(true);
       try {
-        const res = await apiFetch<{ skills: { id: string; name: string }[] }>(
-          "/api/skills",
-        );
+        const res = await apiFetch<{ skills: { id: string; name: string }[] }>("/api/skills");
         if (!cancelled) setAllSkills(res.skills || []);
       } catch {
         if (!cancelled) setAllSkills([]);
@@ -405,34 +439,21 @@ function SkillForm({
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   const set = (key: keyof Skill, value: any) =>
     setFields((prev) => ({ ...prev, [key]: value }));
 
-  const toggleLinked = (type: "educationIds" | "projectIds", index: number) => {
-    const current = fields.usedIn?.[type] || [];
-    const updated = current.includes(index)
-      ? current.filter((id: number) => id !== index)
-      : [...current, index];
-    setFields((prev) => ({
-      ...prev,
-      usedIn: { ...prev.usedIn, [type]: updated },
-    }));
-  };
-
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     set("category", e.target.value);
-    set("name", ""); 
+    set("name", "");
   };
 
   const filteredSkills = useMemo(() => {
     if (!fields.category) return [];
-    return allSkills.filter(s => 
-      !s.category || s.category.toLowerCase() === fields.category.toLowerCase()
+    return allSkills.filter(
+      (s) => !s.category || s.category.toLowerCase() === fields.category.toLowerCase(),
     );
   }, [allSkills, fields.category]);
 
@@ -449,21 +470,42 @@ function SkillForm({
       </h4>
 
       <div className="space-y-4 md:space-y-6">
+        {/* Category — above Skill Name so filter works intuitively */}
+        <div>
+          <label className="mb-1 block text-xs font-medium text-[#0273B1] dark:text-blue-400 md:mb-2">
+            Category
+          </label>
+          <div className="relative">
+            <select
+              value={fields.category}
+              onChange={handleCategoryChange}
+              className="w-full appearance-none rounded-lg border border-gray-300 bg-white px-4 py-3 pr-10 text-sm text-[#1C2D4F] focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200"
+            >
+              <option value="" disabled>Select category</option>
+              <option value="technical">Technical Skills</option>
+              <option value="business">Business Skills</option>
+            </select>
+            <svg
+              className="pointer-events-none absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400 dark:text-slate-400"
+              fill="none" stroke="currentColor" viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+
         {/* Skill Name */}
         <div>
           <label className="mb-1 block text-xs font-medium text-[#0273B1] dark:text-blue-400 md:mb-2">
             Skill Name
           </label>
-          {!fields.category ? (
+          {loading || !fields.category ? (
             <div className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-400 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-500 md:px-4 md:py-3">
-              Loading skills...
+              {loading ? "Loading skills..." : "Select a category first"}
             </div>
           ) : (
             <SearchableDropdown
-              options={filteredSkills.map((s) => ({
-                value: s.name,
-                label: s.name,
-              }))}
+              options={filteredSkills.map((s) => ({ value: s.name, label: s.name }))}
               value={fields.name}
               onChange={(v: any) => set("name", v)}
               placeholder="Select skill"
@@ -473,88 +515,57 @@ function SkillForm({
           )}
         </div>
 
-        {/* Category */}
-        <div>
-          <label className="mb-1 block text-xs font-medium text-[#0273B1] dark:text-blue-400 md:mb-2">
-            Category
-          </label>
-          <div className="relative">
-            <select
-              value={fields.category}
-              onChange={handleCategoryChange}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none pr-10"
-            >
-              <option value="" disabled>Select category</option>
-              <option value="technical">Technical Skills</option>
-              <option value="business">Business Skills</option>
-            </select>
-            <svg
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-slate-400 pointer-events-none"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-          </div>
-        </div>
-
         {/* Proficiency Level */}
         <div>
           <label className="mb-2 block text-xs font-medium text-[#0273B1] dark:text-blue-400 md:mb-3">
             Proficiency Level
           </label>
           <div className="space-y-2 md:space-y-3">
-            {(
-              Object.entries(LEVEL_CONFIG) as [
-                string,
-                (typeof LEVEL_CONFIG)[keyof typeof LEVEL_CONFIG],
-              ][]
-            ).map(([key, cfg], num) => {
-              const isSelected = fields.level === key;
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => set("level", key)}
-                  className={`w-full rounded-lg border-2 p-3 text-left transition-all md:p-4 ${isSelected ? cfg.border : "border-gray-200 dark:border-slate-600"}`}
-                  style={{ backgroundColor: isSelected ? cfg.bg : undefined }}
-                  // Apply darkBg via inline style only when selected in dark mode isn't possible purely via Tailwind with dynamic colors,
-                  // so we rely on the light bg + Tailwind dark overlay
-                >
-                  <div className="mb-1.5 flex items-center gap-2 md:mb-2 md:gap-3">
-                    <div
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base font-bold text-white md:h-10 md:w-10 md:text-lg"
-                      style={{ backgroundColor: cfg.color }}
-                    >
-                      {num + 1}
-                    </div>
-                    <span className="text-sm font-semibold text-[#1C2D4F] dark:text-slate-100 md:text-base">
-                      {cfg.label}
-                    </span>
-                  </div>
-                  <div className="flex gap-1 mb-2">
-                    {cfg.bars.map((filled, i) => (
+            {(Object.entries(LEVEL_CONFIG) as [string, (typeof LEVEL_CONFIG)[keyof typeof LEVEL_CONFIG]][]).map(
+              ([key, cfg], num) => {
+                const isSelected = fields.level === key;
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => set("level", key)}
+                    className={`w-full rounded-lg border-2 p-3 text-left transition-all md:p-4 ${
+                      isSelected ? cfg.border : "border-gray-200 dark:border-slate-600"
+                    }`}
+                    style={{
+                      backgroundColor: isSelected
+                        ? isDark ? cfg.darkBg : cfg.bg
+                        : undefined,
+                    }}
+                  >
+                    <div className="mb-1.5 flex items-center gap-2 md:mb-2 md:gap-3">
                       <div
-                        key={i}
-                        className={`h-2 flex-1 rounded-full ${!filled ? "bg-gray-200 dark:bg-slate-500" : ""}`}
-                        style={
-                          filled ? { backgroundColor: cfg.color } : undefined
-                        }
-                      />
-                    ))}
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-slate-400 md:text-sm">
-                    {cfg.desc}
-                  </p>
-                </button>
-              );
-            })}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-base font-bold text-white md:h-10 md:w-10 md:text-lg"
+                        style={{ backgroundColor: cfg.color }}
+                      >
+                        {num + 1}
+                      </div>
+                      {/* Label — always explicit, never hidden by background clash */}
+                      <span className="text-sm font-semibold text-[#1C2D4F] dark:text-slate-100 md:text-base">
+                        {cfg.label}
+                      </span>
+                    </div>
+                    <div className="flex gap-1 mb-2">
+                      {cfg.bars.map((filled, i) => (
+                        <div
+                          key={i}
+                          className={`h-2 flex-1 rounded-full ${!filled ? "bg-gray-200 dark:bg-slate-500" : ""}`}
+                          style={filled ? { backgroundColor: cfg.color } : undefined}
+                        />
+                      ))}
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-slate-400 md:text-sm">
+                      {cfg.desc}
+                    </p>
+                  </button>
+                );
+              },
+            )}
           </div>
         </div>
       </div>

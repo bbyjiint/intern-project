@@ -15,6 +15,8 @@ import ProjectsSection, {
 import Step3SkillsProjects from "@/components/profile-setup/Step3SkillsProjects";
 import ProgressIndicator from "@/components/profile-setup/ProgressIndicator";
 
+const DRAFT_KEY = "profileSetupDraft";
+
 type Education = {
   university?: string;
   degree?: string;
@@ -33,12 +35,9 @@ export default function ProfileSetupPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const [showSaveModal, setShowSaveModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [pendingStep, setPendingStep] = useState<number | null>(null);
+  const [showIncompleteProjectsModal, setShowIncompleteProjectsModal] = useState(false);
+  const [incompleteProjectNames, setIncompleteProjectNames] = useState<string[]>([]);
 
   const [loadKey, setLoadKey] = useState(0);
   const [skillsKey, setSkillsKey] = useState(0);
@@ -47,6 +46,7 @@ export default function ProfileSetupPage() {
     resumeUrl: null as string | null,
     resumeFile: null,
     _pendingResumeFile: null as File | null,
+    _pendingPhotoFile: null as File | null, // ✅ เก็บ File จริงสำหรับ upload รูป
 
     firstName: "",
     lastName: "",
@@ -88,7 +88,6 @@ export default function ProfileSetupPage() {
     try {
       const res = await apiFetch<{ profile: any }>("/api/candidates/profile");
       const profile = res.profile || {};
-
       const nameParts = (profile.fullName ?? "").split(" ");
 
       let internshipStart = "";
@@ -99,8 +98,7 @@ export default function ProfileSetupPage() {
         internshipEnd = parts[1] || "";
       }
 
-      setFormData((prev) => ({
-        ...prev,
+      const baseData = {
         resumeUrl: profile.resumeUrl || null,
         firstName: nameParts[0] || "",
         lastName: nameParts.slice(1).join(" ") || "",
@@ -122,6 +120,20 @@ export default function ProfileSetupPage() {
         internshipPeriod: profile.internshipPeriod || "",
         internshipStart,
         internshipEnd,
+      };
+
+      let draftData: any = null;
+      try {
+        const raw = localStorage.getItem(DRAFT_KEY);
+        if (raw) draftData = JSON.parse(raw);
+      } catch {}
+
+      setFormData((prev) => ({
+        ...prev,
+        ...baseData,
+        ...(draftData || {}),
+        _pendingResumeFile: null,
+        _pendingPhotoFile: null,
       }));
     } catch (err) {
       console.error("Load profile failed:", err);
@@ -134,145 +146,108 @@ export default function ProfileSetupPage() {
     loadProfile();
   }, []);
 
-  const uploadResume = async () => {
-    if (!formData._pendingResumeFile) return formData.resumeUrl;
+  // Persist draft to localStorage (exclude non-serializable File objects)
+  useEffect(() => {
+    if (loadKey === 0) return;
+    try {
+      const { _pendingResumeFile, _pendingPhotoFile, ...saveable } = formData as any;
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(saveable));
+    } catch {}
+  }, [formData, loadKey]);
 
+  // Upload resume file → returns URL
+  const uploadResume = async (): Promise<string | null> => {
+    if (!formData._pendingResumeFile) {
+      const url = formData.resumeUrl;
+      if (url?.startsWith("blob:")) return null;
+      return url;
+    }
     const uploadForm = new FormData();
     uploadForm.append("file", formData._pendingResumeFile);
-
-    const res = await fetch("http://localhost:5000/api/upload/resume", {
+    const res = await fetch("http://localhost:5001/api/upload/resume", {
       method: "POST",
       body: uploadForm,
       credentials: "include",
     });
-
     const data = await res.json();
-    return data.url;
+    return data.url ?? null;
   };
 
-  const clearAIFlags = (step: number) => {
-    setFormData((prev) => {
-      const cleared: any = { ...prev };
-
-      if (step === 2) {
-        delete cleared._aiAutofilled;
-        delete cleared._aiFilled_firstName;
-        delete cleared._aiFilled_lastName;
-        delete cleared._aiFilled_email;
-        delete cleared._aiFilled_phoneNumber;
-        delete cleared._aiFilled_aboutYou;
-      }
-      if (step === 3) delete cleared._aiFilled_education;
-      if (step === 4) {
-        delete cleared._aiFilled_projects;
-        cleared.projects = prev.projects.map((p: any) => ({ ...p, _aiTag: false }));
-      }
-      if (step === 5) {
-        delete cleared._aiFilled_skills;
-        cleared.skills = prev.skills.map((s: any) => ({ ...s, _aiTag: false }));
-      }
-
-      return cleared;
+  // ✅ Upload profile photo → returns URL
+  // Uses backend POST /api/candidates/profile/image which handles S3/local storage
+  const uploadPhoto = async (): Promise<string | null> => {
+    if (!formData._pendingPhotoFile) {
+      // No new file — use existing URL if it's already a real URL (not base64)
+      const photo = formData.photo;
+      if (!photo || photo.startsWith("data:")) return null;
+      return photo;
+    }
+    const uploadForm = new FormData();
+    uploadForm.append("file", formData._pendingPhotoFile);
+    const res = await fetch("http://localhost:5001/api/candidates/profile/image", {
+      method: "POST",
+      body: uploadForm,
+      credentials: "include",
     });
+    const data = await res.json();
+    return data.url ?? null;
   };
 
-  const saveProfile = async () => {
-    setIsSubmitting(true);
-    setError(null);
+  // Sync projects that have not yet been persisted to DB
+  const syncProjectsFromFormData = async (projects: any[]) => {
+    for (const p of projects) {
+      const payload = {
+        name: p.name,
+        role: p.role,
+        description: p.description || "",
+        startDate: p.startDate || "",
+        endDate: p.endDate || "",
+        relatedSkills: p.relatedSkills || [],
+      };
 
-    try {
-      if (currentStep === 1) {
-        const resumeUrl = await uploadResume();
-        await apiFetch("/api/candidates/profile", {
+      const isNew = p._status === "new" || String(p.id || "").startsWith("local-");
+      const isEdited = p._status === "edited" && p.id && !String(p.id).startsWith("local-");
+      const isDeleted = p._status === "deleted" && p.id && !String(p.id).startsWith("local-");
+
+      if (isDeleted) {
+        await apiFetch(`/api/candidates/projects/${p.id}`, { method: "DELETE" });
+      } else if (isNew) {
+        await apiFetch("/api/candidates/projects", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+      } else if (isEdited) {
+        await apiFetch(`/api/candidates/projects/${p.id}`, {
           method: "PUT",
-          body: JSON.stringify({ resumeUrl }),
+          body: JSON.stringify(payload),
         });
       }
-
-      if (currentStep === 2) {
-        const internshipPeriod =
-          formData.internshipPeriod ||
-          (formData.internshipStart && formData.internshipEnd
-            ? `${formData.internshipStart} - ${formData.internshipEnd}`
-            : formData.internshipStart || formData.internshipEnd || "");
-
-        let dateOfBirth: string | null = null;
-        if (formData.dateOfBirth) {
-          const raw = formData.dateOfBirth.split("T")[0];
-          dateOfBirth = `${raw}T12:00:00.000Z`;
-        }
-
-        await apiFetch("/api/candidates/profile", {
-          method: "PUT",
-          body: JSON.stringify({
-            fullName: `${formData.firstName} ${formData.lastName}`.trim(),
-            email: formData.email,
-            phoneNumber: formData.phoneNumber,
-            aboutYou: formData.aboutYou,
-            profileImage: formData.photo || null,
-            gender: formData.gender,
-            nationality: formData.nationality,
-            dateOfBirth,
-            internshipPeriod,
-            positionsOfInterest: formData.positionsOfInterest,
-            preferredLocations: formData.preferredLocations,
-          }),
-        });
-      }
-
-      if (currentStep === 3) {
-        if (educationValidatorRef.current) {
-          const valid = await educationValidatorRef.current();
-          if (!valid) { setIsSubmitting(false); return; }
-        }
-        await apiFetch("/api/candidates/profile", {
-          method: "PUT",
-          body: JSON.stringify({ education: formData.education }),
-        });
-      }
-
-      if (currentStep === 4) {
-        if (projectsSectionRef.current) {
-          const { valid, incompleteProjects } = projectsSectionRef.current.validateAll();
-          if (!valid) {
-            setError(`กรุณากรอกข้อมูลให้ครบก่อนบันทึก: ${incompleteProjects.join(", ")} — ต้องมี ชื่อ, role, วันที่, description, related skills`);
-            setIsSubmitting(false);
-            return;
-          }
-          await projectsSectionRef.current.syncToDb();
-        }
-      }
-
-      if (currentStep === 5) {
-        const incompleteSkills = (formData.skills as any[]).filter(
-          (s: any) => !s.name?.trim() || !s.category?.trim() || !s.level?.trim()
-        );
-        if (incompleteSkills.length > 0) {
-          setError(
-            `กรุณากรอกข้อมูลให้ครบก่อนบันทึก: ${incompleteSkills.map((s: any) => s.name || "Untitled Skill").join(", ")} — ต้องมี ชื่อ, category, proficiency level`
-          );
-          setIsSubmitting(false);
-          return;
-        }
-        await apiFetch("/api/candidates/profile", {
-          method: "PUT",
-          body: JSON.stringify({ skills: formData.skills }),
-        });
-      }
-
-      clearAIFlags(currentStep);
-      if (currentStep === 5) setSkillsKey((k) => k + 1);
-
-      setHasUnsavedChanges(false);
-      setShowSaveModal(true);
-    } catch (err) {
-      setError("Failed to save profile");
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
+  const validateProjects = (): string[] => {
+    const incomplete: string[] = [];
+    for (const p of formData.projects) {
+      if (p._status === "deleted") continue;
+      const missing =
+        !p.name?.trim() ||
+        !p.role?.trim() ||
+        !p.startDate?.trim() ||
+        !p.endDate?.trim() ||
+        !p.description?.trim() ||
+        !p.relatedSkills?.length;
+      if (missing) incomplete.push(p.name?.trim() || "(Unnamed Project)");
+    }
+    return incomplete;
+  };
+
   const handleCreateProfile = () => {
+    const incomplete = validateProjects();
+    if (incomplete.length > 0) {
+      setIncompleteProjectNames(incomplete);
+      setShowIncompleteProjectsModal(true);
+      return;
+    }
     setShowConfirmModal(true);
   };
 
@@ -282,10 +257,16 @@ export default function ProfileSetupPage() {
     setError(null);
 
     try {
-      const resumeUrl = await uploadResume();
+      const [resumeUrl, profileImageUrl] = await Promise.all([
+        uploadResume(),
+        uploadPhoto(), // ✅ upload รูปพร้อมกัน
+      ]);
 
+      // Sync projects — use ref if still on step 4, else use formData
       if (projectsSectionRef.current) {
         await projectsSectionRef.current.syncToDb();
+      } else {
+        await syncProjectsFromFormData(formData.projects);
       }
 
       const internshipPeriod =
@@ -307,7 +288,7 @@ export default function ProfileSetupPage() {
           email: formData.email,
           phoneNumber: formData.phoneNumber,
           aboutYou: formData.aboutYou,
-          profileImage: formData.photo || null,
+          profileImage: profileImageUrl, // ✅ ใช้ URL จริงแทน base64
           resumeUrl,
           positionsOfInterest: formData.positionsOfInterest,
           preferredLocations: formData.preferredLocations,
@@ -321,81 +302,45 @@ export default function ProfileSetupPage() {
         }),
       });
 
+      localStorage.removeItem(DRAFT_KEY);
       router.push("/intern/profile");
     } catch (err) {
-      setError("Failed to create profile");
+      setError("Failed to create profile. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  useEffect(() => {
-    setHasUnsavedChanges(false);
-  }, [currentStep]);
-
-  const tryNavigateTo = (targetStep: number) => {
-    if (hasUnsavedChanges) {
-      setPendingStep(targetStep);
-      setShowUnsavedModal(true);
-    } else {
-      setHasUnsavedChanges(false);
-      setCurrentStep(targetStep);
-    }
-  };
-
   const handleNext = () => {
-    if (currentStep < 5) tryNavigateTo(currentStep + 1);
+    if (currentStep < 5) setCurrentStep((s) => s + 1);
   };
 
   const handlePrevious = () => {
     if (currentStep === 1) {
-      if (hasUnsavedChanges) {
-        setPendingStep(0);
-        setShowUnsavedModal(true);
-      } else {
-        router.push("/intern/profile");
-      }
-    } else {
-      tryNavigateTo(currentStep - 1);
-    }
-  };
-
-  const updateFormData = (data: any) => {
-    setFormData((prev) => ({ ...prev, ...data }));
-    setHasUnsavedChanges(true);
-  };
-
-  const handleLeaveWithoutSaving = async () => {
-    setShowUnsavedModal(false);
-    setLoadKey(0);
-    await loadProfile();
-    setHasUnsavedChanges(false);
-    if (pendingStep === 0) {
-      setPendingStep(null);
       router.push("/intern/profile");
-    } else if (pendingStep !== null) {
-      setCurrentStep(pendingStep);
-      setPendingStep(null);
+    } else {
+      setCurrentStep((s) => s - 1);
     }
   };
+
+  const updateFormData = (data: any) => setFormData((prev) => ({ ...prev, ...data }));
+  const updateFormDataSilent = (data: any) => setFormData((prev) => ({ ...prev, ...data }));
 
   if (loadKey === 0) {
     return (
       <div className="min-h-screen bg-[#F0F4F8] dark:bg-slate-950 flex items-center justify-center transition-colors duration-300">
-        <div className="text-gray-400 dark:text-slate-500 text-sm">Loading profile...</div>
+        <div className="text-gray-400 dark:text-slate-500 text-sm">Loading your profile...</div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-[#EAF3FA] transition-colors duration-300 dark:bg-slate-950 md:bg-[#F0F4F8]">
-      {/* Headbar: dark navy, logo left + theme toggle right (all breakpoints) */}
+      {/* Header */}
       <header className="sticky top-0 z-50 border-b border-[#223A57] bg-[#0B1C2C]">
         <div className="layout-container flex h-12 items-center justify-between px-3 md:h-[76px] md:px-6">
           <CompanyHubLogoDark href="/" className="shrink-0" />
-          <div
-            className="shrink-0 [&_button]:!h-9 [&_button]:!w-9 md:[&_button]:!h-10 md:[&_button]:!w-10 [&_button]:!border-[#223A57] [&_button]:!bg-[#10273F] [&_button:hover]:!bg-[#223A57] [&_button]:focus:ring-blue-400 [&_button]:focus:ring-offset-2 [&_button]:focus:ring-offset-[#0B1C2C] [&_button_svg]:!h-3.5 [&_button_svg]:!w-3.5 md:[&_button_svg]:!h-4 md:[&_button_svg]:!w-4 [&_button_svg]:!text-[#8A94A6]"
-          >
+          <div className="shrink-0 [&_button]:!h-9 [&_button]:!w-9 md:[&_button]:!h-10 md:[&_button]:!w-10 [&_button]:!border-[#223A57] [&_button]:!bg-[#10273F] [&_button:hover]:!bg-[#223A57] [&_button]:focus:ring-blue-400 [&_button]:focus:ring-offset-2 [&_button]:focus:ring-offset-[#0B1C2C] [&_button_svg]:!h-3.5 [&_button_svg]:!w-3.5 md:[&_button_svg]:!h-4 md:[&_button_svg]:!w-4 [&_button_svg]:!text-[#8A94A6]">
             <ThemeToggle />
           </div>
         </div>
@@ -403,14 +348,16 @@ export default function ProfileSetupPage() {
 
       <div className="layout-container pt-3 pb-24 md:pt-8 md:pb-36 lg:pt-12">
         <div className="mx-auto w-full max-w-[800px] min-w-0">
-          {/* Mobile: compact progress card */}
+          {/* Progress */}
           <div className="mb-2 pt-1 md:mb-4 md:px-1 md:pt-4">
+            {/* Mobile */}
             <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm dark:border-[#223A57] dark:bg-[#0B1C2C] md:hidden">
               <h1 className="mb-2 text-center text-lg font-semibold leading-tight tracking-tight text-[#0273B1] dark:text-white">
                 Start building your profile
               </h1>
               <ProgressIndicator currentStep={currentStep} totalSteps={5} />
             </div>
+            {/* Desktop */}
             <div className="hidden md:block md:rounded-lg md:bg-white md:p-6 md:shadow md:dark:bg-slate-800">
               <h1 className="mb-6 text-center text-3xl font-bold leading-tight text-gray-900 dark:text-slate-100">
                 Start building your profile
@@ -427,8 +374,8 @@ export default function ProfileSetupPage() {
               <Step0UploadResume
                 key={`step0-${loadKey}`}
                 data={formData}
-                onUpdate={updateFormData}
-                onSkip={() => tryNavigateTo(2)}
+                onUpdate={updateFormDataSilent}
+                onSkip={() => setCurrentStep(2)}
               />
             )}
             {currentStep === 2 && (
@@ -436,7 +383,7 @@ export default function ProfileSetupPage() {
                 key={`step1-${loadKey}`}
                 data={formData}
                 onUpdate={updateFormData}
-                onSkip={() => tryNavigateTo(3)}
+                onSkip={() => setCurrentStep(3)}
               />
             )}
             {currentStep === 3 && (
@@ -444,7 +391,7 @@ export default function ProfileSetupPage() {
                 key={`step2-${loadKey}`}
                 data={formData}
                 onUpdate={updateFormData}
-                onSkip={() => tryNavigateTo(4)}
+                onSkip={() => setCurrentStep(4)}
                 onValidate={(fn) => (educationValidatorRef.current = fn)}
               />
             )}
@@ -454,7 +401,7 @@ export default function ProfileSetupPage() {
                 ref={projectsSectionRef}
                 data={formData}
                 onUpdate={updateFormData}
-                onSkip={() => tryNavigateTo(5)}
+                onSkip={() => setCurrentStep(5)}
               />
             )}
             {currentStep === 5 && (
@@ -466,24 +413,10 @@ export default function ProfileSetupPage() {
               />
             )}
 
-            {/* Footer mobile: compact row; Next is filled primary */}
+            {/* Footer Buttons */}
             <div className="mt-5 border-t border-gray-200 pt-4 dark:border-slate-700 md:mt-10 md:pt-6">
+              {/* Mobile */}
               <div className="flex max-w-full flex-col gap-2 md:hidden">
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={saveProfile}
-                    disabled={isSubmitting}
-                    className="inline-flex h-10 max-w-full shrink-0 items-center justify-center gap-1.5 rounded-lg border border-[#0273B1] bg-white px-3 text-sm font-medium text-[#0273B1] transition-colors hover:bg-blue-50 disabled:opacity-60 dark:bg-slate-800 dark:hover:bg-slate-700"
-                  >
-                    <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                      <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
-                      <polyline points="17 21 17 13 7 13 7 21" />
-                      <polyline points="7 3 7 8 15 8" />
-                    </svg>
-                    {isSubmitting ? "Saving..." : "Save"}
-                  </button>
-                </div>
                 <div className="grid w-full min-w-0 grid-cols-2 gap-3">
                   <button
                     type="button"
@@ -495,6 +428,7 @@ export default function ProfileSetupPage() {
                     </svg>
                     <span className="truncate">Previous</span>
                   </button>
+
                   {currentStep < 5 ? (
                     <button
                       type="button"
@@ -513,12 +447,15 @@ export default function ProfileSetupPage() {
                       disabled={isSubmitting}
                       className="inline-flex h-10 min-w-0 items-center justify-center rounded-lg bg-[#16A34A] px-2 text-xs font-semibold leading-tight text-white shadow-sm transition-colors hover:bg-[#15803D] disabled:opacity-60 md:text-sm"
                     >
-                      <span className="px-0.5 text-center leading-snug">Create Profile</span>
+                      <span className="px-0.5 text-center leading-snug">
+                        {isSubmitting ? "Creating..." : "Create Profile"}
+                      </span>
                     </button>
                   )}
                 </div>
               </div>
 
+              {/* Desktop */}
               <div className="hidden items-center justify-between gap-3 md:flex">
                 <button
                   type="button"
@@ -530,21 +467,8 @@ export default function ProfileSetupPage() {
                   </svg>
                   Previous
                 </button>
+
                 <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={saveProfile}
-                    disabled={isSubmitting}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors hover:opacity-95 disabled:opacity-60"
-                    style={{ backgroundColor: "#0273B1" }}
-                  >
-                    <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                      <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
-                      <polyline points="17 21 17 13 7 13 7 21" />
-                      <polyline points="7 3 7 8 15 8" />
-                    </svg>
-                    {isSubmitting ? "Saving..." : "Save"}
-                  </button>
                   {currentStep < 5 ? (
                     <button
                       type="button"
@@ -566,7 +490,7 @@ export default function ProfileSetupPage() {
                       onMouseEnter={(e) => { if (!isSubmitting) e.currentTarget.style.backgroundColor = "#15803D"; }}
                       onMouseLeave={(e) => { if (!isSubmitting) e.currentTarget.style.backgroundColor = "#16A34A"; }}
                     >
-                      Create Profile
+                      {isSubmitting ? "Creating..." : "Create Profile"}
                     </button>
                   )}
                 </div>
@@ -576,56 +500,29 @@ export default function ProfileSetupPage() {
         </div>
       </div>
 
-      {/* Save Success Modal */}
-      {showSaveModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white px-5 py-6 text-center shadow-xl dark:bg-slate-800 sm:px-12 sm:py-10">
-            <div className="flex justify-center mb-6">
-              <div className="w-24 h-24 rounded-full border-4 border-green-200 flex items-center justify-center">
-                <svg className="w-14 h-14 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-            </div>
-            <h2 className="mb-2 text-lg font-bold text-[#1C2D4F] dark:text-white sm:mb-3 sm:text-2xl md:text-3xl">Saved Successfully</h2>
-            <p className="mb-6 text-xs text-gray-500 dark:text-slate-400 sm:mb-8 sm:text-sm md:text-base">
-              Your information has been saved. You can update your profile at any time.
-            </p>
-            <button
-              onClick={() => setShowSaveModal(false)}
-              className="w-full rounded-lg px-10 py-3 font-semibold text-white transition-colors sm:w-auto"
-              style={{ backgroundColor: "#0273B1" }}
-              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#025a8f"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#0273B1"; }}
-            >
-              OK
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Confirm Create Profile Modal */}
+      {/* Confirm Modal */}
       {showConfirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
           <div className="w-full max-w-lg rounded-2xl bg-white px-5 py-6 text-center shadow-xl dark:bg-slate-800 sm:px-12 sm:py-10">
             <div className="flex justify-center mb-6">
               <div className="w-24 h-24 rounded-full border-4 border-blue-200 flex items-center justify-center">
                 <svg className="w-14 h-14 text-[#0273B1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  <path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
               </div>
             </div>
-            <h2 className="mb-2 text-lg font-bold text-[#1C2D4F] dark:text-white sm:mb-3 sm:text-2xl md:text-3xl">Create Profile?</h2>
+            <h2 className="mb-2 text-lg font-bold text-[#1C2D4F] dark:text-white sm:mb-3 sm:text-2xl md:text-3xl">
+              Create Profile?
+            </h2>
             <p className="mb-6 text-xs text-gray-500 dark:text-slate-400 sm:mb-8 sm:text-sm md:text-base">
-              ยืนยันที่จะสร้างโปรไฟล์และบันทึกข้อมูลลงในบัญชีของคุณใช่ไหม?
+               Are you sure you want to create your profile and save your information to your account?
             </p>
             <div className="flex flex-col justify-center gap-3 sm:flex-row sm:gap-4">
               <button
                 onClick={() => setShowConfirmModal(false)}
                 className="w-full rounded-lg border border-gray-300 px-8 py-3 font-semibold text-gray-600 transition-colors hover:bg-gray-100 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 sm:w-auto"
               >
-                ยกเลิก
+                Cancel
               </button>
               <button
                 onClick={confirmCreateProfile}
@@ -634,44 +531,46 @@ export default function ProfileSetupPage() {
                 onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#15803D"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#16A34A"; }}
               >
-                ยืนยัน
+                Confirm
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Unsaved Changes Modal */}
-      {showUnsavedModal && (
+      {/* Incomplete Projects Modal */}
+      {showIncompleteProjectsModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
           <div className="w-full max-w-lg rounded-2xl bg-white px-5 py-6 text-center shadow-xl dark:bg-slate-800 sm:px-12 sm:py-10">
             <div className="flex justify-center mb-6">
-              <div className="w-24 h-24 rounded-full border-4 border-yellow-200 flex items-center justify-center">
-                <svg className="w-14 h-14 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-                    d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+              <div className="w-24 h-24 rounded-full border-4 border-red-200 flex items-center justify-center">
+                <svg className="w-14 h-14 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
                 </svg>
               </div>
             </div>
-            <h2 className="mb-2 text-lg font-bold text-[#1C2D4F] dark:text-white sm:mb-3 sm:text-2xl md:text-3xl">Unsaved Changes</h2>
-            <p className="mb-6 text-xs text-gray-500 dark:text-slate-400 sm:mb-8 sm:text-sm md:text-base">
-              You have unsaved changes. Continue without saving?
+            <h2 className="mb-2 text-lg font-bold text-[#1C2D4F] dark:text-white sm:mb-3 sm:text-2xl">
+              Incomplete Project Information
+            </h2>
+            <p className="mb-3 text-xs text-gray-500 dark:text-slate-400 sm:text-sm">
+              Please complete all required fields or remove any unwanted projects before proceeding.
             </p>
+            <div className="mb-6 flex flex-col gap-1.5">
+              {incompleteProjectNames.map((name, i) => (
+                <div key={i} className="rounded-lg bg-red-50 dark:bg-red-900/20 px-4 py-2 text-sm font-medium text-red-700 dark:text-red-400">
+                  {name}
+                </div>
+              ))}
+            </div>
             <div className="flex flex-col justify-center gap-3 sm:flex-row sm:gap-4">
               <button
-                onClick={handleLeaveWithoutSaving}
-                className="w-full rounded-lg border border-gray-300 px-8 py-3 font-semibold text-gray-600 transition-colors hover:bg-gray-100 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 sm:w-auto"
-              >
-                Leave without saving
-              </button>
-              <button
-                onClick={() => { setShowUnsavedModal(false); saveProfile(); }}
+                onClick={() => { setShowIncompleteProjectsModal(false); setCurrentStep(4); }}
                 className="w-full rounded-lg px-8 py-3 font-semibold text-white transition-colors sm:w-auto"
                 style={{ backgroundColor: "#0273B1" }}
                 onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#025a8f"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#0273B1"; }}
               >
-                Save & Continue
+                Go to Edit Projects
               </button>
             </div>
           </div>

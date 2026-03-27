@@ -62,6 +62,9 @@ export default function Step2BackgroundExperience({
     data.education || [],
   );
 
+  // Track which AI-filled fields have been edited by the user
+  const [userEditedFields, setUserEditedFields] = useState<Set<string>>(new Set());
+
   useEffect(() => {
     setEducation(data.education || []);
   }, [data.education]);
@@ -100,6 +103,26 @@ export default function Step2BackgroundExperience({
     setEducation(updated);
     onUpdate({ education: updated });
   };
+
+  const handleFieldChange = (edu: EducationData, editedField?: string) => {
+    const updated = [edu];
+    setEducation(updated);
+
+    // Mark this field as user-edited so the AI badge disappears
+    if (editedField) {
+      setUserEditedFields((prev) => {
+        const next = new Set(prev);
+        next.add(editedField);
+        return next;
+      });
+    }
+
+    onUpdate({ education: updated });
+  };
+
+  // A field shows the AI badge only if AI filled it AND the user hasn't edited it yet
+  const showAiBadge = (field: string) =>
+    !!data._aiFilled_education && !userEditedFields.has(field);
 
   return (
     <div>
@@ -143,12 +166,8 @@ export default function Step2BackgroundExperience({
         <EducationForm
           ref={educationFormRef}
           education={education[0] || null}
-          isAiFilled={!!data._aiFilled_education}
-          onFieldChange={(edu: EducationData) => {
-            const updated = [edu];
-            setEducation(updated);
-            onUpdate({ education: updated });
-          }}
+          showAiBadgeFor={showAiBadge}
+          onFieldChange={handleFieldChange}
           onSave={handleSave}
         />
       </div>
@@ -179,13 +198,14 @@ const YEAR_OF_STUDY_OPTIONS = [
 
 type EducationFormProps = {
   education: EducationData | null;
-  isAiFilled?: boolean;
+  /** Returns true if a given field name should show the AI badge */
+  showAiBadgeFor: (field: string) => boolean;
   onSave: (edu: EducationData) => void;
-  onFieldChange: (edu: EducationData) => void;
+  onFieldChange: (edu: EducationData, editedField?: string) => void;
 };
 
 const EducationForm = forwardRef<EducationFormHandle, EducationFormProps>(
-  function EducationForm({ education, isAiFilled, onSave, onFieldChange }, ref) {
+  function EducationForm({ education, showAiBadgeFor, onSave, onFieldChange }, ref) {
     const [fields, setFields] = useState({
       educationLevel: education?.educationLevel || "",
       institution: education?.university || "",
@@ -233,7 +253,8 @@ const EducationForm = forwardRef<EducationFormHandle, EducationFormProps>(
       const updated = { ...fields, [key]: value };
       setFields(updated);
       if (errors[key]) setErrors((prev) => ({ ...prev, [key]: false }));
-      onFieldChange(toPayload(updated));
+      // Pass the edited field name up so the parent can clear its AI badge
+      onFieldChange(toPayload(updated), key);
     };
 
     const toPayload = (f: typeof fields): EducationData => ({
@@ -304,7 +325,7 @@ const EducationForm = forwardRef<EducationFormHandle, EducationFormProps>(
           {/* Institution Name */}
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-slate-300 md:mb-2">
-              Institution Name {isAiFilled && <AIBadge />}
+              Institution Name {showAiBadgeFor("institution") && <AIBadge />}
             </label>
             {universitiesLoading ? (
               <div className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-400 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-500 md:px-4 md:py-3">
@@ -329,7 +350,7 @@ const EducationForm = forwardRef<EducationFormHandle, EducationFormProps>(
           {/* Degree */}
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-slate-300 md:mb-2">
-              Degree {isAiFilled && <AIBadge />}
+              Degree {showAiBadgeFor("degree") && <AIBadge />}
             </label>
             <input
               value={fields.degree}
@@ -342,7 +363,7 @@ const EducationForm = forwardRef<EducationFormHandle, EducationFormProps>(
           {/* Field of Study */}
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-slate-300 md:mb-2">
-              Field of Study {isAiFilled && <AIBadge />}
+              Field of Study {showAiBadgeFor("fieldOfStudy") && <AIBadge />}
             </label>
             <input
               value={fields.fieldOfStudy}
@@ -374,7 +395,7 @@ const EducationForm = forwardRef<EducationFormHandle, EducationFormProps>(
           {/* GPA */}
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-slate-300 md:mb-2">
-              GPA (Current) {isAiFilled && <AIBadge />}
+              GPA (Current) {showAiBadgeFor("gpa") && <AIBadge />}
             </label>
             <input
               value={fields.gpa}

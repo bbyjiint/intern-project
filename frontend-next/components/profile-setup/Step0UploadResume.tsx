@@ -124,7 +124,7 @@ export default function Step0UploadResume({
       const uploadForm = new FormData();
       uploadForm.append("resume", file);
 
-      const res = await fetch("http://localhost:5000/api/ai/parse-resume", {
+      const res = await fetch("http://localhost:5001/api/ai/parse-resume", {
         method: "POST",
         body: uploadForm,
         credentials: "include",

@@ -14,14 +14,35 @@ import { apiFetch } from "@/lib/api";
 // ─────────────────────────────────────────────────────────────────────────────
 
 const MONTH_NAMES = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
 ];
 
 const SKILL_OPTIONS = [
-  "JavaScript", "TypeScript", "React", "Next.js", "Node.js",
-  "Python", "Java", "C++", "SQL", "Tableau",
-  "Figma", "Excel", "Power BI", "HTML/CSS",
+  "JavaScript",
+  "TypeScript",
+  "React",
+  "Next.js",
+  "Node.js",
+  "Python",
+  "Java",
+  "C++",
+  "SQL",
+  "Tableau",
+  "Figma",
+  "Excel",
+  "Power BI",
+  "HTML/CSS",
 ];
 
 export interface ProjectsSectionHandle {
@@ -97,7 +118,11 @@ function normaliseProject(p: any): Project {
     relatedSkills: p.relatedSkills ?? p.skills ?? [],
     startDate: toDisplayDate(p.startDate || ""),
     endDate: toDisplayDate(p.endDate || ""),
-    _status: p._status ?? (p.id && !String(p.id).startsWith("local-") ? "saved" : "new"),
+    _status:
+      p._status ??
+      (p.id && !String(p.id).startsWith("local-") && !p._aiTag
+        ? "saved"
+        : "new"),
     _aiTag: p._aiTag ?? false,
   };
 }
@@ -158,7 +183,10 @@ function MonthYearPicker({
 
   return (
     <div ref={wrapRef} className="relative">
-      <div className="relative cursor-pointer" onClick={() => setOpen((v) => !v)}>
+      <div
+        className="relative cursor-pointer"
+        onClick={() => setOpen((v) => !v)}
+      >
         <input
           type="text"
           value={inputVal}
@@ -175,25 +203,67 @@ function MonthYearPicker({
           onClick={() => setOpen((v) => !v)}
           className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-slate-400 hover:text-gray-600 dark:hover:text-slate-200"
         >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
           </svg>
         </button>
       </div>
 
       {open && (
-        <div className="absolute z-50 mt-1 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg shadow-lg p-4" style={{ minWidth: 260 }}>
+        <div
+          className="absolute z-50 mt-1 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg shadow-lg p-4"
+          style={{ minWidth: 260 }}
+        >
           <div className="flex items-center justify-between mb-3">
-            <button type="button" onClick={() => setCalYear((y) => y - 1)} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-600">
-              <svg className="w-4 h-4 text-gray-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <button
+              type="button"
+              onClick={() => setCalYear((y) => y - 1)}
+              className="p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-600"
+            >
+              <svg
+                className="w-4 h-4 text-gray-600 dark:text-slate-300"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
               </svg>
             </button>
-            <span className="font-semibold text-sm text-[#1C2D4F] dark:text-slate-200">{calYear}</span>
-            <button type="button" onClick={() => setCalYear((y) => y + 1)} className="p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-600">
-              <svg className="w-4 h-4 text-gray-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <span className="font-semibold text-sm text-[#1C2D4F] dark:text-slate-200">
+              {calYear}
+            </span>
+            <button
+              type="button"
+              onClick={() => setCalYear((y) => y + 1)}
+              className="p-1 rounded hover:bg-gray-100 dark:hover:bg-slate-600"
+            >
+              <svg
+                className="w-4 h-4 text-gray-600 dark:text-slate-300"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5l7 7-7 7"
+                />
               </svg>
             </button>
           </div>
@@ -202,13 +272,18 @@ function MonthYearPicker({
               const p = parseDateValue(value);
               const isSelected = p && p.month === i + 1 && p.year === calYear;
               return (
-                <button key={name} type="button" onClick={() => selectMonth(i)}
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => selectMonth(i)}
                   className={`py-2 rounded-lg text-sm font-medium transition-colors ${
                     isSelected
                       ? "bg-[#0273B1] text-white"
                       : "text-[#1C2D4F] dark:text-slate-200 hover:bg-[#E3F5FF] dark:hover:bg-slate-600"
                   }`}
-                >{name}</button>
+                >
+                  {name}
+                </button>
               );
             })}
           </div>
@@ -240,7 +315,8 @@ const ProjectsSection = forwardRef<ProjectsSectionHandle, ProjectsSectionProps>(
     useEffect(() => {
       if (initializedRef.current) return;
       const incoming: any[] = data.projects || [];
-      const hasRealData = incoming.length > 0 &&
+      const hasRealData =
+        incoming.length > 0 &&
         incoming.every((p) => p.id && !String(p.id).startsWith("local-"));
       if (!hasRealData) return;
 
@@ -252,7 +328,9 @@ const ProjectsSection = forwardRef<ProjectsSectionHandle, ProjectsSectionProps>(
 
     useImperativeHandle(ref, () => ({
       validateAll: () => {
-        const visible = projectsRef.current.filter((p) => p._status !== "deleted");
+        const visible = projectsRef.current.filter(
+          (p) => p._status !== "deleted",
+        );
         const incomplete = visible.filter(
           (p) =>
             !p.name?.trim() ||
@@ -260,13 +338,24 @@ const ProjectsSection = forwardRef<ProjectsSectionHandle, ProjectsSectionProps>(
             !p.startDate ||
             !p.endDate ||
             !p.description?.trim() ||
-            !p.relatedSkills || p.relatedSkills.length === 0
+            !p.relatedSkills ||
+            p.relatedSkills.length === 0,
         );
         const names = incomplete.map((p) => p.name || "Untitled Project");
         if (names.length > 0) setIncompleteWarnings(names);
         return { valid: names.length === 0, incompleteProjects: names };
       },
       syncToDb: async () => {
+        console.log("=== syncToDb called ===");
+        console.log(
+          "projects:",
+          projectsRef.current.map((p) => ({
+            name: p.name,
+            _status: p._status,
+            id: p.id,
+            _aiTag: p._aiTag,
+          })),
+        );
         const current = [...projectsRef.current];
         const next = [...current];
 
@@ -283,20 +372,31 @@ const ProjectsSection = forwardRef<ProjectsSectionHandle, ProjectsSectionProps>(
 
           if (p._status === "deleted") {
             if (p.id && !String(p.id).startsWith("local-")) {
-              await apiFetch(`/api/candidates/projects/${p.id}`, { method: "DELETE" });
+              await apiFetch(`/api/candidates/projects/${p.id}`, {
+                method: "DELETE",
+              });
             }
             next[i] = { ...p, _status: "deleted" };
-          } else if (p._status === "new" || String(p.id || "").startsWith("local-")) {
-            const res = await apiFetch<{ project: any }>("/api/candidates/projects", {
-              method: "POST",
-              body: JSON.stringify(payload),
-            });
+          } else if (
+            p._status === "new" ||
+            String(p.id || "").startsWith("local-")
+          ) {
+            const res = await apiFetch<{ project: any }>(
+              "/api/candidates/projects",
+              {
+                method: "POST",
+                body: JSON.stringify(payload),
+              },
+            );
             next[i] = normaliseProject({ ...res.project, _status: "saved" });
           } else if (p._status === "edited" && p.id) {
-            const res = await apiFetch<{ project: any }>(`/api/candidates/projects/${p.id}`, {
-              method: "PUT",
-              body: JSON.stringify(payload),
-            });
+            const res = await apiFetch<{ project: any }>(
+              `/api/candidates/projects/${p.id}`,
+              {
+                method: "PUT",
+                body: JSON.stringify(payload),
+              },
+            );
             next[i] = normaliseProject({ ...res.project, _status: "saved" });
           }
         }
@@ -351,7 +451,10 @@ const ProjectsSection = forwardRef<ProjectsSectionHandle, ProjectsSectionProps>(
       const existing = projects[index];
       let updated: Project[];
 
-      if (existing._status === "new" || String(existing.id || "").startsWith("local-")) {
+      if (
+        existing._status === "new" ||
+        String(existing.id || "").startsWith("local-")
+      ) {
         updated = projects.filter((_, i) => i !== index);
       } else {
         updated = [...projects];
@@ -375,7 +478,8 @@ const ProjectsSection = forwardRef<ProjectsSectionHandle, ProjectsSectionProps>(
               Projects
             </h2>
             <p className="text-xs text-[#A9B4CD] dark:text-slate-400 md:text-sm">
-              This step is optional — you can fill your profile information at any time.
+              This step is optional — you can fill your profile information at
+              any time.
             </p>
           </div>
           {onSkip && (
@@ -399,7 +503,10 @@ const ProjectsSection = forwardRef<ProjectsSectionHandle, ProjectsSectionProps>(
               </p>
               <ul className="mt-1 list-disc list-inside text-red-500 dark:text-red-400">
                 {incompleteWarnings.map((name, i) => (
-                  <li key={i} className="text-xs">{name} — ต้องมี ชื่อ, role, วันที่, description, related skills</li>
+                  <li key={i} className="text-xs">
+                    {name} — ต้องมี ชื่อ, role, วันที่, description, related
+                    skills
+                  </li>
                 ))}
               </ul>
             </div>
@@ -412,10 +519,12 @@ const ProjectsSection = forwardRef<ProjectsSectionHandle, ProjectsSectionProps>(
             <span className="text-base mt-0.5">✨</span>
             <div>
               <p className="font-semibold text-indigo-700 dark:text-indigo-300">
-                AI autofilled {aiProjectCount} project{aiProjectCount > 1 ? "s" : ""} from your resume
+                AI autofilled {aiProjectCount} project
+                {aiProjectCount > 1 ? "s" : ""} from your resume
               </p>
               <p className="mt-0.5 text-indigo-500 dark:text-indigo-400">
-                Please review each project and edit if needed. Projects marked with ✨ AI filled were read from your resume.
+                Please review each project and edit if needed. Projects marked
+                with ✨ AI filled were read from your resume.
               </p>
             </div>
           </div>
@@ -454,8 +563,18 @@ const ProjectsSection = forwardRef<ProjectsSectionHandle, ProjectsSectionProps>(
               onClick={() => setShowForm(true)}
               className="flex h-10 w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-[#0273B1] bg-white text-sm font-semibold text-[#0273B1] transition-colors hover:bg-[#F0F8FF] dark:border-blue-400 dark:bg-transparent dark:text-blue-400 dark:hover:bg-slate-700/50 md:h-11"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
               </svg>
               Add Project
             </button>
@@ -482,7 +601,9 @@ function ProjectCard({
   onDelete: () => void;
 }) {
   const skills = project.relatedSkills || [];
-  const dateRange = [project.startDate, project.endDate].filter(Boolean).join(" - ");
+  const dateRange = [project.startDate, project.endDate]
+    .filter(Boolean)
+    .join(" - ");
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-800 md:p-5">
@@ -494,7 +615,9 @@ function ProjectCard({
       </div>
 
       {dateRange ? (
-        <p className="mb-2 text-xs text-gray-500 dark:text-slate-400 md:mb-3 md:text-sm">{dateRange}</p>
+        <p className="mb-2 text-xs text-gray-500 dark:text-slate-400 md:mb-3 md:text-sm">
+          {dateRange}
+        </p>
       ) : null}
       {project.description && (
         <p className="mb-3 text-xs leading-relaxed text-[#1C2D4F] dark:text-slate-300 md:mb-4 md:text-sm">
@@ -504,19 +627,28 @@ function ProjectCard({
       {skills.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-4">
           {skills.map((skill, i) => (
-            <span key={i} className="rounded-full bg-[#E3F5FF] px-2.5 py-0.5 text-xs font-medium text-[#0273B1] dark:bg-blue-900/30 dark:text-blue-400 md:px-3 md:py-1 md:text-sm">
+            <span
+              key={i}
+              className="rounded-full bg-[#E3F5FF] px-2.5 py-0.5 text-xs font-medium text-[#0273B1] dark:bg-blue-900/30 dark:text-blue-400 md:px-3 md:py-1 md:text-sm"
+            >
               {skill}
             </span>
           ))}
         </div>
       )}
       <div className="flex justify-end gap-2">
-        <button onClick={onDelete}
+        <button
+          onClick={onDelete}
           className="h-9 rounded-lg border border-gray-300 bg-white px-3 text-xs font-semibold text-gray-700 transition-colors hover:bg-gray-100 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600 md:h-10 md:px-4 md:text-sm"
-        >Delete</button>
-        <button onClick={onEdit}
+        >
+          Delete
+        </button>
+        <button
+          onClick={onEdit}
           className="h-9 rounded-lg bg-[#0273B1] px-3 text-xs font-semibold text-white transition-colors hover:bg-[#025a8f] md:h-10 md:px-4 md:text-sm"
-        >Edit</button>
+        >
+          Edit
+        </button>
       </div>
     </div>
   );
@@ -560,7 +692,8 @@ function ProjectForm({
     if (!fields.startDate) e.startDate = true;
     if (!fields.endDate) e.endDate = true;
     if (!fields.description.trim()) e.description = true;
-    if (!fields.relatedSkills || fields.relatedSkills.length === 0) e.relatedSkills = true;
+    if (!fields.relatedSkills || fields.relatedSkills.length === 0)
+      e.relatedSkills = true;
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -573,7 +706,10 @@ function ProjectForm({
   };
 
   const handleRemoveSkill = (skill: string) =>
-    set("relatedSkills", fields.relatedSkills.filter((s) => s !== skill));
+    set(
+      "relatedSkills",
+      fields.relatedSkills.filter((s) => s !== skill),
+    );
 
   const handleSubmit = () => {
     if (!validate()) return;
@@ -586,9 +722,7 @@ function ProjectForm({
       : "border-gray-300 dark:border-slate-600";
 
   const labelColor = (key: string) =>
-    errors[key]
-      ? "text-red-500"
-      : "text-[#0273B1] dark:text-blue-400";
+    errors[key] ? "text-red-500" : "text-[#0273B1] dark:text-blue-400";
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-800 md:p-6">
@@ -606,10 +740,15 @@ function ProjectForm({
       <div className="space-y-3 md:space-y-4">
         {/* Name */}
         <div>
-          <label className={`mb-1 block text-xs font-medium md:mb-2 ${labelColor("name")}`}>
+          <label
+            className={`mb-1 block text-xs font-medium md:mb-2 ${labelColor("name")}`}
+          >
             Project Name{errors.name && " *"}
           </label>
-          <input type="text" placeholder="Project Name" value={fields.name}
+          <input
+            type="text"
+            placeholder="Project Name"
+            value={fields.name}
             onChange={(e) => set("name", e.target.value)}
             className={`w-full rounded-lg border bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 md:px-4 md:py-3 ${fieldBorder("name")}`}
           />
@@ -617,10 +756,15 @@ function ProjectForm({
 
         {/* Role */}
         <div>
-          <label className={`mb-1 block text-xs font-medium md:mb-2 ${labelColor("role")}`}>
+          <label
+            className={`mb-1 block text-xs font-medium md:mb-2 ${labelColor("role")}`}
+          >
             Role{errors.role && " *"}
           </label>
-          <input type="text" placeholder="e.g. Web Developer" value={fields.role}
+          <input
+            type="text"
+            placeholder="e.g. Web Developer"
+            value={fields.role}
             onChange={(e) => set("role", e.target.value)}
             className={`w-full rounded-lg border bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 md:px-4 md:py-3 ${fieldBorder("role")}`}
           />
@@ -629,25 +773,41 @@ function ProjectForm({
         {/* Dates */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className={`mb-1 block text-xs font-medium md:mb-2 ${labelColor("startDate")}`}>
+            <label
+              className={`mb-1 block text-xs font-medium md:mb-2 ${labelColor("startDate")}`}
+            >
               Start Date{errors.startDate && " *"}
             </label>
-            <MonthYearPicker value={fields.startDate} onChange={(v) => set("startDate", v)} hasError={errors.startDate} />
+            <MonthYearPicker
+              value={fields.startDate}
+              onChange={(v) => set("startDate", v)}
+              hasError={errors.startDate}
+            />
           </div>
           <div>
-            <label className={`mb-1 block text-xs font-medium md:mb-2 ${labelColor("endDate")}`}>
+            <label
+              className={`mb-1 block text-xs font-medium md:mb-2 ${labelColor("endDate")}`}
+            >
               End Date{errors.endDate && " *"}
             </label>
-            <MonthYearPicker value={fields.endDate} onChange={(v) => set("endDate", v)} hasError={errors.endDate} />
+            <MonthYearPicker
+              value={fields.endDate}
+              onChange={(v) => set("endDate", v)}
+              hasError={errors.endDate}
+            />
           </div>
         </div>
 
         {/* Description */}
         <div>
-          <label className={`mb-1 block text-xs font-medium md:mb-2 ${labelColor("description")}`}>
+          <label
+            className={`mb-1 block text-xs font-medium md:mb-2 ${labelColor("description")}`}
+          >
             Description{errors.description && " *"}
           </label>
-          <textarea placeholder="Description about your project" value={fields.description}
+          <textarea
+            placeholder="Description about your project"
+            value={fields.description}
             onChange={(e) => set("description", e.target.value)}
             rows={3}
             className={`w-full resize-none rounded-lg border bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 md:px-4 md:py-3 ${fieldBorder("description")}`}
@@ -656,35 +816,65 @@ function ProjectForm({
 
         {/* Skills */}
         <div>
-          <label className={`mb-1 block text-xs font-medium md:mb-2 ${labelColor("relatedSkills")}`}>
+          <label
+            className={`mb-1 block text-xs font-medium md:mb-2 ${labelColor("relatedSkills")}`}
+          >
             Related Skills{errors.relatedSkills && " *"}
           </label>
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <select value={selectedSkill} onChange={(e) => setSelectedSkill(e.target.value)}
+              <select
+                value={selectedSkill}
+                onChange={(e) => setSelectedSkill(e.target.value)}
                 className="w-full appearance-none rounded-lg border border-gray-300 bg-white px-3 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 md:px-4 md:py-3"
               >
                 <option value="">Select skill</option>
-                {SKILL_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+                {SKILL_OPTIONS.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
               </select>
-              <svg className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-slate-400 pointer-events-none"
-                fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              <svg
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 dark:text-slate-400 pointer-events-none"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M19 9l-7 7-7-7"
+                />
               </svg>
             </div>
-            <button onClick={handleAddSkill}
+            <button
+              onClick={handleAddSkill}
               className="h-9 shrink-0 rounded-lg bg-[#E3F5FF] px-3 text-xs font-semibold text-[#0273B1] transition-colors hover:bg-[#0273B1] hover:text-white dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-600 md:h-10 md:px-4 md:text-sm"
-            >Add</button>
+            >
+              Add
+            </button>
           </div>
           {errors.relatedSkills && (
-            <p className="text-xs mt-1 text-red-500 dark:text-red-400">กรุณาเพิ่มอย่างน้อย 1 skill</p>
+            <p className="text-xs mt-1 text-red-500 dark:text-red-400">
+              กรุณาเพิ่มอย่างน้อย 1 skill
+            </p>
           )}
           {fields.relatedSkills.length > 0 && (
             <div className="flex flex-wrap gap-2 mt-3">
               {fields.relatedSkills.map((skill, i) => (
-                <span key={i} className="flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#E3F5FF] dark:bg-blue-900/30 text-[#0273B1] dark:text-blue-400">
+                <span
+                  key={i}
+                  className="flex items-center px-3 py-1 rounded-full text-sm font-medium bg-[#E3F5FF] dark:bg-blue-900/30 text-[#0273B1] dark:text-blue-400"
+                >
                   {skill}
-                  <button onClick={() => handleRemoveSkill(skill)} className="ml-2 hover:opacity-60">×</button>
+                  <button
+                    onClick={() => handleRemoveSkill(skill)}
+                    className="ml-2 hover:opacity-60"
+                  >
+                    ×
+                  </button>
                 </span>
               ))}
             </div>
@@ -693,12 +883,18 @@ function ProjectForm({
 
         {/* Actions */}
         <div className="flex justify-end gap-2 pt-1 md:pt-2">
-          <button onClick={onCancel}
+          <button
+            onClick={onCancel}
             className="h-9 rounded-lg bg-gray-100 px-3 text-xs font-semibold text-[#1C2D4F] transition-colors hover:bg-gray-200 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600 md:h-10 md:px-4 md:text-sm"
-          >Cancel</button>
-          <button onClick={handleSubmit}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={handleSubmit}
             className="h-9 rounded-lg bg-[#0273B1] px-3 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-[#025a8f] md:h-10 md:px-4 md:text-sm"
-          >{isEditing ? "Save Changes" : "Add Project"}</button>
+          >
+            {isEditing ? "Save Changes" : "Add Project"}
+          </button>
         </div>
       </div>
     </div>
