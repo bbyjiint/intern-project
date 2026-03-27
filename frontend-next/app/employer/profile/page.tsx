@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import EmployerNavbar from '@/components/EmployerNavbar'
-import EmployerSidebar from '@/components/EmployerSidebar'
+import EmployerSidebarShell from '@/components/EmployerSidebarShell'
 import SearchableDropdown from '@/components/SearchableDropdown'
 import CompanyInfoEditPopup from '@/components/CompanyInfoEditPopup'
 import { apiFetch } from '@/lib/api'
@@ -316,17 +316,15 @@ export default function EmployerProfilePage() {
 
   // ─── Main render ──────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#E6EBF4] dark:bg-gray-950 flex flex-col transition-colors duration-300">
+    <div className="flex min-h-screen flex-col overflow-x-hidden bg-[#E6EBF4] transition-colors duration-300 dark:bg-gray-950">
       <EmployerNavbar />
-      <div className="flex flex-1">
-        <EmployerSidebar activeItem="profile" />
-
-        <div className="layout-container layout-page flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-4xl py-8">
+      <EmployerSidebarShell activeItem="profile">
+        <div className="layout-container layout-page min-w-0 flex-1 overflow-y-auto px-3 pb-6 pt-4 sm:px-6 sm:pb-8 sm:pt-6 md:pt-8">
+          <div className="mx-auto max-w-4xl">
 
             {/* Welcome */}
             <div className="mb-[14px]">
-              <h1 className="mb-2 text-[32px] font-bold leading-none tracking-[-0.02em] text-[#05060A] dark:text-white">
+              <h1 className="mb-2 text-2xl font-bold leading-tight tracking-[-0.02em] text-[#05060A] dark:text-white md:text-[32px] md:leading-none">
                 Welcome, {profileData.companyName || 'Company Name'}
               </h1>
               <p className="text-[14px] text-[#6B7280] dark:text-gray-400">{currentDate}</p>
@@ -339,18 +337,22 @@ export default function EmployerProfilePage() {
             )}
 
             {/* Company Info Card */}
-            <div className="mb-6 rounded-[14px] border border-gray-100 bg-white px-[28px] py-[22px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-none">
-              <div className="flex items-start gap-[18px]">
-                {/* Logo */}
+            <div className="mb-6 rounded-[14px] border border-gray-100 bg-white px-4 py-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-none sm:px-6 md:px-[28px] md:py-[22px]">
+              {/* Row 1: logo + name / email / edit (edit full-width tap on narrow screens) */}
+              <div className="flex gap-3 sm:gap-[18px]">
                 <div
-                  className="relative flex h-[94px] w-[94px] shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#F3F4F7] dark:bg-gray-700"
+                  className="relative flex h-20 w-20 shrink-0 cursor-pointer items-center justify-center rounded-full bg-[#F3F4F7] dark:bg-gray-700 sm:h-[94px] sm:w-[94px]"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   {profileData.profileImage ? (
-                    <img src={profileData.profileImage} alt="Profile" className="h-[94px] w-[94px] rounded-full object-cover" />
+                    <img
+                      src={profileData.profileImage}
+                      alt=""
+                      className="h-20 w-20 rounded-full object-cover sm:h-[94px] sm:w-[94px]"
+                    />
                   ) : (
-                    <div className="flex h-[70px] w-[70px] items-center justify-center rounded-md bg-[#0273B1]">
-                      <span className="text-lg font-semibold text-white">
+                    <div className="flex h-[60px] w-[60px] items-center justify-center rounded-md bg-[#0273B1] sm:h-[70px] sm:w-[70px]">
+                      <span className="text-base font-semibold text-white sm:text-lg">
                         {profileData.companyName?.charAt(0).toUpperCase() || 'C'}
                       </span>
                     </div>
@@ -358,47 +360,53 @@ export default function EmployerProfilePage() {
                   <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
                 </div>
 
-                {/* Info */}
-                <div className="flex-1 pt-[16px]">
-                  <div className="mb-[26px] flex items-start justify-between gap-4">
-                    <div>
-                      <h2 className="mb-1 text-[21px] font-bold leading-tight text-[#111827] dark:text-white">
+                <div className="min-w-0 flex-1 sm:pt-2">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                    <div className="min-w-0">
+                      <h2 className="text-[17px] font-bold leading-snug text-[#111827] dark:text-white sm:mb-1 sm:text-[21px]">
                         {profileData.companyName || 'Company Name'}
                       </h2>
-                      <p className="text-[14px] text-[#9CA3AF] dark:text-gray-400">{profileData.email || 'info@company.com'}</p>
+                      <p className="break-all text-[13px] text-[#9CA3AF] dark:text-gray-400 sm:break-normal sm:text-[14px]">
+                        {profileData.email || 'info@company.com'}
+                      </p>
                     </div>
                     <button
+                      type="button"
                       onClick={() => setIsEditPopupOpen(true)}
-                      className="rounded-[6px] border border-[#0273B1] px-[14px] py-[6px] text-[13px] font-medium text-[#0273B1] transition-colors hover:bg-[#F0F4F8] dark:border-blue-400 dark:text-blue-400 dark:hover:bg-gray-700"
+                      className="h-11 w-full shrink-0 rounded-[6px] border border-[#0273B1] px-[14px] text-[13px] font-medium text-[#0273B1] transition-colors hover:bg-[#F0F4F8] dark:border-blue-400 dark:text-blue-400 dark:hover:bg-gray-700 sm:h-auto sm:w-auto sm:self-start sm:py-[6px]"
                     >
                       Edit
                     </button>
                   </div>
+                </div>
+              </div>
 
-                  <p className="mb-[16px] max-w-[880px] text-[13px] leading-[1.55] text-[#4B5563] dark:text-gray-300">
-                    {profileData.companyDescription || '-'}
+              <p className="mt-5 text-[13px] leading-relaxed text-[#4B5563] dark:text-gray-300 sm:mt-6">
+                {profileData.companyDescription || '-'}
+              </p>
+
+              <div className="mt-5 grid grid-cols-1 gap-5 border-t border-gray-100 pt-5 dark:border-gray-700/80 sm:mt-6 sm:grid-cols-2 sm:gap-8 sm:pt-6">
+                <div className="min-w-0">
+                  <h3 className="mb-1.5 text-[15px] font-bold text-[#111827] dark:text-white sm:mb-2 sm:text-[17px]">
+                    Business Type
+                  </h3>
+                  <p className="text-[14px] text-[#4B5563] dark:text-gray-300">
+                    {profileData.businessType ? getBusinessTypeLabel(profileData.businessType) : '-'}
                   </p>
-
-                  <div className="grid max-w-[680px] grid-cols-2 gap-10">
-                    <div>
-                      <h3 className="mb-[8px] text-[17px] font-bold text-[#111827] dark:text-white">Business Type</h3>
-                      <p className="text-[14px] text-[#4B5563] dark:text-gray-300">
-                        {profileData.businessType ? getBusinessTypeLabel(profileData.businessType) : '-'}
-                      </p>
-                    </div>
-                    <div>
-                      <h3 className="mb-[8px] text-[17px] font-bold text-[#111827] dark:text-white">Company Size</h3>
-                      <p className="text-[14px] text-[#4B5563] dark:text-gray-300">
-                        {profileData.companySize ? getCompanySizeLabel(profileData.companySize) : '-'}
-                      </p>
-                    </div>
-                  </div>
+                </div>
+                <div className="min-w-0">
+                  <h3 className="mb-1.5 text-[15px] font-bold text-[#111827] dark:text-white sm:mb-2 sm:text-[17px]">
+                    Company Size
+                  </h3>
+                  <p className="text-[14px] text-[#4B5563] dark:text-gray-300">
+                    {profileData.companySize ? getCompanySizeLabel(profileData.companySize) : '-'}
+                  </p>
                 </div>
               </div>
             </div>
 
             {/* Address Card */}
-            <div className="mb-6 rounded-[14px] border border-gray-100 bg-white px-[24px] py-[20px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-none">
+            <div className="mb-6 rounded-[14px] border border-gray-100 bg-white px-4 py-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-none sm:px-6 md:px-[24px] md:py-[20px]">
               <div className="mb-5 flex items-center gap-3">
                 <span className="flex h-7 w-7 items-center justify-center text-[#2563EB]">
                   <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -536,7 +544,7 @@ export default function EmployerProfilePage() {
             </div>
 
             {/* Contact Card */}
-            <div className="rounded-[14px] border border-gray-100 bg-white px-[24px] py-[20px] shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-none">
+            <div className="rounded-[14px] border border-gray-100 bg-white px-4 py-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-none sm:px-6 md:px-[24px] md:py-[20px]">
               <div className="mb-5 flex items-center gap-3">
                 <span className="flex h-7 w-7 items-center justify-center text-[#2563EB]">
                   <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -606,7 +614,7 @@ export default function EmployerProfilePage() {
 
           </div>
         </div>
-      </div>
+      </EmployerSidebarShell>
 
       {profileData && (
         <CompanyInfoEditPopup

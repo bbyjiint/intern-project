@@ -116,16 +116,16 @@ export default function CandidateProfileModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-0 sm:items-center sm:p-4"
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-[940px] rounded-[14px] border border-gray-100 bg-white px-10 pb-8 pt-7 shadow-[0_20px_60px_rgba(15,23,42,0.22)] transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-[0_20px_60px_rgba(0,0,0,0.45)]"
+        className="relative max-h-[min(92dvh,900px)] w-full max-w-[940px] overflow-y-auto overscroll-contain rounded-t-2xl border border-gray-100 bg-white px-4 pb-6 pt-6 shadow-[0_20px_60px_rgba(15,23,42,0.22)] transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-[0_20px_60px_rgba(0,0,0,0.45)] sm:rounded-[14px] sm:px-6 sm:pb-8 sm:pt-7 md:px-10"
         onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
-          className="absolute right-4 top-3 text-[#6B7280] transition-colors hover:text-[#111827] dark:text-[#e5e7eb] dark:hover:text-white"
+          className="absolute right-3 top-3 z-10 rounded-lg p-1 text-[#6B7280] transition-colors hover:bg-black/5 hover:text-[#111827] dark:text-[#e5e7eb] dark:hover:bg-white/10 dark:hover:text-white sm:right-4 sm:top-3"
           aria-label="Close candidate profile"
         >
           <svg
@@ -143,10 +143,10 @@ export default function CandidateProfileModal({
           </svg>
         </button>
 
-        <div className="flex items-start justify-between gap-6">
-          <div className="flex items-start gap-5">
+        <div className="flex flex-col gap-4 pr-8 sm:flex-row sm:items-start sm:justify-between sm:gap-6 sm:pr-10">
+          <div className="flex min-w-0 items-start gap-3 sm:gap-5">
             {/* Profile Image */}
-            <div className="flex h-[84px] w-[84px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#E5E7EB] text-[28px] font-semibold text-white dark:bg-[#2563eb]">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#E5E7EB] text-xl font-semibold text-white dark:bg-[#2563eb] sm:h-[84px] sm:w-[84px] sm:text-[28px]">
               {candidate.profileImage ? (
                 <img
                   src={candidate.profileImage}
@@ -157,16 +157,16 @@ export default function CandidateProfileModal({
                 <span className="text-[#6B7280] dark:text-white">{candidate.initials}</span>
               )}
             </div>
-            <div className="pt-2">
-              <h2 className="text-[18px] font-bold leading-none text-[#111827] dark:text-white">
+            <div className="min-w-0 flex-1 pt-0.5 sm:pt-2">
+              <h2 className="text-base font-bold leading-snug text-[#111827] dark:text-white sm:text-[18px] sm:leading-none">
                 {candidate.name}
               </h2>
               {candidate.phoneNumber && (
-                <p className="mt-[10px] text-[12px] text-[#9CA3AF] dark:text-[#e5e7eb]">
+                <p className="mt-2 break-words text-[13px] leading-relaxed text-[#9CA3AF] dark:text-[#e5e7eb] sm:mt-[10px] sm:text-[12px]">
                   Phone: {candidate.phoneNumber}
                 </p>
               )}
-              <p className="mt-[6px] text-[12px] text-[#9CA3AF] dark:text-[#e5e7eb]">
+              <p className="mt-1.5 break-all text-[13px] leading-relaxed text-[#9CA3AF] dark:text-[#e5e7eb] sm:mt-[6px] sm:text-[12px]">
                 Email{" "}
                 {candidate.email ||
                   `${candidate.name.toLowerCase().replace(/\s+/g, ".")}@example.com`}
@@ -175,44 +175,47 @@ export default function CandidateProfileModal({
           </div>
 
           <button
+            type="button"
             onClick={handleViewFullProfile}
-            className="mt-[18px] flex h-[28px] items-center justify-center rounded-[6px] border border-[#d1d5db] bg-white px-[16px] text-[12px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8] dark:border-gray-600 dark:bg-gray-900/50 dark:text-blue-400 dark:hover:bg-gray-700"
+            className="flex h-10 w-full shrink-0 items-center justify-center rounded-lg border border-[#d1d5db] bg-white px-4 text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#F0F4F8] dark:border-gray-600 dark:bg-gray-900/50 dark:text-blue-400 dark:hover:bg-gray-700 sm:mt-[18px] sm:h-[32px] sm:w-auto sm:rounded-[6px] sm:px-4 sm:text-[12px]"
           >
             See Profile
           </button>
         </div>
 
-        <div className="mt-6 border-t border-[#E5E7EB] pt-6 dark:border-[#e5e7eb]">
+        <div className="mt-5 border-t border-[#E5E7EB] pt-5 dark:border-[#e5e7eb] sm:mt-6 sm:pt-6">
           <div>
-            <h3 className="text-[14px] font-bold text-[#344164] dark:text-white">About Me</h3>
-            <p className="mt-[8px] max-w-[820px] text-[12px] leading-[1.55] text-[#51617C] dark:text-[#e5e7eb]">
+            <h3 className="text-[15px] font-bold text-[#344164] dark:text-white sm:text-[14px]">
+              About Me
+            </h3>
+            <p className="mt-2 max-w-[820px] text-[13px] leading-relaxed text-[#51617C] dark:text-[#e5e7eb] sm:mt-[8px] sm:text-[12px] sm:leading-[1.55]">
               {candidate.about || "-"}
             </p>
           </div>
 
-          <div className="mt-6 grid grid-cols-2 gap-x-8 gap-y-5">
-            <div>
-              <h3 className="text-[14px] font-bold text-[#344164] dark:text-white">
+          <div className="mt-5 grid grid-cols-1 gap-x-8 gap-y-5 sm:mt-6 sm:grid-cols-2">
+            <div className="min-w-0">
+              <h3 className="text-[15px] font-bold text-[#344164] dark:text-white sm:text-[14px]">
                 Education
               </h3>
-              <p className="mt-[8px] text-[12px] leading-[1.45] text-[#51617C] dark:text-[#e5e7eb]">
+              <p className="mt-2 break-words text-[13px] leading-relaxed text-[#51617C] dark:text-[#e5e7eb] sm:mt-[8px] sm:text-[12px] sm:leading-[1.45]">
                 {eduLine1}
               </p>
-              <p className="mt-[2px] text-[12px] leading-[1.45] text-[#51617C] dark:text-[#e5e7eb]">
+              <p className="mt-1 break-words text-[13px] leading-relaxed text-[#51617C] dark:text-[#e5e7eb] sm:mt-[2px] sm:text-[12px] sm:leading-[1.45]">
                 {eduLine2}
               </p>
             </div>
 
-            <div>
-              <h3 className="text-[14px] font-bold text-[#344164] dark:text-white">
+            <div className="min-w-0">
+              <h3 className="text-[15px] font-bold text-[#344164] dark:text-white sm:text-[14px]">
                 Positions of Interest
               </h3>
-              <div className="mt-[10px] flex flex-wrap gap-[8px]">
+              <div className="mt-2 flex flex-wrap gap-2 sm:mt-[10px] sm:gap-[8px]">
                 {positionTags.length > 0 ? (
                   positionTags.slice(0, 5).map((pos, index) => (
                     <span
                       key={`${pos}-${index}`}
-                      className="rounded-[6px] px-[14px] py-[5px] text-[12px] font-semibold bg-[#E5E7EB] text-[#374151] dark:bg-gray-700 dark:text-slate-200"
+                      className="rounded-md px-3 py-1.5 text-[12px] font-semibold bg-[#E5E7EB] text-[#374151] dark:bg-gray-700 dark:text-slate-200 sm:rounded-[6px] sm:px-[14px] sm:py-[5px]"
                     >
                       {pos}
                     </span>
@@ -223,36 +226,38 @@ export default function CandidateProfileModal({
               </div>
             </div>
 
-            <div>
-              <h3 className="text-[14px] font-bold text-[#344164] dark:text-white">
+            <div className="min-w-0">
+              <h3 className="text-[15px] font-bold text-[#344164] dark:text-white sm:text-[14px]">
                 Internship Period
               </h3>
-              <p className="mt-[8px] text-[12px] leading-[1.45] text-[#51617C] dark:text-[#e5e7eb]">
+              <p className="mt-2 break-words text-[13px] leading-relaxed text-[#51617C] dark:text-[#e5e7eb] sm:mt-[8px] sm:text-[12px] sm:leading-[1.45]">
                 {candidate.internshipPeriod || "-"}
               </p>
             </div>
 
-            <div>
-              <h3 className="text-[14px] font-bold text-[#344164] dark:text-white">
+            <div className="min-w-0">
+              <h3 className="text-[15px] font-bold text-[#344164] dark:text-white sm:text-[14px]">
                 Preferred Locations
               </h3>
-              <p className="mt-[8px] text-[12px] leading-[1.45] text-[#51617C] dark:text-[#e5e7eb]">
+              <p className="mt-2 break-words text-[13px] leading-relaxed text-[#51617C] dark:text-[#e5e7eb] sm:mt-[8px] sm:text-[12px] sm:leading-[1.45]">
                 {locationDisplay}
               </p>
             </div>
           </div>
 
-          <div className="mt-6 flex justify-end gap-[8px]">
+          <div className="mt-6 flex flex-col-reverse gap-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] sm:flex-row sm:justify-end sm:gap-[8px] sm:pb-0">
             <button
+              type="button"
               onClick={onClose}
-              className="flex h-[32px] items-center justify-center rounded-[6px] bg-[#E5E7EB] px-[22px] text-[12px] font-semibold text-[#6B7280] transition hover:bg-[#D1D5DB] dark:bg-gray-700 dark:text-slate-200 dark:hover:bg-gray-600"
+              className="flex h-11 w-full items-center justify-center rounded-lg bg-[#E5E7EB] px-5 text-[13px] font-semibold text-[#6B7280] transition hover:bg-[#D1D5DB] dark:bg-gray-700 dark:text-slate-200 dark:hover:bg-gray-600 sm:h-[32px] sm:w-auto sm:rounded-[6px] sm:px-[22px] sm:text-[12px]"
             >
               Back
             </button>
             <button
+              type="button"
               onClick={handleStartConversation}
               disabled={isStartingConversation || !candidate.id}
-              className="flex h-[32px] items-center justify-center rounded-[6px] bg-[#2563EB] px-[20px] text-[12px] font-semibold text-white transition hover:bg-[#1D4ED8] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex h-11 w-full items-center justify-center rounded-lg bg-[#2563EB] px-5 text-[13px] font-semibold text-white transition hover:bg-[#1D4ED8] disabled:cursor-not-allowed disabled:opacity-50 sm:h-[32px] sm:w-auto sm:rounded-[6px] sm:px-[20px] sm:text-[12px]"
             >
               {isStartingConversation ? "Loading..." : "Send Message"}
             </button>

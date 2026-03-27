@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import EmployerNavbar from "@/components/EmployerNavbar";
-import EmployerSidebar from "@/components/EmployerSidebar";
+import EmployerSidebarShell from "@/components/EmployerSidebarShell";
 import EmployerApplicantsOverviewCard, {
   type EmployerApplicantsOverviewCardData,
 } from "@/components/job-post/EmployerApplicantsOverviewCard";
@@ -205,31 +205,29 @@ export default function EmployerDashboardPage() {
   }, [jobPosts, searchQuery, activeFilter, viewedAt]);
 
   return (
-    <div className="min-h-screen bg-[#E6EBF4] dark:bg-gray-950 flex flex-col transition-colors duration-300">
+    <div className="flex min-h-screen flex-col overflow-x-hidden bg-[#E6EBF4] transition-colors duration-300 dark:bg-gray-950">
       <EmployerNavbar />
-      <div className="flex flex-1">
-        <EmployerSidebar activeItem="applicants" />
-
-        <div className="layout-container layout-page flex-1 overflow-y-auto">
-          <div className="py-8">
+      <EmployerSidebarShell activeItem="applicants">
+        <div className="layout-container layout-page min-w-0 flex-1 overflow-y-auto px-3 pb-6 pt-4 sm:px-6 sm:pb-8 sm:pt-6 md:pt-8">
+          <div>
             {apiError && (
               <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800 dark:border-yellow-900/50 dark:bg-yellow-500/10 dark:text-yellow-300">
                 {apiError}
               </div>
             )}
 
-            <div className="mb-[18px] flex items-start justify-between gap-6">
-              <div>
-                <h1 className="text-[32px] font-bold leading-none tracking-[-0.02em] text-[#05060A] dark:text-white">
+            <div className="mb-[18px] flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
+              <div className="min-w-0">
+                <h1 className="text-2xl font-bold leading-tight tracking-[-0.02em] text-[#05060A] dark:text-white md:text-[32px] md:leading-none">
                   Applicants
                 </h1>
-                <p className="mt-4 text-[14px] text-[#6B7280] dark:text-gray-400">
+                <p className="mt-3 text-[13px] text-[#6B7280] dark:text-gray-400 md:mt-4 md:text-[14px]">
                   View and manage your job posts and track applicants for each position.
                 </p>
               </div>
 
-              <div className="relative pt-[2px]">
-                <div className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2">
+              <div className="relative w-full shrink-0 lg:w-auto lg:pt-[2px]">
+                <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 md:left-5">
                     <svg className="h-5 w-5 text-[#6B7280] dark:text-[#686868]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
@@ -239,12 +237,12 @@ export default function EmployerDashboardPage() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search"
-                    className="h-[38px] w-[356px] rounded-full border border-[#C9CED8] bg-white pl-[50px] pr-5 text-[14px] text-[#374151] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-gray-500"
+                    className="h-[42px] w-full rounded-full border border-[#C9CED8] bg-white pl-11 pr-4 text-[14px] text-[#374151] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-gray-500 md:pl-[50px] lg:w-[min(100%,356px)]"
                 />
               </div>
             </div>
 
-            <div className="mb-[12px] flex gap-[6px]">
+            <div className="mb-[12px] flex flex-wrap gap-2 sm:gap-[6px]">
               {(
                 [
                   ["all", "All"],
@@ -257,7 +255,7 @@ export default function EmployerDashboardPage() {
                   onClick={() => setActiveFilter(value)}
                   className={`h-[36px] rounded-[7px] border px-6 text-[14px] font-semibold transition-colors ${
                     activeFilter === value
-                      ? 'border-[#2563EB] bg-white text-[#2563EB] dark:bg-white dark:text-[#2563EB]'
+                      ? 'border-[#0273B1] bg-white text-[#0273B1] dark:bg-white dark:text-[#0273B1]'
                       : 'border-[#D1D5DB] bg-[#F3F4F6] text-[#111827] hover:bg-[#E5E7EB] dark:border-slate-700 dark:bg-slate-900 dark:text-gray-200 dark:hover:bg-slate-800'
                   }`}
                 >
@@ -287,7 +285,7 @@ export default function EmployerDashboardPage() {
             </div>
           </div>
         </div>
-      </div>
+      </EmployerSidebarShell>
     </div>
   );
 }

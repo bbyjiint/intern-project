@@ -1,12 +1,10 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import EmployerNavbar from "@/components/EmployerNavbar";
+import PageBackButton from "@/components/PageBackButton";
 import Link from "next/link";
 
 export default function JobPostSuccessPage() {
-  const router = useRouter();
-
   return (
     <div
       className="min-h-screen transition-colors dark:bg-slate-950"
@@ -16,8 +14,9 @@ export default function JobPostSuccessPage() {
     >
       <EmployerNavbar />
 
-      <div className="layout-container py-16">
-        <div className="mx-auto max-w-2xl rounded-lg bg-white p-12 text-center shadow-md transition-colors dark:bg-slate-900 dark:shadow-none dark:ring-1 dark:ring-slate-800">
+      <div className="layout-container px-3 pt-3 pb-10 sm:pt-4 sm:pb-16">
+        <PageBackButton fallbackHref="/employer/job-post" label="Back to job posts" />
+        <div className="mx-auto max-w-2xl rounded-lg bg-white p-6 text-center shadow-md transition-colors dark:bg-slate-900 dark:shadow-none dark:ring-1 dark:ring-slate-800 sm:p-12">
           {/* Success Icon */}
           <div className="flex justify-center mb-6">
             <div className="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center">

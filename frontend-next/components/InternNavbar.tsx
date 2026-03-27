@@ -195,16 +195,20 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
             <ThemeToggle />
 
             <div className="relative" ref={dropdownRef}>
-              <div
-                className="relative cursor-pointer"
+              <button
+                type="button"
+                className="relative border-0 bg-transparent p-0"
                 onClick={() => setShowDropdown(!showDropdown)}
+                aria-expanded={showDropdown}
+                aria-haspopup="menu"
+                aria-label="Open account menu"
               >
-                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full overflow-hidden border border-gray-200 dark:border-gray-700">
+                <div className="h-10 w-10 overflow-hidden rounded-full border border-gray-200 dark:border-gray-700 sm:h-11 sm:w-11">
                   {profileImageUrl ? (
                     <img
                       src={profileImageUrl}
-                      alt="Profile"
-                      className="w-full h-full object-cover"
+                      alt=""
+                      className="h-full w-full object-cover"
                       onError={(e) => {
                         e.currentTarget.style.display = 'none'
                         const parent = e.currentTarget.parentElement
@@ -215,19 +219,19 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
                       }}
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-[#0273B1]">
-                      <span className="text-white font-semibold text-xs sm:text-sm">
+                    <div className="flex h-full w-full items-center justify-center bg-[#0273B1]">
+                      <span className="text-xs font-semibold text-white sm:text-sm">
                         {getInitials(displayName)}
                       </span>
                     </div>
                   )}
                 </div>
-                <div className="absolute bottom-0 right-0 w-3.5 h-3.5 bg-[#E2E8F0] dark:bg-gray-700 border-2 border-white dark:border-gray-900 rounded-full flex items-center justify-center shadow-sm">
-                  <svg className="w-2 h-2 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="pointer-events-none absolute bottom-0 right-0 flex h-3.5 w-3.5 items-center justify-center rounded-full border-2 border-white bg-[#E2E8F0] shadow-sm dark:border-gray-900 dark:bg-gray-700">
+                  <svg className="h-2 w-2 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M19 9l-7 7-7-7" />
                   </svg>
                 </div>
-              </div>
+              </button>
 
               {/* Desktop Dropdown */}
               {showDropdown && (

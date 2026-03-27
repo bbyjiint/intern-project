@@ -1,17 +1,38 @@
 import fs from "fs";
-import { createRequire } from "module";
 import { GoogleGenAI } from "@google/genai";
+import { PDFParse } from "pdf-parse";
 
 console.log("🔥 NEW SDK PARSER LOADED");
 
-const require = createRequire(import.meta.url);
+let genaiClient: GoogleGenAI | null = null;
 
-const ai = new GoogleGenAI({
-  apiKey: process.env.GEMINI_API_KEY!,
-});
+function getGenAI(): GoogleGenAI {
+  const apiKey = process.env.GEMINI_API_KEY?.trim();
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY is not configured");
+  }
+  if (!genaiClient) {
+    genaiClient = new GoogleGenAI({ apiKey });
+  }
+  return genaiClient;
+}
 
 async function extractTextFromPDF(buffer: Buffer): Promise<string> {
-  // ── ลอง pdfjs-dist โดยตรง ─────────────────────────────────────────────────
+  // pdf-parse v2+: use PDFParse class (the old default export function was removed)
+  try {
+    const parser = new PDFParse({ data: buffer });
+    try {
+      const result = await parser.getText();
+      const text = result.text ?? "";
+      console.log("📝 PDFParse extracted length:", text.length);
+      if (text.trim().length >= 20) return text;
+    } finally {
+      await parser.destroy().catch(() => {});
+    }
+  } catch (e1) {
+    console.log("⚠️ PDFParse failed, trying pdfjs:", (e1 as Error).message);
+  }
+
   try {
     const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs" as any);
     const loadingTask = pdfjsLib.getDocument({ data: new Uint8Array(buffer) });
@@ -31,22 +52,8 @@ async function extractTextFromPDF(buffer: Buffer): Promise<string> {
     const text = textParts.join("\n");
     console.log("📝 pdfjs extracted length:", text.length);
     return text;
-  } catch (e1) {
-    console.log("⚠️ pdfjs failed, trying pdf-parse:", (e1 as any).message);
-  }
-
-  // ── fallback: pdf-parse ───────────────────────────────────────────────────
-  try {
-    const pdfParseLib = require("pdf-parse");
-    const fn = typeof pdfParseLib === "function"
-      ? pdfParseLib
-      : pdfParseLib.default ?? pdfParseLib;
-    const data = await fn(buffer);
-    const text = data?.text ?? "";
-    console.log("📝 pdf-parse extracted length:", text.length);
-    return text;
   } catch (e2) {
-    console.log("⚠️ pdf-parse failed:", (e2 as any).message);
+    console.log("⚠️ pdfjs failed:", (e2 as Error).message);
   }
 
   return "";
@@ -62,10 +69,11 @@ export async function parseResume(filePath: string) {
       throw new Error("Failed to extract text from PDF");
     }
 
-    const modelName = "gemini-2.5-flash";
+    const modelName =
+      process.env.GEMINI_MODEL?.trim() || "gemini-2.0-flash";
     console.log("Using model:", modelName);
 
-    const response = await ai.models.generateContent({
+    const response = await getGenAI().models.generateContent({
       model: modelName,
       contents: `
 You are a professional resume parser.

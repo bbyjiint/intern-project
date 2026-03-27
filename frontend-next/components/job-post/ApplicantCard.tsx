@@ -186,7 +186,7 @@ export default function ApplicantCard({
         <p className="font-semibold text-[#111827] dark:text-white">
           {formatDisplayDate(applicant.fieldOfStudy)}
         </p>
-        <p className="text-[#7C869A] dark:text-[#7f7f7f]">Preferred</p>
+        <p className="text-[#7C869A] dark:text-[#7f7f7f]">Preferred location</p>
         <p className="font-semibold text-[#111827] dark:text-white">
           {applicant.preferredLocations?.length
             ? applicant.preferredLocations.join(", ")

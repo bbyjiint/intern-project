@@ -21,7 +21,7 @@ export default function CompanyHubLogo({
       />
 
       <span
-        className="relative z-10 pl-3 text-2xl font-black tracking-tighter text-[#1C2D4F] dark:text-white transition-colors duration-300"
+        className="relative z-10 pl-2 text-[17px] font-black leading-none tracking-tighter text-[#1C2D4F] transition-colors duration-300 dark:text-white sm:pl-3 sm:text-2xl"
       >
         CompanyHub<span className="text-blue-600 dark:text-blue-400">.</span>
       </span>

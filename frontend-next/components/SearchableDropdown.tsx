@@ -10,6 +10,8 @@ interface SearchableDropdownProps {
   className?: string
   allOptionLabel?: string
   variant?: 'default' | 'applicants'
+  /** Shorter control height + radius for dense mobile layouts */
+  compact?: boolean
 }
 
 export default function SearchableDropdown({
@@ -20,6 +22,7 @@ export default function SearchableDropdown({
   className = '',
   allOptionLabel = 'All',
   variant = 'default',
+  compact = false,
 }: SearchableDropdownProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
@@ -57,7 +60,11 @@ export default function SearchableDropdown({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className={`flex h-[42px] w-full items-center justify-between rounded-[8px] border bg-white px-3 text-left transition-colors focus:border-[#94A3B8] focus:outline-none ${
+        className={`flex w-full items-center justify-between border bg-white text-left transition-colors focus:border-[#94A3B8] focus:outline-none ${
+          compact
+            ? 'h-10 min-h-[40px] rounded-lg px-2.5 md:h-[42px] md:min-h-0 md:rounded-[8px] md:px-3'
+            : 'h-[42px] rounded-[8px] px-3'
+        } ${
           isApplicantsVariant
             ? 'border-[#D1D5DB] dark:border-gray-700 dark:bg-gray-900/50'
             : 'border-[#D1D5DB] dark:border-gray-700 dark:bg-gray-900/50'

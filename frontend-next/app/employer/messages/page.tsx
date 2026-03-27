@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, Suspense } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import EmployerNavbar from "@/components/EmployerNavbar";
 import CandidateProfileModal from "@/components/CandidateProfileModal";
@@ -92,6 +93,7 @@ function MessagesContent() {
   const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(
     null,
   );
+  const [showChatMobile, setShowChatMobile] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -102,6 +104,7 @@ function MessagesContent() {
   }, [selectedConversation]);
 
   const handleSelectConversation = (conversation: Conversation) => {
+    setShowChatMobile(true);
     setSelectedConversation((prev) =>
       prev?.id === conversation.id
         ? { ...conversation, messages: prev.messages }
@@ -254,6 +257,9 @@ function MessagesContent() {
           ? { ...target, messages: prev.messages }
           : target,
       );
+      if (typeof window !== "undefined" && window.innerWidth < 1024) {
+        setShowChatMobile(true);
+      }
     }
   }, [conversations, selectedConversation?.id, targetConversationId]);
 
@@ -411,22 +417,47 @@ function MessagesContent() {
   };
 
   return (
-    <div className="h-screen bg-[#E6EBF4] dark:bg-gray-950 flex flex-col transition-colors duration-300 overflow-hidden">
+    <div className="flex min-h-screen flex-col overflow-hidden bg-[#E6EBF4] transition-colors duration-300 dark:bg-gray-950">
       <EmployerNavbar />
-      <div className="layout-container flex h-[calc(100vh-4rem)] w-full py-6">
-        {/* Left Sidebar */}
-        <div className="flex w-80 flex-col rounded-l-2xl border border-r-0 border-gray-200 bg-white transition-colors dark:border-slate-800 dark:bg-slate-900">
-          <div className="border-b border-gray-200 p-6 dark:border-slate-800">
-            <h1 className="mb-4 text-2xl font-bold text-gray-900 dark:text-white">
-              Messages
-            </h1>
+      <div className="mx-auto flex h-[calc(100vh-4rem)] w-full max-w-7xl flex-1 overflow-hidden lg:px-4 lg:py-6">
+        {/* Left Sidebar - Conversation List — aligned with intern/messages layout */}
+        <div
+          className={`${
+            showChatMobile ? "hidden lg:flex" : "flex"
+          } w-full flex-col border-r border-gray-200 bg-white transition-colors dark:border-slate-800 dark:bg-slate-900 lg:w-80 lg:rounded-l-2xl`}
+        >
+          <div className="border-b border-gray-200 p-4 dark:border-slate-800 lg:p-6">
+            <div className="mb-4 flex items-center gap-3">
+              <Link
+                href="/employer/dashboard"
+                className="text-gray-500 transition-colors hover:text-gray-800 dark:text-slate-400 dark:hover:text-white"
+                aria-label="Back to dashboard"
+              >
+                <svg
+                  className="h-5 w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                  />
+                </svg>
+              </Link>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white lg:text-2xl">
+                Messages
+              </h1>
+            </div>
             <div className="relative">
               <input
                 type="text"
                 placeholder="Search conversations..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 pl-10 text-slate-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-gray-500"
+                className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 pl-10 text-sm text-slate-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#0273B1] dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-gray-500"
               />
               <svg
                 className="absolute left-3 top-2.5 h-5 w-5 text-gray-400 dark:text-slate-500"
@@ -456,15 +487,15 @@ function MessagesContent() {
                   onClick={() => handleSelectConversation(conv)}
                   className={`cursor-pointer border-b border-gray-100 p-4 transition-colors hover:bg-gray-50 dark:border-slate-800 dark:hover:bg-slate-800 ${
                     selectedConversation?.id === conv.id
-                      ? "bg-blue-50 dark:bg-slate-800"
+                      ? "bg-[#E3F5FF]/80 dark:bg-slate-800"
                       : ""
                   }`}
                 >
                   <div className="flex items-start space-x-3">
                     <div
-                      className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0 overflow-hidden ${
+                      className={`flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full font-semibold text-white ${
                         selectedConversation?.id === conv.id
-                          ? "bg-blue-600"
+                          ? "bg-[#0273B1]"
                           : "bg-gray-400"
                       }`}
                     >
@@ -501,44 +532,69 @@ function MessagesContent() {
           </div>
         </div>
 
-        {/* Main Chat Area */}
-        <div className="flex flex-1 flex-col rounded-r-2xl border border-gray-200 bg-white transition-colors dark:border-slate-800 dark:bg-slate-900">
+        {/* Main Content - Chat Area */}
+        <div
+          className={`${
+            !showChatMobile ? "hidden lg:flex" : "flex"
+          } min-w-0 flex-1 flex-col border-l border-gray-200 bg-white transition-colors dark:border-slate-800 dark:bg-slate-900 lg:rounded-r-2xl`}
+        >
           {loading ? (
             <div className="flex flex-1 items-center justify-center text-gray-500 dark:text-slate-400">
               <div className="text-center">
-                <div className="mx-auto mb-4 h-16 w-16 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600 dark:border-slate-800 dark:border-t-blue-500" />
-                <p className="text-lg">Loading messages...</p>
+                <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-[#0273B1] dark:border-slate-800 dark:border-t-[#0273B1] lg:h-16 lg:w-16" />
+                <p className="text-sm lg:text-lg">Loading messages...</p>
               </div>
             </div>
           ) : selectedConversation ? (
             <>
               {/* Chat Header */}
-              <div className="flex items-center justify-between border-b border-gray-200 p-4 dark:border-slate-800">
-                <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-semibold overflow-hidden flex-shrink-0">
+              <div className="flex items-center justify-between gap-2 border-b border-gray-200 p-3 shadow-sm dark:border-slate-800 lg:p-4">
+                <div className="flex min-w-0 items-center space-x-2 lg:space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowChatMobile(false)}
+                    className="shrink-0 rounded-lg p-1.5 text-gray-500 lg:hidden"
+                    aria-label="Back to conversations"
+                  >
+                    <svg
+                      className="h-6 w-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 19l-7-7 7-7"
+                      />
+                    </svg>
+                  </button>
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-[#0273B1] text-sm font-semibold text-white lg:h-10 lg:w-10">
                     {selectedConversation.candidateProfileImage ? (
                       <img
                         src={selectedConversation.candidateProfileImage}
                         alt={selectedConversation.candidateName}
-                        className="w-full h-full object-cover"
+                        className="h-full w-full object-cover"
                       />
                     ) : (
                       selectedConversation.candidateInitials
                     )}
                   </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  <div className="min-w-0">
+                    <h2 className="truncate text-base font-semibold text-gray-900 dark:text-white lg:text-lg">
                       {selectedConversation.candidateName}
                     </h2>
-                    <p className="text-sm text-gray-600 dark:text-slate-400">
+                    <p className="truncate text-xs text-gray-600 dark:text-slate-400 lg:text-sm">
                       {selectedConversation.candidateRole} ·{" "}
                       {selectedConversation.candidateUniversity}
                     </p>
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={handleViewProfile}
-                  className="flex items-center space-x-2 rounded-lg border border-gray-300 px-4 py-2 transition-colors hover:bg-gray-50 dark:border-slate-700 dark:hover:bg-slate-800"
+                  className="flex shrink-0 items-center space-x-1 rounded-lg border border-gray-300 px-2 py-1.5 transition-colors hover:bg-gray-50 dark:border-slate-700 dark:hover:bg-slate-800 sm:space-x-2 sm:px-4 sm:py-2"
                 >
                   <svg
                     className="h-4 w-4 text-gray-600 dark:text-slate-400"
@@ -553,7 +609,7 @@ function MessagesContent() {
                       d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                     />
                   </svg>
-                  <span className="text-sm font-medium text-gray-700 dark:text-slate-300">
+                  <span className="hidden text-sm font-medium text-gray-700 dark:text-slate-300 sm:inline">
                     View Profile
                   </span>
                 </button>
@@ -562,7 +618,7 @@ function MessagesContent() {
               {/* Messages */}
               <div
                 ref={chatContainerRef}
-                className="flex-1 overflow-y-auto bg-gray-50 p-6 transition-colors dark:bg-gray-950"
+                className="flex-1 overflow-y-auto bg-gray-50 p-4 transition-colors dark:bg-gray-950 lg:p-6"
               >
                 <div className="space-y-4">
                   {selectedConversation.messages.map((msg) => {
@@ -570,12 +626,12 @@ function MessagesContent() {
                     return (
                       <div
                         key={msg.id}
-                        className={`flex items-start space-x-3 ${isCurrentUser ? "flex-row-reverse space-x-reverse" : ""}`}
+                        className={`flex items-start space-x-2 ${isCurrentUser ? "flex-row-reverse space-x-reverse" : ""}`}
                       >
                         {/* Avatar */}
                         <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-semibold flex-shrink-0 overflow-hidden ${
-                            isCurrentUser ? "bg-blue-600" : "bg-gray-400"
+                          className={`flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full text-[10px] font-semibold text-white ${
+                            isCurrentUser ? "bg-[#0273B1]" : "bg-gray-400"
                           }`}
                         >
                           {isCurrentUser ? (
@@ -603,17 +659,17 @@ function MessagesContent() {
                           className={`flex-1 ${isCurrentUser ? "flex justify-end" : ""}`}
                         >
                           <div
-                            className={`inline-block max-w-[70%] rounded-lg px-4 py-2 ${
+                            className={`inline-block max-w-[85%] rounded-2xl px-4 py-2 shadow-sm sm:max-w-[75%] lg:max-w-[70%] ${
                               isCurrentUser
-                                ? "bg-blue-600 text-white"
-                                : "bg-white border border-gray-200 text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                ? "rounded-tr-none bg-[#0273B1] text-white"
+                                : "rounded-tl-none border border-gray-100 bg-white text-gray-900 dark:border-slate-800 dark:bg-slate-800 dark:text-white"
                             }`}
                           >
-                            <p className="text-sm leading-relaxed">
+                            <p className="break-words text-sm leading-relaxed">
                               {msg.text}
                             </p>
                             <p
-                              className={`text-xs mt-1 ${isCurrentUser ? "text-blue-100" : "text-gray-500 dark:text-slate-500"}`}
+                              className={`mt-1 text-right text-[9px] ${isCurrentUser ? "text-blue-100" : "text-gray-400 dark:text-slate-500"}`}
                             >
                               {formatTime(msg.timestamp)}
                             </p>
@@ -627,8 +683,8 @@ function MessagesContent() {
               </div>
 
               {/* Message Input */}
-              <div className="border-t border-gray-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                <div className="flex items-center space-x-4">
+              <div className="border-t border-gray-200 bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] dark:border-slate-800 dark:bg-slate-900 lg:p-4">
+                <div className="flex items-center space-x-2 lg:space-x-4">
                   <input
                     type="text"
                     value={newMessage}
@@ -640,23 +696,27 @@ function MessagesContent() {
                       }
                     }}
                     placeholder="Type a message..."
-                    className="flex-1 rounded-lg border border-gray-300 bg-white px-4 py-2 text-slate-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-gray-500"
+                    className="min-w-0 flex-1 rounded-full border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm text-slate-900 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-[#0273B1] dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-gray-500 lg:rounded-lg"
                   />
                   <button
+                    type="button"
                     onClick={handleSendMessage}
                     disabled={!newMessage.trim()}
-                    className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="shrink-0 rounded-full bg-[#0273B1] p-2.5 font-semibold text-white transition-colors hover:bg-[#025a8f] disabled:cursor-not-allowed disabled:opacity-50 lg:rounded-lg lg:px-6 lg:py-2"
                   >
-                    Send
+                    <span className="hidden lg:inline">Send</span>
+                    <svg className="h-5 w-5 lg:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    </svg>
                   </button>
                 </div>
               </div>
             </>
           ) : (
-            <div className="flex flex-1 items-center justify-center text-gray-500 dark:text-slate-400">
+            <div className="flex flex-1 items-center justify-center px-6 text-gray-500 dark:text-slate-400">
               <div className="text-center">
                 <svg
-                  className="mx-auto mb-4 h-16 w-16 text-gray-400 dark:text-slate-500"
+                  className="mx-auto mb-4 h-12 w-12 text-gray-400 dark:text-slate-500 lg:h-16 lg:w-16"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -668,8 +728,11 @@ function MessagesContent() {
                     d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
                   />
                 </svg>
-                <p className="text-lg">
-                  Select a conversation to start messaging
+                <p className="text-base font-medium lg:text-lg">
+                  Select a conversation
+                </p>
+                <p className="mt-1 text-xs text-gray-400 lg:text-sm">
+                  Choose a candidate to start messaging
                 </p>
               </div>
             </div>
@@ -692,7 +755,7 @@ export default function MessagesPage() {
     <Suspense
       fallback={
         <div className="flex flex-1 items-center justify-center min-h-[calc(100vh-4rem)] w-full">
-          <div className="w-12 h-12 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin dark:border-slate-800 dark:border-t-blue-500" />
+          <div className="h-12 w-12 animate-spin rounded-full border-4 border-slate-200 border-t-[#0273B1] dark:border-slate-800 dark:border-t-[#0273B1]" />
         </div>
       }
     >

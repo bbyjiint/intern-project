@@ -128,11 +128,11 @@ export default function CreateJobPostModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 px-0 py-0 sm:items-center sm:px-4 sm:py-6"
       onClick={onClose}
     >
       <div
-        className="flex max-h-[88vh] w-full max-w-[780px] flex-col rounded-[16px] border border-gray-100 bg-white px-6 pb-6 pt-5 shadow-[0_24px_60px_rgba(15,23,42,0.18)] transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-none"
+        className="flex max-h-[min(92dvh,900px)] w-full max-w-[780px] flex-col rounded-t-[16px] border border-gray-100 bg-white px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 shadow-[0_24px_60px_rgba(15,23,42,0.18)] transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-none sm:rounded-[16px] sm:px-6 sm:pb-6 sm:pt-5"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="mb-4 flex items-start justify-between gap-4">
@@ -188,7 +188,7 @@ export default function CreateJobPostModal({
             <label className="mb-1.5 block text-[14px] font-semibold text-[#111827] dark:text-slate-200">
               Internship format
             </label>
-            <div className="grid grid-cols-3 overflow-hidden rounded-[8px] border border-[#A3A3A3] dark:border-gray-700">
+            <div className="grid grid-cols-1 overflow-hidden rounded-[8px] border border-[#A3A3A3] dark:border-gray-700 sm:grid-cols-3">
               {(
                 [
                   ["on-site", "On-site"],
@@ -205,7 +205,7 @@ export default function CreateJobPostModal({
                       workplaceType: value,
                     }))
                   }
-                  className={`h-[42px] border-r border-[#A3A3A3] text-[13px] font-medium transition last:border-r-0 ${
+                  className={`min-h-[44px] border-b border-[#A3A3A3] py-2 text-[13px] font-medium transition last:border-b-0 sm:h-[42px] sm:border-b-0 sm:border-r sm:last:border-r-0 ${
                     values.workplaceType === value
                       ? "bg-[#EFF6FF] text-[#2563EB] dark:bg-blue-500/10 dark:text-blue-400"
                       : "bg-white text-[#404040] dark:bg-gray-900/50 dark:text-slate-200"
@@ -240,8 +240,8 @@ export default function CreateJobPostModal({
             <label className="mb-1.5 block text-[14px] font-semibold text-[#111827] dark:text-slate-200">
               Allowance
             </label>
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="relative min-w-0 flex-1">
                 <input
                   type="text"
                   inputMode="numeric"
@@ -259,8 +259,8 @@ export default function CreateJobPostModal({
                   ฿
                 </span>
               </div>
-              <span className="text-[20px] leading-none text-[#111827] dark:text-slate-200">/</span>
-              <div className="w-[110px]">
+              <span className="hidden text-[20px] leading-none text-[#111827] dark:text-slate-200 sm:inline">/</span>
+              <div className="w-full sm:w-[110px] sm:shrink-0">
                 <select
                   value={values.allowancePeriod}
                   onChange={(event) =>

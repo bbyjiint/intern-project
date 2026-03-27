@@ -194,7 +194,7 @@ export default function JobMatchCard({
 
       {/* Info grid */}
       <div className="grid grid-cols-[150px_1fr] gap-y-[8px]">
-        <p className="text-[12px] text-[#8B94A7]">Preferred</p>
+        <p className="text-[12px] text-[#8B94A7]">Preferred location</p>
         <p className="text-[13px] text-[#6B7280] dark:text-slate-400">
           {post.locationProvince || "-"}
         </p>

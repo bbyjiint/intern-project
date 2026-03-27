@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import EmployerNavbar from "@/components/EmployerNavbar";
-import EmployerSidebar from "@/components/EmployerSidebar";
+import EmployerSidebarShell from "@/components/EmployerSidebarShell";
+import PageBackButton from "@/components/PageBackButton";
 import { apiFetch } from "@/lib/api";
 
 interface JobPostDetail {
@@ -147,14 +148,13 @@ export default function EmployerViewPostPage() {
 
   if (!jobPost) {
     return (
-      <div className="min-h-screen bg-[#F4F7FA] transition-colors dark:bg-slate-950">
+      <div className="flex min-h-screen flex-col overflow-x-hidden bg-[#F4F7FA] transition-colors dark:bg-slate-950">
         <EmployerNavbar />
-        <div className="flex">
-          <EmployerSidebar activeItem="applicants" />
-          <div className="flex flex-1 items-center justify-center">
+        <EmployerSidebarShell activeItem="job-post">
+          <div className="flex min-w-0 flex-1 items-center justify-center px-4">
             <p className="text-sm text-[#6B7280] dark:text-slate-400">{error || "Loading job post..."}</p>
           </div>
-        </div>
+        </EmployerSidebarShell>
       </div>
     );
   }
@@ -168,21 +168,20 @@ export default function EmployerViewPostPage() {
   const workType = formatWorkType(jobPost.workplaceType);
 
   return (
-    <div className="min-h-screen bg-[#F4F7FA] transition-colors dark:bg-slate-950">
+    <div className="flex min-h-screen flex-col overflow-x-hidden bg-[#F4F7FA] transition-colors dark:bg-slate-950">
       <EmployerNavbar />
-      <div className="flex">
-        <EmployerSidebar activeItem="applicants" />
-
-        <div className="flex-1">
-          <div className="layout-container layout-page">
+      <EmployerSidebarShell activeItem="job-post">
+        <div className="min-w-0 flex-1 overflow-y-auto">
+          <div className="layout-container px-3 pb-6 pt-2 sm:px-6 sm:pb-8 sm:pt-3 lg:pb-10 lg:pt-4">
+            <PageBackButton />
             {/* Header */}
-            <h1 className="mb-[20px] text-[24px] font-bold text-[#05060A] dark:text-white">
+            <h1 className="mb-4 text-xl font-bold text-[#05060A] dark:text-white sm:mb-[20px] sm:text-[24px]">
               Applicants &gt; View Post
             </h1>
 
-            <div className="flex flex-col lg:flex-row gap-6 items-start">
+            <div className="flex flex-col items-start gap-6 lg:flex-row">
               {/* LEFT COLUMN */}
-              <div className="w-full flex-[2] rounded-2xl border border-gray-100 bg-white p-8 shadow-sm transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-none lg:p-10">
+              <div className="w-full flex-[2] rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-none sm:p-8 lg:p-10">
                 {/* Date */}
                 <div className="mb-4 flex items-center text-gray-500 dark:text-slate-400">
                   <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -193,7 +192,7 @@ export default function EmployerViewPostPage() {
                 </div>
 
                 {/* Title & Company */}
-                <h2 className="mb-1 text-[28px] font-extrabold text-black dark:text-white">
+                <h2 className="mb-1 text-2xl font-extrabold text-black dark:text-white sm:text-[28px]">
                   {jobPost.jobTitle || "Untitled Job Post"}
                 </h2>
                 <p className="mb-6 text-gray-500 dark:text-slate-400">
@@ -268,7 +267,7 @@ export default function EmployerViewPostPage() {
               </div>
 
               {/* RIGHT COLUMN */}
-              <div className="w-full flex-[1] rounded-2xl border border-gray-100 bg-white p-8 shadow-sm transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-none lg:sticky lg:top-8">
+              <div className="w-full flex-[1] rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-none sm:p-8 lg:sticky lg:top-8">
                 <h2 className="mb-6 text-center text-xl font-extrabold text-black dark:text-white">Job Poster</h2>
 
                 {/* Logo */}
@@ -343,7 +342,7 @@ export default function EmployerViewPostPage() {
             </div>
           </div>
         </div>
-      </div>
+      </EmployerSidebarShell>
     </div>
   );
 }

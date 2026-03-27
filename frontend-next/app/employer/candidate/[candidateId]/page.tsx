@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 import EmployerNavbar from "@/components/EmployerNavbar";
+import PageBackButton from "@/components/PageBackButton";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
@@ -101,9 +102,11 @@ function formatFileUrl(url?: string) {
 
 function SectionTitle({ icon, title }: { icon: React.ReactNode; title: string }) {
   return (
-    <div className="mb-6 flex items-center gap-2 text-blue-600">
-      {icon}
-      <h2 className="text-xl font-bold text-gray-900 dark:text-white">{title}</h2>
+    <div className="mb-4 flex min-w-0 items-center gap-2 text-blue-600 sm:mb-6">
+      <span className="shrink-0">{icon}</span>
+      <h2 className="min-w-0 text-lg font-bold leading-tight text-gray-900 dark:text-white sm:text-xl">
+        {title}
+      </h2>
     </div>
   );
 }
@@ -111,27 +114,27 @@ function SectionTitle({ icon, title }: { icon: React.ReactNode; title: string })
 function ResumeReadOnly({ resume }: { resume?: ProfileData["resume"] }) {
   const href = formatFileUrl(resume?.url);
   return (
-    <div className="mb-6 rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+    <div className="mb-6 rounded-xl border border-gray-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
       <SectionTitle
         icon={
-          <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
+          <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="currentColor" viewBox="0 0 20 20">
             <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
           </svg>
         }
         title="Resume File"
       />
-      <div className="flex items-center justify-between rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800 p-5">
-        <div className="flex items-center gap-4">
-          <div className="relative flex flex-col items-center">
-            <svg className="h-14 w-12 text-blue-100 dark:text-blue-900" fill="currentColor" viewBox="0 0 24 24">
+      <div className="flex flex-col gap-4 rounded-xl border border-gray-100 bg-gray-50/50 p-4 dark:border-slate-700 dark:bg-slate-800 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+        <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+          <div className="relative flex shrink-0 flex-col items-center">
+            <svg className="h-12 w-10 text-blue-100 dark:text-blue-900 sm:h-14 sm:w-12" fill="currentColor" viewBox="0 0 24 24">
               <path d="M6 2c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6H6zm7 7V3.5L18.5 9H13z" />
             </svg>
             <div className="absolute bottom-1 rounded-sm bg-blue-600 px-1 text-[8px] font-bold text-white">
               PDF
             </div>
           </div>
-          <div>
-            <p className="font-bold text-gray-800 dark:text-slate-200">
+          <div className="min-w-0">
+            <p className="break-words font-bold text-gray-800 dark:text-slate-200">
               {resume?.name || "No resume uploaded"}
             </p>
             <p className="mt-1 text-xs text-gray-400 dark:text-slate-500">
@@ -147,7 +150,7 @@ function ResumeReadOnly({ resume }: { resume?: ProfileData["resume"] }) {
             href={href}
             target="_blank"
             rel="noreferrer"
-            className="rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-5 py-2 text-sm font-bold text-gray-700 dark:text-slate-200 transition hover:bg-gray-50 dark:hover:bg-slate-600"
+            className="flex h-10 w-full shrink-0 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-bold text-gray-700 transition hover:bg-gray-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600 sm:h-auto sm:w-auto sm:px-5 sm:py-2"
           >
             See File
           </a>
@@ -159,10 +162,10 @@ function ResumeReadOnly({ resume }: { resume?: ProfileData["resume"] }) {
 
 function EducationReadOnly({ education }: { education?: Education[] }) {
   return (
-    <div className="mb-6 rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+    <div className="mb-6 rounded-xl border border-gray-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
       <SectionTitle
         icon={
-          <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+          <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3z" />
           </svg>
         }
@@ -177,25 +180,27 @@ function EducationReadOnly({ education }: { education?: Education[] }) {
             return (
               <div
                 key={edu.id}
-                className="relative rounded-xl border border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800 p-5"
+                className="relative rounded-xl border border-gray-100 bg-white p-4 dark:border-slate-700 dark:bg-slate-800 sm:p-5"
               >
-                <div className="absolute right-5 top-5">
+                <div className="mb-3 flex flex-wrap justify-end sm:absolute sm:right-4 sm:top-4 sm:z-10 sm:mb-0 md:right-5 md:top-5">
                   {transcriptHref ? (
-                    <span className="flex items-center gap-1 rounded-full border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/30 px-3 py-1 text-xs font-medium text-green-600 dark:text-green-400">
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <span className="inline-flex max-w-full items-center gap-1 rounded-full border border-green-200 bg-green-50 px-2.5 py-1 text-[11px] font-medium text-green-600 dark:border-green-800 dark:bg-green-900/30 dark:text-green-400 sm:text-xs">
+                      <svg className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
-                      Verified by Transcript
+                      <span className="leading-tight">Verified by Transcript</span>
                     </span>
                   ) : (
-                    <span className="flex items-center gap-1 rounded-full border border-blue-100 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/30 px-3 py-1 text-xs font-medium text-blue-600 dark:text-blue-400">
+                    <span className="inline-flex rounded-full border border-blue-100 bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-600 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-400 sm:text-xs">
                       Not Verified
                     </span>
                   )}
                 </div>
-                <div className="pr-40">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">{edu.universityName}</h3>
-                  <p className="mt-1 text-sm text-gray-600 dark:text-slate-400">
+                <div className="min-w-0 sm:pr-44">
+                  <h3 className="break-words text-base font-bold leading-snug text-gray-900 dark:text-white sm:text-lg">
+                    {edu.universityName}
+                  </h3>
+                  <p className="mt-1 break-words text-sm text-gray-600 dark:text-slate-400">
                     {edu.degreeName}
                     {edu.fieldOfStudy ? ` in ${edu.fieldOfStudy}` : ""}
                     {edu.gpa ? ` | GPA: ${edu.gpa}` : ""}
@@ -207,12 +212,12 @@ function EducationReadOnly({ education }: { education?: Education[] }) {
                   </p>
                 </div>
                 {transcriptHref && (
-                  <div className="mt-4 flex justify-end">
+                  <div className="mt-4 flex justify-stretch sm:justify-end">
                     <a
                       href={transcriptHref}
                       target="_blank"
                       rel="noreferrer"
-                      className="rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-5 py-1.5 text-sm font-bold text-gray-700 dark:text-slate-200 transition hover:bg-gray-50 dark:hover:bg-slate-600"
+                      className="flex h-10 w-full items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-bold text-gray-700 transition hover:bg-gray-50 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600 sm:h-auto sm:w-auto sm:px-5 sm:py-1.5"
                     >
                       See Transcript
                     </a>
@@ -229,10 +234,10 @@ function EducationReadOnly({ education }: { education?: Education[] }) {
 
 function ProjectsReadOnly({ projects }: { projects?: Project[] }) {
   return (
-    <div className="mb-6 rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+    <div className="mb-6 rounded-xl border border-gray-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
       <SectionTitle
         icon={
-          <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+          <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="currentColor" viewBox="0 0 24 24">
             <path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" />
           </svg>
         }
@@ -251,37 +256,39 @@ function ProjectsReadOnly({ projects }: { projects?: Project[] }) {
             return (
               <div
                 key={project.id}
-                className="relative rounded-xl border border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800 p-6"
+                className="relative rounded-xl border border-gray-100 bg-white p-4 dark:border-slate-700 dark:bg-slate-800 sm:p-6"
               >
-                <div className="absolute right-5 top-5">
+                <div className="mb-3 flex flex-wrap justify-end sm:absolute sm:right-4 sm:top-4 sm:z-10 sm:mb-0 md:right-5 md:top-5">
                   <span
-                    className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-[10px] font-bold ${
+                    className={`inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold leading-tight sm:px-3 ${
                       hasAny
-                        ? "border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400"
-                        : "border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                        ? "border-green-200 bg-green-50 text-green-600 dark:border-green-800 dark:bg-green-900/30 dark:text-green-400"
+                        : "border-blue-200 bg-blue-50 text-blue-600 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
                     }`}
                   >
-                    <div className={`h-1.5 w-1.5 rounded-full ${hasAny ? "bg-green-500" : "bg-blue-500"}`} />
+                    <div className={`h-1.5 w-1.5 shrink-0 rounded-full ${hasAny ? "bg-green-500" : "bg-blue-500"}`} />
                     {hasAny ? "Fully Upload" : "Not Upload"}
                   </span>
                 </div>
-                <div className="pr-32">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">{project.name}</h3>
+                <div className="min-w-0 sm:pr-36">
+                  <h3 className="break-words text-base font-bold leading-snug text-gray-900 dark:text-white sm:text-lg">
+                    {project.name}
+                  </h3>
                   <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
                     Role: {project.role || "Contributor"}
                   </p>
-                  <p className="mt-2 text-sm leading-relaxed text-gray-600 dark:text-slate-300 line-clamp-2">
+                  <p className="mt-2 text-sm leading-relaxed text-gray-600 line-clamp-3 dark:text-slate-300 sm:line-clamp-2">
                     {project.description || "No description."}
                   </p>
                 </div>
                 <div className="mt-4">
-                  <p className="mb-3 text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-slate-500">
+                  <p className="mb-2 text-[11px] font-bold uppercase tracking-wider text-gray-400 dark:text-slate-500">
                     Upload Files for Credibility
                   </p>
-                  <p className="mb-2 text-right text-[11px] text-blue-500 dark:text-blue-400">
-                    Tip: You can click on the card to view the file or link.
+                  <p className="mb-3 text-[11px] leading-snug text-blue-500 dark:text-blue-400 sm:mb-2 sm:text-right">
+                    Tip: Tap a card to open the file or link.
                   </p>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3 lg:gap-4">
                     {[
                       { label: "Github Linked", active: hasGithub, url: project.githubUrl, icon: "github" },
                       { label: "Live Demo", active: hasLink, url: project.projectUrl, icon: "link" },
@@ -293,13 +300,13 @@ function ProjectsReadOnly({ projects }: { projects?: Project[] }) {
                         target="_blank"
                         rel="noreferrer"
                         onClick={(e) => { if (!active) e.preventDefault(); }}
-                        className={`flex items-center justify-between rounded-xl border p-3 transition ${
+                        className={`flex min-w-0 items-center justify-between gap-2 rounded-xl border p-2.5 transition sm:p-3 ${
                           active
                             ? "border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-700 shadow-sm"
                             : "border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800/50 opacity-60"
                         }`}
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
                           <div className={`rounded-lg p-2 ${active ? "bg-green-50 dark:bg-green-900/30 text-green-600 dark:text-green-400" : "bg-gray-200 dark:bg-slate-700 text-gray-500 dark:text-slate-500"}`}>
                             {icon === "github" && (
                               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
@@ -317,7 +324,11 @@ function ProjectsReadOnly({ projects }: { projects?: Project[] }) {
                               </svg>
                             )}
                           </div>
-                          <span className={`text-xs font-bold ${active ? "text-gray-700 dark:text-slate-200" : "text-gray-400 dark:text-slate-500"}`}>
+                          <span
+                            className={`min-w-0 text-[11px] font-bold leading-tight sm:text-xs ${
+                              active ? "text-gray-700 dark:text-slate-200" : "text-gray-400 dark:text-slate-500"
+                            }`}
+                          >
                             {label}
                           </span>
                         </div>
@@ -381,21 +392,21 @@ function SkillsReadOnly({
     const hasProject = projectSkillNames.has(skill.name);
     return (
       <div className="mb-6 last:mb-0">
-        <div className="mb-1 flex flex-wrap items-center justify-between gap-y-1">
-          <span className="font-bold text-gray-900 dark:text-white">{skill.name}</span>
-          <div className="flex items-center gap-2 text-xs">
+        <div className="mb-1 flex flex-col gap-1.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-y-1">
+          <span className="min-w-0 break-words font-bold text-gray-900 dark:text-white">{skill.name}</span>
+          <div className="flex min-w-0 flex-wrap items-center gap-2 text-[11px] leading-snug sm:text-xs">
             {hasCert && hasProject ? (
-              <span className="text-[#6B7280] dark:text-slate-400">Evidence By Project & Certificate</span>
+              <span className="text-[#6B7280] dark:text-slate-400">Evidence: project & certificate</span>
             ) : hasCert ? (
-              <span className="text-[#6B7280] dark:text-slate-400">Evidence By Certificate</span>
+              <span className="text-[#6B7280] dark:text-slate-400">Evidence: certificate</span>
             ) : hasProject ? (
-              <span className="text-[#6B7280] dark:text-slate-400">Evidence By Project</span>
+              <span className="text-[#6B7280] dark:text-slate-400">Evidence: project</span>
             ) : (
               <span className="flex items-center gap-1 text-red-400">
-                <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="h-4 w-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                 </svg>
-                Not Verified
+                Not verified
               </span>
             )}
           </div>
@@ -412,10 +423,10 @@ function SkillsReadOnly({
   };
 
   return (
-    <div className="mb-6 rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+    <div className="mb-6 rounded-xl border border-gray-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
       <SectionTitle
         icon={
-          <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+          <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="currentColor" viewBox="0 0 24 24">
             <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-5 9h10v2H7z" />
           </svg>
         }
@@ -425,8 +436,8 @@ function SkillsReadOnly({
         {(["Technical Skills", "Business Skills"] as const).map((label) => {
           const list = label === "Technical Skills" ? technicalSkills : businessSkills;
           return (
-            <div key={label} className="rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50/50 dark:bg-slate-800 p-6">
-              <h3 className="mb-6 text-lg font-bold text-gray-800 dark:text-slate-200">{label}</h3>
+            <div key={label} className="rounded-xl border border-gray-100 bg-gray-50/50 p-4 dark:border-slate-700 dark:bg-slate-800 sm:p-6">
+              <h3 className="mb-4 text-base font-bold text-gray-800 dark:text-slate-200 sm:mb-6 sm:text-lg">{label}</h3>
               {list.length > 0 ? (
                 list.map((s) => <SkillItem key={s.id} skill={s} />)
               ) : (
@@ -444,10 +455,10 @@ function SkillsReadOnly({
 
 function CertificatesReadOnly({ certificates }: { certificates?: Certificate[] }) {
   return (
-    <div className="mb-6 rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm">
+    <div className="mb-6 rounded-xl border border-gray-100 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
       <SectionTitle
         icon={
-          <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
+          <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="currentColor" viewBox="0 0 20 20">
             <path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v14l-5-2.5L5 18V4z" />
           </svg>
         }
@@ -462,14 +473,16 @@ function CertificatesReadOnly({ certificates }: { certificates?: Certificate[] }
             return (
               <div
                 key={cert.id}
-                className="rounded-2xl border border-gray-100 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 transition hover:border-blue-200 dark:hover:border-blue-700 hover:shadow-md"
+                className="rounded-2xl border border-gray-100 bg-white p-4 transition hover:border-blue-200 hover:shadow-md dark:border-slate-700 dark:bg-slate-800 dark:hover:border-blue-700 sm:p-6"
               >
-                <h3 className="mb-1 text-lg font-bold text-gray-900 dark:text-white">{cert.name}</h3>
-                <p className="mb-4 flex items-center gap-2 text-sm text-gray-500 dark:text-slate-400">
-                  <span className="font-medium text-gray-700 dark:text-slate-300">{cert.issuedBy}</span>
+                <h3 className="mb-1 break-words text-base font-bold leading-snug text-gray-900 dark:text-white sm:text-lg">
+                  {cert.name}
+                </h3>
+                <p className="mb-3 flex flex-col gap-1 text-sm text-gray-500 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2 dark:text-slate-400">
+                  <span className="min-w-0 break-words font-medium text-gray-700 dark:text-slate-300">{cert.issuedBy}</span>
                   {cert.issueDate && (
                     <>
-                      <span className="text-gray-300 dark:text-slate-600">|</span>
+                      <span className="hidden text-gray-300 sm:inline dark:text-slate-600">|</span>
                       <span>{formatDate(cert.issueDate)}</span>
                     </>
                   )}
@@ -479,18 +492,21 @@ function CertificatesReadOnly({ certificates }: { certificates?: Certificate[] }
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {tags.map((tag) => (
-                    <span key={tag} className="rounded-lg border border-blue-100 dark:border-blue-800 bg-blue-50 dark:bg-blue-900/30 px-3 py-1 text-[11px] font-bold text-blue-600 dark:text-blue-400">
+                    <span
+                      key={tag}
+                      className="max-w-full break-words rounded-lg border border-blue-100 bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-600 dark:border-blue-800 dark:bg-blue-900/30 dark:text-blue-400 sm:px-3"
+                    >
                       {tag}
                     </span>
                   ))}
                 </div>
                 {cert.url && (
-                  <div className="mt-4 flex justify-end border-t border-gray-50 dark:border-slate-700 pt-4">
+                  <div className="mt-4 flex border-t border-gray-50 pt-4 dark:border-slate-700 sm:justify-end">
                     <a
                       href={cert.url}
                       target="_blank"
                       rel="noreferrer"
-                      className="rounded-lg border-2 border-blue-600 dark:border-blue-500 px-5 py-1.5 text-sm font-bold text-blue-600 dark:text-blue-400 transition hover:bg-blue-50 dark:hover:bg-blue-900/30"
+                      className="flex h-10 w-full items-center justify-center rounded-lg border-2 border-blue-600 px-4 text-sm font-bold text-blue-600 transition hover:bg-blue-50 dark:border-blue-500 dark:text-blue-400 dark:hover:bg-blue-900/30 sm:h-auto sm:w-auto sm:px-5 sm:py-1.5"
                     >
                       View File
                     </a>
@@ -594,33 +610,34 @@ export default function EmployerCandidateProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#E6EBF4] dark:bg-slate-950 transition-colors duration-300">
+    <div className="min-h-screen overflow-x-hidden bg-[#E6EBF4] transition-colors duration-300 dark:bg-slate-950">
       <EmployerNavbar />
-      <div className="mx-auto max-w-4xl px-4 py-8">
+      <div className="mx-auto w-full min-w-0 max-w-4xl px-3 pt-2 pb-4 sm:px-4 sm:pt-3 sm:pb-8">
+        <PageBackButton />
         {/* Profile Header */}
-        <div className="mb-6 flex items-start gap-5 rounded-xl border border-gray-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm transition-colors">
+        <div className="mb-5 flex flex-col gap-3 rounded-xl border border-gray-100 bg-white p-4 shadow-sm transition-colors dark:border-slate-800 dark:bg-slate-900 sm:mb-6 sm:flex-row sm:items-start sm:gap-5 sm:p-6">
           {profile.profileImage ? (
             <img
               src={profile.profileImage}
               alt={profile.fullName || ""}
-              className="h-20 w-20 rounded-full object-cover"
+              className="h-16 w-16 shrink-0 rounded-full object-cover sm:h-20 sm:w-20"
             />
           ) : (
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-blue-500 text-2xl font-bold text-white">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-blue-500 text-xl font-bold text-white sm:h-20 sm:w-20 sm:text-2xl">
               {profile.fullName?.substring(0, 2).toUpperCase() || "??"}
             </div>
           )}
-          <div className="flex-1 pt-1">
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <div className="min-w-0 flex-1 pt-0 sm:pt-1">
+            <h1 className="break-words text-xl font-bold leading-tight text-gray-900 dark:text-white sm:text-2xl">
               {profile.fullName}
             </h1>
             {profile.phoneNumber && (
-              <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
+              <p className="mt-1 break-words text-sm text-gray-500 dark:text-slate-400">
                 Phone: {profile.phoneNumber}
               </p>
             )}
             {profile.email && (
-              <p className="mt-0.5 text-sm text-gray-500 dark:text-slate-400">
+              <p className="mt-0.5 break-all text-sm text-gray-500 dark:text-slate-400">
                 Email: {profile.email}
               </p>
             )}
@@ -630,14 +647,20 @@ export default function EmployerCandidateProfilePage() {
               </p>
             )}
             {(profile.preferredPositions?.length || profile.preferredLocations?.length) && (
-              <div className="mt-3 flex flex-wrap gap-2">
+              <div className="mt-3 flex flex-wrap gap-1.5 sm:gap-2">
                 {profile.preferredPositions?.map((p) => (
-                  <span key={p} className="rounded-lg bg-blue-50 dark:bg-blue-500/10 px-3 py-1 text-xs font-semibold text-blue-600 dark:text-blue-400">
+                  <span
+                    key={p}
+                    className="max-w-full break-words rounded-lg bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-600 dark:bg-blue-500/10 dark:text-blue-400 sm:px-3"
+                  >
                     {p}
                   </span>
                 ))}
                 {profile.preferredLocations?.map((l) => (
-                  <span key={l} className="rounded-lg bg-gray-100 dark:bg-slate-800 px-3 py-1 text-xs font-semibold text-gray-600 dark:text-slate-300">
+                  <span
+                    key={l}
+                    className="max-w-full break-words rounded-lg bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-600 dark:bg-slate-800 dark:text-slate-300 sm:px-3"
+                  >
                     {l}
                   </span>
                 ))}
@@ -660,11 +683,11 @@ export default function EmployerCandidateProfilePage() {
         <div ref={certificatesRef}><CertificatesReadOnly certificates={profile.certificates} /></div>
 
         {/* Back button */}
-        <div className="mt-8 flex justify-end">
+        <div className="mt-6 flex justify-stretch sm:mt-8 sm:justify-end">
           <button
             type="button"
             onClick={() => router.back()}
-            className="rounded-lg border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-6 py-2 text-sm font-semibold text-gray-700 dark:text-slate-300 transition hover:bg-gray-50 dark:hover:bg-slate-800"
+            className="flex h-11 w-full items-center justify-center rounded-lg border border-gray-300 bg-white px-4 text-sm font-semibold text-gray-700 transition hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 sm:h-auto sm:w-auto sm:px-6 sm:py-2"
           >
             Back
           </button>

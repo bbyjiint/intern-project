@@ -1,13 +1,14 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import EmployerNavbar from '@/components/EmployerNavbar'
-import EmployerSidebar from '@/components/EmployerSidebar'
+import EmployerSidebarShell from '@/components/EmployerSidebarShell'
 import CandidateCard from '@/components/CandidateCard'
 import CandidateProfileModal from '@/components/CandidateProfileModal'
 import SearchableDropdown from '@/components/SearchableDropdown'
 import { apiFetch } from '@/lib/api'
+import { POSITION_OPTIONS } from '@/constants/positionOptions'
 
 type Candidate = {
   id: string
@@ -64,6 +65,21 @@ export default function BookmarkPage() {
   const [apiError, setApiError] = useState<string | null>(null)
   const [universities, setUniversities] = useState<Array<{ id: string; name: string; thname: string | null; code: string | null }>>([])
   const [universitiesLoading, setUniversitiesLoading] = useState(false)
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false)
+
+  const positionOptions = POSITION_OPTIONS
+
+  const activeFilterCount = useMemo(() => {
+    let n = 0
+    if (searchQuery.trim()) n++
+    if (position) n++
+    if (academicYear) n++
+    if (startDate) n++
+    if (endDate) n++
+    if (duration) n++
+    if (university) n++
+    return n
+  }, [searchQuery, position, academicYear, startDate, endDate, duration, university])
 
   useEffect(() => {
     const checkRole = async () => {
@@ -173,7 +189,7 @@ export default function BookmarkPage() {
       candidate.skills.some((s) => s.toLowerCase().includes(searchQuery.toLowerCase()))
 
     const matchesPosition = !position ||
-      candidate.role.toLowerCase().includes(position.toLowerCase())
+      String(candidate.role || '').toLowerCase() === position.toLowerCase()
 
     const matchesAcademicYear = !academicYear ||
       (candidate.yearOfStudy ?? '').toLowerCase().includes(academicYear.toLowerCase())
@@ -203,13 +219,11 @@ export default function BookmarkPage() {
   })
 
   return (
-    <div className="min-h-screen bg-[#E6EBF4] dark:bg-gray-950 flex flex-col transition-colors duration-300">
+    <div className="flex min-h-screen flex-col overflow-x-hidden bg-[#E6EBF4] transition-colors duration-300 dark:bg-gray-950">
       <EmployerNavbar />
-      <div className="flex flex-1">
-        <EmployerSidebar activeItem="bookmark" />
-
-        <div className="layout-container layout-page flex-1 overflow-y-auto">
-          <div className="py-8">
+      <EmployerSidebarShell activeItem="bookmark">
+        <div className="layout-container layout-page min-w-0 flex-1 overflow-y-auto px-2 pb-6 pt-4 sm:px-6 sm:pb-8 sm:pt-6 md:pt-8">
+          <div>
             {apiError && (
               <div className="mb-6 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-800 dark:border-yellow-900/50 dark:bg-yellow-500/10 dark:text-yellow-300">
                 {apiError}
@@ -217,137 +231,177 @@ export default function BookmarkPage() {
             )}
 
             <div className="mb-8">
-              <h1 className="mb-6 text-[32px] font-bold text-[#111827] dark:text-white">Bookmark</h1>
+              <h1 className="mb-4 text-2xl font-bold text-[#111827] dark:text-white md:mb-6 md:text-[32px]">Bookmark</h1>
 
-              {/* Filter Card */}
-              <div className="rounded-[16px] border border-gray-100 bg-white px-6 py-5 shadow-[0_2px_10px_rgba(15,23,42,0.06)] transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-none">
-
-                {/* Row 1: Search | Position | Academic Year */}
-                <div className="grid grid-cols-3 gap-4 mb-4">
-                  <div>
-                    <label className="mb-1.5 block text-[13px] font-semibold text-[#374151] dark:text-[#e5e7eb]">Search</label>
-                    <div className="relative">
-                      <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2">
-                        <svg className="h-4 w-4 text-[#9CA3AF] dark:text-[#686868]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                      </div>
-                      <input
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Search"
-                        className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white pl-9 pr-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-gray-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="mb-1.5 block text-[13px] font-semibold text-[#374151] dark:text-[#e5e7eb]">Position</label>
-                    <input
-                      type="text"
-                      value={position}
-                      onChange={(e) => setPosition(e.target.value)}
-                      placeholder="Position"
-                      className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-gray-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1.5 block text-[13px] font-semibold text-[#374151] dark:text-[#e5e7eb]">Academic Year</label>
-                    <div className="relative">
-                      <select
-                        value={academicYear}
-                        onChange={(e) => setAcademicYear(e.target.value)}
-                        className="h-[42px] w-full appearance-none rounded-[8px] border border-[#D1D5DB] bg-white px-3 pr-9 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8] dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                      >
-                        <option value="">Year</option>
-                        {ACADEMIC_YEAR_OPTIONS.map((y) => (
-                          <option key={y} value={y}>{y}</option>
-                        ))}
-                      </select>
-                      <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2">
-                        <svg className="h-4 w-4 text-[#6B7280] dark:text-[#686868]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Row 2: Internship Period | Duration | Institution */}
-                <div className="mb-4 grid grid-cols-[1fr_16px_1fr_1fr_2fr] items-end gap-3">
-                  <div>
-                    <label className="mb-1.5 block text-[13px] font-semibold text-[#374151] dark:text-[#e5e7eb]">Internship Period</label>
-                    <input
-                      type="date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8] [color-scheme:light] dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:[color-scheme:dark]"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-center pb-[2px] text-[16px] text-[#9CA3AF] dark:text-[#757575]">–</div>
-
-                  <div>
-                    <label className="invisible mb-1.5 block text-[13px] font-semibold text-[#374151] dark:text-[#e5e7eb]">End</label>
-                    <input
-                      type="date"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8] [color-scheme:light] dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:[color-scheme:dark]"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1.5 block text-[13px] font-semibold text-[#374151] dark:text-[#e5e7eb]">Duration</label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={duration}
-                      onChange={(e) => setDuration(e.target.value)}
-                      placeholder="Duration (Month)"
-                      className="h-[42px] w-full rounded-[8px] border border-[#D1D5DB] bg-white px-3 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] dark:border-slate-700 dark:bg-slate-800 dark:text-white dark:placeholder:text-gray-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1.5 block text-[13px] font-semibold text-[#374151] dark:text-[#e5e7eb]">Institution</label>
-                    {universitiesLoading ? (
-                      <div className="flex h-[42px] w-full items-center rounded-[8px] border border-[#D1D5DB] bg-gray-50 px-3 dark:border-slate-700 dark:bg-slate-800">
-                        <span className="text-[13px] text-[#9CA3AF] dark:text-gray-500">Loading...</span>
-                      </div>
-                    ) : (
-                      <SearchableDropdown
-                        options={universities.map((uni) => ({
-                          value: uni.name,
-                          label: uni.thname ? `${uni.name} (${uni.thname})` : uni.name,
-                          code: uni.code,
-                        }))}
-                        value={university}
-                        onChange={setUniversity}
-                        placeholder="Select Institution Name"
-                        className="w-full"
-                        allOptionLabel="All Universities"
-                        variant="applicants"
-                      />
+              {/* Filter Card — same as Find Candidates */}
+              <div className="min-w-0 rounded-2xl border border-gray-100 bg-white px-2.5 py-2.5 shadow-[0_2px_10px_rgba(15,23,42,0.06)] transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-none sm:rounded-[16px] sm:px-6 sm:py-5">
+                <button
+                  type="button"
+                  className="mb-2 flex w-full items-center justify-between gap-2 rounded-xl border border-transparent bg-[#F3F4F6] px-3 py-2.5 text-left transition-colors hover:bg-[#ECEFF3] dark:bg-gray-900/50 dark:hover:bg-gray-900 md:hidden"
+                  onClick={() => setMobileFiltersOpen((o) => !o)}
+                  aria-expanded={mobileFiltersOpen}
+                >
+                  <span className="text-sm font-semibold text-[#111827] dark:text-white">
+                    Filters
+                    {activeFilterCount > 0 && (
+                      <span className="ml-2 inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-blue-100 px-1.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/50 dark:text-blue-200">
+                        {activeFilterCount}
+                      </span>
                     )}
-                  </div>
-                </div>
-
-                <div className="flex justify-end">
-                  <button
-                    onClick={handleClearFilters}
-                    className="h-[38px] rounded-[8px] border border-[#D1D5DB] bg-white px-5 text-[13px] font-medium text-[#374151] transition hover:bg-[#F9FAFB] dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-200 dark:hover:bg-gray-700"
+                  </span>
+                  <svg
+                    className={`h-5 w-5 shrink-0 text-gray-600 transition-transform dark:text-gray-400 ${mobileFiltersOpen ? 'rotate-180' : ''}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    aria-hidden
                   >
-                    Clear Filters
-                  </button>
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                <div className={`${mobileFiltersOpen ? 'block' : 'hidden'} md:block`}>
+                  <p className="mb-3 hidden text-[13px] font-semibold text-[#374151] dark:text-[#e5e7eb] md:block">Filters</p>
+
+                  <div className="mb-3 grid min-w-0 grid-cols-2 gap-2 sm:mb-4 sm:gap-3 lg:mb-4 lg:grid-cols-3 lg:gap-4">
+                    <div className="col-span-2 min-w-0 lg:col-span-1">
+                      <label className="mb-1 block text-xs font-semibold text-[#374151] dark:text-[#e5e7eb] md:mb-1.5 md:text-[13px]">Search</label>
+                      <div className="relative">
+                        <div className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 md:left-3">
+                          <svg className="h-4 w-4 text-[#9CA3AF] dark:text-[#686868]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                          </svg>
+                        </div>
+                        <input
+                          type="text"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder="Name, skills…"
+                          className="h-10 min-h-[40px] w-full rounded-lg border border-[#D1D5DB] bg-white pl-8 pr-2.5 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] dark:border-gray-700 dark:bg-gray-900/50 dark:text-white dark:placeholder:text-gray-500 md:h-[42px] md:rounded-[8px] md:pl-9 md:pr-3"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="min-w-0">
+                      <label className="mb-1 block text-xs font-semibold text-[#374151] dark:text-[#e5e7eb] md:mb-1.5 md:text-[13px]">Position</label>
+                      <SearchableDropdown
+                        options={positionOptions.map((p) => ({ value: p, label: p }))}
+                        value={position}
+                        onChange={setPosition}
+                        placeholder="Position"
+                        className="w-full"
+                        allOptionLabel="All Positions"
+                        variant="applicants"
+                        compact
+                      />
+                    </div>
+
+                    <div className="min-w-0">
+                      <label className="mb-1 block text-xs font-semibold text-[#374151] dark:text-[#e5e7eb] md:mb-1.5 md:text-[13px]">
+                        <span className="md:hidden">Year</span>
+                        <span className="hidden md:inline">Academic Year</span>
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={academicYear}
+                          onChange={(e) => setAcademicYear(e.target.value)}
+                          className="h-10 min-h-[40px] w-full appearance-none rounded-lg border border-[#D1D5DB] bg-white px-2 pr-8 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8] dark:border-gray-700 dark:bg-gray-900/50 dark:text-white md:h-[42px] md:rounded-[8px] md:px-3 md:pr-9"
+                        >
+                          <option value="">Year</option>
+                          {ACADEMIC_YEAR_OPTIONS.map((y) => (
+                            <option key={y} value={y}>{y}</option>
+                          ))}
+                        </select>
+                        <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 md:right-3">
+                          <svg className="h-4 w-4 text-[#6B7280] dark:text-[#686868]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mb-3 grid min-w-0 grid-cols-2 gap-2 sm:mb-4 sm:grid-cols-2 sm:gap-4 xl:grid-cols-[minmax(0,1fr)_16px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)] xl:items-end xl:gap-3">
+                    <div className="min-w-0">
+                      <label className="mb-1 block text-xs font-semibold text-[#374151] dark:text-[#e5e7eb] md:mb-1.5 md:text-[13px]">
+                        <span className="md:hidden">Start</span>
+                        <span className="hidden md:inline">Internship start</span>
+                      </label>
+                      <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="h-10 min-h-[40px] w-full min-w-0 max-w-full rounded-lg border border-[#D1D5DB] bg-white px-1.5 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8] [color-scheme:light] dark:border-gray-700 dark:bg-gray-900/50 dark:text-white dark:[color-scheme:dark] md:h-[42px] md:rounded-[8px] md:px-3"
+                      />
+                    </div>
+
+                    <div className="hidden items-center justify-center pb-[2px] text-[16px] text-[#9CA3AF] dark:text-[#757575] xl:flex">–</div>
+
+                    <div className="min-w-0">
+                      <label className="mb-1 block text-xs font-semibold text-[#374151] dark:text-[#e5e7eb] md:mb-1.5 md:text-[13px] xl:invisible xl:mb-1.5">
+                        <span className="md:hidden">End</span>
+                        <span className="hidden md:inline">Internship end</span>
+                      </label>
+                      <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="h-10 min-h-[40px] w-full min-w-0 max-w-full rounded-lg border border-[#D1D5DB] bg-white px-1.5 text-[13px] text-[#111827] outline-none focus:border-[#94A3B8] [color-scheme:light] dark:border-gray-700 dark:bg-gray-900/50 dark:text-white dark:[color-scheme:dark] md:h-[42px] md:rounded-[8px] md:px-3"
+                      />
+                    </div>
+
+                    <div className="col-span-2 min-w-0 sm:col-span-1">
+                      <label className="mb-1 block text-xs font-semibold text-[#374151] dark:text-[#e5e7eb] md:mb-1.5 md:text-[13px]">Duration</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={duration}
+                        onChange={(e) => setDuration(e.target.value)}
+                        placeholder="Months"
+                        className="h-10 min-h-[40px] w-full rounded-lg border border-[#D1D5DB] bg-white px-2.5 text-[13px] text-[#111827] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] dark:border-gray-700 dark:bg-gray-900/50 dark:text-white dark:placeholder:text-gray-500 md:h-[42px] md:rounded-[8px] md:px-3"
+                      />
+                    </div>
+
+                    <div className="col-span-2 min-w-0 sm:col-span-2 xl:col-span-1">
+                      <label className="mb-1 block text-xs font-semibold text-[#374151] dark:text-[#e5e7eb] md:mb-1.5 md:text-[13px]">Institution</label>
+                      {universitiesLoading ? (
+                        <div className="flex h-10 min-h-[40px] w-full items-center rounded-lg border border-[#D1D5DB] bg-gray-50 px-2.5 dark:border-gray-700 dark:bg-gray-900/50 md:h-[42px] md:rounded-[8px] md:px-3">
+                          <span className="text-[13px] text-[#9CA3AF] dark:text-gray-500">Loading...</span>
+                        </div>
+                      ) : (
+                        <SearchableDropdown
+                          options={universities.map((uni) => ({
+                            value: uni.name,
+                            label: uni.thname ? `${uni.name} (${uni.thname})` : uni.name,
+                            code: uni.code,
+                          }))}
+                          value={university}
+                          onChange={setUniversity}
+                          placeholder="University"
+                          className="w-full"
+                          allOptionLabel="All Universities"
+                          variant="applicants"
+                          compact
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-stretch sm:justify-end">
+                    <button
+                      type="button"
+                      onClick={handleClearFilters}
+                      className="h-10 min-h-[40px] w-full rounded-lg border border-[#D1D5DB] bg-white px-4 text-[13px] font-medium text-[#374151] transition hover:bg-[#F9FAFB] dark:border-gray-700 dark:bg-gray-900/50 dark:text-gray-200 dark:hover:bg-gray-700 sm:h-[38px] sm:w-auto sm:rounded-[8px] sm:px-5"
+                    >
+                      Clear Filters
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* All / Latest + count */}
-            <div className="mb-4 flex items-center gap-2">
+            <div className="mb-6 flex min-w-0 flex-wrap items-center gap-2">
               <button
                 onClick={() => setSortMode('all')}
                 className={`h-[36px] rounded-[8px] border px-5 text-[14px] font-semibold transition-colors ${
@@ -370,8 +424,8 @@ export default function BookmarkPage() {
               </button>
             </div>
 
-            <p className="mb-4 text-[16px] font-semibold text-[#111827] dark:text-white">
-              {sortedCandidates.length} Total Candidate
+            <p className="mb-[16px] text-[14px] font-semibold text-[#1F2937] dark:text-[#ffffff]">
+              {sortedCandidates.length} Total Candidate{sortedCandidates.length === 1 ? '' : 's'}
             </p>
 
             {sortedCandidates.length === 0 ? (
@@ -395,7 +449,7 @@ export default function BookmarkPage() {
             )}
           </div>
         </div>
-      </div>
+      </EmployerSidebarShell>
 
       {selectedCandidate && (
         <CandidateProfileModal

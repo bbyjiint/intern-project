@@ -1,11 +1,8 @@
-import type { Response, Request } from "express";
-import jwt from "jsonwebtoken";
+import type { Response } from "express";
 
 export const AUTH_COOKIE_NAME = "auth";
 
-export function getAuthCookieOptions(args?: {
-  rememberMe?: boolean;
-}) {
+function getAuthCookieOptions(args?: { rememberMe?: boolean }) {
   const rememberMe = args?.rememberMe ?? false;
 
   return {
@@ -28,17 +25,4 @@ export function clearAuthCookie(res: Response) {
     sameSite: "lax",
     path: "/",
   });
-}
-
-export function getUserIdFromRequest(req: Request): string {
-
-  const token = req.cookies?.[AUTH_COOKIE_NAME]
-
-  if (!token) {
-    throw new Error("Unauthorized")
-  }
-
-  const payload = jwt.verify(token, process.env.JWT_SECRET!) as any
-
-  return payload.sub
 }

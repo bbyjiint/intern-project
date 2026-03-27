@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import EmployerNavbar from "@/components/EmployerNavbar";
-import EmployerSidebar from "@/components/EmployerSidebar";
+import EmployerSidebarShell from "@/components/EmployerSidebarShell";
 import EmployerJobPostCard, {
   type EmployerJobPostCardData,
 } from "@/components/job-post/EmployerJobPostCard";
@@ -538,13 +538,11 @@ function JobPostContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#E6EBF4] dark:bg-gray-950 flex flex-col transition-colors duration-300">
+    <div className="flex min-h-screen flex-col overflow-x-hidden bg-[#E6EBF4] transition-colors duration-300 dark:bg-gray-950">
       <EmployerNavbar />
-      <div className="flex flex-1">
-        <EmployerSidebar activeItem="job-post" />
-
-        <div className="layout-container layout-page flex-1 overflow-y-auto">
-          <div className="py-8">
+      <EmployerSidebarShell activeItem="job-post">
+        <div className="layout-container layout-page min-w-0 flex-1 overflow-y-auto px-3 pb-6 pt-4 sm:px-6 sm:pb-8 sm:pt-6 md:pt-8">
+          <div>
             {jobPostActionError && (
               <div className="mb-4 rounded-[12px] border border-[#FECACA] bg-[#FEF2F2] px-4 py-3 text-[14px] text-[#B91C1C] dark:border-red-900/50 dark:bg-red-500/10 dark:text-red-300">
                 {jobPostActionError}
@@ -557,19 +555,19 @@ function JobPostContent() {
               </div>
             )}
 
-            <div className="mb-[18px] flex items-start justify-between gap-6">
-              <div>
-                <h1 className="text-[32px] font-bold leading-none tracking-[-0.02em] text-[#05060A] dark:text-white">
+            <div className="mb-[18px] flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-6">
+              <div className="min-w-0">
+                <h1 className="text-2xl font-bold leading-tight tracking-[-0.02em] text-[#05060A] dark:text-white md:text-[32px] md:leading-none">
                   Your Job Posts
                 </h1>
-                <p className="mt-4 text-[14px] text-[#6B7280] dark:text-gray-400">
+                <p className="mt-3 text-[13px] text-[#6B7280] dark:text-gray-400 md:mt-4 md:text-[14px]">
                   Create, manage, and update the status of your job posts.
                 </p>
               </div>
 
-              <div className="flex items-center gap-3 pt-[4px]">
-                <div className="relative">
-                  <div className="pointer-events-none absolute left-5 top-1/2 -translate-y-1/2">
+              <div className="flex w-full flex-col gap-3 sm:flex-row sm:items-stretch sm:justify-end lg:w-auto lg:pt-[4px]">
+                <div className="relative min-w-0 flex-1 sm:max-w-md lg:max-w-none">
+                  <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 md:left-5">
                     <svg
                       className="h-5 w-5 text-[#6B7280] dark:text-[#686868]"
                       fill="none"
@@ -589,21 +587,21 @@ function JobPostContent() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search"
-                    className="h-[38px] w-[356px] rounded-full border border-[#C9CED8] bg-white pl-[50px] pr-5 text-[14px] text-[#374151] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] dark:border-gray-700 dark:bg-gray-900/50 dark:text-white dark:placeholder:text-gray-500"
+                    className="h-[42px] w-full rounded-full border border-[#C9CED8] bg-white pl-11 pr-4 text-[14px] text-[#374151] outline-none placeholder:text-[#9CA3AF] focus:border-[#94A3B8] dark:border-gray-700 dark:bg-gray-900/50 dark:text-white dark:placeholder:text-gray-500 md:pl-[50px] lg:w-[356px]"
                   />
                 </div>
 
                 <button
                   type="button"
                   onClick={handleOpenCreateModal}
-                  className="flex h-[38px] items-center justify-center rounded-full border border-[#d1d5db] bg-white px-6 text-[14px] font-semibold text-[#2563EB] transition hover:bg-[#EEF4FF] dark:border-gray-600 dark:bg-gray-900/50 dark:text-blue-400 dark:hover:bg-gray-700"
+                  className="flex h-[42px] shrink-0 items-center justify-center rounded-full border border-[#d1d5db] bg-white px-4 text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#EEF4FF] dark:border-gray-600 dark:bg-gray-900/50 dark:text-blue-400 dark:hover:bg-gray-700 sm:px-6 sm:text-[14px]"
                 >
                   + Create Job Post
                 </button>
               </div>
             </div>
 
-            <div className="mb-[16px] flex gap-[6px]">
+            <div className="mb-[16px] flex flex-wrap gap-2 sm:gap-[6px]">
               {(
                 [
                   ["all", "All"],
@@ -650,7 +648,7 @@ function JobPostContent() {
             )}
           </div>
         </div>
-      </div>
+      </EmployerSidebarShell>
 
       {showDeleteModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">

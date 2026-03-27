@@ -84,8 +84,8 @@ export default function Step1GeneralInfo({
       </h2>
 
       <div className="space-y-[15px]">
-        <div className="grid items-start gap-8 lg:grid-cols-[494px_minmax(0,1fr)] lg:gap-[40px]">
-          <div className="w-full max-w-[494px] space-y-[14px]">
+        <div className="grid min-w-0 items-start gap-8 lg:grid-cols-[minmax(0,494px)_minmax(0,1fr)] lg:gap-[40px]">
+          <div className="min-w-0 max-w-full space-y-[14px] lg:max-w-[494px]">
             <div>
               <label className="mb-[6px] block text-[14px] font-semibold text-[#253858] dark:text-slate-200">
                 Company Name<span style={{ color: "#EF4444" }}>*</span>
@@ -126,7 +126,7 @@ export default function Step1GeneralInfo({
               <label className="mb-[6px] block text-[14px] font-semibold text-[#253858] dark:text-slate-200">
                 Business Type<span style={{ color: "#EF4444" }}>*</span>
               </label>
-              <div className="flex flex-wrap gap-x-[30px] gap-y-2 pt-[1px]">
+              <div className="flex flex-col gap-2 pt-[1px] sm:flex-row sm:flex-wrap sm:gap-x-[30px]">
                 <label className="flex cursor-pointer items-center gap-[10px] text-[13px] text-[#6B7280] dark:text-slate-300">
                   <input
                     type="radio"
@@ -158,7 +158,7 @@ export default function Step1GeneralInfo({
           {/* Logo: laptop (lg+) only — setup page */}
           <div className="hidden justify-center pt-[6px] lg:flex lg:justify-end">
             {formData.companyLogo ? (
-              <div className="w-[170px]">
+              <div className="w-full max-w-[170px]">
                 <div className="overflow-hidden rounded-lg border border-gray-200 bg-gray-50 dark:border-slate-600 dark:bg-slate-700">
                   <img
                     src={formData.companyLogo}

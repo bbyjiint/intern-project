@@ -18,7 +18,7 @@ export default function CompanyHubLogoDark({
         style={{ backgroundColor: '#2F80ED' }}
       />
       <span
-        className="relative z-10 pl-1.5 text-lg font-semibold tracking-tight md:pl-2 md:text-2xl"
+        className="relative z-10 pl-1.5 text-lg font-semibold leading-none tracking-tight md:pl-2 md:text-2xl"
         style={{ color: '#FFFFFF' }}
       >
         CompanyHub.

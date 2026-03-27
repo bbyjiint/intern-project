@@ -16,7 +16,7 @@ import messagesRouter from "../routes/messages";
 import { internRouter } from "../routes/intern";
 import { githubRouter } from "../routes/githubCheck";
 import uploadRouter from "../routes/upload";
-import aiRouter from "../routes/ai"; // ← เพิ่ม
+import aiRouter from "../routes/ai";
 import { bugReportsRouter } from "../routes/bug-reports";
 
 const app = express();
@@ -60,10 +60,8 @@ app.use("/api/bookmarks", bookmarksRouter);
 app.use("/api/messages", messagesRouter);
 app.use("/api/intern", internRouter);
 app.use("/api/upload", uploadRouter);
-app.use("/api/ai", aiRouter); // ← เพิ่ม
+app.use("/api/ai", aiRouter);
 app.use("/api/bug-reports", bugReportsRouter);
-
-app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });

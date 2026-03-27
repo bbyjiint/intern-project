@@ -9,15 +9,5 @@
   "scripts": {
     "dev": "cd frontend-next && npm run dev",
     "build": "cd frontend-next && npm run build"
-  },
-  "devDependencies": {
-    "@types/uuid": "^10.0.0",
-    "concurrently": "^8.2.2"
-  },
-  "dependencies": {
-    "@google/genai": "^1.45.0",
-    "argon2": "^0.44.0",
-    "lucide-react": "^0.577.0",
-    "uuid": "^13.0.0"
   }
 }

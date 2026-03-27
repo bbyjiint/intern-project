@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import EmployerNavbar from '@/components/EmployerNavbar'
-import EmployerSidebar from '@/components/EmployerSidebar'
+import EmployerSidebarShell from '@/components/EmployerSidebarShell'
+import PageBackButton from '@/components/PageBackButton'
 import { apiFetch } from '@/lib/api'
 
 import ApplicantCard, { type Applicant } from '@/components/job-post/ApplicantCard'
@@ -389,21 +390,24 @@ export default function ViewApplicantsPage() {
 
   // ─── Render ──────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#E6EBF4] dark:bg-gray-950 flex flex-col transition-colors duration-300">
+    <div className="flex min-h-screen flex-col overflow-x-hidden bg-[#E6EBF4] transition-colors duration-300 dark:bg-gray-950">
       <EmployerNavbar />
-      <div className="flex flex-1">
-        <EmployerSidebar activeItem="applicants" />
-
-        <div className="layout-container layout-page flex-1 overflow-y-auto">
-          <div className="py-8">
+      <EmployerSidebarShell activeItem="applicants">
+        <div className="layout-container layout-page min-w-0 flex-1 overflow-y-auto px-2 pb-6 pt-4 sm:px-6 sm:pb-8 sm:pt-6 md:pt-8">
+          <div>
+            <PageBackButton />
 
             {/* Header */}
-            <div className="mb-[18px] flex items-start justify-between gap-6">
-              <div>
-                <h1 className="text-[30px] font-bold leading-none text-black dark:text-white">Applicants › View Candidates</h1>
-                <p className="mt-[14px] text-[22px] font-semibold text-[#1F2937] dark:text-white">{jobPost.title}</p>
+            <div className="mb-[18px] flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+              <div className="min-w-0">
+                <h1 className="text-xl font-bold leading-tight text-black dark:text-white sm:text-2xl md:text-[30px] md:leading-none">
+                  Applicants › View Candidates
+                </h1>
+                <p className="mt-3 text-lg font-semibold text-[#1F2937] dark:text-white sm:mt-[14px] sm:text-[22px]">
+                  {jobPost.title}
+                </p>
               </div>
-              <div className="flex items-center gap-[10px] pt-3">
+              <div className="flex shrink-0 flex-wrap items-center gap-2 sm:gap-[10px] sm:pt-3">
                 <button
                   type="button" disabled={stateUpdating}
                   onClick={() => handleToggleState('PUBLISHED')}
@@ -474,7 +478,7 @@ export default function ViewApplicantsPage() {
             )}
           </div>
         </div>
-      </div>
+      </EmployerSidebarShell>
 
       {/* ✅ Popup — ส่ง jobPostId ให้ popup เรียก AI analysis */}
       {selectedApplicant && (

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import InternNavbar from "@/components/InternNavbar";
+import PageBackButton from "@/components/PageBackButton";
 import { apiFetch } from "@/lib/api";
 
 interface JobDetailData {
@@ -31,6 +32,18 @@ interface JobDetailData {
   contactDepartment?: string;
   address?: string;
   mapEmbedUrl?: string;
+}
+
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5001";
+
+/** Public job API may send a full URL, a path like `/uploads/...`, or a text fallback when no logo is set. */
+function resolveCompanyLogoUrl(raw?: string | null): string | null {
+  if (!raw?.trim()) return null;
+  const t = raw.trim();
+  if (t.startsWith("http://") || t.startsWith("https://")) return t;
+  if (t.startsWith("/")) return `${API_BASE_URL}${t}`;
+  return null;
 }
 
 const formatPostedDate = (value?: string) => {
@@ -75,16 +88,16 @@ const renderLines = (text?: string | string[] | null) => {
         .split("\n")
         .map((l) => l.trim())
         .filter(Boolean);
-  if (!lines.length) return <p className="text-gray-600 dark:text-slate-400 text-[15px]">-</p>;
+  if (!lines.length) return <p className="text-sm text-gray-600 dark:text-slate-400 sm:text-[15px]">-</p>;
   return (
     <ul className="space-y-2">
       {lines.map((line, i) => (
         <li
           key={i}
-          className="text-gray-600 dark:text-slate-400 text-[15px] leading-relaxed flex items-start"
+          className="flex items-start text-sm leading-relaxed text-gray-600 dark:text-slate-400 sm:text-[15px]"
         >
-          <span className="mr-2">-</span>
-          <span>{line.startsWith("-") ? line.slice(1).trim() : line}</span>
+          <span className="mr-2 shrink-0">-</span>
+          <span className="min-w-0 break-words">{line.startsWith("-") ? line.slice(1).trim() : line}</span>
         </li>
       ))}
     </ul>
@@ -198,26 +211,33 @@ export default function JobDetailPage() {
 
   const workType = formatWorkType(job.workplaceType);
 
+  const companyLogoUrl = resolveCompanyLogoUrl(job.companyLogo);
+  const companyDescription = job.companyDescription?.trim();
+  const showCompanyDescription = !!companyDescription && companyDescription !== "-";
+  const phone = job.contactPhone?.trim();
+  const dept = job.contactDepartment?.trim();
+  const showPhone = !!phone && phone !== "-";
+  const showDept = !!dept && dept !== "-";
+  const showContactBlock = showPhone || showDept;
+  const addressLine = job.address?.trim();
+  const showAddressText = !!addressLine && addressLine !== "-";
+  const showMap = !!job.mapEmbedUrl?.trim();
+  const showAddressSection = showAddressText || showMap;
+
   return (
-    <div className="min-h-screen bg-[#F4F7FA] dark:bg-slate-950 flex flex-col transition-colors duration-300">
+    <div className="min-h-screen overflow-x-hidden bg-[#F4F7FA] transition-colors duration-300 dark:bg-slate-950">
       <InternNavbar />
 
-      <div className="layout-container layout-page">
-        {/* Back Button */}
-        <button
-          onClick={() => router.back()}
-          className="text-gray-600 dark:text-slate-400 font-bold text-[15px] mb-6 hover:text-black dark:hover:text-white transition-colors"
-        >
-          &lt;&lt; Back
-        </button>
+      <div className="layout-container w-full min-w-0 max-w-full pb-6 pt-2 sm:pb-8 sm:pt-3 lg:pb-10 lg:pt-4">
+        <PageBackButton />
 
-        <div className="flex flex-col lg:flex-row gap-6 items-start">
+        <div className="flex flex-col items-start gap-5 lg:flex-row lg:gap-6">
           {/* LEFT COLUMN */}
-          <div className="flex-[2] bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-8 lg:p-10 w-full">
+          <div className="w-full min-w-0 flex-[2] rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800 sm:p-6 md:p-8 lg:p-10">
             {/* Date */}
-            <div className="flex items-center text-gray-500 dark:text-slate-400 mb-4">
+            <div className="mb-4 flex flex-wrap items-center gap-x-2 text-gray-500 dark:text-slate-400">
               <svg
-                className="w-4 h-4 mr-2"
+                className="h-4 w-4 shrink-0"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -229,21 +249,23 @@ export default function JobDetailPage() {
                   d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
                 />
               </svg>
-              <span className="text-sm font-medium">
+              <span className="min-w-0 text-sm font-medium">
                 {formatPostedDate(job.createdAt || job.postedDate)}
               </span>
             </div>
 
             {/* Title & Company */}
-            <h1 className="text-[28px] font-extrabold text-black dark:text-white mb-1">
+            <h1 className="mb-1 break-words text-xl font-extrabold leading-tight text-black dark:text-white sm:text-2xl md:text-[28px]">
               {job.jobTitle || "Untitled Job Post"}
             </h1>
-            <p className="text-gray-500 dark:text-slate-400 mb-6">{job.companyName || "-"}</p>
+            <p className="mb-5 break-words text-sm text-gray-500 dark:text-slate-400 sm:mb-6 sm:text-base">
+              {job.companyName || "-"}
+            </p>
 
             {/* Tags */}
-            <div className="flex flex-wrap gap-2 mb-8">
+            <div className="mb-6 flex flex-wrap gap-1.5 sm:mb-8 sm:gap-2">
               <span
-                className="rounded-[5px] px-[14px] py-[5px] text-[12px] font-semibold text-white"
+                className="rounded-md px-2.5 py-1 text-[11px] font-semibold text-white sm:rounded-[5px] sm:px-[14px] sm:py-[5px] sm:text-[12px]"
                 style={{
                   backgroundColor: workTypeColors[workType] || "#94A3B8",
                 }}
@@ -254,7 +276,7 @@ export default function JobDetailPage() {
                 ? job.positions.map((pos) => (
                     <span
                       key={pos}
-                      className="rounded-[5px] bg-[#E5E7EB] dark:bg-slate-700 px-[14px] py-[5px] text-[12px] font-semibold text-[#4B5563] dark:text-slate-300"
+                      className="max-w-full break-words rounded-md bg-[#E5E7EB] px-2.5 py-1 text-[11px] font-semibold text-[#4B5563] dark:bg-slate-700 dark:text-slate-300 sm:rounded-[5px] sm:px-[14px] sm:py-[5px] sm:text-[12px]"
                     >
                       {pos}
                     </span>
@@ -263,72 +285,74 @@ export default function JobDetailPage() {
             </div>
 
             {/* Positions Available */}
-            <h3 className="text-lg font-bold text-black dark:text-white mb-8">
+            <h3 className="mb-6 break-words text-base font-bold text-black dark:text-white sm:mb-8 sm:text-lg">
               Number of positions available: {job.positionsAvailable ?? "-"}
             </h3>
 
             {/* Job Description */}
-            <div className="mb-8">
-              <h3 className="text-[17px] font-bold text-black dark:text-white mb-3">
+            <div className="mb-6 sm:mb-8">
+              <h3 className="mb-2 text-base font-bold text-black dark:text-white sm:mb-3 sm:text-[17px]">
                 Job description
               </h3>
               {renderLines(job.jobDescription)}
             </div>
 
             {/* Applicant Qualifications */}
-            <div className="mb-8">
-              <h3 className="text-[17px] font-bold text-black dark:text-white mb-3">
+            <div className="mb-6 sm:mb-8">
+              <h3 className="mb-2 text-base font-bold text-black dark:text-white sm:mb-3 sm:text-[17px]">
                 Applicant qualifications
               </h3>
               {renderLines(job.qualifications)}
             </div>
 
             {/* Other Details */}
-            <div className="space-y-6 mb-12">
+            <div className="mb-8 space-y-5 sm:mb-12 sm:space-y-6">
               <div>
-                <h3 className="text-[17px] font-bold text-black dark:text-white mb-1">GPA</h3>
-                <p className="text-gray-600 dark:text-slate-400 text-[15px]">
+                <h3 className="mb-1 text-base font-bold text-black dark:text-white sm:text-[17px]">GPA</h3>
+                <p className="break-words text-sm text-gray-600 dark:text-slate-400 sm:text-[15px]">
                   {job.gpa || "Not specified"}
                 </p>
               </div>
               <div>
-                <h3 className="text-[17px] font-bold text-black dark:text-white mb-1">
+                <h3 className="mb-1 text-base font-bold text-black dark:text-white sm:text-[17px]">
                   Allowance
                 </h3>
-                <p className="text-gray-600 dark:text-slate-400 text-[15px]">
+                <p className="break-words text-sm text-gray-600 dark:text-slate-400 sm:text-[15px]">
                   {formatAllowance(job)}
                 </p>
               </div>
               <div>
-                <h3 className="text-[17px] font-bold text-black dark:text-white mb-1">
+                <h3 className="mb-1 text-base font-bold text-black dark:text-white sm:text-[17px]">
                   Preferred Location
                 </h3>
-                <p className="text-gray-600 dark:text-slate-400 text-[15px]">
+                <p className="break-words text-sm text-gray-600 dark:text-slate-400 sm:text-[15px]">
                   {job.location || "Location not specified"}
                 </p>
               </div>
               <div>
-                <h3 className="text-[17px] font-bold text-black dark:text-white mb-1">
+                <h3 className="mb-1 text-base font-bold text-black dark:text-white sm:text-[17px]">
                   Working Days &amp; Hours
                 </h3>
-                <p className="text-gray-600 dark:text-slate-400 text-[15px]">
+                <p className="break-words text-sm text-gray-600 dark:text-slate-400 sm:text-[15px]">
                   {job.workingDaysHours || "Not specified"}
                 </p>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-4 border-t border-gray-100 dark:border-slate-700 pt-8 justify-end">
+            <div className="flex flex-col-reverse gap-2 border-t border-gray-100 pt-6 dark:border-slate-700 sm:flex-row sm:justify-end sm:gap-4 sm:pt-8">
               <button
+                type="button"
                 onClick={() => router.back()}
-                className="px-6 py-2 rounded-lg border-2 border-[#2563EB] text-[#2563EB] font-bold hover:bg-blue-50 dark:hover:bg-blue-950 transition-colors"
+                className="flex h-11 w-full items-center justify-center rounded-lg border-2 border-[#2563EB] font-bold text-[#2563EB] transition-colors hover:bg-blue-50 dark:hover:bg-blue-950 sm:h-auto sm:w-auto sm:px-6 sm:py-2"
               >
                 Back
               </button>
               <button
+                type="button"
                 onClick={() => void handleApply()}
                 disabled={isApplying || hasApplied || job.state === "CLOSED"}
-                className="px-6 py-2 rounded-lg bg-[#2563EB] text-white font-bold hover:bg-blue-700 shadow-md shadow-blue-200 dark:shadow-none transition-colors disabled:cursor-not-allowed disabled:bg-[#E5E7EB] dark:disabled:bg-slate-700 disabled:shadow-none disabled:text-[#9CA3AF] dark:disabled:text-slate-500"
+                className="flex h-11 w-full items-center justify-center rounded-lg bg-[#2563EB] px-3 text-sm font-bold text-white shadow-md shadow-blue-200 transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-[#E5E7EB] disabled:text-[#9CA3AF] disabled:shadow-none dark:shadow-none dark:disabled:bg-slate-700 dark:disabled:text-slate-500 sm:h-auto sm:w-auto sm:px-6 sm:py-2 sm:text-base"
               >
                 {job.state === "CLOSED"
                   ? "Position closed"
@@ -336,13 +360,13 @@ export default function JobDetailPage() {
                     ? "Applied"
                     : isApplying
                       ? "Applying..."
-                      : ">> Apply for this position"}
+                      : "Apply for this position"}
               </button>
             </div>
 
             {applyMessage && (
               <div
-                className={`mt-4 rounded-lg px-4 py-3 text-sm ${
+                className={`mt-4 rounded-lg px-3 py-3 text-sm sm:px-4 ${
                   hasApplied
                     ? "bg-[#EFF6FF] dark:bg-blue-950 text-[#1D4ED8] dark:text-blue-300"
                     : "bg-[#FEF2F2] dark:bg-red-950 text-[#B91C1C] dark:text-red-400"
@@ -353,106 +377,112 @@ export default function JobDetailPage() {
             )}
           </div>
 
-          {/* RIGHT COLUMN */}
-          <div className="flex-[1] bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 p-8 w-full sticky top-8">
-            <h2 className="text-xl font-extrabold text-black dark:text-white text-center mb-6">
-              Job Poster
+          {/* RIGHT COLUMN — company details / contact */}
+          <div className="w-full min-w-0 flex-[1] rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800 sm:p-6 md:p-8 lg:sticky lg:top-8">
+            <h2 className="mb-4 border-b border-gray-100 pb-3 text-base font-extrabold text-black dark:border-slate-700 dark:text-white sm:mb-5 sm:text-lg">
+              Company details
             </h2>
 
-            {/* Logo */}
-            <div className="flex justify-center mb-6">
-              <div className="w-24 h-24 bg-[#F8F9FA] dark:bg-slate-700 border border-gray-100 dark:border-slate-600 rounded-full flex items-center justify-center shadow-sm overflow-hidden">
-                {job.companyLogo && job.companyLogo.startsWith("http") ? (
+            {companyLogoUrl && (
+              <div className="mb-4 flex justify-center sm:mb-5">
+                <div className="h-16 w-16 overflow-hidden rounded-full border border-gray-100 bg-[#F8F9FA] shadow-sm dark:border-slate-600 dark:bg-slate-700 sm:h-20 sm:w-20">
                   <img
-                    src={job.companyLogo}
+                    src={companyLogoUrl}
                     alt={job.companyName || "Company"}
-                    className="w-full h-full object-cover"
+                    className="h-full w-full object-cover"
                   />
-                ) : (
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#23356E] text-sm font-bold text-white">
-                    {(job.companyName || "C").substring(0, 2).toUpperCase()}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Company Name & Email */}
-            <div className="text-center mb-6">
-              <h3 className="text-lg font-bold text-black dark:text-white">
-                {job.companyName || "-"}
-              </h3>
-              <p className="text-sm text-gray-500 dark:text-slate-400">{job.companyEmail || "-"}</p>
-            </div>
-
-            <p className="text-sm text-gray-600 dark:text-slate-400 leading-relaxed mb-8 text-left px-2">
-              {job.companyDescription || "-"}
-            </p>
-
-            {/* Contact Info */}
-            <div className="mb-8">
-              <h4 className="text-[15px] font-bold text-black dark:text-white mb-4">
-                Contact Information
-              </h4>
-              <div className="space-y-3">
-                <div className="flex items-center text-gray-600 dark:text-slate-400 text-sm">
-                  <svg
-                    className="w-5 h-5 text-[#2563EB] mr-3"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
-                    />
-                  </svg>
-                  {job.contactPhone || "-"}
-                </div>
-                <div className="flex items-center text-gray-600 dark:text-slate-400 text-sm">
-                  <svg
-                    className="w-5 h-5 text-[#2563EB] mr-3"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
-                  {job.contactDepartment || "-"}
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Address & Map */}
-            <div>
-              <h4 className="text-[15px] font-bold text-black dark:text-white mb-2">Address</h4>
-              <p className="text-sm text-gray-600 dark:text-slate-400 leading-relaxed mb-4">
-                {job.address || "-"}
+            <div className="mb-5 space-y-1.5 sm:mb-6">
+              <p className="break-words text-lg font-bold leading-snug text-black dark:text-white">
+                {job.companyName || "—"}
               </p>
-              <div className="w-full h-48 bg-gray-200 dark:bg-slate-700 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-600">
-                {job.mapEmbedUrl ? (
-                  <iframe
-                    src={job.mapEmbedUrl}
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    allowFullScreen={false}
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-sm text-gray-500 dark:text-slate-400">
-                    Map not available
+              {job.companyEmail && job.companyEmail.trim() !== "-" ? (
+                <a
+                  href={`mailto:${job.companyEmail}`}
+                  className="block break-all text-sm font-medium text-[#2563EB] underline-offset-2 hover:underline dark:text-blue-400"
+                >
+                  {job.companyEmail}
+                </a>
+              ) : null}
+            </div>
+
+            {showCompanyDescription && (
+              <p className="mb-5 break-words text-sm leading-relaxed text-gray-600 dark:text-slate-400 sm:mb-6">
+                {companyDescription}
+              </p>
+            )}
+
+            {showContactBlock && (
+              <div className="mb-5 sm:mb-6">
+                <h3 className="mb-2.5 text-sm font-bold text-black dark:text-white">Contact</h3>
+                <div className="space-y-2.5">
+                  {showPhone && (
+                    <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-slate-400">
+                      <svg
+                        className="mt-0.5 h-5 w-5 shrink-0 text-[#2563EB]"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                        />
+                      </svg>
+                      <span className="min-w-0 break-words">{phone}</span>
+                    </div>
+                  )}
+                  {showDept && (
+                    <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-slate-400">
+                      <svg
+                        className="mt-0.5 h-5 w-5 shrink-0 text-[#2563EB]"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                        />
+                      </svg>
+                      <span className="min-w-0 break-words">{dept}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {showAddressSection && (
+              <div>
+                <h3 className="mb-2 text-sm font-bold text-black dark:text-white">Address</h3>
+                {showAddressText && (
+                  <p className="mb-3 break-words text-sm leading-relaxed text-gray-600 dark:text-slate-400 sm:mb-4">
+                    {addressLine}
+                  </p>
+                )}
+                {showMap && (
+                  <div className="h-44 w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-200 dark:border-slate-600 dark:bg-slate-700 sm:h-48">
+                    <iframe
+                      src={job.mapEmbedUrl}
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      allowFullScreen={false}
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      title="Company location map"
+                    />
                   </div>
                 )}
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>
