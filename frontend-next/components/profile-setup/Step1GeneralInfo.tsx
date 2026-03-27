@@ -161,7 +161,7 @@ function DayMonthYearPicker({
             setOpen((v) => !v);
             setView("day");
           }}
-          className="w-full px-4 py-3 pr-10 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+          className="w-full cursor-pointer rounded-lg border border-gray-300 bg-white px-3 py-2.5 pr-10 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 md:px-4 md:py-3"
         />
         <button
           type="button"
@@ -464,21 +464,22 @@ export default function Step1GeneralInfo({
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex justify-between items-start mb-6">
-        <div>
-          <h2 className="text-2xl font-bold mb-1 text-[#1C2D4F] dark:text-slate-100">
+      {/* Header — Skip compact, top-right */}
+      <div className="mb-3 flex items-start justify-between gap-2 md:mb-6">
+        <div className="min-w-0 flex-1 pr-1">
+          <h2 className="mb-0.5 text-base font-semibold text-[#1C2D4F] dark:text-slate-100 md:text-2xl md:font-bold">
             Profile Information
           </h2>
-          <p className="text-sm text-[#A9B4CD] dark:text-slate-400">
+          <p className="text-xs text-[#A9B4CD] dark:text-slate-400 md:text-sm">
             This step is optional — you can fill your profile information at any
             time.
           </p>
         </div>
         {onSkip && (
           <button
+            type="button"
             onClick={onSkip}
-            className="flex items-center px-4 py-2 rounded-lg font-medium text-sm transition-colors border-2 border-[#0273B1] text-[#0273B1] bg-white dark:bg-slate-700 dark:text-blue-400 dark:border-blue-400 hover:bg-[#F0F4F8] dark:hover:bg-slate-600"
+            className="shrink-0 rounded-md border border-[#0273B1] bg-white px-2 py-1 text-xs font-semibold leading-none text-[#0273B1] transition-colors hover:bg-[#F0F4F8] dark:border-blue-400 dark:bg-slate-800 dark:text-blue-400 dark:hover:bg-slate-700"
           >
             Skip &gt;
           </button>
@@ -487,23 +488,23 @@ export default function Step1GeneralInfo({
 
       {/* AI Autofill Banner */}
       {data._aiAutofilled && (
-        <div className="flex items-center gap-2 px-4 py-3 rounded-lg mb-5 text-sm bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700">
-          <span className="text-base">✨</span>
-          <span className="font-semibold">AI autofilled your profile</span>
-          <span className="text-indigo-500 dark:text-indigo-400">
-            — Fields marked with ✨ AI filled were read from your resume. Please
-            review and edit if needed.
-          </span>
+        <div className="mb-4 flex gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2.5 text-indigo-700 dark:border-indigo-700 dark:bg-indigo-900/20 dark:text-indigo-300 md:mb-5 md:items-center md:px-4 md:py-3">
+          <span className="shrink-0 pt-0.5 text-sm md:pt-0 md:text-base">✨</span>
+          <div className="min-w-0 flex-1 space-y-0.5 text-xs leading-snug md:text-sm md:leading-normal">
+            <p className="font-semibold text-indigo-800 dark:text-indigo-200">AI autofilled your profile</p>
+            <p className="text-xs text-indigo-600 dark:text-indigo-400 md:text-sm">
+              Fields marked with ✨ AI filled were read from your resume. Please review and edit if needed.
+            </p>
+          </div>
         </div>
       )}
 
-      <div className="flex flex-col md:flex-row gap-6">
-        {/* Left column */}
-        <div className="flex-1 space-y-5">
+      <div className="flex flex-col gap-4 lg:flex-row lg:gap-6">
+        <div className="flex-1 space-y-3 md:space-y-5">
           {/* Name */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4">
             <div>
-              <label className="block text-xs font-medium mb-2 text-[#0273B1]">
+              <label className="mb-1 block text-xs font-medium text-[#0273B1] md:mb-2">
                 First Name {data._aiFilled_firstName && <AIBadge />}
               </label>
               <input
@@ -511,11 +512,11 @@ export default function Step1GeneralInfo({
                 value={fields.firstName}
                 onChange={(e) => handleChange("firstName", e.target.value)}
                 placeholder="Your First Name"
-                className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 md:px-4 md:py-3"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium mb-2 text-[#0273B1]">
+              <label className="mb-1 block text-xs font-medium text-[#0273B1] md:mb-2">
                 Last Name {data._aiFilled_lastName && <AIBadge />}
               </label>
               <input
@@ -523,14 +524,14 @@ export default function Step1GeneralInfo({
                 value={fields.lastName}
                 onChange={(e) => handleChange("lastName", e.target.value)}
                 placeholder="Your Last Name"
-                className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 md:px-4 md:py-3"
               />
             </div>
           </div>
 
           {/* Gender */}
           <div>
-            <label className="block text-xs font-medium mb-2 text-[#0273B1]">
+            <label className="mb-1 block text-xs font-medium text-[#0273B1] md:mb-2">
               Gender
             </label>
             <div className="flex gap-4">
@@ -555,7 +556,7 @@ export default function Step1GeneralInfo({
 
           {/* Date of Birth */}
           <div>
-            <label className="block text-xs font-medium mb-2 text-[#0273B1]">
+            <label className="mb-1 block text-xs font-medium text-[#0273B1] md:mb-2">
               Date of Birth
             </label>
             <DayMonthYearPicker
@@ -566,13 +567,13 @@ export default function Step1GeneralInfo({
 
           {/* Nationality */}
           <div>
-            <label className="block text-xs font-medium mb-2 text-[#0273B1]">
+            <label className="mb-1 block text-xs font-medium text-[#0273B1] md:mb-2">
               Nationality
             </label>
             <select
               value={fields.nationality}
               onChange={(e) => handleChange("nationality", e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 md:px-4 md:py-3"
             >
               <option value="" disabled>
                 Select Nationality
@@ -587,7 +588,7 @@ export default function Step1GeneralInfo({
 
           {/* Email */}
           <div>
-            <label className="block text-xs font-medium mb-2 text-[#0273B1]">
+            <label className="mb-1 block text-xs font-medium text-[#0273B1] md:mb-2">
               Email {data._aiFilled_email && <AIBadge />}
             </label>
             <input
@@ -595,22 +596,22 @@ export default function Step1GeneralInfo({
               value={fields.email}
               onChange={(e) => handleChange("email", e.target.value)}
               placeholder="example@gmail.com"
-              className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 md:px-4 md:py-3"
             />
           </div>
 
           {/* Phone */}
-          <div>
-            <label className="block text-xs font-medium mb-2 text-[#0273B1]">
+          <div className="min-w-0">
+            <label className="mb-1 block text-xs font-medium text-[#0273B1] md:mb-2">
               Phone Number {data._aiFilled_phoneNumber && <AIBadge />}
             </label>
-            <div className="flex gap-2">
+            <div className="flex min-w-0 gap-2">
               {/* Dropdown รหัสประเทศ */}
               <select
                 value={phonePrefix}
                 onChange={(e) => setPhonePrefix(e.target.value)}
                 size={1}
-                className="w-[120px] px-3 py-3 border border-gray-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-[4.75rem] shrink-0 rounded-lg border border-gray-300 bg-slate-50 px-1.5 py-2.5 text-sm tabular-nums focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 md:w-[120px] md:px-3 md:py-3"
               >
                 {COUNTRY_DATA.filter((c) => c.dialCode !== "").map(
                   (country) => (
@@ -635,27 +636,28 @@ export default function Step1GeneralInfo({
                   );
                 }}
                 placeholder="e.g. 08x-xxx-xxxx"
-                className="flex-1 px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="min-w-0 flex-1 rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 md:px-4 md:py-3"
               />
             </div>
           </div>
         </div>
 
-        {/* Right column — photo */}
-        <div className="ml-auto">
+        {/* Photo: laptop (lg+) only — setup page */}
+        <div className="hidden lg:ml-auto lg:mr-0 lg:block">
           {fields.photo ? (
             <div className="relative w-32">
               <img
                 src={fields.photo}
                 alt="Profile"
-                className="w-full aspect-square object-cover rounded-lg"
+                className="aspect-square w-full rounded-lg object-cover"
               />
               <button
+                type="button"
                 onClick={removePhoto}
-                className="absolute top-1 right-1 p-1 bg-white dark:bg-slate-700 rounded-full shadow-md hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors"
+                className="absolute right-1 top-1 rounded-full bg-white p-1 shadow-md transition-colors hover:bg-gray-100 dark:bg-slate-700 dark:hover:bg-slate-600"
               >
                 <svg
-                  className="w-3 h-3 text-gray-600 dark:text-slate-300"
+                  className="h-3 w-3 text-gray-600 dark:text-slate-300"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -670,10 +672,10 @@ export default function Step1GeneralInfo({
               </button>
             </div>
           ) : (
-            <label className="cursor-pointer block w-32">
-              <div className="w-full aspect-square rounded-lg flex flex-col items-center justify-center border-2 border-dashed transition-colors bg-[#F9FAFB] dark:bg-slate-700 border-gray-200 dark:border-slate-600">
+            <label className="block w-32 cursor-pointer">
+              <div className="flex aspect-square w-full flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-[#F9FAFB] transition-colors dark:border-slate-600 dark:bg-slate-700">
                 <svg
-                  className="w-6 h-6 mb-1 text-gray-400 dark:text-slate-500"
+                  className="mb-1 h-6 w-6 text-gray-400 dark:text-slate-500"
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"
@@ -701,11 +703,11 @@ export default function Step1GeneralInfo({
       </div>
 
       {/* About You */}
-      <div className="mt-8">
-        <label className="block text-xs font-medium mb-1 text-[#0273B1]">
+      <div className="mt-6 md:mt-8">
+        <label className="mb-1 block text-xs font-medium text-[#0273B1]">
           About You {data._aiFilled_aboutYou && <AIBadge />}
         </label>
-        <p className="text-xs mb-3 text-[#A9B4CD] dark:text-slate-500">
+        <p className="mb-2 text-xs text-[#A9B4CD] dark:text-slate-500 md:mb-3">
           Add a short description highlighting your background, skills, or
           interests.
         </p>
@@ -713,22 +715,22 @@ export default function Step1GeneralInfo({
           value={fields.aboutYou}
           onChange={(e) => handleChange("aboutYou", e.target.value)}
           placeholder="Write a brief overview of yourself"
-          rows={5}
+          rows={4}
           maxLength={3000}
-          className="w-full px-4 py-3 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+          className="w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:placeholder-slate-400 md:px-4 md:py-3"
         />
       </div>
 
       {/* Career Preference */}
-      <div className="mt-8 pt-8 border-t border-gray-200 dark:border-slate-700">
-        <h3 className="text-xl font-bold mb-6 text-[#1C2D4F] dark:text-slate-100">
+      <div className="mt-6 border-t border-gray-200 pt-6 dark:border-slate-700 md:mt-8 md:pt-8">
+        <h3 className="mb-3 text-base font-semibold text-[#1C2D4F] dark:text-slate-100 md:mb-6 md:text-xl md:font-bold">
           Career Preference
         </h3>
 
-        <div className="space-y-6">
+        <div className="space-y-4 md:space-y-6">
           {/* Positions of Interest */}
           <div>
-            <label className="block text-xs font-medium mb-2 text-[#0273B1]">
+            <label className="mb-1 block text-xs font-medium text-[#0273B1] md:mb-2">
               Position(s) of Interest
             </label>
             <MultiSelectDropdown
@@ -737,14 +739,14 @@ export default function Step1GeneralInfo({
               onChange={(selected) =>
                 handleChange("positionsOfInterest", selected)
               }
-              placeholder="Select one or more positions (e.g., HR, Accounting)"
-              helperText="Select one or more positions (e.g., HR, Accounting)"
+              placeholder="Select positions"
+              helperText="One or more (e.g. HR, Accounting)"
             />
           </div>
 
           {/* Preferred Locations */}
           <div>
-            <label className="block text-xs font-medium mb-2 text-[#0273B1]">
+            <label className="mb-1 block text-xs font-medium text-[#0273B1] md:mb-2">
               Preferred Location(s)
             </label>
             <MultiSelectDropdown
@@ -759,18 +761,18 @@ export default function Step1GeneralInfo({
                   handleChange("preferredLocations", selected);
                 }
               }}
-              placeholder="Add preferred province"
+              placeholder="Select provinces"
               maxSelections={3}
-              helperText="(Select up to 3 provinces)"
+              helperText="Up to 3 provinces"
             />
           </div>
 
           {/* Internship Period */}
           <div>
-            <label className="block text-xs font-medium mb-2 text-[#0273B1]">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <label className="mb-1 block text-xs font-medium text-[#0273B1] md:mb-2">
               Internship Period
             </label>
-            <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-xs mb-1 block text-[#A9B4CD] dark:text-slate-500">
                   Start Date

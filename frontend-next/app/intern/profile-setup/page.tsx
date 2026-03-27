@@ -2,9 +2,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { apiFetch } from "@/lib/api";
-import CompanyHubLogo from "@/components/CompanyHubLogo";
+import CompanyHubLogoDark from "@/components/CompanyHubLogoDark";
 import ThemeToggle from "@/components/ThemeToggle";
 
 import Step0UploadResume from "@/components/profile-setup/Step0UploadResume";
@@ -141,7 +140,7 @@ export default function ProfileSetupPage() {
     const uploadForm = new FormData();
     uploadForm.append("file", formData._pendingResumeFile);
 
-    const res = await fetch("http://localhost:5001/api/upload/resume", {
+    const res = await fetch("http://localhost:5000/api/upload/resume", {
       method: "POST",
       body: uploadForm,
       credentials: "include",
@@ -389,28 +388,40 @@ export default function ProfileSetupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F0F4F8] dark:bg-slate-950 transition-colors duration-300">
-      {/* Navbar */}
-      <div className="bg-white dark:bg-slate-900 border-b dark:border-slate-800 sticky top-0 z-50 transition-colors">
-        <div className="layout-container layout-page-tight flex items-center justify-between h-[76px]">
-          <CompanyHubLogo href="/" />
-          <ThemeToggle />
+    <div className="min-h-screen overflow-x-hidden bg-[#EAF3FA] transition-colors duration-300 dark:bg-slate-950 md:bg-[#F0F4F8]">
+      {/* Headbar: dark navy, logo left + theme toggle right (all breakpoints) */}
+      <header className="sticky top-0 z-50 border-b border-[#223A57] bg-[#0B1C2C]">
+        <div className="layout-container flex h-12 items-center justify-between px-3 md:h-[76px] md:px-6">
+          <CompanyHubLogoDark href="/" className="shrink-0" />
+          <div
+            className="shrink-0 [&_button]:!h-9 [&_button]:!w-9 md:[&_button]:!h-10 md:[&_button]:!w-10 [&_button]:!border-[#223A57] [&_button]:!bg-[#10273F] [&_button:hover]:!bg-[#223A57] [&_button]:focus:ring-blue-400 [&_button]:focus:ring-offset-2 [&_button]:focus:ring-offset-[#0B1C2C] [&_button_svg]:!h-3.5 [&_button_svg]:!w-3.5 md:[&_button_svg]:!h-4 md:[&_button_svg]:!w-4 [&_button_svg]:!text-[#8A94A6]"
+          >
+            <ThemeToggle />
+          </div>
         </div>
-      </div>
+      </header>
 
-      <div className="layout-container layout-page pb-36">
-        <div className="mx-auto max-w-[800px]">
-          {/* Progress Card */}
-          <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow mb-4 transition-colors">
-            <h1 className="text-3xl font-bold text-center mb-6 text-gray-900 dark:text-white">
-              Start building your profile
-            </h1>
-            <ProgressIndicator currentStep={currentStep} totalSteps={5} />
+      <div className="layout-container pt-3 pb-24 md:pt-8 md:pb-36 lg:pt-12">
+        <div className="mx-auto w-full max-w-[800px] min-w-0">
+          {/* Mobile: compact progress card */}
+          <div className="mb-2 pt-1 md:mb-4 md:px-1 md:pt-4">
+            <div className="rounded-lg border border-gray-200 bg-white px-3 py-2 shadow-sm dark:border-[#223A57] dark:bg-[#0B1C2C] md:hidden">
+              <h1 className="mb-2 text-center text-lg font-semibold leading-tight tracking-tight text-[#0273B1] dark:text-white">
+                Start building your profile
+              </h1>
+              <ProgressIndicator currentStep={currentStep} totalSteps={5} />
+            </div>
+            <div className="hidden md:block md:rounded-lg md:bg-white md:p-6 md:shadow md:dark:bg-slate-800">
+              <h1 className="mb-6 text-center text-3xl font-bold leading-tight text-gray-900 dark:text-slate-100">
+                Start building your profile
+              </h1>
+              <ProgressIndicator currentStep={currentStep} totalSteps={5} />
+            </div>
           </div>
 
           {/* Main Card */}
-          <div className="bg-white dark:bg-slate-800 p-10 rounded-lg shadow transition-colors">
-            {error && <div className="text-red-500 mb-4">{error}</div>}
+          <div className="rounded-lg bg-white p-4 shadow-md transition-colors dark:bg-slate-800 md:rounded-lg md:p-10 md:shadow">
+            {error && <div className="mb-3 text-sm text-red-500 md:mb-4">{error}</div>}
 
             {currentStep === 1 && (
               <Step0UploadResume
@@ -455,44 +466,110 @@ export default function ProfileSetupPage() {
               />
             )}
 
-            {/* Footer Buttons */}
-            <div className="flex justify-between mt-10 pt-6 border-t dark:border-slate-700">
-              <button
-                onClick={handlePrevious}
-                className="flex items-center px-6 py-3 rounded-lg font-semibold bg-white dark:bg-slate-800 border-2 border-[#0273B1] text-[#0273B1] hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors"
-              >
-                Previous
-              </button>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={saveProfile}
-                  disabled={isSubmitting}
-                  className="px-6 py-3 rounded-lg text-white font-semibold transition-colors"
-                  style={{ backgroundColor: "#0273B1" }}
-                >
-                  {isSubmitting ? "Saving..." : "Save"}
-                </button>
-
-                {currentStep < 5 ? (
+            {/* Footer mobile: compact row; Next is filled primary */}
+            <div className="mt-5 border-t border-gray-200 pt-4 dark:border-slate-700 md:mt-10 md:pt-6">
+              <div className="flex max-w-full flex-col gap-2 md:hidden">
+                <div className="flex justify-end">
                   <button
-                    onClick={handleNext}
-                    className="px-6 py-3 rounded-lg font-semibold border-2 border-[#0273B1] text-[#0273B1] hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors"
-                  >
-                    Next
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleCreateProfile}
+                    type="button"
+                    onClick={saveProfile}
                     disabled={isSubmitting}
-                    className="px-6 py-3 rounded-lg text-white font-semibold transition-colors"
-                    style={{ backgroundColor: "#16A34A" }}
-                    onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#15803D"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#16A34A"; }}
+                    className="inline-flex h-10 max-w-full shrink-0 items-center justify-center gap-1.5 rounded-lg border border-[#0273B1] bg-white px-3 text-sm font-medium text-[#0273B1] transition-colors hover:bg-blue-50 disabled:opacity-60 dark:bg-slate-800 dark:hover:bg-slate-700"
                   >
-                    Create Profile
+                    <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
+                      <polyline points="17 21 17 13 7 13 7 21" />
+                      <polyline points="7 3 7 8 15 8" />
+                    </svg>
+                    {isSubmitting ? "Saving..." : "Save"}
                   </button>
-                )}
+                </div>
+                <div className="grid w-full min-w-0 grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={handlePrevious}
+                    className="inline-flex h-10 min-w-0 items-center justify-center gap-1 rounded-lg border border-gray-300 bg-white px-2 text-sm font-medium text-[#1C2D4F] transition-colors hover:bg-gray-50 active:bg-gray-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+                  >
+                    <svg className="h-4 w-4 shrink-0 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    <span className="truncate">Previous</span>
+                  </button>
+                  {currentStep < 5 ? (
+                    <button
+                      type="button"
+                      onClick={handleNext}
+                      className="inline-flex h-10 min-w-0 items-center justify-center gap-1 rounded-lg bg-[#0273B1] px-2 text-sm font-semibold text-white shadow-sm ring-1 ring-[#0273B1]/20 transition-colors hover:bg-[#025a8f] active:scale-[0.99]"
+                    >
+                      <span className="truncate">Next</span>
+                      <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleCreateProfile}
+                      disabled={isSubmitting}
+                      className="inline-flex h-10 min-w-0 items-center justify-center rounded-lg bg-[#16A34A] px-2 text-xs font-semibold leading-tight text-white shadow-sm transition-colors hover:bg-[#15803D] disabled:opacity-60 md:text-sm"
+                    >
+                      <span className="px-0.5 text-center leading-snug">Create Profile</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="hidden items-center justify-between gap-3 md:flex">
+                <button
+                  type="button"
+                  onClick={handlePrevious}
+                  className="inline-flex h-10 items-center justify-center gap-1 rounded-lg border-2 border-[#0273B1] bg-white px-4 py-2 text-sm font-semibold text-[#0273B1] transition-colors hover:bg-blue-50 dark:bg-slate-800 dark:hover:bg-slate-700"
+                >
+                  <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                  Previous
+                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={saveProfile}
+                    disabled={isSubmitting}
+                    className="inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors hover:opacity-95 disabled:opacity-60"
+                    style={{ backgroundColor: "#0273B1" }}
+                  >
+                    <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
+                      <polyline points="17 21 17 13 7 13 7 21" />
+                      <polyline points="7 3 7 8 15 8" />
+                    </svg>
+                    {isSubmitting ? "Saving..." : "Save"}
+                  </button>
+                  {currentStep < 5 ? (
+                    <button
+                      type="button"
+                      onClick={handleNext}
+                      className="inline-flex h-10 items-center justify-center gap-1 rounded-lg border-2 border-[#0273B1] px-4 py-2 text-sm font-semibold text-[#0273B1] transition-colors hover:bg-blue-50 dark:hover:bg-slate-700"
+                    >
+                      Next
+                      <svg className="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleCreateProfile}
+                      disabled={isSubmitting}
+                      className="rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors disabled:opacity-60"
+                      style={{ backgroundColor: "#16A34A" }}
+                      onMouseEnter={(e) => { if (!isSubmitting) e.currentTarget.style.backgroundColor = "#15803D"; }}
+                      onMouseLeave={(e) => { if (!isSubmitting) e.currentTarget.style.backgroundColor = "#16A34A"; }}
+                    >
+                      Create Profile
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -501,8 +578,8 @@ export default function ProfileSetupPage() {
 
       {/* Save Success Modal */}
       {showSaveModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl px-12 py-10 max-w-lg w-full text-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white px-5 py-6 text-center shadow-xl dark:bg-slate-800 sm:px-12 sm:py-10">
             <div className="flex justify-center mb-6">
               <div className="w-24 h-24 rounded-full border-4 border-green-200 flex items-center justify-center">
                 <svg className="w-14 h-14 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -510,13 +587,13 @@ export default function ProfileSetupPage() {
                 </svg>
               </div>
             </div>
-            <h2 className="text-3xl font-bold text-[#1C2D4F] dark:text-white mb-3">Saved Successfully</h2>
-            <p className="text-gray-500 dark:text-slate-400 text-base mb-8">
+            <h2 className="mb-2 text-lg font-bold text-[#1C2D4F] dark:text-white sm:mb-3 sm:text-2xl md:text-3xl">Saved Successfully</h2>
+            <p className="mb-6 text-xs text-gray-500 dark:text-slate-400 sm:mb-8 sm:text-sm md:text-base">
               Your information has been saved. You can update your profile at any time.
             </p>
             <button
               onClick={() => setShowSaveModal(false)}
-              className="px-10 py-3 rounded-lg font-semibold text-white transition-colors"
+              className="w-full rounded-lg px-10 py-3 font-semibold text-white transition-colors sm:w-auto"
               style={{ backgroundColor: "#0273B1" }}
               onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#025a8f"; }}
               onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#0273B1"; }}
@@ -529,8 +606,8 @@ export default function ProfileSetupPage() {
 
       {/* Confirm Create Profile Modal */}
       {showConfirmModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl px-12 py-10 max-w-lg w-full text-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white px-5 py-6 text-center shadow-xl dark:bg-slate-800 sm:px-12 sm:py-10">
             <div className="flex justify-center mb-6">
               <div className="w-24 h-24 rounded-full border-4 border-blue-200 flex items-center justify-center">
                 <svg className="w-14 h-14 text-[#0273B1]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -539,20 +616,20 @@ export default function ProfileSetupPage() {
                 </svg>
               </div>
             </div>
-            <h2 className="text-3xl font-bold text-[#1C2D4F] dark:text-white mb-3">Create Profile?</h2>
-            <p className="text-gray-500 dark:text-slate-400 text-base mb-8">
+            <h2 className="mb-2 text-lg font-bold text-[#1C2D4F] dark:text-white sm:mb-3 sm:text-2xl md:text-3xl">Create Profile?</h2>
+            <p className="mb-6 text-xs text-gray-500 dark:text-slate-400 sm:mb-8 sm:text-sm md:text-base">
               ยืนยันที่จะสร้างโปรไฟล์และบันทึกข้อมูลลงในบัญชีของคุณใช่ไหม?
             </p>
-            <div className="flex gap-4 justify-center">
+            <div className="flex flex-col justify-center gap-3 sm:flex-row sm:gap-4">
               <button
                 onClick={() => setShowConfirmModal(false)}
-                className="px-8 py-3 rounded-lg font-semibold border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                className="w-full rounded-lg border border-gray-300 px-8 py-3 font-semibold text-gray-600 transition-colors hover:bg-gray-100 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 sm:w-auto"
               >
                 ยกเลิก
               </button>
               <button
                 onClick={confirmCreateProfile}
-                className="px-8 py-3 rounded-lg font-semibold text-white transition-colors"
+                className="w-full rounded-lg px-8 py-3 font-semibold text-white transition-colors sm:w-auto"
                 style={{ backgroundColor: "#16A34A" }}
                 onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#15803D"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#16A34A"; }}
@@ -566,8 +643,8 @@ export default function ProfileSetupPage() {
 
       {/* Unsaved Changes Modal */}
       {showUnsavedModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl px-12 py-10 max-w-lg w-full text-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
+          <div className="w-full max-w-lg rounded-2xl bg-white px-5 py-6 text-center shadow-xl dark:bg-slate-800 sm:px-12 sm:py-10">
             <div className="flex justify-center mb-6">
               <div className="w-24 h-24 rounded-full border-4 border-yellow-200 flex items-center justify-center">
                 <svg className="w-14 h-14 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -576,20 +653,20 @@ export default function ProfileSetupPage() {
                 </svg>
               </div>
             </div>
-            <h2 className="text-3xl font-bold text-[#1C2D4F] dark:text-white mb-3">Unsaved Changes</h2>
-            <p className="text-gray-500 dark:text-slate-400 text-base mb-8">
+            <h2 className="mb-2 text-lg font-bold text-[#1C2D4F] dark:text-white sm:mb-3 sm:text-2xl md:text-3xl">Unsaved Changes</h2>
+            <p className="mb-6 text-xs text-gray-500 dark:text-slate-400 sm:mb-8 sm:text-sm md:text-base">
               You have unsaved changes. Continue without saving?
             </p>
-            <div className="flex gap-4 justify-center">
+            <div className="flex flex-col justify-center gap-3 sm:flex-row sm:gap-4">
               <button
                 onClick={handleLeaveWithoutSaving}
-                className="px-8 py-3 rounded-lg font-semibold border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                className="w-full rounded-lg border border-gray-300 px-8 py-3 font-semibold text-gray-600 transition-colors hover:bg-gray-100 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700 sm:w-auto"
               >
                 Leave without saving
               </button>
               <button
                 onClick={() => { setShowUnsavedModal(false); saveProfile(); }}
-                className="px-8 py-3 rounded-lg font-semibold text-white transition-colors"
+                className="w-full rounded-lg px-8 py-3 font-semibold text-white transition-colors sm:w-auto"
                 style={{ backgroundColor: "#0273B1" }}
                 onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = "#025a8f"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#0273B1"; }}

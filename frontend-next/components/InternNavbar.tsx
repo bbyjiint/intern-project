@@ -30,7 +30,7 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
   const resolveImageUrl = (image?: string) => {
     if (!image) return null
     if (image.startsWith('http')) return image
-    return `http://localhost:5001${image}`
+    return `http://localhost:5000${image}`
   }
 
   useEffect(() => {
