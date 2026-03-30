@@ -103,12 +103,12 @@ function CircularProgress({
   const outerRadius = 88;
   const innerRadius = 74;
   return (
-    <div className="relative h-[220px] w-[220px]">
+    <div className="relative h-[200px] w-[200px]">
       <svg
         width="220"
         height="220"
         viewBox={`0 0 ${size} ${size}`}
-        className="absolute left-1/2 top-1/2 h-[200px] w-[200px] -translate-x-1/2 -translate-y-1/2"
+        className="absolute left-1/2 top-1/2 h-[180px] w-[180px] -translate-x-1/2 -translate-y-1/2"
         aria-hidden="true"
       >
         {Array.from({ length: totalSegments }).map((_, i) => {
@@ -135,11 +135,11 @@ function CircularProgress({
           );
         })}
       </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <p className="text-[28px] font-medium leading-none text-[#1F2937]">
+      <div className="absolute inset-0 flex flex-col items-center justify-center gap-[2px]">
+        <p className="text-[22px] font-medium leading-none text-[#111827] dark:text-slate-200">
           {norm}%
         </p>
-        <p className="mt-[8px] max-w-[120px] text-center text-[13px] leading-[1.3] text-[#4B5563]">
+        <p className="max-w-[120px] break-words whitespace-normal text-center text-[11px] leading-[1.15] text-[#374151] dark:text-slate-300">
           {label}
         </p>
       </div>
@@ -385,7 +385,7 @@ export default function ApplicantProfilePopup({
           </div>
 
           {/* Circular progress */}
-          <div className="mt-[16px] flex justify-center gap-[48px]">
+          <div className="mt-[16px] flex flex-col items-center gap-[18px] md:flex-row md:gap-[48px] md:justify-center">
             <CircularProgress percentage={jobMatch} label="Job Match" />
             <CircularProgress
               percentage={profileCompletion}

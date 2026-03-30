@@ -594,7 +594,7 @@ function JobPostContent() {
                 <button
                   type="button"
                   onClick={handleOpenCreateModal}
-                  className="flex h-[42px] shrink-0 items-center justify-center rounded-full border border-[#d1d5db] bg-white px-4 text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#EEF4FF] dark:border-gray-600 dark:bg-gray-900/50 dark:text-blue-400 dark:hover:bg-gray-700 sm:px-6 sm:text-[14px]"
+                  className="flex w-full sm:w-auto min-h-[42px] shrink-0 items-center justify-center rounded-full border border-[#d1d5db] bg-white px-[clamp(14px,2.2vw,24px)] py-[clamp(10px,1.4vw,12px)] text-[13px] font-semibold text-[#2563EB] transition hover:bg-[#EEF4FF] dark:border-gray-600 dark:bg-gray-900/50 dark:text-blue-400 dark:hover:bg-gray-700 sm:text-[14px]"
                 >
                   + Create Job Post
                 </button>
