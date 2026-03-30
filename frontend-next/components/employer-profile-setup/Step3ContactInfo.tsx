@@ -77,7 +77,7 @@ export default function Step3ContactInfo({
   };
 
   const inputClass =
-    "w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-3 text-[13px] text-[#1E293B] dark:text-slate-200 placeholder:text-gray-400 dark:placeholder:text-slate-400 outline-none transition focus:border-[#0273B1] focus:ring-2 focus:ring-[#BFDBFE]";
+    "w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-[#1E293B] outline-none transition focus:border-[#0273B1] focus:ring-2 focus:ring-[#BFDBFE] dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:placeholder:text-slate-400 placeholder:text-gray-400 md:px-4 md:py-3 md:text-[13px]";
 
   const localDigits = stripLocal(formData.phoneNumber, phonePrefix).replace(
     /[^0-9-]/g,
@@ -86,11 +86,16 @@ export default function Step3ContactInfo({
 
   return (
     <div>
-      <h2 className="mb-6 text-xl font-bold text-[#0273B1] dark:text-white sm:mb-8 sm:text-2xl">
-        Contact Information
-      </h2>
+      <div className="mb-3 md:mb-8">
+        <h2 className="mb-0.5 text-base font-semibold text-[#1C2D4F] dark:text-slate-100 md:text-2xl md:font-bold">
+          Contact Information
+        </h2>
+        <p className="text-xs text-[#A9B4CD] dark:text-slate-400 md:text-sm">
+          How candidates and the platform can reach your company.
+        </p>
+      </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         {/* Phone — same row layout as intern profile setup (dial + number) */}
         <div className="min-w-0">
           <label className="mb-1 block text-xs font-medium text-[#0273B1] md:mb-2">
@@ -125,7 +130,7 @@ export default function Step3ContactInfo({
         </div>
 
         <div>
-          <label className="mb-2 block text-xs font-medium text-[#0273B1]">
+          <label className="mb-1 block text-xs font-medium text-[#0273B1] md:mb-2">
             Email
           </label>
           <input
@@ -138,7 +143,7 @@ export default function Step3ContactInfo({
         </div>
 
         <div>
-          <label className="mb-2 block text-xs font-medium text-[#0273B1]">
+          <label className="mb-1 block text-xs font-medium text-[#0273B1] md:mb-2">
             Website URL{" "}
             <span className="text-xs font-normal text-[#A9B4CD] dark:text-slate-500">
               (Optional)
@@ -154,7 +159,7 @@ export default function Step3ContactInfo({
         </div>
 
         <div>
-          <label className="mb-2 block text-xs font-medium text-[#0273B1]">
+          <label className="mb-1 block text-xs font-medium text-[#0273B1] md:mb-2">
             Contact Name
           </label>
           <input

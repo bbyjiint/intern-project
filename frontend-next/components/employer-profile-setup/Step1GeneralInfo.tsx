@@ -77,18 +77,92 @@ export default function Step1GeneralInfo({
     reader.readAsDataURL(file);
   };
 
+  const fieldLabel =
+    "mb-1 block text-xs font-medium text-[#0273B1] md:mb-2 md:text-[14px] md:font-semibold";
+  const fieldInput =
+    "h-[42px] w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-[#1E293B] outline-none transition focus:border-[#0273B1] focus:ring-2 focus:ring-[#BFDBFE] dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 placeholder:text-gray-400 dark:placeholder:text-slate-400 md:px-4 md:text-[13px]";
+
   return (
     <div>
-      <h2 className="mb-8 text-[22px] font-bold leading-none text-[#23325B] dark:text-white">
-        Company Information
-      </h2>
+      <div className="mb-3 md:mb-6">
+        <h2 className="mb-0.5 text-base font-semibold text-[#1C2D4F] dark:text-slate-100 md:text-2xl md:font-bold">
+          Company Information
+        </h2>
+        <p className="text-xs text-[#A9B4CD] dark:text-slate-400 md:text-sm">
+          Fields marked with <span className="text-red-500">*</span> are required.
+        </p>
+      </div>
 
-      <div className="space-y-[15px]">
-        <div className="grid min-w-0 items-start gap-8 lg:grid-cols-[minmax(0,494px)_minmax(0,1fr)] lg:gap-[40px]">
-          <div className="min-w-0 max-w-full space-y-[14px] lg:max-w-[494px]">
+      {/* Mobile: logo centered above fields (intern profile-setup pattern) */}
+      <div className="mb-4 flex justify-center lg:hidden">
+        {formData.companyLogo ? (
+          <div className="relative w-[min(11.25rem,72vw)]">
+            <div className="overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 shadow-sm dark:border-slate-600 dark:bg-slate-700">
+              <img
+                src={formData.companyLogo}
+                alt="Company logo preview"
+                className="aspect-square w-full object-cover"
+              />
+            </div>
+            <div className="mt-2 flex justify-center gap-2">
+              <label className="cursor-pointer rounded-lg border border-[#0273B1] px-2.5 py-1.5 text-xs font-semibold text-[#0273B1] transition hover:bg-blue-50 dark:hover:bg-slate-700">
+                Change
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoChange}
+                  className="hidden"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  const updated = { ...formData, companyLogo: null };
+                  setFormData(updated);
+                  onUpdate(updated);
+                }}
+                className="rounded-lg border border-gray-300 px-2.5 py-1.5 text-xs font-semibold text-[#64748B] transition hover:bg-gray-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+              >
+                Remove
+              </button>
+            </div>
+          </div>
+        ) : (
+          <label className="block w-[min(11.25rem,72vw)] cursor-pointer">
+            <div className="flex aspect-square w-full flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-200 bg-[#F9FAFB] transition-colors dark:border-slate-600 dark:bg-slate-700">
+              <svg
+                className="mb-1 h-6 w-6 text-gray-400 dark:text-slate-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+              <span className="text-xs font-medium text-gray-400 dark:text-slate-500">
+                Add Picture
+              </span>
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleLogoChange}
+              className="hidden"
+            />
+          </label>
+        )}
+      </div>
+
+      <div className="space-y-3 md:space-y-[15px]">
+        <div className="grid min-w-0 items-start gap-6 md:gap-8 lg:grid-cols-[minmax(0,494px)_minmax(0,1fr)] lg:gap-[40px]">
+          <div className="min-w-0 max-w-full space-y-3 md:space-y-[14px] lg:max-w-[494px]">
             <div>
-              <label className="mb-[6px] block text-[14px] font-semibold text-[#253858] dark:text-slate-200">
-                Company Name<span style={{ color: "#EF4444" }}>*</span>
+              <label className={fieldLabel}>
+                Company Name<span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -97,20 +171,20 @@ export default function Step1GeneralInfo({
                 placeholder="Company Name"
                 autoComplete="organization"
                 suppressHydrationWarning
-                className="h-[42px] w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 text-[13px] text-[#1E293B] dark:text-slate-200 placeholder:text-gray-400 dark:placeholder:text-slate-400 outline-none transition focus:border-[#0273B1] focus:ring-2 focus:ring-[#BFDBFE]"
+                className={fieldInput}
               />
             </div>
 
             <div>
-              <label className="mb-[6px] block text-[14px] font-semibold text-[#253858] dark:text-slate-200">
-                Company Size<span style={{ color: "#EF4444" }}>*</span>
+              <label className={fieldLabel}>
+                Company Size<span className="text-red-500">*</span>
               </label>
               <select
                 value={formData.companySize}
                 onChange={(e) => handleChange("companySize", e.target.value)}
                 autoComplete="off"
                 suppressHydrationWarning
-                className="h-[42px] w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 text-[13px] text-[#64748B] dark:text-slate-200 outline-none transition focus:border-[#0273B1] focus:ring-2 focus:ring-[#BFDBFE]"
+                className={`${fieldInput} text-[#64748B]`}
               >
                 <option value="">Select company size</option>
                 <option value="less-than-10">Less than 10 people</option>
@@ -123,11 +197,11 @@ export default function Step1GeneralInfo({
             </div>
 
             <div>
-              <label className="mb-[6px] block text-[14px] font-semibold text-[#253858] dark:text-slate-200">
-                Business Type<span style={{ color: "#EF4444" }}>*</span>
+              <label className={fieldLabel}>
+                Business Type<span className="text-red-500">*</span>
               </label>
               <div className="flex flex-col gap-2 pt-[1px] sm:flex-row sm:flex-wrap sm:gap-x-[30px]">
-                <label className="flex cursor-pointer items-center gap-[10px] text-[13px] text-[#6B7280] dark:text-slate-300">
+                <label className="flex cursor-pointer items-center gap-2 text-xs text-[#6B7280] dark:text-slate-300 sm:text-[13px]">
                   <input
                     type="radio"
                     name="businessType"
@@ -139,7 +213,7 @@ export default function Step1GeneralInfo({
                   />
                   <span>Private Company</span>
                 </label>
-                <label className="flex cursor-pointer items-center gap-[10px] text-[13px] text-[#6B7280] dark:text-slate-300">
+                <label className="flex cursor-pointer items-center gap-2 text-xs text-[#6B7280] dark:text-slate-300 sm:text-[13px]">
                   <input
                     type="radio"
                     name="businessType"
@@ -212,11 +286,11 @@ export default function Step1GeneralInfo({
           </div>
         </div>
 
-        <div className="pt-[4px]">
-          <label className="mb-[6px] block text-[14px] font-semibold text-[#253858] dark:text-slate-200">
-            Company Description<span style={{ color: "#EF4444" }}>*</span>
+        <div className="pt-1 md:pt-[4px]">
+          <label className={fieldLabel}>
+            Company Description<span className="text-red-500">*</span>
           </label>
-          <p className="mb-[8px] text-[13px] leading-[1.4] text-[#6B7280] dark:text-slate-400">
+          <p className="mb-2 text-xs leading-snug text-[#A9B4CD] dark:text-slate-400 md:mb-[8px] md:text-[13px] md:leading-[1.4]">
             Provide a brief overview of your company, including industry,
             services, and key strengths.
           </p>
@@ -228,7 +302,7 @@ export default function Step1GeneralInfo({
             maxLength={2000}
             autoComplete="off"
             suppressHydrationWarning
-            className="min-h-[116px] w-full resize-none rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-3 text-[13px] text-[#1E293B] dark:text-slate-200 placeholder:text-gray-400 dark:placeholder:text-slate-400 outline-none transition focus:border-[#0273B1] focus:ring-2 focus:ring-[#BFDBFE]"
+            className="min-h-[100px] w-full resize-none rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-[#1E293B] outline-none transition focus:border-[#0273B1] focus:ring-2 focus:ring-[#BFDBFE] dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 dark:placeholder:text-slate-400 md:min-h-[116px] md:px-4 md:py-3 md:text-[13px]"
           />
         </div>
       </div>

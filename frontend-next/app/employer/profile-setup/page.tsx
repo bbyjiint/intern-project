@@ -16,7 +16,6 @@ export default function EmployerProfileSetupPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [showSaveModal, setShowSaveModal] = useState(false);
   const [showCreateProfileModal, setShowCreateProfileModal] = useState(false);
   const [showProfileCreatedModal, setShowProfileCreatedModal] = useState(false);
 
@@ -137,23 +136,6 @@ export default function EmployerProfileSetupPage() {
     contactName: formData.contactName,
   });
 
-  const saveProgress = async () => {
-    if (isSubmitting) return;
-    setIsSubmitting(true);
-    setError(null);
-    try {
-      await apiFetch("/api/companies/profile", {
-        method: "PUT",
-        body: JSON.stringify(buildCompanyPayload()),
-      });
-      setShowSaveModal(true);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const handleNext = () => {
     if (currentStep < 3) {
       setCurrentStep(currentStep + 1);
@@ -263,32 +245,8 @@ export default function EmployerProfileSetupPage() {
             )}
 
             <div className="mt-5 border-t border-gray-200 pt-4 dark:border-slate-700 md:mt-10 md:pt-6">
-              <div className="flex max-w-full flex-col gap-2 md:hidden">
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={saveProgress}
-                    disabled={isSubmitting}
-                    className="inline-flex h-10 max-w-full shrink-0 items-center justify-center gap-1.5 rounded-lg border border-[#0273B1] bg-white px-3 text-sm font-medium text-[#0273B1] transition-colors hover:bg-blue-50 disabled:opacity-60 dark:bg-slate-800 dark:hover:bg-slate-700"
-                  >
-                    <svg
-                      className="h-4 w-4 shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden
-                    >
-                      <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
-                      <polyline points="17 21 17 13 7 13 7 21" />
-                      <polyline points="7 3 7 8 15 8" />
-                    </svg>
-                    {isSubmitting ? "Saving..." : "Save"}
-                  </button>
-                </div>
-                <div className="grid w-full min-w-0 grid-cols-2 gap-3">
+              {/* Mobile: same row structure as intern profile-setup */}
+              <div className="grid w-full min-w-0 grid-cols-2 gap-3 md:hidden">
                   <button
                     type="button"
                     onClick={handlePrevious}
@@ -342,7 +300,6 @@ export default function EmployerProfileSetupPage() {
                       </span>
                     </button>
                   )}
-                </div>
               </div>
 
               <div className="hidden items-center justify-between gap-3 md:flex">
@@ -367,29 +324,6 @@ export default function EmployerProfileSetupPage() {
                   Previous
                 </button>
                 <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={saveProgress}
-                    disabled={isSubmitting}
-                    className="inline-flex items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors hover:opacity-95 disabled:opacity-60"
-                    style={{ backgroundColor: "#0273B1" }}
-                  >
-                    <svg
-                      className="h-4 w-4 shrink-0"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                      strokeWidth={2}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      aria-hidden
-                    >
-                      <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
-                      <polyline points="17 21 17 13 7 13 7 21" />
-                      <polyline points="7 3 7 8 15 8" />
-                    </svg>
-                    {isSubmitting ? "Saving..." : "Save"}
-                  </button>
                   {currentStep < 3 ? (
                     <button
                       type="button"
@@ -436,51 +370,6 @@ export default function EmployerProfileSetupPage() {
           </div>
         </div>
       </div>
-
-      {showSaveModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-          <div className="w-full max-w-lg rounded-2xl bg-white px-5 py-6 text-center shadow-xl dark:bg-slate-800 sm:px-12 sm:py-10">
-            <div className="mb-6 flex justify-center">
-              <div className="flex h-24 w-24 items-center justify-center rounded-full border-4 border-green-200">
-                <svg
-                  className="h-14 w-14 text-green-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-              </div>
-            </div>
-            <h2 className="mb-2 text-lg font-bold text-[#1C2D4F] dark:text-white sm:mb-3 sm:text-2xl md:text-3xl">
-              Saved Successfully
-            </h2>
-            <p className="mb-6 text-xs text-gray-500 dark:text-slate-400 sm:mb-8 sm:text-sm md:text-base">
-              Your information has been saved. You can update your profile at
-              any time.
-            </p>
-            <button
-              type="button"
-              onClick={() => setShowSaveModal(false)}
-              className="w-full rounded-lg px-10 py-3 font-semibold text-white transition-colors sm:w-auto"
-              style={{ backgroundColor: "#0273B1" }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = "#025a8f";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = "#0273B1";
-              }}
-            >
-              OK
-            </button>
-          </div>
-        </div>
-      )}
 
       {showCreateProfileModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">

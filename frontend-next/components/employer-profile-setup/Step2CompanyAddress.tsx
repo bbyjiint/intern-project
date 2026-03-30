@@ -232,23 +232,30 @@ export default function Step2CompanyAddress({ data, onUpdate }: Step2CompanyAddr
     onUpdate(updated)
   }
 
-  const inputClass = "w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-3 text-[13px] text-[#1E293B] dark:text-slate-200 placeholder:text-gray-400 dark:placeholder:text-slate-400 outline-none transition focus:border-[#0273B1] focus:ring-2 focus:ring-[#BFDBFE]"
-  const disabledClass = "flex w-full items-center justify-center rounded-lg border border-gray-300 dark:border-slate-600 bg-gray-100 dark:bg-slate-700/50 px-4 py-3"
+  const inputClass =
+    "w-full rounded-lg border border-gray-300 bg-white px-3 py-2.5 text-sm text-[#1E293B] outline-none transition focus:border-[#0273B1] focus:ring-2 focus:ring-[#BFDBFE] dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 placeholder:text-gray-400 dark:placeholder:text-slate-400 md:px-4 md:py-3 md:text-[13px]"
+  const disabledClass =
+    "flex w-full items-center justify-center rounded-lg border border-gray-300 bg-gray-100 px-3 py-2.5 dark:border-slate-600 dark:bg-slate-700/50 md:px-4 md:py-3"
   const disabledTextClass = "text-sm text-gray-400 dark:text-slate-500"
 
   return (
     <div>
-      <h2 className="mb-6 text-xl font-bold sm:mb-8 sm:text-2xl text-[#0273B1] dark:text-white">
-        Company Address
-      </h2>
+      <div className="mb-3 md:mb-8">
+        <h2 className="mb-0.5 text-base font-semibold text-[#1C2D4F] dark:text-slate-100 md:text-2xl md:font-bold">
+          Company Address
+        </h2>
+        <p className="text-xs text-[#A9B4CD] dark:text-slate-400 md:text-sm">
+          Use the search fields to select province, district, and sub-district.
+        </p>
+      </div>
 
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         {/* Address Details */}
         <div>
-          <label className="block text-xs font-medium mb-2 text-[#0273B1]">
+          <label className="mb-1 block text-xs font-medium text-[#0273B1] md:mb-2">
             Address Details
           </label>
-          <p className="text-xs mb-3 text-[#A9B4CD] dark:text-slate-400">
+          <p className="mb-2 text-xs text-[#A9B4CD] dark:text-slate-400 md:mb-3">
             (Example: Number, Building, Street etc.)
           </p>
           <textarea
@@ -262,7 +269,7 @@ export default function Step2CompanyAddress({ data, onUpdate }: Step2CompanyAddr
 
         {/* Province */}
         <div>
-          <label className="block text-xs font-medium mb-2 text-[#0273B1]">
+          <label className="mb-1 block text-xs font-medium text-[#0273B1] md:mb-2">
             Province
           </label>
           {provincesLoading ? (
@@ -286,7 +293,7 @@ export default function Step2CompanyAddress({ data, onUpdate }: Step2CompanyAddr
 
         {/* District */}
         <div>
-          <label className="block text-xs font-medium mb-2 text-[#0273B1]">
+          <label className="mb-1 block text-xs font-medium text-[#0273B1] md:mb-2">
             District
           </label>
           {!formData.provinceId ? (
@@ -314,7 +321,7 @@ export default function Step2CompanyAddress({ data, onUpdate }: Step2CompanyAddr
 
         {/* Sub-District */}
         <div>
-          <label className="block text-xs font-medium mb-2 text-[#0273B1]">
+          <label className="mb-1 block text-xs font-medium text-[#0273B1] md:mb-2">
             Sub-District
           </label>
           {!formData.districtId ? (
@@ -342,7 +349,7 @@ export default function Step2CompanyAddress({ data, onUpdate }: Step2CompanyAddr
 
         {/* Postcode */}
         <div>
-          <label className="block text-xs font-medium mb-2 text-[#0273B1]">
+          <label className="mb-1 block text-xs font-medium text-[#0273B1] md:mb-2">
             Postcode
           </label>
           <input

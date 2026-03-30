@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import EmployerNavbar from '@/components/EmployerNavbar'
 import EmployerSidebarShell from '@/components/EmployerSidebarShell'
@@ -322,12 +323,37 @@ export default function EmployerProfilePage() {
         <div className="layout-container layout-page min-w-0 flex-1 overflow-y-auto px-3 pb-6 pt-4 sm:px-6 sm:pb-8 sm:pt-6 md:pt-8">
           <div className="mx-auto max-w-4xl">
 
-            {/* Welcome */}
-            <div className="mb-[14px]">
-              <h1 className="mb-2 text-2xl font-bold leading-tight tracking-[-0.02em] text-[#05060A] dark:text-white md:text-[32px] md:leading-none">
-                Welcome, {profileData.companyName || 'Company Name'}
-              </h1>
-              <p className="text-[14px] text-[#6B7280] dark:text-gray-400">{currentDate}</p>
+            {/* Welcome + dev shortcut (matches intern ProfileHeader) */}
+            <div className="mb-8 flex flex-col justify-between gap-4 md:flex-row md:items-center">
+              <div>
+                <h1 className="mb-2 text-2xl font-bold leading-tight tracking-[-0.02em] text-[#05060A] dark:text-white md:text-[32px] md:leading-none">
+                  Welcome, {profileData.companyName || 'Company Name'}
+                </h1>
+                <p className="text-[14px] font-medium text-[#6B7280] dark:text-slate-400">
+                  {currentDate}
+                </p>
+              </div>
+              <div>
+                <Link
+                  href="/employer/profile-setup"
+                  className="inline-flex items-center rounded-xl bg-slate-800 px-4 py-2 text-sm font-bold text-white shadow-sm transition-colors hover:bg-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600"
+                >
+                  <svg
+                    className="mr-2 h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2.5}
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                    />
+                  </svg>
+                  Return to Profile Setup (Dev Mode)
+                </Link>
+              </div>
             </div>
 
             {error && (
