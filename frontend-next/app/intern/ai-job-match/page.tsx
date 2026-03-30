@@ -84,7 +84,7 @@ export default function JobMatchPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#E6EBF4] dark:bg-[#0f172a] transition-colors duration-300">
+    <div className="min-h-screen bg-[#E6EBF4] dark:bg-slate-950 flex flex-col transition-colors duration-300">
       <InternNavbar />
       
       <div className="flex relative">
@@ -110,7 +110,7 @@ export default function JobMatchPage() {
             <header className="flex flex-col gap-6 mb-8">
               <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
                 <div className="space-y-2">
-                  <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                  <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white mb-2 tracking-tight">
                     AI Job Match
                   </h1>
                   <p className="text-base md:text-lg font-semibold text-[#0273B1] dark:text-[#38bdf8]">

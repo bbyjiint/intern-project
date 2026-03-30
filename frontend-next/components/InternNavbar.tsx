@@ -183,7 +183,7 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
               </Link>
               <button
                 onClick={() => setIsBugModalOpen(true)}
-                className="font-semibold text-[15px] transition-colors text-[#A9B4CD] dark:text-gray-500 hover:text-[#0273B1] dark:hover:text-[#0273B1]"
+                className="font-semibold text-[15px] transition-colors text-[#A9B4CD] dark:text-gray-400 hover:text-[#0273B1] dark:hover:text-[#0273B1]"
               >
                 Report bug
               </button>
@@ -238,6 +238,9 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
                 <div className="absolute right-0 mt-3 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 py-2 z-50">
                   <Link href="/intern/profile" className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700" onClick={() => setShowDropdown(false)}>
                     Profile
+                  </Link>
+                  <Link href="/intern/ai-job-match" className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700" onClick={() => setShowDropdown(false)}>
+                    AI Job Match
                   </Link>
                   <Link href="/intern/applied" className="flex items-center px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700" onClick={() => setShowDropdown(false)}>
                     Applied

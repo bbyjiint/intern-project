@@ -137,50 +137,54 @@ export default function InternBookmarkPage() {
   const labelStyles =
     "block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 ml-1 uppercase tracking-wider";
 
-  return (
+return (
     <div className="min-h-screen bg-[#E6EBF4] dark:bg-slate-950 flex flex-col transition-colors duration-300">
       <InternNavbar />
 
-      <div className="flex flex-1 relative">
+      <div className="flex flex-1 relative overflow-hidden">
         {/* Sidebar */}
-        <Sidebar
-          isOpen={isSidebarOpen}
-          onClose={() => setIsSidebarOpen(false)}
-        />
+        <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-        {/* Floating Action Button (FAB) - ปรากฏเฉพาะบน Mobile (lg:hidden) */}
+        {/* Floating Action Button (FAB) */}
         <button
           onClick={() => setIsSidebarOpen(true)}
-          className="lg:hidden fixed bottom-6 right-6 z-50 w-14 h-14 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.15)] border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200"
+          className={`
+            lg:hidden fixed bottom-6 right-6 z-50 w-14 h-14 
+            bg-white dark:bg-slate-800 text-slate-900 dark:text-white 
+            rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.15)] 
+            border border-slate-200 dark:border-slate-700 
+            flex items-center justify-center 
+            hover:scale-110 active:scale-95 transition-all duration-200
+          `}
           aria-label="Toggle Menu"
         >
-          <svg
-            className="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2.5}
-              d="M4 6h16M4 12h16M4 18h16"
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path 
+              strokeLinecap="round" 
+              strokeLinejoin="round" 
+              strokeWidth={2.5} 
+              d="M4 6h16M4 12h16M4 18h16" 
             />
           </svg>
         </button>
 
-        <div className="layout-container layout-page flex-1 overflow-y-auto p-4 md:p-10">
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto p-4 md:p-10 w-full">
           <div className="max-w-7xl mx-auto">
-            {/* Header */}
-            <div className="flex items-center justify-between mb-8">
+            
+            {/* 1. Header */}
+            <div className="mb-6 md:mb-8">
               <h1 className="text-3xl md:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
-                Bookmarks
+                Bookmark
               </h1>
-              {/* ปุ่ม Sidebar เดิมถูกย้ายไปที่ FAB แล้ว */}
             </div>
 
-            {/* Filter Section */}
-            <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800 p-5 md:p-8 mb-16 md:mb-20">
+            {/* 2. Filter Section (White Box) */}
+            <div className={`
+              bg-white dark:bg-slate-900 rounded-2xl shadow-sm 
+              border border-slate-100 dark:border-slate-800 
+              p-6 md:p-8 mb-8 md:mb-10
+            `}>
               
               {/* --- ROW 1 --- */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-4 md:mb-6">
@@ -189,8 +193,17 @@ export default function InternBookmarkPage() {
                 <div>
                   <label className={labelStyles}>Search</label>
                   <div className="relative group">
-                    <svg className="w-5 h-5 text-slate-400 group-focus-within:text-blue-500 absolute left-3 top-1/2 transform -translate-y-1/2 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    <svg 
+                      className={`
+                        w-5 h-5 text-slate-400 group-focus-within:text-blue-500 
+                        absolute left-3 top-1/2 transform -translate-y-1/2 transition-colors
+                      `} 
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    >
+                      <path 
+                        strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} 
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
+                      />
                     </svg>
                     <input
                       type="text"
@@ -209,16 +222,29 @@ export default function InternBookmarkPage() {
                     <select
                       value={position}
                       onChange={(e) => setPosition(e.target.value)}
-                      className={`${inputStyles} appearance-none cursor-pointer ${!position ? "text-slate-400 dark:text-slate-500" : ""}`}
+                      className={`
+                        ${inputStyles} appearance-none cursor-pointer 
+                        ${!position ? "text-slate-400 dark:text-slate-500" : ""}
+                      `}
                     >
                       <option value="">Select Position</option>
                       {POSITION_OPTIONS.map((opt: any) => (
-                        <option key={opt.value || opt} value={opt.value || opt} className="text-slate-900 dark:text-white">
+                        <option 
+                          key={opt.value || opt} 
+                          value={opt.value || opt} 
+                          className="text-slate-900 dark:text-white"
+                        >
                           {opt.label || opt}
                         </option>
                       ))}
                     </select>
-                    <svg className="w-4 h-4 text-slate-400 absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg 
+                      className={`
+                        w-4 h-4 text-slate-400 absolute right-4 
+                        top-1/2 transform -translate-y-1/2 pointer-events-none
+                      `} 
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </div>
@@ -231,7 +257,10 @@ export default function InternBookmarkPage() {
                     <select
                       value={preferredLocation}
                       onChange={(e) => setPreferredLocation(e.target.value)}
-                      className={`${inputStyles} appearance-none cursor-pointer ${!preferredLocation ? "text-slate-400 dark:text-slate-500" : ""}`}
+                      className={`
+                        ${inputStyles} appearance-none cursor-pointer 
+                        ${!preferredLocation ? "text-slate-400 dark:text-slate-500" : ""}
+                      `}
                     >
                       <option value="">Select Location</option>
                       {provinces.map((prov) => (
@@ -240,7 +269,13 @@ export default function InternBookmarkPage() {
                         </option>
                       ))}
                     </select>
-                    <svg className="w-4 h-4 text-slate-400 absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg 
+                      className={`
+                        w-4 h-4 text-slate-400 absolute right-4 
+                        top-1/2 transform -translate-y-1/2 pointer-events-none
+                      `} 
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </div>
@@ -279,14 +314,23 @@ export default function InternBookmarkPage() {
                     <select
                       value={internshipFormat}
                       onChange={(e) => setInternshipFormat(e.target.value)}
-                      className={`${inputStyles} appearance-none cursor-pointer ${!internshipFormat ? "text-slate-400 dark:text-slate-500" : ""}`}
+                      className={`
+                        ${inputStyles} appearance-none cursor-pointer 
+                        ${!internshipFormat ? "text-slate-400 dark:text-slate-500" : ""}
+                      `}
                     >
                       <option value="">Select Format</option>
                       <option value="On-site" className="text-slate-900 dark:text-white">On-site</option>
                       <option value="Hybrid" className="text-slate-900 dark:text-white">Hybrid</option>
                       <option value="Remote" className="text-slate-900 dark:text-white">Remote</option>
                     </select>
-                    <svg className="w-4 h-4 text-slate-400 absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg 
+                      className={`
+                        w-4 h-4 text-slate-400 absolute right-4 
+                        top-1/2 transform -translate-y-1/2 pointer-events-none
+                      `} 
+                      fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </div>
@@ -296,69 +340,77 @@ export default function InternBookmarkPage() {
                 <div className="flex justify-end mt-4 md:mt-0">
                   <button
                     onClick={handleClearFilters}
-                    className="w-full md:w-auto px-8 py-2.5 rounded-xl text-sm font-bold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all active:scale-95 shadow-sm"
+                    className={`
+                      w-full md:w-[140px] px-6 py-2.5 rounded-xl text-sm font-bold 
+                      text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-900 
+                      border border-slate-300 dark:border-slate-700 
+                      hover:bg-slate-50 dark:hover:bg-slate-800 
+                      transition-all active:scale-95 shadow-sm
+                    `}
                   >
                     Clear Filter
                   </button>
                 </div>
-            </div>
-              {loadError && (
-                <div className="mb-6 rounded-2xl border border-red-200 dark:border-red-900/30 bg-red-50 dark:bg-red-900/10 px-6 py-4 text-sm text-red-600 dark:text-red-400 flex items-center gap-3">
-                  <svg
-                    className="w-5 h-5"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                  </svg>
-                  {loadError}
-                </div>
-              )}
-
-              <div className="flex items-center justify-between mb-6 mt-10 md:mt-12">
-                <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200">
-                  {isLoading ? (
-                    <span className="animate-pulse">Loading Bookmarks...</span>
-                  ) : (
-                    <>
-                      <span className="text-blue-600 dark:text-blue-400">
-                        {filteredJobs.length}
-                      </span>{" "}
-                      Total Bookmarks
-                    </>
-                  )}
-                </h2>
               </div>
+            </div>
 
+            {/* Error Message */}
+            {loadError && (
+              <div className={`
+                mb-6 rounded-xl border border-red-200 dark:border-red-900/30 
+                bg-red-50 dark:bg-red-900/10 px-4 py-3 text-sm 
+                text-red-600 dark:text-red-400 flex items-center gap-2
+              `}>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path 
+                    strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
+                  />
+                </svg>
+                {loadError}
+              </div>
+            )}
+
+            {/* 3. Total Bookmark Text */}
+            <div className="mb-6">
+              <h2 className="text-lg md:text-xl font-bold text-slate-900 dark:text-white">
+                {isLoading ? (
+                  <span className="flex items-center gap-2 animate-pulse text-slate-500">
+                    <div className={`
+                      w-4 h-4 border-2 border-slate-400 
+                      border-t-transparent rounded-full animate-spin
+                    `}></div>
+                    Loading...
+                  </span>
+                ) : (
+                  `${filteredJobs.length} Total Bookmark`
+                )}
+              </h2>
+            </div>
+
+            {/* 4. Job Grid */}
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
               {isLoading ? (
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                  {[1, 2, 3].map((n) => (
-                    <div
-                      key={n}
-                      className="h-[280px] rounded-2xl bg-white dark:bg-slate-900 animate-pulse border border-slate-100 dark:border-slate-800"
-                    />
-                  ))}
-                </div>
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div 
+                    key={i} 
+                    className={`
+                      h-[280px] rounded-2xl bg-white dark:bg-slate-900 
+                      animate-pulse border border-slate-100 dark:border-slate-800
+                    `} 
+                  />
+                ))
               ) : filteredJobs.length === 0 ? (
-                <div className="text-center py-20 bg-white dark:bg-slate-900 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800 shadow-sm px-4">
+                <div className={`
+                  text-center py-20 bg-white dark:bg-slate-900 rounded-3xl 
+                  border-2 border-dashed border-slate-200 dark:border-slate-800 
+                  shadow-sm px-4 col-span-full
+                `}>
                   <div className="mb-4 flex justify-center text-slate-300 dark:text-slate-700">
-                    <svg
-                      className="w-16 h-16 md:w-20 md:h-20"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1}
-                        d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+                    <svg className="w-16 h-16 md:w-20 md:h-20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path 
+                        strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} 
+                        d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" 
                       />
                     </svg>
                   </div>
@@ -372,30 +424,23 @@ export default function InternBookmarkPage() {
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                  {filteredJobs.map((job) => (
-                    <div
-                      key={job.id}
-                      className="transition-transform duration-300 hover:scale-[1.02]"
-                    >
-                      <JobCard
-                        job={{
-                          ...job,
-                          isBookmarked: bookmarkedJobs.has(job.id),
-                        }}
-                        onBookmarkClick={handleBookmark}
-                        onClick={(id) =>
-                          router.push(`/intern/job-detail/${id}`)
-                        }
-                      />
-                    </div>
-                  ))}
-                </div>
+                filteredJobs.map((job) => (
+                  <div key={job.id} className="transition-transform duration-300 hover:scale-[1.02]">
+                    <JobCard
+                      job={{
+                        ...job,
+                        isBookmarked: bookmarkedJobs.has(job.id),
+                      }}
+                      onBookmarkClick={handleBookmark}
+                      onClick={(id) => router.push(`/intern/job-detail/${id}`)}
+                    />
+                  </div>
+                ))
               )}
             </div>
+
           </div>
-        </div>
+        </main>
       </div>
     </div>
-  );
-}
+  )}
