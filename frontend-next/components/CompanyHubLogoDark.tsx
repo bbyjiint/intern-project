@@ -14,7 +14,7 @@ export default function CompanyHubLogoDark({
   return (
     <Link href={href} className={`relative flex items-center group ${className}`.trim()}>
       <span
-        className="absolute z-0 h-4 w-4 -left-0.5 top-1 rounded-full transition-transform group-hover:scale-110 md:h-5 md:w-5 md:-left-1 md:top-1"
+        className="absolute z-0 h-4 w-4 -left-0.5 top-1/2 -translate-y-1/2 rounded-full transition-transform group-hover:scale-110 md:h-5 md:w-5 md:-left-1"
         style={{ backgroundColor: '#2F80ED' }}
       />
       <span
