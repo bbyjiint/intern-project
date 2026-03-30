@@ -199,7 +199,7 @@ export default function CertificatesPage() {
               <div className="w-12 h-12 border-4 border-slate-200 dark:border-slate-800 border-t-blue-600 rounded-full animate-spin"></div>
             </div>
           ) : (
-            <>
+            <div className="max-w-7xl mx-auto">
               {/* Header Section - Adjusted for Responsive Alignment */}
               <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-8 md:mb-10 gap-6">
                 <div className="text-left">
@@ -374,7 +374,7 @@ export default function CertificatesPage() {
                   })
                 )}
               </div>
-            </>
+            </div>
           )}
         </main>
       </div>

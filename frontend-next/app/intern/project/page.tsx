@@ -207,6 +207,7 @@ export default function ProjectPage() {
             <Menu size={28} strokeWidth={2.5} />
           </button>
 
+          <div className="max-w-7xl mx-auto">
           {/* Header Section */}
           <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-8 sm:mb-10 gap-6">
             <div className="flex flex-col gap-2">
@@ -361,7 +362,7 @@ export default function ProjectPage() {
               </div>
             ))}
           </div>
-
+          </div>
           <div className="h-24 lg:hidden" />
 
         </main>
