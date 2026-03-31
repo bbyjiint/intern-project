@@ -21,10 +21,10 @@ export default function EmployerNavbar() {
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   const resolveImageUrl = (image?: string) => {
-    if (!image) return null
-    if (image.startsWith('http')) return image
-    return `http://localhost:5000${image}`
-  }
+  if (!image) return null
+  if (image.startsWith('http') || image.startsWith('data:')) return image
+  return `http://localhost:5000${image}`
+}
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -174,7 +174,7 @@ export default function EmployerNavbar() {
                 <button
                   type="button"
                   onClick={() => setIsBugModalOpen(true)}
-                  className="text-[15px] font-semibold text-[#A9B4CD] transition-colors hover:text-[#0273B1] dark:text-gray-500 dark:hover:text-[#0273B1]"
+                  className="text-[15px] font-semibold text-[#A9B4CD] transition-colors hover:text-[#0273B1] dark:text-gray-400 dark:hover:text-[#0273B1]"
                 >
                   Report bug
                 </button>

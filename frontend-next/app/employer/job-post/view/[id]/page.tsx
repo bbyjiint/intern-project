@@ -91,13 +91,13 @@ const renderLines = (text?: string | null) => {
     .filter(Boolean);
 
   if (lines.length === 0) {
-    return <p className="text-gray-600 text-[15px]">-</p>;
+    return <p className="text-gray-600 dark:text-slate-300 text-[15px]">-</p>;
   }
 
   return (
     <ul className="space-y-2">
       {lines.map((line, i) => (
-        <li key={i} className="text-gray-600 text-[15px] leading-relaxed flex items-start">
+        <li key={i} className="text-gray-600 dark:text-slate-300 text-[15px] leading-relaxed flex items-start">
           <span className="mr-2">-</span>
           <span>{line.startsWith("-") ? line.slice(1).trim() : line}</span>
         </li>
