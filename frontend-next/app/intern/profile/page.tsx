@@ -111,7 +111,6 @@ export default function InternProfilePage() {
                 <ProfileHeader
                   fullName={profileData.fullName || "User"}
                   currentDate={currentDate}
-                  completionPercentage={completionPercentage}
                 />
 
                 <div className="grid grid-cols-1 gap-5 [&>*]:mb-0">
