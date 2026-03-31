@@ -192,17 +192,14 @@ export default function ApplicantProfilePopup({
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysis | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiError, setAiError] = useState(false);
-  // ✅ forceRefresh flag — toggle เพื่อ trigger useEffect ใหม่
   const [forceRefresh, setForceRefresh] = useState(false);
 
   useEffect(() => {
     if (!profile?.id || !jobPostId) return;
-
     const fetchAnalysis = async () => {
       setAiLoading(true);
       setAiError(false);
       try {
-        // ✅ ถ้า forceRefresh ให้ลบ cache ฝั่ง DB ก่อน แล้วค่อยดึงใหม่
         const url = forceRefresh
           ? `/api/candidates/applicant-job-analysis?jobPostId=${jobPostId}&candidateId=${profile.id}&refresh=true`
           : `/api/candidates/applicant-job-analysis?jobPostId=${jobPostId}&candidateId=${profile.id}`;
@@ -215,7 +212,6 @@ export default function ApplicantProfilePopup({
         setAiLoading(false);
       }
     };
-
     fetchAnalysis();
   }, [profile?.id, jobPostId, forceRefresh]);
 
@@ -228,7 +224,7 @@ export default function ApplicantProfilePopup({
   const handleReanalyze = () => {
     setAiAnalysis(null);
     setAiError(false);
-    setForceRefresh((prev) => !prev); // ✅ toggle เพื่อ trigger useEffect
+    setForceRefresh((prev) => !prev);
   };
 
   const goToProfile = (section?: string) => {
@@ -276,7 +272,12 @@ export default function ApplicantProfilePopup({
           className="absolute right-[16px] top-[14px] text-[#4B5563] transition hover:text-[#111827] dark:text-slate-400 dark:hover:text-white"
           aria-label="Close"
         >
-          <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg
+            className="h-5 w-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -329,7 +330,9 @@ export default function ApplicantProfilePopup({
         {/* Body */}
         <div className="mt-[20px] border-t border-[#E5E7EB] pt-[18px] dark:border-slate-800">
           <div>
-            <h3 className="text-[14px] font-bold text-[#344164] dark:text-slate-200">About Me</h3>
+            <h3 className="text-[14px] font-bold text-[#344164] dark:text-slate-200">
+              About Me
+            </h3>
             <p className="mt-[6px] text-[13px] leading-[1.5] text-[#51617C] dark:text-slate-400">
               {about}
             </p>
@@ -362,7 +365,9 @@ export default function ApplicantProfilePopup({
                     </span>
                   ))
                 ) : (
-                  <p className="text-[13px] text-[#51617C] dark:text-slate-400">-</p>
+                  <p className="text-[13px] text-[#51617C] dark:text-slate-400">
+                    -
+                  </p>
                 )}
               </div>
             </div>
@@ -401,7 +406,9 @@ export default function ApplicantProfilePopup({
                 <h3 className="text-[13px] font-bold text-[#1F2937] dark:text-slate-200">
                   Job Match Section
                 </h3>
-                <span className="text-[14px] text-[#6B7280] dark:text-slate-400">✦</span>
+                <span className="text-[14px] text-[#6B7280] dark:text-slate-400">
+                  ✦
+                </span>
               </div>
               <button
                 type="button"
@@ -438,8 +445,11 @@ export default function ApplicantProfilePopup({
 
             {aiAnalysis && !aiLoading && (
               <div className="space-y-[10px] text-[12px]">
-                <div className="grid grid-cols-[90px_1fr] items-center gap-x-[12px]">
-                  <span className="text-[#6B7280] dark:text-slate-400">Position</span>
+                {/* Position */}
+                <div className="flex flex-col gap-[4px] sm:grid sm:grid-cols-[90px_1fr] sm:items-center sm:gap-x-[12px] sm:gap-y-0">
+                  <span className="text-[#6B7280] dark:text-slate-400">
+                    Position
+                  </span>
                   <div className="flex items-center gap-[8px]">
                     <CheckIcon matched={aiAnalysis.position.matched} />
                     <span className="text-[#374151] dark:text-slate-200">
@@ -448,9 +458,12 @@ export default function ApplicantProfilePopup({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-[90px_1fr] items-center gap-x-[12px]">
-                  <span className="text-[#6B7280] dark:text-slate-400">Education</span>
-                  <div className="flex items-center justify-between gap-[8px]">
+                {/* Education */}
+                <div className="flex flex-col gap-[4px] sm:grid sm:grid-cols-[90px_1fr] sm:items-center sm:gap-x-[12px] sm:gap-y-0">
+                  <span className="text-[#6B7280] dark:text-slate-400">
+                    Education
+                  </span>
+                  <div className="flex flex-col gap-[4px] sm:flex-row sm:items-center sm:justify-between sm:gap-[8px]">
                     <div className="flex items-center gap-[8px]">
                       <CheckIcon matched={aiAnalysis.education.matched} />
                       <span className="text-[#374151] dark:text-slate-200">
@@ -460,42 +473,43 @@ export default function ApplicantProfilePopup({
                     <button
                       type="button"
                       onClick={() => goToProfile("education")}
-                      className="shrink-0 text-[11px] text-[#2563EB] hover:underline dark:text-blue-400"
+                      className="w-fit shrink-0 text-[11px] text-[#2563EB] hover:underline dark:text-blue-400"
                     >
                       &gt;&gt; Go to Profile to see file
                     </button>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-[90px_1fr] items-start gap-x-[12px]">
-                  <span className="pt-[2px] text-[#6B7280] dark:text-slate-400">Skills</span>
+                {/* Skills */}
+                <div className="flex flex-col gap-[4px] sm:grid sm:grid-cols-[90px_1fr] sm:items-start sm:gap-x-[12px] sm:gap-y-0">
+                  <span className="pt-[2px] text-[#6B7280] dark:text-slate-400">
+                    Skills
+                  </span>
                   <div className="flex flex-col gap-[6px]">
                     {aiAnalysis.skills.map((skill, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center justify-between gap-[8px]"
-                      >
-                        <div className="flex items-center gap-[8px]">
-                          <CheckIcon matched={skill.matched} />
-                          <span className="text-[#374151] dark:text-slate-200">{skill.label}</span>
-                        </div>
-                        {i === aiAnalysis.skills.length - 1 && (
-                          <button
-                            type="button"
-                            onClick={() => goToProfile("skills")}
-                            className="shrink-0 text-[11px] text-[#2563EB] hover:underline dark:text-blue-400"
-                          >
-                            &gt;&gt; Go to Profile to see more Skill
-                          </button>
-                        )}
+                      <div key={i} className="flex items-center gap-[8px]">
+                        <CheckIcon matched={skill.matched} />
+                        <span className="text-[#374151] dark:text-slate-200">
+                          {skill.label}
+                        </span>
                       </div>
                     ))}
+                    <button
+                      type="button"
+                      onClick={() => goToProfile("skills")}
+                      className="w-fit text-[11px] text-[#2563EB] hover:underline dark:text-blue-400"
+                    >
+                      &gt;&gt; Go to Profile to see more Skill
+                    </button>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-[90px_1fr] items-center gap-x-[12px]">
-                  <span className="text-[#6B7280] dark:text-slate-400">Project</span>
-                  <div className="flex items-center justify-between gap-[8px]">
+                {/* Project */}
+                <div className="flex flex-col gap-[4px] sm:grid sm:grid-cols-[90px_1fr] sm:items-center sm:gap-x-[12px] sm:gap-y-0">
+                  <span className="text-[#6B7280] dark:text-slate-400">
+                    Project
+                  </span>
+                  <div className="flex flex-col gap-[4px] sm:flex-row sm:items-center sm:justify-between sm:gap-[8px]">
                     <div className="flex items-center gap-[8px]">
                       <CheckIcon matched={aiAnalysis.project.matched} />
                       <span className="text-[#374151] dark:text-slate-200">
@@ -505,7 +519,7 @@ export default function ApplicantProfilePopup({
                     <button
                       type="button"
                       onClick={() => goToProfile("projects")}
-                      className="shrink-0 text-[11px] text-[#2563EB] hover:underline dark:text-blue-400"
+                      className="w-fit shrink-0 text-[11px] text-[#2563EB] hover:underline dark:text-blue-400"
                     >
                       &gt;&gt; Go to Profile to see file
                     </button>
@@ -525,7 +539,9 @@ export default function ApplicantProfilePopup({
           <div className="mt-[12px] rounded-[12px] border border-[#E5E7EB] bg-[#F9FAFB] px-[20px] py-[16px] dark:border-slate-800 dark:bg-slate-900/60">
             <div className="mb-[10px] flex items-center gap-[6px]">
               <span className="text-[13px] font-bold text-[#2563EB]">AI</span>
-              <h3 className="text-[13px] font-bold text-[#1F2937] dark:text-slate-200">Insight</h3>
+              <h3 className="text-[13px] font-bold text-[#1F2937] dark:text-slate-200">
+                Insight
+              </h3>
               <span className="text-[14px]">🔒</span>
             </div>
             {(aiLoading || (isLoading && !aiAnalysis)) && (
@@ -539,7 +555,6 @@ export default function ApplicantProfilePopup({
                 ))}
               </div>
             )}
-
             {aiAnalysis && !aiLoading && (
               <div className="space-y-[4px]">
                 {aiAnalysis.insight.map((line, i) => (
@@ -552,7 +567,6 @@ export default function ApplicantProfilePopup({
                 ))}
               </div>
             )}
-
             {aiError && !aiLoading && (
               <p className="text-[12px] text-[#9CA3AF]">
                 Insight not available.

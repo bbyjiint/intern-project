@@ -21,10 +21,10 @@ export default function EmployerNavbar() {
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   const resolveImageUrl = (image?: string) => {
-    if (!image) return null
-    if (image.startsWith('http')) return image
-    return `http://localhost:5000${image}`
-  }
+  if (!image) return null
+  if (image.startsWith('http') || image.startsWith('data:')) return image
+  return `http://localhost:5000${image}`
+}
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -39,6 +39,7 @@ export default function EmployerNavbar() {
     const loadProfileData = async () => {
       try {
         const data = await apiFetch<{ profile: any }>('/api/companies/profile')
+        console.log('profileImage value:', data.profile?.profileImage)
         if (data?.profile) {
           const minimal = {
             companyName: data.profile.companyName,

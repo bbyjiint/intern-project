@@ -161,7 +161,7 @@ export default function ApplicantCard({
                 transform="rotate(-90 26 26)"
               />
             </svg>
-            <div className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-[#374151]">
+            <div className="absolute inset-0 flex items-center justify-center text-[11px] font-bold text-white">
               {score}%
             </div>
           </div>
