@@ -87,11 +87,13 @@ export default function JobMatchPage() {
     <div className="min-h-screen bg-[#E6EBF4] dark:bg-slate-950 flex flex-col transition-colors duration-300">
       <InternNavbar />
       
-      <div className="flex relative">
-        {/* Sidebar Component */}
+      {/* แก้ไข: เพิ่ม h-[calc(100vh-64px)] หรือใช้ flex-1 เพื่อให้สูงเต็มหน้าจอที่เหลือจาก Navbar */}
+      <div className="flex flex-1 relative overflow-hidden">
+        
+        {/* Sidebar Component: ปกติคอมโพเนนต์นี้ควรมีกลไกซ่อนตัวเองบน lg: อยู่แล้ว */}
         <InternSidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
 
-        {/* Floating Action Button (FAB) สำหรับเปิด Sidebar บน Mobile/Tablet */}
+        {/* Floating Action Button (FAB) สำหรับ Mobile */}
         <button 
           onClick={() => setIsSidebarOpen(true)}
           className="lg:hidden fixed bottom-6 right-6 z-50 w-14 h-14 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-full shadow-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-200"
@@ -102,8 +104,8 @@ export default function JobMatchPage() {
           </svg>
         </button>
 
-        {/* Main Content */}
-        <main className="flex-1 p-4 md:p-10 w-full overflow-hidden">
+        {/* Main Content: ใช้ overflow-y-auto เพื่อให้ Scroll แยกส่วนจาก Sidebar ได้บน Desktop */}
+        <main className="flex-1 p-4 md:p-10 w-full overflow-y-auto">
           <div className="max-w-7xl mx-auto">
             
             {/* Header Area */}
@@ -121,7 +123,6 @@ export default function JobMatchPage() {
                   </p>
                 </div>
 
-                {/* Recalculate button */}
                 <div className="flex flex-col items-start md:items-end gap-2 flex-shrink-0">
                   <button
                     onClick={() => fetchJobMatches(true)}
