@@ -8,6 +8,7 @@ import EmployerSidebarShell from '@/components/EmployerSidebarShell'
 import SearchableDropdown from '@/components/SearchableDropdown'
 import CompanyInfoEditPopup from '@/components/CompanyInfoEditPopup'
 import { apiFetch } from '@/lib/api'
+import { COUNTRY_DATA } from '@/constants/countries'
 
 interface CompanyProfileData {
   companyName: string
@@ -38,6 +39,7 @@ export default function EmployerProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [isEditPopupOpen, setIsEditPopupOpen] = useState(false)
   const [savingSection, setSavingSection] = useState<'address' | 'contact' | null>(null)
+  const [selectedDialCode, setSelectedDialCode] = useState(COUNTRY_DATA[0].dialCode);
 
   const [addressForm, setAddressForm] = useState({
     postcode: '',
@@ -585,12 +587,22 @@ export default function EmployerProfilePage() {
                   <label className="mb-[6px] block text-[14px] text-[#4B5563] dark:text-[#e5e7eb]">Phone Number</label>
                   <div className="flex gap-[10px]">
                     <select className="h-[38px] w-[80px] rounded-[6px] border border-[#D1D5DB] bg-white px-3 text-[14px] text-[#374151] outline-none dark:border-gray-700 dark:bg-gray-900/50 dark:text-white">
-                      <option value="+66">+66</option>
+                      {COUNTRY_DATA.filter((c) => c.dialCode !== "").map((country) => (
+                        <option key={country.name} value={country.dialCode}>{country.dialCode}</option>
+                      ))}
                     </select>
                     <input
-                      type="text"
-                      value={contactForm.phoneNumber}
-                      onChange={(e) => setContactForm((prev) => ({ ...prev, phoneNumber: e.target.value }))}
+                      type="tel"
+                      maxLength={15}
+                      placeholder="e.g. 08x-xxx-xxxx"
+                      value={contactForm.phoneNumber.replace(/^\+\d+\s?/, "")}
+                      onChange={(e) => {
+                        const sanitized = e.target.value.replace(/[^0-9-]/g, "");
+                        setContactForm((prev) => ({ 
+                          ...prev, 
+                          phoneNumber: sanitized ? `${selectedDialCode} ${sanitized}` : "" 
+                        }));
+                      }}
                       className="h-[38px] flex-1 rounded-[6px] border border-[#D1D5DB] px-3 text-[14px] text-[#374151] outline-none focus:border-[#94A3B8] dark:border-gray-700 dark:bg-gray-900/50 dark:text-white dark:placeholder:text-gray-500"
                     />
                   </div>
