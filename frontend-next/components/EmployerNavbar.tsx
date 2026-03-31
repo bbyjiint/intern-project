@@ -39,7 +39,6 @@ export default function EmployerNavbar() {
     const loadProfileData = async () => {
       try {
         const data = await apiFetch<{ profile: any }>('/api/companies/profile')
-        console.log('profileImage value:', data.profile?.profileImage)
         if (data?.profile) {
           const minimal = {
             companyName: data.profile.companyName,
