@@ -152,7 +152,7 @@ export default function InternNavbar({ searchQuery, onSearchChange, onFindJob }:
           
           {/* LEFT SECTION */}
           <div className="flex items-center ml-2 gap-4 lg:gap-12 xl:gap-20">
-            <ThemedCompanyHubLogo href="/intern/profile" />
+            <ThemedCompanyHubLogo href="/intern/find-companies" />
 
             {/* Desktop Links */}
             <div className="hidden md:flex items-center gap-8">

@@ -182,15 +182,6 @@ export default function EmployerNavbar() {
             </div>
 
             <div className="flex items-center gap-3 sm:gap-6">
-              {process.env.NODE_ENV === 'development' && (
-                <Link
-                  href="/employer/profile-setup"
-                  className="hidden shrink-0 items-center rounded-[10px] border border-dashed border-[#0273B1]/50 bg-[#E3F5FF]/80 px-2 py-1.5 text-[11px] font-semibold text-[#0273B1] transition-colors hover:bg-[#0273B1] hover:text-white dark:border-[#0273B1]/40 dark:bg-slate-800/80 dark:text-[#7dd3fc] dark:hover:bg-[#0273B1] dark:hover:text-white sm:inline-flex sm:px-3 sm:text-xs"
-                  title="Dev only: return to company profile setup"
-                >
-                  Company setup
-                </Link>
-              )}
               <ThemeToggle />
 
               <div className="relative" ref={dropdownRef}>
