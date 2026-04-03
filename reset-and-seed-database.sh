@@ -128,7 +128,7 @@ echo "🌱 Step 3: Seeding fresh test users..."
 echo ""
 
 # Run the seed script
-docker compose exec backend npm run seed:users
+docker compose exec backend npm run seed:mock-data
 
 if [ $? -eq 0 ]; then
     echo ""
