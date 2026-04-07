@@ -43,6 +43,7 @@ function resolveCompanyLogoUrl(raw?: string | null): string | null {
   const t = raw.trim();
   if (t.startsWith("http://") || t.startsWith("https://")) return t;
   if (t.startsWith("/")) return `${API_BASE_URL}${t}`;
+  if (t.startsWith("data:image/")) return t; // ✅ เพิ่มรองรับ base64
   return null;
 }
 
@@ -88,7 +89,12 @@ const renderLines = (text?: string | string[] | null) => {
         .split("\n")
         .map((l) => l.trim())
         .filter(Boolean);
-  if (!lines.length) return <p className="text-sm text-gray-600 dark:text-slate-400 sm:text-[15px]">-</p>;
+  if (!lines.length)
+    return (
+      <p className="text-sm text-gray-600 dark:text-slate-400 sm:text-[15px]">
+        -
+      </p>
+    );
   return (
     <ul className="space-y-2">
       {lines.map((line, i) => (
@@ -97,7 +103,9 @@ const renderLines = (text?: string | string[] | null) => {
           className="flex items-start text-sm leading-relaxed text-gray-600 dark:text-slate-400 sm:text-[15px]"
         >
           <span className="mr-2 shrink-0">-</span>
-          <span className="min-w-0 break-words">{line.startsWith("-") ? line.slice(1).trim() : line}</span>
+          <span className="min-w-0 break-words">
+            {line.startsWith("-") ? line.slice(1).trim() : line}
+          </span>
         </li>
       ))}
     </ul>
@@ -120,6 +128,12 @@ export default function JobDetailPage() {
   const [isApplying, setIsApplying] = useState(false);
   const [hasApplied, setHasApplied] = useState(false);
   const [applyMessage, setApplyMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (job) {
+      console.log("companyLogo:", job.companyLogo);
+    }
+  }, [job]);
 
   useEffect(() => {
     const fetchJobDetail = async () => {
@@ -213,7 +227,8 @@ export default function JobDetailPage() {
 
   const companyLogoUrl = resolveCompanyLogoUrl(job.companyLogo);
   const companyDescription = job.companyDescription?.trim();
-  const showCompanyDescription = !!companyDescription && companyDescription !== "-";
+  const showCompanyDescription =
+    !!companyDescription && companyDescription !== "-";
   const phone = job.contactPhone?.trim();
   const dept = job.contactDepartment?.trim();
   const showPhone = !!phone && phone !== "-";
@@ -228,7 +243,7 @@ export default function JobDetailPage() {
     <div className="min-h-screen overflow-x-hidden bg-[#F4F7FA] transition-colors duration-300 dark:bg-slate-950">
       <InternNavbar />
 
-      <div className="layout-container w-full min-w-0 max-w-full pb-6 pt-2 sm:pb-8 sm:pt-3 lg:pb-10 lg:pt-4">
+      <div className="w-full min-w-0 max-w-6xl mx-auto px-4 pb-6 pt-2 sm:pb-8 sm:pt-3 lg:pb-10 lg:pt-4">
         <PageBackButton />
 
         <div className="flex flex-col items-start gap-5 lg:flex-row lg:gap-6">
@@ -308,7 +323,9 @@ export default function JobDetailPage() {
             {/* Other Details */}
             <div className="mb-8 space-y-5 sm:mb-12 sm:space-y-6">
               <div>
-                <h3 className="mb-1 text-base font-bold text-black dark:text-white sm:text-[17px]">GPA</h3>
+                <h3 className="mb-1 text-base font-bold text-black dark:text-white sm:text-[17px]">
+                  GPA
+                </h3>
                 <p className="break-words text-sm text-gray-600 dark:text-slate-400 sm:text-[15px]">
                   {job.gpa || "Not specified"}
                 </p>
@@ -377,52 +394,58 @@ export default function JobDetailPage() {
             )}
           </div>
 
-          {/* RIGHT COLUMN — company details / contact */}
-          <div className="w-full min-w-0 flex-[1] rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-800 sm:p-6 md:p-8 lg:sticky lg:top-8">
-            <h2 className="mb-4 border-b border-gray-100 pb-3 text-base font-extrabold text-black dark:border-slate-700 dark:text-white sm:mb-5 sm:text-lg">
-              Company details
+          {/* RIGHT COLUMN */}
+          <div className="w-full min-w-0 flex-[1] rounded-2xl border border-gray-100 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800 sm:p-8 lg:sticky lg:top-8">
+            <h2 className="mb-6 text-center text-xl font-extrabold text-black dark:text-white">
+              Job Poster
             </h2>
 
-            {companyLogoUrl && (
-              <div className="mb-4 flex justify-center sm:mb-5">
-                <div className="h-16 w-16 overflow-hidden rounded-full border border-gray-100 bg-[#F8F9FA] shadow-sm dark:border-slate-600 dark:bg-slate-700 sm:h-20 sm:w-20">
+            {/* Logo */}
+            <div className="flex justify-center mb-6">
+              <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border border-gray-100 bg-[#F8F9FA] shadow-sm dark:border-gray-700 dark:bg-gray-700">
+                {companyLogoUrl ? (
                   <img
                     src={companyLogoUrl}
                     alt={job.companyName || "Company"}
-                    className="h-full w-full object-cover"
+                    className="w-full h-full object-cover"
+                    onError={() => {}}
                   />
-                </div>
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center rounded-full bg-[#23356E] text-sm font-bold text-white">
+                    {(job.companyName || "C").slice(0, 2).toUpperCase()}
+                  </div>
+                )}
               </div>
-            )}
-
-            <div className="mb-5 space-y-1.5 sm:mb-6">
-              <p className="break-words text-lg font-bold leading-snug text-black dark:text-white">
-                {job.companyName || "—"}
-              </p>
-              {job.companyEmail && job.companyEmail.trim() !== "-" ? (
-                <a
-                  href={`mailto:${job.companyEmail}`}
-                  className="block break-all text-sm font-medium text-[#2563EB] underline-offset-2 hover:underline dark:text-blue-400"
-                >
-                  {job.companyEmail}
-                </a>
-              ) : null}
             </div>
 
+            {/* Company Name & Email */}
+            <div className="text-center mb-6">
+              <h3 className="text-lg font-bold text-black dark:text-white">
+                {job.companyName || "-"}
+              </h3>
+              <p className="text-sm text-gray-500 dark:text-slate-400">
+                {job.companyEmail || "-"}
+              </p>
+            </div>
+
+            {/* Description */}
             {showCompanyDescription && (
-              <p className="mb-5 break-words text-sm leading-relaxed text-gray-600 dark:text-slate-400 sm:mb-6">
+              <p className="mb-8 text-left text-sm leading-relaxed text-gray-600 dark:text-slate-300">
                 {companyDescription}
               </p>
             )}
 
+            {/* Contact Information */}
             {showContactBlock && (
-              <div className="mb-5 sm:mb-6">
-                <h3 className="mb-2.5 text-sm font-bold text-black dark:text-white">Contact</h3>
-                <div className="space-y-2.5">
+              <div className="mb-8">
+                <h4 className="mb-4 text-[15px] font-bold text-black dark:text-white">
+                  Contact Information
+                </h4>
+                <div className="space-y-3">
                   {showPhone && (
-                    <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-slate-400">
+                    <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-slate-300">
                       <svg
-                        className="mt-0.5 h-5 w-5 shrink-0 text-[#2563EB]"
+                        className="w-5 h-5 text-[#2563EB] shrink-0"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -434,13 +457,13 @@ export default function JobDetailPage() {
                           d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
                         />
                       </svg>
-                      <span className="min-w-0 break-words">{phone}</span>
+                      {phone}
                     </div>
                   )}
                   {showDept && (
-                    <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-slate-400">
+                    <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-slate-300">
                       <svg
-                        className="mt-0.5 h-5 w-5 shrink-0 text-[#2563EB]"
+                        className="w-5 h-5 text-[#2563EB] shrink-0"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -452,29 +475,31 @@ export default function JobDetailPage() {
                           d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                         />
                       </svg>
-                      <span className="min-w-0 break-words">{dept}</span>
+                      {dept}
                     </div>
                   )}
                 </div>
               </div>
             )}
 
+            {/* Address & Map */}
             {showAddressSection && (
               <div>
-                <h3 className="mb-2 text-sm font-bold text-black dark:text-white">Address</h3>
+                <h4 className="mb-2 text-[15px] font-bold text-black dark:text-white">
+                  Address
+                </h4>
                 {showAddressText && (
-                  <p className="mb-3 break-words text-sm leading-relaxed text-gray-600 dark:text-slate-400 sm:mb-4">
+                  <p className="mb-4 text-sm leading-relaxed text-gray-600 dark:text-slate-300">
                     {addressLine}
                   </p>
                 )}
                 {showMap && (
-                  <div className="h-44 w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-200 dark:border-slate-600 dark:bg-slate-700 sm:h-48">
+                  <div className="h-48 w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-200 dark:border-gray-700 dark:bg-gray-700">
                     <iframe
                       src={job.mapEmbedUrl}
                       width="100%"
                       height="100%"
                       style={{ border: 0 }}
-                      allowFullScreen={false}
                       loading="lazy"
                       referrerPolicy="no-referrer-when-downgrade"
                       title="Company location map"

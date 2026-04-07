@@ -97,7 +97,10 @@ const renderLines = (text?: string | null) => {
   return (
     <ul className="space-y-2">
       {lines.map((line, i) => (
-        <li key={i} className="text-gray-600 dark:text-slate-300 text-[15px] leading-relaxed flex items-start">
+        <li
+          key={i}
+          className="text-gray-600 dark:text-slate-300 text-[15px] leading-relaxed flex items-start"
+        >
           <span className="mr-2">-</span>
           <span>{line.startsWith("-") ? line.slice(1).trim() : line}</span>
         </li>
@@ -112,7 +115,9 @@ export default function EmployerViewPostPage() {
   const jobPostId = params?.id as string;
 
   const [jobPost, setJobPost] = useState<JobPostDetail | null>(null);
-  const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(null);
+  const [companyProfile, setCompanyProfile] = useState<CompanyProfile | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -126,7 +131,9 @@ export default function EmployerViewPostPage() {
         setJobPost(jobResp.jobPost);
         setCompanyProfile(companyResp.profile || null);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load job post");
+        setError(
+          err instanceof Error ? err.message : "Failed to load job post",
+        );
       }
     };
     load();
@@ -152,7 +159,9 @@ export default function EmployerViewPostPage() {
         <EmployerNavbar />
         <EmployerSidebarShell activeItem="job-post">
           <div className="flex min-w-0 flex-1 items-center justify-center px-4">
-            <p className="text-sm text-[#6B7280] dark:text-slate-400">{error || "Loading job post..."}</p>
+            <p className="text-sm text-[#6B7280] dark:text-slate-400">
+              {error || "Loading job post..."}
+            </p>
           </div>
         </EmployerSidebarShell>
       </div>
@@ -184,11 +193,22 @@ export default function EmployerViewPostPage() {
               <div className="w-full flex-[2] rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-none sm:p-8 lg:p-10">
                 {/* Date */}
                 <div className="mb-4 flex items-center text-gray-500 dark:text-slate-400">
-                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  <svg
+                    className="w-4 h-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
                   </svg>
-                  <span className="text-sm font-medium">{formatPostedDate(jobPost.createdAt)}</span>
+                  <span className="text-sm font-medium">
+                    {formatPostedDate(jobPost.createdAt)}
+                  </span>
                 </div>
 
                 {/* Title & Company */}
@@ -196,20 +216,28 @@ export default function EmployerViewPostPage() {
                   {jobPost.jobTitle || "Untitled Job Post"}
                 </h2>
                 <p className="mb-6 text-gray-500 dark:text-slate-400">
-                  {companyProfile?.companyName || jobPost.Company?.companyName || "Company Name"}
+                  {companyProfile?.companyName ||
+                    jobPost.Company?.companyName ||
+                    "Company Name"}
                 </p>
 
                 {/* Tags */}
                 <div className="flex flex-wrap gap-2 mb-8">
                   <span
                     className="rounded-[5px] px-[14px] py-[5px] text-[12px] font-semibold text-white"
-                    style={{ backgroundColor: workTypeColors[workType] || "#94A3B8" }}
+                    style={{
+                      backgroundColor: workTypeColors[workType] || "#94A3B8",
+                    }}
                   >
                     {workType}
                   </span>
-                  {Array.isArray(jobPost.positions) && jobPost.positions.length > 0
+                  {Array.isArray(jobPost.positions) &&
+                  jobPost.positions.length > 0
                     ? jobPost.positions.map((pos) => (
-                        <span key={pos} className="rounded-[5px] bg-[#E5E7EB] px-[14px] py-[5px] text-[12px] font-semibold text-[#4B5563] dark:bg-gray-700 dark:text-slate-200">
+                        <span
+                          key={pos}
+                          className="rounded-[5px] bg-[#E5E7EB] px-[14px] py-[5px] text-[12px] font-semibold text-[#4B5563] dark:bg-gray-700 dark:text-slate-200"
+                        >
                           {pos}
                         </span>
                       ))
@@ -218,40 +246,61 @@ export default function EmployerViewPostPage() {
 
                 {/* Positions Available */}
                 <h3 className="mb-8 text-lg font-bold text-black dark:text-white">
-                  Number of positions available: {jobPost.positionsAvailable ?? "-"}
+                  Number of positions available:{" "}
+                  {jobPost.positionsAvailable ?? "-"}
                 </h3>
 
                 {/* Job Description */}
                 <div className="mb-8">
-                  <h3 className="mb-3 text-[17px] font-bold text-black dark:text-white">Job description</h3>
+                  <h3 className="mb-3 text-[17px] font-bold text-black dark:text-white">
+                    Job description
+                  </h3>
                   {renderLines(jobPost.jobDescription)}
                 </div>
 
                 {/* Qualifications */}
                 <div className="mb-8">
-                  <h3 className="mb-3 text-[17px] font-bold text-black dark:text-white">Applicant qualifications</h3>
+                  <h3 className="mb-3 text-[17px] font-bold text-black dark:text-white">
+                    Applicant qualifications
+                  </h3>
                   {renderLines(jobPost.jobSpecification)}
                 </div>
 
                 {/* Other Details */}
                 <div className="space-y-6 mb-12">
                   <div>
-                    <h3 className="mb-1 text-[17px] font-bold text-black dark:text-white">GPA</h3>
-                    <p className="text-[15px] text-gray-600 dark:text-slate-300">{jobPost.gpa || "Not specified"}</p>
-                  </div>
-                  <div>
-                    <h3 className="mb-1 text-[17px] font-bold text-black dark:text-white">Allowance</h3>
-                    <p className="text-[15px] text-gray-600 dark:text-slate-300">{formatAllowance(jobPost)}</p>
-                  </div>
-                  <div>
-                    <h3 className="mb-1 text-[17px] font-bold text-black dark:text-white">Preferred Location</h3>
+                    <h3 className="mb-1 text-[17px] font-bold text-black dark:text-white">
+                      GPA
+                    </h3>
                     <p className="text-[15px] text-gray-600 dark:text-slate-300">
-                      {jobPost.LocationProvince?.name || jobPost.locationProvince || "-"}
+                      {jobPost.gpa || "Not specified"}
                     </p>
                   </div>
                   <div>
-                    <h3 className="mb-1 text-[17px] font-bold text-black dark:text-white">Working Days &amp; Hours</h3>
-                    <p className="text-[15px] text-gray-600 dark:text-slate-300">{jobPost.workingDaysHours || "Not specified"}</p>
+                    <h3 className="mb-1 text-[17px] font-bold text-black dark:text-white">
+                      Allowance
+                    </h3>
+                    <p className="text-[15px] text-gray-600 dark:text-slate-300">
+                      {formatAllowance(jobPost)}
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="mb-1 text-[17px] font-bold text-black dark:text-white">
+                      Preferred Location
+                    </h3>
+                    <p className="text-[15px] text-gray-600 dark:text-slate-300">
+                      {jobPost.LocationProvince?.name ||
+                        jobPost.locationProvince ||
+                        "-"}
+                    </p>
+                  </div>
+                  <div>
+                    <h3 className="mb-1 text-[17px] font-bold text-black dark:text-white">
+                      Working Days &amp; Hours
+                    </h3>
+                    <p className="text-[15px] text-gray-600 dark:text-slate-300">
+                      {jobPost.workingDaysHours || "Not specified"}
+                    </p>
                   </div>
                 </div>
 
@@ -268,27 +317,52 @@ export default function EmployerViewPostPage() {
 
               {/* RIGHT COLUMN */}
               <div className="w-full flex-[1] rounded-2xl border border-gray-100 bg-white p-5 shadow-sm transition-colors dark:border-gray-700 dark:bg-gray-800 dark:shadow-none sm:p-8 lg:sticky lg:top-8">
-                <h2 className="mb-6 text-center text-xl font-extrabold text-black dark:text-white">Job Poster</h2>
+                <h2 className="mb-6 text-center text-xl font-extrabold text-black dark:text-white">
+                  Job Poster
+                </h2>
 
                 {/* Logo */}
                 <div className="flex justify-center mb-6">
                   <div className="flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border border-gray-100 bg-[#F8F9FA] shadow-sm dark:border-gray-700 dark:bg-gray-700">
-                    {companyLogo && companyLogo.startsWith("http") ? (
-                      <img src={companyLogo} alt={companyProfile?.companyName || "Company"} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#23356E] text-sm font-bold text-white">
-                        {(companyProfile?.companyName || jobPost.Company?.companyName || "C").slice(0, 2).toUpperCase()}
-                      </div>
-                    )}
+                    {companyLogo ? (
+                      <img
+                        src={companyLogo}
+                        alt={companyProfile?.companyName || "Company"}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          // fallback ถ้าโหลดรูปไม่ได้
+                          e.currentTarget.style.display = "none";
+                          e.currentTarget.nextElementSibling?.removeAttribute(
+                            "style",
+                          );
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      className="flex h-12 w-12 items-center justify-center rounded-lg bg-[#23356E] text-sm font-bold text-white"
+                      style={companyLogo ? { display: "none" } : undefined}
+                    >
+                      {(
+                        companyProfile?.companyName ||
+                        jobPost.Company?.companyName ||
+                        "C"
+                      )
+                        .slice(0, 2)
+                        .toUpperCase()}
+                    </div>
                   </div>
                 </div>
 
                 {/* Company Name & Email */}
                 <div className="text-center mb-6">
                   <h3 className="text-lg font-bold text-black dark:text-white">
-                    {companyProfile?.companyName || jobPost.Company?.companyName || "-"}
+                    {companyProfile?.companyName ||
+                      jobPost.Company?.companyName ||
+                      "-"}
                   </h3>
-                  <p className="text-sm text-gray-500 dark:text-slate-400">{companyProfile?.email || "-"}</p>
+                  <p className="text-sm text-gray-500 dark:text-slate-400">
+                    {companyProfile?.email || "-"}
+                  </p>
                 </div>
 
                 <p className="mb-8 px-2 text-left text-sm leading-relaxed text-gray-600 dark:text-slate-300">
@@ -297,19 +371,39 @@ export default function EmployerViewPostPage() {
 
                 {/* Contact Info */}
                 <div className="mb-8">
-                  <h4 className="mb-4 text-[15px] font-bold text-black dark:text-white">Contact Information</h4>
+                  <h4 className="mb-4 text-[15px] font-bold text-black dark:text-white">
+                    Contact Information
+                  </h4>
                   <div className="space-y-3">
                     <div className="flex items-center text-sm text-gray-600 dark:text-slate-300">
-                      <svg className="w-5 h-5 text-[#2563EB] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                          d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      <svg
+                        className="w-5 h-5 text-[#2563EB] mr-3"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                        />
                       </svg>
                       {companyProfile?.phoneNumber || "-"}
                     </div>
                     <div className="flex items-center text-sm text-gray-600 dark:text-slate-300">
-                      <svg className="w-5 h-5 text-[#2563EB] mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      <svg
+                        className="w-5 h-5 text-[#2563EB] mr-3"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                        />
                       </svg>
                       {companyProfile?.contactName || "-"}
                     </div>
@@ -318,8 +412,12 @@ export default function EmployerViewPostPage() {
 
                 {/* Address & Map */}
                 <div>
-                  <h4 className="mb-2 text-[15px] font-bold text-black dark:text-white">Address</h4>
-                  <p className="mb-4 text-sm leading-relaxed text-gray-600 dark:text-slate-300">{fullAddress || "-"}</p>
+                  <h4 className="mb-2 text-[15px] font-bold text-black dark:text-white">
+                    Address
+                  </h4>
+                  <p className="mb-4 text-sm leading-relaxed text-gray-600 dark:text-slate-300">
+                    {fullAddress || "-"}
+                  </p>
                   <div className="h-48 w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-200 dark:border-gray-700 dark:bg-gray-700">
                     {fullAddress ? (
                       <iframe

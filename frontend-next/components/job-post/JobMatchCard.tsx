@@ -77,21 +77,24 @@ export default function JobMatchCard({
   const circumference = 2 * Math.PI * r;
 
   const renderLogo = () => {
-    if (post.companyLogo && post.companyLogo.startsWith("http")) {
-      return (
-        <img
-          src={post.companyLogo}
-          alt={post.companyName}
-          className="h-[48px] w-[48px] rounded-full object-cover"
-        />
-      );
-    }
+  if (post.companyLogo && (
+    post.companyLogo.startsWith("http") ||
+    post.companyLogo.startsWith("data:image/") // ✅ เพิ่มรองรับ base64
+  )) {
     return (
-      <div className="flex h-[31px] w-[31px] items-center justify-center rounded-[4px] bg-[#23356E] text-[9px] font-bold text-white">
-        {post.companyName.substring(0, 2).toUpperCase()}
-      </div>
+      <img
+        src={post.companyLogo}
+        alt={post.companyName}
+        className="h-[48px] w-[48px] rounded-full object-cover"
+      />
     );
-  };
+  }
+  return (
+    <div className="flex h-[31px] w-[31px] items-center justify-center rounded-[4px] bg-[#23356E] text-[9px] font-bold text-white">
+      {post.companyName.substring(0, 2).toUpperCase()}
+    </div>
+  );
+};
 
   return (
     <div className="relative flex h-full min-h-[274px] flex-col rounded-[12px] bg-white dark:bg-slate-800 px-[20px] py-[18px] shadow-sm border border-slate-100 dark:border-slate-700 transition-shadow duration-200 hover:shadow-[0_0px_15px_rgba(0,0,0,0.10)] cursor-pointer">

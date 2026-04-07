@@ -1182,6 +1182,7 @@ candidatesRouter.post(
       cleanupLocalFile(req.file);
       return res.json({ url: result.url });
     } catch (e: any) {
+      console.error("🔴 Project upload error:", e); // ← ดู terminal
       cleanupLocalFile(req.file);
       return res.status(500).json({ error: e?.message || "Upload failed" });
     }

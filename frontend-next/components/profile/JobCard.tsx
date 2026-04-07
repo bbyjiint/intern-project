@@ -42,18 +42,21 @@ export default function JobCard({
   onClick,
   showActions = false,
 }: JobCardProps) {
+  const [imgError, setImgError] = React.useState(false);
+
   const renderCompanyLogo = () => {
-    if (job.companyLogo && job.companyLogo.startsWith("http")) {
+    if (job.companyLogo && !imgError) {
       return (
         <img
           src={job.companyLogo}
           alt={job.companyName}
-          className="h-[48px] w-[48px] rounded-full object-cover"
+          className="h-full w-full rounded-full object-cover"
+          onError={() => setImgError(true)}
         />
       );
     }
     return (
-      <div className="flex h-[31px] w-[31px] items-center justify-center rounded-[4px] bg-[#23356E] dark:bg-sky-900 text-[10px] font-bold text-white">
+      <div className="flex h-full w-full items-center justify-center rounded-full bg-[#23356E] dark:bg-sky-900 text-[13px] font-bold text-white">
         {job.companyName.substring(0, 2).toUpperCase()}
       </div>
     );

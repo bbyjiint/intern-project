@@ -110,14 +110,26 @@ export default function ProjectUploadModal({
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...project,
-          githubUrl,
+          name: project.name,
+          role: project.role,
+          description: project.description || "",
+          startDate: project.startDate || null,
+          endDate: project.endDate || null,
+          relatedSkills: project.relatedSkills || [],
+          githubUrl: githubUrl || null,
           githubVerified,
-          projectUrl,
-          onUpdate,
-          fileUrl: uploadedFileUrl,
-          fileName: uploadedFileName,
+          projectUrl: projectUrl || null,
+          fileUrl: uploadedFileUrl || null,
+          fileName: uploadedFileName || null,
         }),
+      });
+
+      onUpdate(project.id, {
+        githubUrl,
+        githubVerified,
+        projectUrl,
+        fileUrl: uploadedFileUrl,
+        fileName: uploadedFileName,
       });
 
       onRefresh?.();

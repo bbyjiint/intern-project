@@ -321,7 +321,8 @@ jobPostsRouter.get("/job-posts/public/:id", async (req, res) => {
       jobPost.Company?.CompanyEmails[0]?.email ||
       jobPost.Company?.User?.email ||
       "info@example.com";
-    const companyLogo = jobPost.Company?.logoURL || companyName.substring(0, 7).toUpperCase().replace(/\s+/g, "");
+    const companyLogo = jobPost.Company?.logoURL || null;
+
     const location = jobPost.locationProvince || "Location not specified";
     const address = [
       jobPost.Company?.addressDetails,
@@ -361,7 +362,9 @@ jobPostsRouter.get("/job-posts/public/:id", async (req, res) => {
         contactPhone: jobPost.Company?.CompanyPhones[0]?.phone || "Not specified",
         contactDepartment: jobPost.Company?.recruiterName || "Hiring Team",
         address,
-        mapEmbedUrl: "",
+        mapEmbedUrl: address && address !== "Address not specified"
+          ? `https://www.google.com/maps?q=${encodeURIComponent(address)}&output=embed`
+          : "",
       },
     });
   } catch (error: any) {
@@ -394,6 +397,9 @@ jobPostsRouter.get("/job-posts", requireAuth, requireRole("COMPANY"), async (req
             Choices: { orderBy: { order: "asc" } },
           },
           orderBy: { order: "asc" },
+        },
+        LocationProvince: {
+          select: { name: true },
         },
       },
       orderBy: { createdAt: "desc" },
@@ -443,6 +449,9 @@ jobPostsRouter.get("/job-posts/:id", requireAuth, requireRole("COMPANY"), async 
             companyName: true,
             logoURL: true,
           },
+        },
+        LocationProvince: {
+          select: { name: true },
         },
       },
     });
